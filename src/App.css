@@ -1,7 +1,5 @@
-/* Fontes especiais */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
-/* Reset e Base */
 * {
   margin: 0;
   padding: 0;
@@ -15,38 +13,36 @@ html {
 }
 
 body {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-  background: #0a1628;
-  color: #ffffff;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: #1a1f2e;
+  color: #fff;
   line-height: 1.5;
 }
 
-/* Scrollbar personalizada */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.02);
+  background: #1a1f2e;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(212, 175, 55, 0.3);
+  background: #3d4654;
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(212, 175, 55, 0.5);
+  background: #4f5a6a;
 }
 
-/* Loading Screen */
 .loading-screen {
   min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #0a1628 0%, #1a365d 50%, #0d2137 100%);
+  background: #1a1f2e;
 }
 
 .loading-content {
@@ -54,18 +50,18 @@ body {
 }
 
 .loading-spinner-screen {
-  width: 48px;
-  height: 48px;
-  border: 3px solid rgba(212, 175, 55, 0.2);
-  border-top-color: #d4af37;
+  width: 32px;
+  height: 32px;
+  border: 2px solid #2d3548;
+  border-top-color: #4f7942;
   border-radius: 50%;
-  animation: spin 1s linear infinite;
-  margin: 0 auto 16px;
+  animation: spin 0.7s linear infinite;
+  margin: 0 auto 12px;
 }
 
 .loading-content p {
-  color: rgba(255, 255, 255, 0.6);
-  font-size: 14px;
+  color: #6b7280;
+  font-size: 13px;
 }
 
 @keyframes spin {
@@ -74,50 +70,21 @@ body {
   }
 }
 
-/* Utility Classes */
-.text-gold {
-  color: #d4af37;
-}
-
-.bg-gold {
-  background: linear-gradient(135deg, #d4af37, #c9a227);
-}
-
-/* Animações */
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.fade-in {
-  animation: fadeIn 0.3s ease-out;
-}
-
-/* Selection */
 ::selection {
-  background: rgba(212, 175, 55, 0.3);
-  color: #ffffff;
+  background: rgba(79, 121, 66, 0.3);
+  color: #fff;
 }
 
-/* Focus Visible */
 :focus-visible {
-  outline: 2px solid rgba(212, 175, 55, 0.5);
+  outline: 2px solid #4f7942;
   outline-offset: 2px;
 }
 
-/* Links */
 a {
-  color: #d4af37;
+  color: #4ade80;
   text-decoration: none;
-  transition: color 0.2s ease;
 }
 
 a:hover {
-  color: #f4e4a6;
+  color: #86efac;
 }
