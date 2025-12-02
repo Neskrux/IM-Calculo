@@ -26,20 +26,17 @@
 }
 
 .logo-container {
-  width: 72px;
-  height: 72px;
+  width: 80px;
+  height: 80px;
   margin: 0 auto 20px;
-  background: #fff;
-  border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 8px;
 }
 
 .logo-img {
-  width: 56px;
-  height: 56px;
+  width: 80px;
+  height: 80px;
   object-fit: contain;
 }
 
