@@ -1270,6 +1270,44 @@
   background: #2d5a3a;
 }
 
+/* Input de Moeda */
+.input-currency {
+  display: flex;
+  align-items: center;
+  background: #1a1f2e;
+  border: 1px solid #2d3548;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.input-currency:focus-within {
+  border-color: #4f7942;
+}
+
+.currency-prefix {
+  padding: 12px 10px 12px 14px;
+  color: #4ade80;
+  font-weight: 600;
+  font-size: 14px;
+  background: #232936;
+  border-right: 1px solid #2d3548;
+}
+
+.input-currency input {
+  flex: 1;
+  padding: 12px 14px;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: #fff;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.input-currency input::placeholder {
+  color: #6b7280;
+}
+
 .info-box {
   background: #1a1f2e;
   border: 1px solid #2d3548;

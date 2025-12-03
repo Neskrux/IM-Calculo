@@ -723,6 +723,31 @@ const AdminDashboard = () => {
     }).format(value)
   }
 
+  // Formatar valor como moeda para input
+  const formatCurrencyInput = (value) => {
+    if (!value) return ''
+    const num = parseFloat(value)
+    if (isNaN(num)) return ''
+    return num.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+  }
+
+  // Converter valor formatado para número
+  const parseCurrencyInput = (formattedValue) => {
+    if (!formattedValue) return ''
+    // Remove tudo exceto números e vírgula
+    const cleanValue = formattedValue.replace(/[^\d,]/g, '').replace(',', '.')
+    return cleanValue
+  }
+
+  // Handler para campo de moeda
+  const handleCurrencyChange = (field, value) => {
+    // Remove caracteres não numéricos exceto vírgula e ponto
+    const cleanValue = value.replace(/[^\d]/g, '')
+    // Converte para decimal (divide por 100 para ter centavos)
+    const numValue = cleanValue ? (parseInt(cleanValue) / 100).toString() : ''
+    setVendaForm({ ...vendaForm, [field]: numValue })
+  }
+
   const getTotalVendas = () => {
     return vendas.reduce((acc, v) => acc + v.valor_venda, 0)
   }
@@ -1479,12 +1504,15 @@ const AdminDashboard = () => {
                   <div className="form-row">
                     <div className="form-group">
                       <label>Valor da Venda *</label>
-                      <input
-                        type="number"
-                        placeholder="Ex: 500000"
-                        value={vendaForm.valor_venda}
-                        onChange={(e) => setVendaForm({...vendaForm, valor_venda: e.target.value})}
-                      />
+                      <div className="input-currency">
+                        <span className="currency-prefix">R$</span>
+                        <input
+                          type="text"
+                          placeholder="0,00"
+                          value={formatCurrencyInput(vendaForm.valor_venda)}
+                          onChange={(e) => handleCurrencyChange('valor_venda', e.target.value)}
+                        />
+                      </div>
                     </div>
                     <div className="form-group">
                       <label>Data da Venda</label>
@@ -1540,12 +1568,15 @@ const AdminDashboard = () => {
                     {vendaForm.teve_sinal && (
                       <div className="form-group">
                         <label>Valor do Sinal</label>
-                        <input
-                          type="number"
-                          placeholder="Ex: 50000"
-                          value={vendaForm.valor_sinal}
-                          onChange={(e) => setVendaForm({...vendaForm, valor_sinal: e.target.value})}
-                        />
+                        <div className="input-currency">
+                          <span className="currency-prefix">R$</span>
+                          <input
+                            type="text"
+                            placeholder="0,00"
+                            value={formatCurrencyInput(vendaForm.valor_sinal)}
+                            onChange={(e) => handleCurrencyChange('valor_sinal', e.target.value)}
+                          />
+                        </div>
                       </div>
                     )}
                   </div>
@@ -1574,12 +1605,15 @@ const AdminDashboard = () => {
                         </div>
                         <div className="form-group">
                           <label>Valor Parcela</label>
-                          <input
-                            type="number"
-                            placeholder="Ex: 5000"
-                            value={vendaForm.valor_parcela_entrada}
-                            onChange={(e) => setVendaForm({...vendaForm, valor_parcela_entrada: e.target.value})}
-                          />
+                          <div className="input-currency">
+                            <span className="currency-prefix">R$</span>
+                            <input
+                              type="text"
+                              placeholder="0,00"
+                              value={formatCurrencyInput(vendaForm.valor_parcela_entrada)}
+                              onChange={(e) => handleCurrencyChange('valor_parcela_entrada', e.target.value)}
+                            />
+                          </div>
                         </div>
                       </>
                     )}
@@ -1600,12 +1634,15 @@ const AdminDashboard = () => {
                     {(vendaForm.teve_balao === 'sim' || vendaForm.teve_balao === 'pendente') && (
                       <div className="form-group">
                         <label>Valor do Balão</label>
-                        <input
-                          type="number"
-                          placeholder="Ex: 100000"
-                          value={vendaForm.valor_balao}
-                          onChange={(e) => setVendaForm({...vendaForm, valor_balao: e.target.value})}
-                        />
+                        <div className="input-currency">
+                          <span className="currency-prefix">R$</span>
+                          <input
+                            type="text"
+                            placeholder="0,00"
+                            value={formatCurrencyInput(vendaForm.valor_balao)}
+                            onChange={(e) => handleCurrencyChange('valor_balao', e.target.value)}
+                          />
+                        </div>
                       </div>
                     )}
                   </div>
