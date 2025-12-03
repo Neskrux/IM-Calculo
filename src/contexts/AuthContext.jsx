@@ -12,11 +12,11 @@ export const AuthProvider = ({ children }) => {
   const loadingTimeout = useRef(null)
 
   useEffect(() => {
-    // Timeout de segurança - para o loading após 5 segundos
+    // Timeout de segurança - para o loading após 3 segundos
     loadingTimeout.current = setTimeout(() => {
       console.log('Timeout: forçando fim do loading')
       setLoading(false)
-    }, 5000)
+    }, 3000)
 
     // Verificar sessão atual
     const getSession = async () => {
@@ -61,15 +61,21 @@ export const AuthProvider = ({ children }) => {
     try {
       console.log('Buscando perfil para:', userId)
       
+      // Timeout de 3 segundos para a busca
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 3000)
+      
       const { data, error } = await supabase
         .from('usuarios')
-        .select('*')
+        .select('id, email, nome, tipo, tipo_corretor, telefone, percentual_corretor, empreendimento_id, cargo_id')
         .eq('id', userId)
         .maybeSingle()
+        .abortSignal(controller.signal)
       
+      clearTimeout(timeoutId)
       console.log('Resultado busca perfil:', { data, error })
       
-      if (error) {
+      if (error && error.name !== 'AbortError') {
         console.error('Erro ao buscar perfil:', error)
       }
       
