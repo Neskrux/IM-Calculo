@@ -1689,3 +1689,148 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* Modal de Detalhe de Pagamento */
+.detalhe-pagamento-modal {
+  max-width: 500px;
+}
+
+.detalhe-info {
+  background: #2a3142;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 20px;
+}
+
+.detalhe-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid #343b4d;
+}
+
+.detalhe-row:last-child {
+  border-bottom: none;
+}
+
+.detalhe-row .label {
+  color: #9ca3af;
+  font-size: 14px;
+}
+
+.detalhe-row .value {
+  color: #fff;
+  font-weight: 500;
+}
+
+.detalhe-row.highlight {
+  background: #343b4d;
+  margin: 8px -16px;
+  padding: 12px 16px;
+  border-bottom: none;
+}
+
+.detalhe-row.highlight:first-of-type {
+  margin-top: 16px;
+}
+
+.detalhe-row .value.comissao {
+  color: #d4af37;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.divisao-cargos h3 {
+  font-size: 16px;
+  color: #fff;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #343b4d;
+}
+
+.tabela-divisao {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.tabela-divisao th {
+  text-align: left;
+  padding: 10px;
+  background: #2a3142;
+  color: #9ca3af;
+  font-size: 12px;
+  text-transform: uppercase;
+  border-bottom: 1px solid #343b4d;
+}
+
+.tabela-divisao th:last-child,
+.tabela-divisao td:last-child {
+  text-align: right;
+}
+
+.tabela-divisao td {
+  padding: 12px 10px;
+  color: #e5e7eb;
+  border-bottom: 1px solid #2d3548;
+  font-size: 14px;
+}
+
+.tabela-divisao td.valor-comissao {
+  color: #10b981;
+  font-weight: 600;
+}
+
+.tabela-divisao tfoot .total-row {
+  background: #343b4d;
+}
+
+.tabela-divisao tfoot .total-row td {
+  padding: 14px 10px;
+  border-bottom: none;
+}
+
+.tabela-divisao tfoot .total-row td.valor-comissao {
+  color: #d4af37;
+  font-size: 16px;
+}
+
+/* Botão ver detalhe */
+.btn-ver-detalhe {
+  background: #3b82f6;
+  color: #fff;
+  border: none;
+  padding: 6px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: background 0.2s;
+}
+
+.btn-ver-detalhe:hover {
+  background: #2563eb;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.btn-confirmar-pag {
+  background: #10b981;
+  color: #fff;
+  border: none;
+  padding: 6px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: background 0.2s;
+  font-size: 13px;
+}
+
+.btn-confirmar-pag:hover {
+  background: #059669;
+}

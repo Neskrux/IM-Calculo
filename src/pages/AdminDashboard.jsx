@@ -27,6 +27,7 @@ const AdminDashboard = () => {
   const [message, setMessage] = useState({ type: '', text: '' })
   const [contratoFile, setContratoFile] = useState(null)
   const [uploadingContrato, setUploadingContrato] = useState(false)
+  const [pagamentoDetalhe, setPagamentoDetalhe] = useState(null)
 
   // Formulário de empreendimento
   const [empreendimentoForm, setEmpreendimentoForm] = useState({
@@ -104,6 +105,48 @@ const AdminDashboard = () => {
     const total = comissoesPorCargo.reduce((acc, c) => acc + c.valor, 0)
     
     return { cargos: comissoesPorCargo, total }
+  }
+
+  // Calcular comissão detalhada por cargo para um pagamento específico
+  const calcularComissaoPorCargoPagamento = (pagamento) => {
+    if (!pagamento?.venda_id) return []
+    
+    // Buscar a venda relacionada
+    const venda = vendas.find(v => v.id === pagamento.venda_id)
+    if (!venda) return []
+    
+    // Buscar o empreendimento da venda
+    const emp = empreendimentos.find(e => e.id === venda.empreendimento_id)
+    if (!emp || !emp.cargos) return []
+    
+    // Filtrar cargos pelo tipo de corretor
+    const tipoCorretor = venda.tipo_corretor || 'externo'
+    const cargosDoTipo = emp.cargos.filter(c => c.tipo_corretor === tipoCorretor)
+    
+    // Calcular a comissão proporcional do pagamento para cada cargo
+    // fator_comissao da venda já foi calculado no momento da criação
+    const fatorComissao = parseFloat(venda.fator_comissao) || 0
+    const valorPagamento = parseFloat(pagamento.valor) || 0
+    
+    // Total percentual dos cargos
+    const totalPercentualCargos = cargosDoTipo.reduce((acc, c) => acc + parseFloat(c.percentual || 0), 0)
+    
+    // Comissão total desse pagamento
+    const comissaoTotalPagamento = pagamento.comissao_gerada || (valorPagamento * fatorComissao)
+    
+    // Distribuir proporcionalmente entre os cargos
+    return cargosDoTipo.map(cargo => {
+      const percentualCargo = parseFloat(cargo.percentual) || 0
+      // Proporção desse cargo no total
+      const proporcao = totalPercentualCargos > 0 ? percentualCargo / totalPercentualCargos : 0
+      const valorComissaoCargo = comissaoTotalPagamento * proporcao
+      
+      return {
+        nome_cargo: cargo.nome_cargo,
+        percentual: percentualCargo,
+        valor: valorComissaoCargo
+      }
+    })
   }
 
   useEffect(() => {
@@ -1493,22 +1536,111 @@ const AdminDashboard = () => {
                             </span>
                           </td>
                           <td>
-                            {pag.status !== 'pago' && (
+                            <div className="action-buttons">
                               <button 
-                                className="btn-confirmar-pag"
-                                onClick={() => confirmarPagamento(pag.id)}
-                                title="Confirmar pagamento"
+                                className="btn-ver-detalhe"
+                                onClick={() => setPagamentoDetalhe(pag)}
+                                title="Ver divisão de comissões"
                               >
-                                <Check size={16} />
-                                Confirmar
+                                <Eye size={16} />
                               </button>
-                            )}
+                              {pag.status !== 'pago' && (
+                                <button 
+                                  className="btn-confirmar-pag"
+                                  onClick={() => confirmarPagamento(pag.id)}
+                                  title="Confirmar pagamento"
+                                >
+                                  <Check size={16} />
+                                </button>
+                              )}
+                            </div>
                           </td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
                 </div>
+
+                {/* Modal de Detalhes do Pagamento */}
+                {pagamentoDetalhe && (
+                  <div className="modal-overlay" onClick={() => setPagamentoDetalhe(null)}>
+                    <div className="modal detalhe-pagamento-modal" onClick={e => e.stopPropagation()}>
+                      <div className="modal-header">
+                        <h2>Divisão de Comissões</h2>
+                        <button className="close-btn" onClick={() => setPagamentoDetalhe(null)}>
+                          <X size={24} />
+                        </button>
+                      </div>
+                      <div className="modal-body">
+                        {/* Info do Pagamento */}
+                        <div className="detalhe-info">
+                          <div className="detalhe-row">
+                            <span className="label">Empreendimento:</span>
+                            <span className="value">{pagamentoDetalhe.venda?.empreendimento?.nome || 'N/A'}</span>
+                          </div>
+                          <div className="detalhe-row">
+                            <span className="label">Corretor:</span>
+                            <span className="value">{pagamentoDetalhe.venda?.corretor?.nome || 'N/A'}</span>
+                          </div>
+                          <div className="detalhe-row">
+                            <span className="label">Tipo:</span>
+                            <span className="value">
+                              {pagamentoDetalhe.tipo === 'sinal' && 'Sinal'}
+                              {pagamentoDetalhe.tipo === 'entrada' && 'Entrada'}
+                              {pagamentoDetalhe.tipo === 'parcela_entrada' && `Parcela de Entrada ${pagamentoDetalhe.numero_parcela}`}
+                              {pagamentoDetalhe.tipo === 'balao' && (pagamentoDetalhe.numero_parcela ? `Balão ${pagamentoDetalhe.numero_parcela}` : 'Balão')}
+                            </span>
+                          </div>
+                          <div className="detalhe-row highlight">
+                            <span className="label">Valor do Pagamento:</span>
+                            <span className="value">{formatCurrency(pagamentoDetalhe.valor)}</span>
+                          </div>
+                          <div className="detalhe-row highlight">
+                            <span className="label">Comissão Total:</span>
+                            <span className="value comissao">{formatCurrency(pagamentoDetalhe.comissao_gerada || 0)}</span>
+                          </div>
+                        </div>
+
+                        {/* Divisão por Cargo */}
+                        <div className="divisao-cargos">
+                          <h3>Divisão por Beneficiário</h3>
+                          <table className="tabela-divisao">
+                            <thead>
+                              <tr>
+                                <th>Beneficiário</th>
+                                <th>%</th>
+                                <th>Valor</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {calcularComissaoPorCargoPagamento(pagamentoDetalhe).map((cargo, idx) => (
+                                <tr key={idx}>
+                                  <td>{cargo.nome_cargo}</td>
+                                  <td>{cargo.percentual.toFixed(2)}%</td>
+                                  <td className="valor-comissao">{formatCurrency(cargo.valor)}</td>
+                                </tr>
+                              ))}
+                              {calcularComissaoPorCargoPagamento(pagamentoDetalhe).length === 0 && (
+                                <tr>
+                                  <td colSpan="3" style={{ textAlign: 'center', color: '#999' }}>
+                                    Sem cargos cadastrados para este empreendimento
+                                  </td>
+                                </tr>
+                              )}
+                            </tbody>
+                            <tfoot>
+                              <tr className="total-row">
+                                <td><strong>TOTAL</strong></td>
+                                <td>-</td>
+                                <td className="valor-comissao"><strong>{formatCurrency(pagamentoDetalhe.comissao_gerada || 0)}</strong></td>
+                              </tr>
+                            </tfoot>
+                          </table>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </>
             )}
           </div>
