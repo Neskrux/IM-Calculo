@@ -43,10 +43,10 @@ const LoadingScreen = ({ showLogout = false }) => {
 
 // Componente para rotas protegidas
 const ProtectedRoute = ({ children, requiredRole }) => {
-  const { user, userProfile, loading } = useAuth()
+  const { user, userProfile, loading, initialized } = useAuth()
 
-  if (loading) {
-    return <LoadingScreen showLogout={true} />
+  if (!initialized || loading) {
+    return <LoadingScreen showLogout={initialized} />
   }
 
   if (!user) {
@@ -99,10 +99,10 @@ const ProtectedRoute = ({ children, requiredRole }) => {
 
 // Componente para redirecionar usuários logados
 const PublicRoute = ({ children }) => {
-  const { user, userProfile, loading } = useAuth()
+  const { user, userProfile, loading, initialized } = useAuth()
 
-  if (loading) {
-    return <LoadingScreen showLogout={true} />
+  if (!initialized || loading) {
+    return <LoadingScreen showLogout={false} />
   }
 
   if (user && userProfile) {
@@ -117,10 +117,10 @@ const PublicRoute = ({ children }) => {
 
 // Componente de Dashboard que redireciona baseado no tipo de usuário
 const DashboardRedirect = () => {
-  const { userProfile, loading, user } = useAuth()
+  const { userProfile, loading, user, initialized } = useAuth()
 
-  if (loading) {
-    return <LoadingScreen showLogout={true} />
+  if (!initialized || loading) {
+    return <LoadingScreen showLogout={initialized} />
   }
 
   // Se não tem perfil cadastrado na tabela usuarios

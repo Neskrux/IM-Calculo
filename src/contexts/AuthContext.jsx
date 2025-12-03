@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, useRef } from 'react'
+import { createContext, useContext, useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 
 const AuthContext = createContext({})
@@ -9,107 +9,112 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null)
   const [userProfile, setUserProfile] = useState(null)
   const [loading, setLoading] = useState(true)
-  const loadingTimeout = useRef(null)
+  const [initialized, setInitialized] = useState(false)
 
   useEffect(() => {
-    // Timeout de segurança - para o loading após 3 segundos
-    loadingTimeout.current = setTimeout(() => {
-      console.log('Timeout: forçando fim do loading')
-      setLoading(false)
-    }, 3000)
+    let isMounted = true
 
-    // Verificar sessão atual
-    const getSession = async () => {
+    const initAuth = async () => {
       try {
+        // Buscar sessão atual
         const { data: { session } } = await supabase.auth.getSession()
-        console.log('Sessão:', session)
-        setUser(session?.user ?? null)
         
+        if (!isMounted) return
+
         if (session?.user) {
+          setUser(session.user)
           await fetchUserProfile(session.user.id)
         } else {
-          setLoading(false)
+          setUser(null)
+          setUserProfile(null)
         }
       } catch (error) {
-        console.error('Erro ao buscar sessão:', error)
-        setLoading(false)
+        console.error('Erro ao inicializar auth:', error)
+      } finally {
+        if (isMounted) {
+          setLoading(false)
+          setInitialized(true)
+        }
       }
     }
 
-    getSession()
+    initAuth()
 
     // Escutar mudanças de autenticação
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('Auth state changed:', event, session)
-      setUser(session?.user ?? null)
+      console.log('Auth event:', event)
       
-      if (session?.user) {
-        await fetchUserProfile(session.user.id)
-      } else {
+      if (!isMounted) return
+
+      if (event === 'SIGNED_OUT') {
+        setUser(null)
         setUserProfile(null)
+        setLoading(false)
+        return
+      }
+
+      if (event === 'SIGNED_IN' && session?.user) {
+        setUser(session.user)
+        setLoading(true)
+        await fetchUserProfile(session.user.id)
         setLoading(false)
       }
     })
 
     return () => {
+      isMounted = false
       subscription.unsubscribe()
-      if (loadingTimeout.current) clearTimeout(loadingTimeout.current)
     }
   }, [])
 
   const fetchUserProfile = async (userId) => {
     try {
-      console.log('Buscando perfil para:', userId)
-      
-      // Timeout de 3 segundos para a busca
-      const controller = new AbortController()
-      const timeoutId = setTimeout(() => controller.abort(), 3000)
-      
       const { data, error } = await supabase
         .from('usuarios')
-        .select('id, email, nome, tipo, tipo_corretor, telefone, percentual_corretor, empreendimento_id, cargo_id')
+        .select('*')
         .eq('id', userId)
         .maybeSingle()
-        .abortSignal(controller.signal)
       
-      clearTimeout(timeoutId)
-      console.log('Resultado busca perfil:', { data, error })
-      
-      if (error && error.name !== 'AbortError') {
+      if (error) {
         console.error('Erro ao buscar perfil:', error)
+        setUserProfile(null)
+        return
       }
       
-      setUserProfile(data || null)
+      setUserProfile(data)
     } catch (err) {
-      console.error('Erro catch:', err)
+      console.error('Erro:', err)
       setUserProfile(null)
-    } finally {
-      if (loadingTimeout.current) clearTimeout(loadingTimeout.current)
-      setLoading(false)
     }
   }
 
   const signIn = async (email, password) => {
+    setLoading(true)
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password
     })
+    if (error) {
+      setLoading(false)
+    }
     return { data, error }
   }
 
   const signOut = async () => {
-    const { error } = await supabase.auth.signOut()
-    if (!error) {
-      setUser(null)
-      setUserProfile(null)
-    }
-    return { error }
+    setLoading(true)
+    await supabase.auth.signOut()
+    setUser(null)
+    setUserProfile(null)
+    setLoading(false)
+    // Limpar storage local
+    localStorage.removeItem('sb-jdkkusrxullttyyeakwb-auth-token')
   }
 
   const value = {
     user,
     userProfile,
     loading,
+    initialized,
     signIn,
     signOut,
     isAdmin: userProfile?.tipo === 'admin',
