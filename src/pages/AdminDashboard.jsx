@@ -73,6 +73,9 @@ const AdminDashboard = () => {
   const [vendaForm, setVendaForm] = useState({
     corretor_id: '',
     empreendimento_id: '',
+    cliente_id: '',
+    unidade: '',
+    bloco: '',
     valor_venda: '',
     tipo_corretor: 'externo',
     data_venda: new Date().toISOString().split('T')[0],
@@ -376,6 +379,9 @@ const AdminDashboard = () => {
     const vendaData = {
       corretor_id: vendaForm.corretor_id,
       empreendimento_id: vendaForm.empreendimento_id,
+      cliente_id: vendaForm.cliente_id || null,
+      unidade: vendaForm.unidade || null,
+      bloco: vendaForm.bloco?.toUpperCase() || null,
       valor_venda: valorVenda,
       tipo_corretor: vendaForm.tipo_corretor,
       data_venda: vendaForm.data_venda,
@@ -882,6 +888,9 @@ const AdminDashboard = () => {
     setVendaForm({
       corretor_id: '',
       empreendimento_id: '',
+      cliente_id: '',
+      unidade: '',
+      bloco: '',
       valor_venda: '',
       tipo_corretor: 'externo',
       data_venda: new Date().toISOString().split('T')[0],
@@ -1116,6 +1125,9 @@ const AdminDashboard = () => {
     setVendaForm({
       corretor_id: venda.corretor_id,
       empreendimento_id: venda.empreendimento_id || '',
+      cliente_id: venda.cliente_id || '',
+      unidade: venda.unidade || '',
+      bloco: venda.bloco || '',
       valor_venda: venda.valor_venda.toString(),
       tipo_corretor: venda.tipo_corretor,
       data_venda: venda.data_venda,
@@ -1488,6 +1500,7 @@ const AdminDashboard = () => {
                 <thead>
                   <tr>
                     <th>Corretor</th>
+                    <th>Unidade</th>
                     <th>Tipo</th>
                     <th>Valor Venda</th>
                     <th>Comissão Corretor</th>
@@ -1500,13 +1513,13 @@ const AdminDashboard = () => {
                 <tbody>
                   {loading ? (
                     <tr>
-                      <td colSpan="8" className="loading-cell">
+                      <td colSpan="9" className="loading-cell">
                         <div className="loading-spinner"></div>
                       </td>
                     </tr>
                   ) : filteredVendas.length === 0 ? (
                     <tr>
-                      <td colSpan="8" className="empty-cell">
+                      <td colSpan="9" className="empty-cell">
                         Nenhuma venda encontrada
                       </td>
                     </tr>
@@ -1520,6 +1533,13 @@ const AdminDashboard = () => {
                             </div>
                             <span>{venda.corretor?.nome || 'N/A'}</span>
                           </div>
+                        </td>
+                        <td>
+                          <span className="unidade-bloco">
+                            {venda.unidade || venda.bloco ? (
+                              <>{venda.bloco && `Bloco ${venda.bloco}`}{venda.bloco && venda.unidade && ' - '}{venda.unidade && `Un. ${venda.unidade}`}</>
+                            ) : '-'}
+                          </span>
                         </td>
                         <td>
                           <span className={`badge ${venda.tipo_corretor}`}>
@@ -2255,10 +2275,53 @@ const AdminDashboard = () => {
                       </select>
                     </div>
                     <div className="form-group">
+                      <label>Cliente (opcional)</label>
+                      <select
+                        value={vendaForm.cliente_id || ''}
+                        onChange={(e) => setVendaForm({...vendaForm, cliente_id: e.target.value})}
+                      >
+                        <option value="">Selecione o cliente</option>
+                        {clientes.map((cliente) => (
+                          <option key={cliente.id} value={cliente.id}>
+                            {cliente.nome_completo} {cliente.cpf ? `- ${cliente.cpf}` : ''}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label>Unidade</label>
+                      <input
+                        type="text"
+                        placeholder="Ex: 101"
+                        maxLength={5}
+                        value={vendaForm.unidade}
+                        onChange={(e) => {
+                          const val = e.target.value.replace(/\D/g, '').slice(0, 5)
+                          setVendaForm({...vendaForm, unidade: val})
+                        }}
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>Bloco</label>
+                      <input
+                        type="text"
+                        placeholder="Ex: A"
+                        maxLength={1}
+                        value={vendaForm.bloco}
+                        onChange={(e) => {
+                          const val = e.target.value.toUpperCase().replace(/[^A-Z]/g, '').slice(0, 1)
+                          setVendaForm({...vendaForm, bloco: val})
+                        }}
+                      />
+                    </div>
+                    <div className="form-group">
                       <label>Descrição (opcional)</label>
                       <input
                         type="text"
-                        placeholder="Ex: Unidade 101, Bloco A"
+                        placeholder="Observações adicionais"
                         value={vendaForm.descricao}
                         onChange={(e) => setVendaForm({...vendaForm, descricao: e.target.value})}
                       />
