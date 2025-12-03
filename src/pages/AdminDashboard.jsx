@@ -4,7 +4,7 @@ import { supabase } from '../lib/supabase'
 import { 
   Users, DollarSign, TrendingUp, Plus, Edit2, Trash2, 
   Search, Filter, LogOut, Menu, X, ChevronDown, Save, Eye,
-  Calculator, Calendar, User, Briefcase, CheckCircle, Clock, UserPlus, Mail, Lock, Percent, Building, PlusCircle, CreditCard, Check
+  Calculator, Calendar, User, Briefcase, CheckCircle, Clock, UserPlus, Mail, Lock, Percent, Building, PlusCircle, CreditCard, Check, Upload, FileText, Trash
 } from 'lucide-react'
 import logo from '../imgs/logo.png'
 import '../styles/Dashboard.css'
@@ -25,6 +25,8 @@ const AdminDashboard = () => {
   const [filterTipo, setFilterTipo] = useState('todos')
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState({ type: '', text: '' })
+  const [contratoFile, setContratoFile] = useState(null)
+  const [uploadingContrato, setUploadingContrato] = useState(false)
 
   // Formulário de empreendimento
   const [empreendimentoForm, setEmpreendimentoForm] = useState({
@@ -53,7 +55,9 @@ const AdminDashboard = () => {
     valor_parcela_entrada: '',
     teve_balao: 'nao', // 'nao', 'sim', 'pendente'
     valor_balao: '',
-    valor_pro_soluto: ''
+    valor_pro_soluto: '',
+    contrato_url: '',
+    contrato_nome: ''
   })
 
   // Dados do formulário de corretor
@@ -215,7 +219,18 @@ const AdminDashboard = () => {
       valor_balao: valorBalao || null,
       valor_pro_soluto: valorProSoluto || null,
       fator_comissao: fatorComissao || null,
-      comissao_total: comissoesDinamicas.total
+      comissao_total: comissoesDinamicas.total,
+      contrato_url: vendaForm.contrato_url || null,
+      contrato_nome: vendaForm.contrato_nome || null
+    }
+
+    // Upload do contrato se houver arquivo novo
+    if (contratoFile) {
+      const resultado = await handleContratoUpload(contratoFile)
+      if (resultado) {
+        vendaData.contrato_url = resultado.url
+        vendaData.contrato_nome = resultado.nome
+      }
     }
 
     let error
@@ -675,8 +690,11 @@ const AdminDashboard = () => {
       valor_parcela_entrada: '',
       teve_balao: 'nao',
       valor_balao: '',
-      valor_pro_soluto: ''
+      valor_pro_soluto: '',
+      contrato_url: '',
+      contrato_nome: ''
     })
+    setContratoFile(null)
   }
 
   const resetCorretorForm = () => {
@@ -710,8 +728,11 @@ const AdminDashboard = () => {
       valor_parcela_entrada: venda.valor_parcela_entrada?.toString() || '',
       teve_balao: venda.teve_balao || 'nao',
       valor_balao: venda.valor_balao?.toString() || '',
-      valor_pro_soluto: venda.valor_pro_soluto?.toString() || ''
+      valor_pro_soluto: venda.valor_pro_soluto?.toString() || '',
+      contrato_url: venda.contrato_url || '',
+      contrato_nome: venda.contrato_nome || ''
     })
+    setContratoFile(null)
     setModalType('venda')
     setShowModal(true)
   }
@@ -746,6 +767,47 @@ const AdminDashboard = () => {
     // Converte para decimal (divide por 100 para ter centavos)
     const numValue = cleanValue ? (parseInt(cleanValue) / 100).toString() : ''
     setVendaForm({ ...vendaForm, [field]: numValue })
+  }
+
+  // Upload de contrato
+  const handleContratoUpload = async (file) => {
+    if (!file) return null
+    
+    setUploadingContrato(true)
+    
+    try {
+      const fileExt = file.name.split('.').pop()
+      const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`
+      const filePath = `contratos/${fileName}`
+      
+      const { error: uploadError } = await supabase.storage
+        .from('contratos')
+        .upload(filePath, file)
+      
+      if (uploadError) {
+        console.error('Erro upload:', uploadError)
+        setMessage({ type: 'error', text: 'Erro ao fazer upload do contrato' })
+        setUploadingContrato(false)
+        return null
+      }
+      
+      const { data: { publicUrl } } = supabase.storage
+        .from('contratos')
+        .getPublicUrl(filePath)
+      
+      setUploadingContrato(false)
+      return { url: publicUrl, nome: file.name }
+    } catch (err) {
+      console.error('Erro:', err)
+      setUploadingContrato(false)
+      return null
+    }
+  }
+
+  // Remover contrato
+  const handleRemoveContrato = () => {
+    setContratoFile(null)
+    setVendaForm({ ...vendaForm, contrato_url: '', contrato_nome: '' })
   }
 
   const getTotalVendas = () => {
@@ -1657,6 +1719,67 @@ const AdminDashboard = () => {
                       <option value="em_andamento">Em Andamento</option>
                       <option value="pago">Comissão Paga</option>
                     </select>
+                  </div>
+
+                  <div className="section-divider">
+                    <span>Contrato</span>
+                  </div>
+
+                  <div className="contrato-upload-area">
+                    {!vendaForm.contrato_url && !contratoFile ? (
+                      <label className="upload-box">
+                        <input
+                          type="file"
+                          accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                          onChange={(e) => {
+                            const file = e.target.files[0]
+                            if (file) {
+                              setContratoFile(file)
+                              setVendaForm({ ...vendaForm, contrato_nome: file.name })
+                            }
+                          }}
+                          style={{ display: 'none' }}
+                        />
+                        <Upload size={32} />
+                        <span>Clique para anexar contrato</span>
+                        <small>PDF, DOC, DOCX, JPG ou PNG</small>
+                      </label>
+                    ) : (
+                      <div className="contrato-anexado">
+                        <FileText size={24} />
+                        <div className="contrato-info">
+                          <span className="contrato-nome">
+                            {contratoFile?.name || vendaForm.contrato_nome}
+                          </span>
+                          {vendaForm.contrato_url && !contratoFile && (
+                            <a 
+                              href={vendaForm.contrato_url} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="contrato-link"
+                            >
+                              Visualizar
+                            </a>
+                          )}
+                          {contratoFile && (
+                            <span className="contrato-novo">Novo arquivo</span>
+                          )}
+                        </div>
+                        <button 
+                          type="button" 
+                          className="btn-remove-contrato"
+                          onClick={handleRemoveContrato}
+                        >
+                          <Trash size={16} />
+                        </button>
+                      </div>
+                    )}
+                    {uploadingContrato && (
+                      <div className="upload-progress">
+                        <div className="loading-spinner"></div>
+                        <span>Enviando contrato...</span>
+                      </div>
+                    )}
                   </div>
 
                   {vendaForm.valor_venda && vendaForm.corretor_id && (

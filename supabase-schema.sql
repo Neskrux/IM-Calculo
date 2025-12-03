@@ -258,6 +258,10 @@ CREATE TABLE IF NOT EXISTS pagamentos_prosoluto (
 CREATE INDEX IF NOT EXISTS idx_comissoes_venda ON comissoes_venda(venda_id);
 CREATE INDEX IF NOT EXISTS idx_pagamentos_venda ON pagamentos_prosoluto(venda_id);
 
+-- Adicionar coluna para contrato na venda
+ALTER TABLE vendas ADD COLUMN IF NOT EXISTS contrato_url TEXT;
+ALTER TABLE vendas ADD COLUMN IF NOT EXISTS contrato_nome TEXT;
+
 -- Desabilitar RLS
 ALTER TABLE comissoes_venda DISABLE ROW LEVEL SECURITY;
 ALTER TABLE pagamentos_prosoluto DISABLE ROW LEVEL SECURITY;
