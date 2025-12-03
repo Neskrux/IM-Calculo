@@ -374,7 +374,10 @@ const AdminDashboard = () => {
       : 0
     const valorTotalBalao = (parseFloat(vendaForm.qtd_balao) || 0) * (parseFloat(vendaForm.valor_balao) || 0)
     const valorProSoluto = valorSinal + valorEntrada + valorParcelas + valorTotalBalao
-    const fatorComissao = valorProSoluto > 0 ? comissoesDinamicas.total / valorProSoluto : 0
+    
+    // Fator de comissão = comissão total / valor da venda
+    // Assim, cada parcela recebe proporcionalmente à sua participação no valor total
+    const fatorComissao = valorVenda > 0 ? comissoesDinamicas.total / valorVenda : 0
 
     const vendaData = {
       corretor_id: vendaForm.corretor_id,
