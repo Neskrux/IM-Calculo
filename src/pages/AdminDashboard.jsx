@@ -73,9 +73,12 @@ const AdminDashboard = () => {
     senha: '',
     tipo_corretor: 'externo',
     telefone: '',
-    percentual_corretor: '4',
+    percentual_corretor: '',
     empreendimento_id: '',
-    cargo_id: ''
+    cargo_id: '',
+    cnpj: '',
+    imobiliaria: '',
+    creci: ''
   })
 
   // Cargos filtrados por empreendimento selecionado
@@ -396,7 +399,10 @@ const AdminDashboard = () => {
             telefone: corretorForm.telefone || null,
             percentual_corretor: parseFloat(corretorForm.percentual_corretor) || null,
             empreendimento_id: corretorForm.empreendimento_id || null,
-            cargo_id: corretorForm.cargo_id || null
+            cargo_id: corretorForm.cargo_id || null,
+            cnpj: corretorForm.cnpj || null,
+            imobiliaria: corretorForm.imobiliaria || null,
+            creci: corretorForm.creci || null
           })
           .eq('id', selectedItem.id)
 
@@ -436,7 +442,10 @@ const AdminDashboard = () => {
             telefone: corretorForm.telefone || null,
             percentual_corretor: parseFloat(corretorForm.percentual_corretor) || null,
             empreendimento_id: corretorForm.empreendimento_id || null,
-            cargo_id: corretorForm.cargo_id || null
+            cargo_id: corretorForm.cargo_id || null,
+            cnpj: corretorForm.cnpj || null,
+            imobiliaria: corretorForm.imobiliaria || null,
+            creci: corretorForm.creci || null
           }])
 
         if (dbError) {
@@ -701,7 +710,10 @@ const AdminDashboard = () => {
       telefone: corretor.telefone || '',
       percentual_corretor: corretor.percentual_corretor?.toString() || '',
       empreendimento_id: corretor.empreendimento_id || '',
-      cargo_id: corretor.cargo_id || ''
+      cargo_id: corretor.cargo_id || '',
+      cnpj: corretor.cnpj || '',
+      imobiliaria: corretor.imobiliaria || '',
+      creci: corretor.creci || ''
     })
     setModalType('corretor')
     setShowModal(true)
@@ -745,7 +757,10 @@ const AdminDashboard = () => {
       telefone: '',
       percentual_corretor: '',
       empreendimento_id: '',
-      cargo_id: ''
+      cargo_id: '',
+      cnpj: '',
+      imobiliaria: '',
+      creci: ''
     })
     setCargosDisponiveis([])
   }
@@ -2094,6 +2109,41 @@ const AdminDashboard = () => {
                       placeholder="(00) 00000-0000"
                       value={corretorForm.telefone}
                       onChange={(e) => setCorretorForm({...corretorForm, telefone: e.target.value})}
+                    />
+                  </div>
+
+                  <div className="section-divider">
+                    <span>Dados Profissionais (opcional)</span>
+                  </div>
+
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label>CNPJ</label>
+                      <input
+                        type="text"
+                        placeholder="00.000.000/0000-00"
+                        value={corretorForm.cnpj}
+                        onChange={(e) => setCorretorForm({...corretorForm, cnpj: e.target.value})}
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>CRECI</label>
+                      <input
+                        type="text"
+                        placeholder="Ex: 12345-F"
+                        value={corretorForm.creci}
+                        onChange={(e) => setCorretorForm({...corretorForm, creci: e.target.value})}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="form-group">
+                    <label>Imobiliária</label>
+                    <input
+                      type="text"
+                      placeholder="Nome da imobiliária"
+                      value={corretorForm.imobiliaria}
+                      onChange={(e) => setCorretorForm({...corretorForm, imobiliaria: e.target.value})}
                     />
                   </div>
                 </div>
