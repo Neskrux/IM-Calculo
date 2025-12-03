@@ -154,24 +154,16 @@ const AdminDashboard = () => {
     setLoading(false)
   }
 
-  const calcularComissoes = (valorVenda, tipoCorretor, percentualCorretor) => {
-    const base = getComissoesBase(tipoCorretor)
-    const percCorretor = parseFloat(percentualCorretor) || (tipoCorretor === 'externo' ? 4 : 2.5)
-    
-    const comissoes = {
-      diretor: (valorVenda * base.diretor) / 100,
-      nohros_imobiliaria: (valorVenda * base.nohros_imobiliaria) / 100,
-      nohros_gestao: (valorVenda * base.nohros_gestao) / 100,
-      wsc: (valorVenda * base.wsc) / 100,
-      corretor: (valorVenda * percCorretor) / 100,
-      coordenadora: (valorVenda * base.coordenadora) / 100,
+  // Função para preview de comissões no modal
+  const getPreviewComissoes = () => {
+    if (!vendaForm.empreendimento_id || !vendaForm.valor_venda) {
+      return { cargos: [], total: 0 }
     }
-    
-    comissoes.total = comissoes.diretor + comissoes.nohros_imobiliaria + 
-                      comissoes.nohros_gestao + comissoes.wsc + 
-                      comissoes.corretor + comissoes.coordenadora
-    
-    return comissoes
+    return calcularComissoesDinamicas(
+      parseFloat(vendaForm.valor_venda || 0),
+      vendaForm.empreendimento_id,
+      vendaForm.tipo_corretor
+    )
   }
 
   const getCorretorPercentual = (corretorId) => {
@@ -1646,21 +1638,15 @@ const AdminDashboard = () => {
                             (parseFloat(vendaForm.valor_balao) || 0)
                           )}</span>
                         </div>
-                        <div className="preview-item">
-                          <span>Comissão Corretor</span>
-                          <span>{formatCurrency(calcularComissoes(
-                            parseFloat(vendaForm.valor_venda || 0), 
-                            vendaForm.tipo_corretor,
-                            getCorretorPercentual(vendaForm.corretor_id)
-                          ).corretor)}</span>
-                        </div>
-                        <div className="preview-item">
-                          <span>Comissão Total (7%)</span>
-                          <span>{formatCurrency(calcularComissoes(
-                            parseFloat(vendaForm.valor_venda || 0), 
-                            vendaForm.tipo_corretor,
-                            getCorretorPercentual(vendaForm.corretor_id)
-                          ).total)}</span>
+                        {getPreviewComissoes().cargos.map((cargo, idx) => (
+                          <div key={idx} className="preview-item">
+                            <span>{cargo.nome_cargo}</span>
+                            <span>{formatCurrency(cargo.valor)}</span>
+                          </div>
+                        ))}
+                        <div className="preview-item total">
+                          <span>Comissão Total</span>
+                          <span>{formatCurrency(getPreviewComissoes().total)}</span>
                         </div>
                       </div>
                     </div>
