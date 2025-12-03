@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from 'react'
+import { createContext, useContext, useEffect, useState, useRef } from 'react'
 import { supabase } from '../lib/supabase'
 
 const AuthContext = createContext({})
@@ -9,8 +9,15 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null)
   const [userProfile, setUserProfile] = useState(null)
   const [loading, setLoading] = useState(true)
+  const loadingTimeout = useRef(null)
 
   useEffect(() => {
+    // Timeout de segurança - para o loading após 5 segundos
+    loadingTimeout.current = setTimeout(() => {
+      console.log('Timeout: forçando fim do loading')
+      setLoading(false)
+    }, 5000)
+
     // Verificar sessão atual
     const getSession = async () => {
       try {
@@ -44,7 +51,10 @@ export const AuthProvider = ({ children }) => {
       }
     })
 
-    return () => subscription.unsubscribe()
+    return () => {
+      subscription.unsubscribe()
+      if (loadingTimeout.current) clearTimeout(loadingTimeout.current)
+    }
   }, [])
 
   const fetchUserProfile = async (userId) => {
@@ -55,7 +65,7 @@ export const AuthProvider = ({ children }) => {
         .from('usuarios')
         .select('*')
         .eq('id', userId)
-        .maybeSingle()  // Usar maybeSingle ao invés de single para não dar erro se não existir
+        .maybeSingle()
       
       console.log('Resultado busca perfil:', { data, error })
       
@@ -68,7 +78,8 @@ export const AuthProvider = ({ children }) => {
       console.error('Erro catch:', err)
       setUserProfile(null)
     } finally {
-      setLoading(false)  // Sempre para o loading
+      if (loadingTimeout.current) clearTimeout(loadingTimeout.current)
+      setLoading(false)
     }
   }
 

@@ -1,23 +1,52 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
+import { supabase } from './lib/supabase'
 import Login from './pages/Login'
 import AdminDashboard from './pages/AdminDashboard'
 import CorretorDashboard from './pages/CorretorDashboard'
 import './App.css'
+
+// Componente de Loading com botão de sair
+const LoadingScreen = ({ showLogout = false }) => {
+  const handleForceLogout = async () => {
+    await supabase.auth.signOut()
+    localStorage.clear()
+    window.location.reload()
+  }
+
+  return (
+    <div className="loading-screen">
+      <div className="loading-content">
+        <div className="loading-spinner-screen"></div>
+        <p>Carregando...</p>
+        {showLogout && (
+          <button 
+            onClick={handleForceLogout}
+            style={{
+              marginTop: '20px',
+              padding: '10px 20px',
+              background: 'transparent',
+              border: '1px solid rgba(255,255,255,0.3)',
+              color: 'rgba(255,255,255,0.7)',
+              borderRadius: '6px',
+              cursor: 'pointer',
+              fontSize: '13px'
+            }}
+          >
+            Problemas? Clique para sair
+          </button>
+        )}
+      </div>
+    </div>
+  )
+}
 
 // Componente para rotas protegidas
 const ProtectedRoute = ({ children, requiredRole }) => {
   const { user, userProfile, loading } = useAuth()
 
   if (loading) {
-    return (
-      <div className="loading-screen">
-        <div className="loading-content">
-          <div className="loading-spinner-screen"></div>
-          <p>Carregando...</p>
-        </div>
-      </div>
-    )
+    return <LoadingScreen showLogout={true} />
   }
 
   if (!user) {
@@ -73,14 +102,7 @@ const PublicRoute = ({ children }) => {
   const { user, userProfile, loading } = useAuth()
 
   if (loading) {
-    return (
-      <div className="loading-screen">
-        <div className="loading-content">
-          <div className="loading-spinner-screen"></div>
-          <p>Carregando...</p>
-        </div>
-      </div>
-    )
+    return <LoadingScreen showLogout={true} />
   }
 
   if (user && userProfile) {
@@ -98,14 +120,7 @@ const DashboardRedirect = () => {
   const { userProfile, loading, user } = useAuth()
 
   if (loading) {
-    return (
-      <div className="loading-screen">
-        <div className="loading-content">
-          <div className="loading-spinner-screen"></div>
-          <p>Carregando...</p>
-        </div>
-      </div>
-    )
+    return <LoadingScreen showLogout={true} />
   }
 
   // Se não tem perfil cadastrado na tabela usuarios
