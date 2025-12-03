@@ -1252,31 +1252,19 @@ const AdminDashboard = () => {
             {modalType === 'venda' && (
               <>
                 <div className="modal-body">
-                  <div className="form-row">
-                    <div className="form-group">
-                      <label>Corretor *</label>
-                      <select
-                        value={vendaForm.corretor_id}
-                        onChange={(e) => handleCorretorChange(e.target.value)}
-                      >
-                        <option value="">Selecione</option>
-                        {corretores.map((c) => (
-                          <option key={c.id} value={c.id}>
-                            {c.nome} ({c.percentual_corretor || (c.tipo_corretor === 'interno' ? 2.5 : 4)}%)
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    <div className="form-group">
-                      <label>Tipo</label>
-                      <select
-                        value={vendaForm.tipo_corretor}
-                        onChange={(e) => setVendaForm({...vendaForm, tipo_corretor: e.target.value})}
-                      >
-                        <option value="externo">Externo</option>
-                        <option value="interno">Interno</option>
-                      </select>
-                    </div>
+                  <div className="form-group">
+                    <label>Corretor *</label>
+                    <select
+                      value={vendaForm.corretor_id}
+                      onChange={(e) => handleCorretorChange(e.target.value)}
+                    >
+                      <option value="">Selecione</option>
+                      {corretores.map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.nome} - {c.tipo_corretor === 'interno' ? 'Interno' : 'Externo'} ({c.percentual_corretor || (c.tipo_corretor === 'interno' ? 2.5 : 4)}%)
+                        </option>
+                      ))}
+                    </select>
                   </div>
 
                   <div className="form-row">
