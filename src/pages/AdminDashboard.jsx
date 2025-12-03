@@ -113,58 +113,86 @@ const AdminDashboard = () => {
   const fetchData = async () => {
     setLoading(true)
     
-    // Buscar corretores
+    // Buscar corretores (sem JOINs complexos)
     const { data: corretoresData } = await supabase
       .from('usuarios')
-      .select(`
-        *,
-        empreendimento:empreendimentos(nome),
-        cargo:cargos_empreendimento(nome_cargo, percentual)
-      `)
+      .select('*')
       .eq('tipo', 'corretor')
-      .order('nome')
 
-    // Buscar vendas
+    // Buscar vendas (sem JOINs)
     const { data: vendasData, error: vendasError } = await supabase
       .from('vendas')
-      .select(`
-        *,
-        corretor:usuarios(nome, email, tipo_corretor, percentual_corretor),
-        empreendimento:empreendimentos(nome)
-      `)
+      .select('*')
     
     if (vendasError) console.error('Erro ao buscar vendas:', vendasError)
 
-    // Buscar empreendimentos com cargos
+    // Buscar empreendimentos
     const { data: empreendimentosData } = await supabase
       .from('empreendimentos')
-      .select(`
-        *,
-        cargos:cargos_empreendimento(*)
-      `)
-      .order('nome')
+      .select('*')
 
-    // Buscar pagamentos pro-soluto
+    // Buscar cargos separadamente
+    const { data: cargosData } = await supabase
+      .from('cargos_empreendimento')
+      .select('*')
+
+    // Buscar pagamentos pro-soluto (sem JOINs)
     const { data: pagamentosData, error: pagamentosError } = await supabase
       .from('pagamentos_prosoluto')
-      .select(`
-        *,
-        venda:vendas(
-          id,
-          valor_venda,
-          descricao,
-          fator_comissao,
-          corretor:usuarios(nome),
-          empreendimento:empreendimentos(nome)
-        )
-      `)
+      .select('*')
     
     if (pagamentosError) console.error('Erro ao buscar pagamentos:', pagamentosError)
 
-    setCorretores(corretoresData || [])
-    setVendas(vendasData || [])
-    setEmpreendimentos(empreendimentosData || [])
-    setPagamentos(pagamentosData || [])
+    // Associar cargos aos empreendimentos manualmente
+    const empreendimentosComCargos = (empreendimentosData || []).map(emp => ({
+      ...emp,
+      cargos: (cargosData || []).filter(c => c.empreendimento_id === emp.id)
+    }))
+
+    // Associar dados relacionados às vendas manualmente
+    const vendasComRelacionamentos = (vendasData || []).map(venda => {
+      const corretor = (corretoresData || []).find(c => c.id === venda.corretor_id)
+      const empreendimento = (empreendimentosData || []).find(e => e.id === venda.empreendimento_id)
+      return {
+        ...venda,
+        corretor: corretor ? { nome: corretor.nome, email: corretor.email, tipo_corretor: corretor.tipo_corretor, percentual_corretor: corretor.percentual_corretor } : null,
+        empreendimento: empreendimento ? { nome: empreendimento.nome } : null
+      }
+    })
+
+    // Associar dados relacionados aos pagamentos manualmente
+    const pagamentosComRelacionamentos = (pagamentosData || []).map(pag => {
+      const venda = (vendasData || []).find(v => v.id === pag.venda_id)
+      const corretor = venda ? (corretoresData || []).find(c => c.id === venda.corretor_id) : null
+      const empreendimento = venda ? (empreendimentosData || []).find(e => e.id === venda.empreendimento_id) : null
+      return {
+        ...pag,
+        venda: venda ? {
+          id: venda.id,
+          valor_venda: venda.valor_venda,
+          descricao: venda.descricao,
+          fator_comissao: venda.fator_comissao,
+          corretor: corretor ? { nome: corretor.nome } : null,
+          empreendimento: empreendimento ? { nome: empreendimento.nome } : null
+        } : null
+      }
+    })
+
+    // Associar empreendimento e cargo aos corretores
+    const corretoresComRelacionamentos = (corretoresData || []).map(corretor => {
+      const empreendimento = (empreendimentosData || []).find(e => e.id === corretor.empreendimento_id)
+      const cargo = (cargosData || []).find(c => c.id === corretor.cargo_id)
+      return {
+        ...corretor,
+        empreendimento: empreendimento ? { nome: empreendimento.nome } : null,
+        cargo: cargo ? { nome_cargo: cargo.nome_cargo, percentual: cargo.percentual } : null
+      }
+    })
+
+    setCorretores(corretoresComRelacionamentos || [])
+    setVendas(vendasComRelacionamentos || [])
+    setEmpreendimentos(empreendimentosComCargos || [])
+    setPagamentos(pagamentosComRelacionamentos || [])
     setLoading(false)
   }
 
