@@ -643,7 +643,10 @@ const AdminDashboard = () => {
                           <span className={`status-badge ${venda.status}`}>
                             {venda.status === 'pago' && <CheckCircle size={14} />}
                             {venda.status === 'pendente' && <Clock size={14} />}
-                            {venda.status === 'pago' ? 'Pago' : 'Pendente'}
+                            {venda.status === 'em_andamento' && <Clock size={14} />}
+                            {venda.status === 'pago' && 'Comissão Paga'}
+                            {venda.status === 'pendente' && 'Pendente'}
+                            {venda.status === 'em_andamento' && 'Em Andamento'}
                           </span>
                         </td>
                         <td>
@@ -1018,13 +1021,14 @@ const AdminDashboard = () => {
                   </div>
 
                   <div className="form-group">
-                    <label>Status do Pagamento</label>
+                    <label>Status</label>
                     <select
                       value={vendaForm.status}
                       onChange={(e) => setVendaForm({...vendaForm, status: e.target.value})}
                     >
                       <option value="pendente">Pendente</option>
-                      <option value="pago">Pago</option>
+                      <option value="em_andamento">Em Andamento</option>
+                      <option value="pago">Comissão Paga</option>
                     </select>
                   </div>
 

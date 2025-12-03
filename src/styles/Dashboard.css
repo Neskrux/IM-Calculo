@@ -468,6 +468,11 @@
   color: #facc15;
 }
 
+.status-badge.em_andamento {
+  background: rgba(59, 130, 246, 0.1);
+  color: #60a5fa;
+}
+
 .action-buttons {
   display: flex;
   gap: 6px;
