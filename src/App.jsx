@@ -10,8 +10,16 @@ import './App.css'
 const LoadingScreen = ({ showLogout = false }) => {
   const handleForceLogout = async () => {
     await supabase.auth.signOut()
-    localStorage.clear()
-    window.location.reload()
+    // Limpar todo storage do Supabase
+    const keysToRemove = []
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i)
+      if (key && (key.includes('supabase') || key.includes('sb-'))) {
+        keysToRemove.push(key)
+      }
+    }
+    keysToRemove.forEach(key => localStorage.removeItem(key))
+    window.location.href = '/login'
   }
 
   return (
@@ -43,10 +51,10 @@ const LoadingScreen = ({ showLogout = false }) => {
 
 // Componente para rotas protegidas
 const ProtectedRoute = ({ children, requiredRole }) => {
-  const { user, userProfile, loading, initialized } = useAuth()
+  const { user, userProfile, loading } = useAuth()
 
-  if (!initialized || loading) {
-    return <LoadingScreen showLogout={initialized} />
+  if (loading) {
+    return <LoadingScreen showLogout={true} />
   }
 
   if (!user) {
@@ -81,13 +89,31 @@ const ProtectedRoute = ({ children, requiredRole }) => {
             &nbsp;&nbsp;'admin'<br/>
             );
           </div>
+          <button 
+            onClick={async () => {
+              await supabase.auth.signOut()
+              localStorage.clear()
+              window.location.href = '/login'
+            }}
+            style={{
+              marginTop: '20px',
+              padding: '10px 20px',
+              background: '#ef4444',
+              border: 'none',
+              color: '#fff',
+              borderRadius: '6px',
+              cursor: 'pointer',
+              fontSize: '13px'
+            }}
+          >
+            Sair
+          </button>
         </div>
       </div>
     )
   }
 
   if (requiredRole && userProfile?.tipo !== requiredRole) {
-    // Redireciona para o dashboard correto
     if (userProfile?.tipo === 'admin') {
       return <Navigate to="/admin" replace />
     }
@@ -99,9 +125,10 @@ const ProtectedRoute = ({ children, requiredRole }) => {
 
 // Componente para redirecionar usuários logados
 const PublicRoute = ({ children }) => {
-  const { user, userProfile, loading, initialized } = useAuth()
+  const { user, userProfile, loading } = useAuth()
 
-  if (!initialized || loading) {
+  // Não mostrar loading na página de login - deixa renderizar o formulário
+  if (loading) {
     return <LoadingScreen showLogout={false} />
   }
 
@@ -117,23 +144,19 @@ const PublicRoute = ({ children }) => {
 
 // Componente de Dashboard que redireciona baseado no tipo de usuário
 const DashboardRedirect = () => {
-  const { userProfile, loading, user, initialized } = useAuth()
+  const { userProfile, loading, user } = useAuth()
 
-  if (!initialized || loading) {
-    return <LoadingScreen showLogout={initialized} />
+  if (loading) {
+    return <LoadingScreen showLogout={true} />
   }
 
-  // Se não tem perfil cadastrado na tabela usuarios
   if (user && !userProfile) {
     return (
       <div className="loading-screen">
         <div className="loading-content">
-          <p style={{ color: '#ef4444', marginBottom: '10px' }}>⚠️ Usuário não cadastrado no sistema</p>
+          <p style={{ color: '#ef4444', marginBottom: '10px' }}>Usuário não cadastrado no sistema</p>
           <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.6)' }}>
-            Peça ao administrador para cadastrar seu perfil na tabela 'usuarios'
-          </p>
-          <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', marginTop: '10px' }}>
-            UUID: {user.id}
+            Peça ao administrador para cadastrar seu perfil
           </p>
         </div>
       </div>
