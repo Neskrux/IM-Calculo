@@ -58,6 +58,9 @@ const AdminDashboard = () => {
     teve_balao: 'nao', // 'nao', 'sim', 'pendente'
     qtd_balao: '',
     valor_balao: '',
+    teve_permuta: false,
+    tipo_permuta: '',
+    valor_permuta: '',
     valor_pro_soluto: '',
     contrato_url: '',
     contrato_nome: ''
@@ -226,6 +229,9 @@ const AdminDashboard = () => {
       teve_balao: vendaForm.teve_balao,
       qtd_balao: parseInt(vendaForm.qtd_balao) || null,
       valor_balao: parseFloat(vendaForm.valor_balao) || null,
+      teve_permuta: vendaForm.teve_permuta,
+      tipo_permuta: vendaForm.tipo_permuta || null,
+      valor_permuta: parseFloat(vendaForm.valor_permuta) || null,
       valor_pro_soluto: valorProSoluto || null,
       fator_comissao: fatorComissao || null,
       comissao_total: comissoesDinamicas.total,
@@ -720,6 +726,9 @@ const AdminDashboard = () => {
       teve_balao: 'nao',
       qtd_balao: '',
       valor_balao: '',
+      teve_permuta: false,
+      tipo_permuta: '',
+      valor_permuta: '',
       valor_pro_soluto: '',
       contrato_url: '',
       contrato_nome: ''
@@ -761,6 +770,9 @@ const AdminDashboard = () => {
       teve_balao: venda.teve_balao || 'nao',
       qtd_balao: venda.qtd_balao?.toString() || '',
       valor_balao: venda.valor_balao?.toString() || '',
+      teve_permuta: venda.teve_permuta || false,
+      tipo_permuta: venda.tipo_permuta || '',
+      valor_permuta: venda.valor_permuta?.toString() || '',
       valor_pro_soluto: venda.valor_pro_soluto?.toString() || '',
       contrato_url: venda.contrato_url || '',
       contrato_nome: venda.contrato_nome || ''
@@ -1795,6 +1807,54 @@ const AdminDashboard = () => {
                             onChange={(e) => handleCurrencyChange('valor_balao', e.target.value)}
                           />
                         </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* PERMUTA */}
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label>Teve Permuta?</label>
+                      <select
+                        value={vendaForm.teve_permuta ? 'sim' : 'nao'}
+                        onChange={(e) => setVendaForm({
+                          ...vendaForm, 
+                          teve_permuta: e.target.value === 'sim',
+                          tipo_permuta: e.target.value === 'nao' ? '' : vendaForm.tipo_permuta,
+                          valor_permuta: e.target.value === 'nao' ? '' : vendaForm.valor_permuta
+                        })}
+                      >
+                        <option value="nao">Não</option>
+                        <option value="sim">Sim</option>
+                      </select>
+                    </div>
+                    {vendaForm.teve_permuta && (
+                      <div className="form-group">
+                        <label>Tipo de Permuta</label>
+                        <select
+                          value={vendaForm.tipo_permuta}
+                          onChange={(e) => setVendaForm({...vendaForm, tipo_permuta: e.target.value})}
+                        >
+                          <option value="">Selecione</option>
+                          <option value="imovel">Imóvel</option>
+                          <option value="veiculo">Veículo</option>
+                          <option value="outros">Outros</option>
+                        </select>
+                      </div>
+                    )}
+                  </div>
+
+                  {vendaForm.teve_permuta && (
+                    <div className="form-group">
+                      <label>Valor da Permuta</label>
+                      <div className="input-currency">
+                        <span className="currency-prefix">R$</span>
+                        <input
+                          type="text"
+                          placeholder="0,00"
+                          value={formatCurrencyInput(vendaForm.valor_permuta)}
+                          onChange={(e) => handleCurrencyChange('valor_permuta', e.target.value)}
+                        />
                       </div>
                     </div>
                   )}
