@@ -28,6 +28,34 @@ const AdminDashboard = () => {
   const [contratoFile, setContratoFile] = useState(null)
   const [uploadingContrato, setUploadingContrato] = useState(false)
   const [pagamentoDetalhe, setPagamentoDetalhe] = useState(null)
+  const [vendaExpandida, setVendaExpandida] = useState(null)
+
+  // Agrupar pagamentos por venda
+  const pagamentosAgrupados = pagamentos.reduce((acc, pag) => {
+    const vendaId = pag.venda_id
+    if (!acc[vendaId]) {
+      acc[vendaId] = {
+        venda_id: vendaId,
+        venda: pag.venda,
+        pagamentos: [],
+        totalValor: 0,
+        totalComissao: 0,
+        totalPago: 0,
+        totalPendente: 0
+      }
+    }
+    acc[vendaId].pagamentos.push(pag)
+    acc[vendaId].totalValor += parseFloat(pag.valor) || 0
+    acc[vendaId].totalComissao += parseFloat(pag.comissao_gerada) || 0
+    if (pag.status === 'pago') {
+      acc[vendaId].totalPago += parseFloat(pag.valor) || 0
+    } else {
+      acc[vendaId].totalPendente += parseFloat(pag.valor) || 0
+    }
+    return acc
+  }, {})
+
+  const listaVendasComPagamentos = Object.values(pagamentosAgrupados)
 
   // Formulário de empreendimento
   const [empreendimentoForm, setEmpreendimentoForm] = useState({
@@ -1494,71 +1522,120 @@ const AdminDashboard = () => {
                   </div>
                 </div>
 
-                {/* Tabela de Pagamentos */}
-                <div className="table-container">
-                  <table className="data-table">
-                    <thead>
-                      <tr>
-                        <th>Venda</th>
-                        <th>Tipo</th>
-                        <th>Valor</th>
-                        <th>Comissão</th>
-                        <th>Data Prevista</th>
-                        <th>Status</th>
-                        <th>Ações</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {pagamentos.map((pag) => (
-                        <tr key={pag.id} className={pag.status === 'pago' ? 'row-pago' : ''}>
-                          <td>
-                            <div className="venda-info-cell">
-                              <strong>{pag.venda?.empreendimento?.nome || 'N/A'}</strong>
-                              <small>{pag.venda?.corretor?.nome}</small>
-                            </div>
-                          </td>
-                          <td>
-                            <span className={`badge-tipo ${pag.tipo}`}>
-                              {pag.tipo === 'sinal' && 'Sinal'}
-                              {pag.tipo === 'entrada' && 'Entrada'}
-                              {pag.tipo === 'parcela_entrada' && `Parcela ${pag.numero_parcela}`}
-                              {pag.tipo === 'balao' && (pag.numero_parcela ? `Balão ${pag.numero_parcela}` : 'Balão')}
-                            </span>
-                          </td>
-                          <td>{formatCurrency(pag.valor)}</td>
-                          <td className="comissao-cell">{formatCurrency(pag.comissao_gerada || 0)}</td>
-                          <td>{pag.data_prevista ? new Date(pag.data_prevista).toLocaleDateString('pt-BR') : '-'}</td>
-                          <td>
-                            <span className={`status-badge ${pag.status}`}>
-                              {pag.status === 'pendente' && 'Pendente'}
-                              {pag.status === 'pago' && 'Pago'}
-                              {pag.status === 'atrasado' && 'Atrasado'}
-                            </span>
-                          </td>
-                          <td>
-                            <div className="action-buttons">
-                              <button 
-                                className="btn-ver-detalhe"
-                                onClick={() => setPagamentoDetalhe(pag)}
-                                title="Ver divisão de comissões"
-                              >
-                                <Eye size={16} />
-                              </button>
-                              {pag.status !== 'pago' && (
-                                <button 
-                                  className="btn-confirmar-pag"
-                                  onClick={() => confirmarPagamento(pag.id)}
-                                  title="Confirmar pagamento"
-                                >
-                                  <Check size={16} />
-                                </button>
-                              )}
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                {/* Vendas Agrupadas */}
+                <div className="vendas-pagamentos-lista">
+                  {listaVendasComPagamentos.map((grupo) => (
+                    <div key={grupo.venda_id} className="venda-pagamento-card">
+                      {/* Header da Venda - Clicável */}
+                      <div 
+                        className={`venda-pagamento-header ${vendaExpandida === grupo.venda_id ? 'expanded' : ''}`}
+                        onClick={() => setVendaExpandida(vendaExpandida === grupo.venda_id ? null : grupo.venda_id)}
+                      >
+                        <div className="venda-info">
+                          <div className="venda-titulo">
+                            <Building size={18} />
+                            <strong>{grupo.venda?.empreendimento?.nome || 'Empreendimento'}</strong>
+                          </div>
+                          <div className="venda-subtitulo">
+                            <User size={14} />
+                            <span>{grupo.venda?.corretor?.nome || 'Corretor'}</span>
+                            <span className="separator">•</span>
+                            <span>{grupo.pagamentos.length} parcelas</span>
+                          </div>
+                        </div>
+                        <div className="venda-valores">
+                          <div className="valor-item">
+                            <span className="valor-label">Valor Total</span>
+                            <span className="valor-number">{formatCurrency(grupo.totalValor)}</span>
+                          </div>
+                          <div className="valor-item">
+                            <span className="valor-label">Comissão Total</span>
+                            <span className="valor-number comissao">{formatCurrency(grupo.totalComissao)}</span>
+                          </div>
+                          <div className="valor-item">
+                            <span className="valor-label">Pago</span>
+                            <span className="valor-number pago">{formatCurrency(grupo.totalPago)}</span>
+                          </div>
+                          <div className="valor-item">
+                            <span className="valor-label">Pendente</span>
+                            <span className="valor-number pendente">{formatCurrency(grupo.totalPendente)}</span>
+                          </div>
+                        </div>
+                        <div className="expand-icon">
+                          <ChevronDown size={20} className={vendaExpandida === grupo.venda_id ? 'rotated' : ''} />
+                        </div>
+                      </div>
+
+                      {/* Lista de Parcelas - Expandível */}
+                      {vendaExpandida === grupo.venda_id && (
+                        <div className="venda-pagamento-body">
+                          <table className="parcelas-table">
+                            <thead>
+                              <tr>
+                                <th>Tipo</th>
+                                <th>Valor</th>
+                                <th>Comissão</th>
+                                <th>Data Prevista</th>
+                                <th>Status</th>
+                                <th>Ações</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {grupo.pagamentos
+                                .sort((a, b) => {
+                                  // Ordenar: sinal primeiro, depois entrada, depois parcelas por número
+                                  const ordem = { sinal: 0, entrada: 1, parcela_entrada: 2, balao: 3 }
+                                  if (ordem[a.tipo] !== ordem[b.tipo]) return ordem[a.tipo] - ordem[b.tipo]
+                                  return (a.numero_parcela || 0) - (b.numero_parcela || 0)
+                                })
+                                .map((pag) => (
+                                <tr key={pag.id} className={pag.status === 'pago' ? 'row-pago' : ''}>
+                                  <td>
+                                    <span className={`badge-tipo ${pag.tipo}`}>
+                                      {pag.tipo === 'sinal' && 'Sinal'}
+                                      {pag.tipo === 'entrada' && 'Entrada'}
+                                      {pag.tipo === 'parcela_entrada' && `Parcela ${pag.numero_parcela}`}
+                                      {pag.tipo === 'balao' && (pag.numero_parcela ? `Balão ${pag.numero_parcela}` : 'Balão')}
+                                    </span>
+                                  </td>
+                                  <td>{formatCurrency(pag.valor)}</td>
+                                  <td className="comissao-cell">{formatCurrency(pag.comissao_gerada || 0)}</td>
+                                  <td>{pag.data_prevista ? new Date(pag.data_prevista).toLocaleDateString('pt-BR') : '-'}</td>
+                                  <td>
+                                    <span className={`status-badge ${pag.status}`}>
+                                      {pag.status === 'pendente' && 'Pendente'}
+                                      {pag.status === 'pago' && 'Pago'}
+                                      {pag.status === 'atrasado' && 'Atrasado'}
+                                    </span>
+                                  </td>
+                                  <td>
+                                    <div className="action-buttons">
+                                      <button 
+                                        className="btn-ver-detalhe"
+                                        onClick={(e) => { e.stopPropagation(); setPagamentoDetalhe(pag); }}
+                                        title="Ver divisão de comissões"
+                                      >
+                                        <Eye size={16} />
+                                      </button>
+                                      {pag.status !== 'pago' && (
+                                        <button 
+                                          className="btn-confirmar-pag"
+                                          onClick={(e) => { e.stopPropagation(); confirmarPagamento(pag.id); }}
+                                          title="Confirmar pagamento"
+                                        >
+                                          <Check size={16} />
+                                        </button>
+                                      )}
+                                    </div>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
+                    </div>
+                  ))}
                 </div>
 
                 {/* Modal de Detalhes do Pagamento */}

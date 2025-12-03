@@ -1834,3 +1834,194 @@
 .btn-confirmar-pag:hover {
   background: #059669;
 }
+
+/* ======================== */
+/* Vendas Agrupadas - Pagamentos */
+/* ======================== */
+
+.vendas-pagamentos-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.venda-pagamento-card {
+  background: #232936;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid #2d3548;
+}
+
+.venda-pagamento-header {
+  display: flex;
+  align-items: center;
+  padding: 16px 20px;
+  cursor: pointer;
+  transition: background 0.2s;
+  gap: 20px;
+}
+
+.venda-pagamento-header:hover {
+  background: #2a3142;
+}
+
+.venda-pagamento-header.expanded {
+  background: #2a3142;
+  border-bottom: 1px solid #343b4d;
+}
+
+.venda-info {
+  flex: 1;
+  min-width: 200px;
+}
+
+.venda-titulo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #fff;
+  font-size: 15px;
+  margin-bottom: 4px;
+}
+
+.venda-titulo svg {
+  color: #d4af37;
+}
+
+.venda-subtitulo {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #9ca3af;
+  font-size: 13px;
+}
+
+.venda-subtitulo svg {
+  width: 14px;
+  height: 14px;
+}
+
+.venda-subtitulo .separator {
+  color: #4b5563;
+}
+
+.venda-valores {
+  display: flex;
+  gap: 24px;
+}
+
+.valor-item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  min-width: 100px;
+}
+
+.valor-label {
+  font-size: 11px;
+  color: #6b7280;
+  text-transform: uppercase;
+  margin-bottom: 2px;
+}
+
+.valor-number {
+  font-size: 14px;
+  font-weight: 600;
+  color: #e5e7eb;
+}
+
+.valor-number.comissao {
+  color: #d4af37;
+}
+
+.valor-number.pago {
+  color: #10b981;
+}
+
+.valor-number.pendente {
+  color: #f59e0b;
+}
+
+.expand-icon {
+  color: #6b7280;
+  transition: transform 0.2s;
+}
+
+.expand-icon svg.rotated {
+  transform: rotate(180deg);
+}
+
+.venda-pagamento-body {
+  padding: 0;
+  background: #1e2433;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.parcelas-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.parcelas-table th {
+  background: #2a3142;
+  padding: 12px 16px;
+  text-align: left;
+  font-size: 11px;
+  text-transform: uppercase;
+  color: #9ca3af;
+  font-weight: 600;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.parcelas-table td {
+  padding: 12px 16px;
+  border-bottom: 1px solid #2d3548;
+  font-size: 14px;
+  color: #e5e7eb;
+}
+
+.parcelas-table tr:last-child td {
+  border-bottom: none;
+}
+
+.parcelas-table tr.row-pago {
+  background: rgba(16, 185, 129, 0.05);
+}
+
+.parcelas-table tr.row-pago td {
+  color: #9ca3af;
+}
+
+/* Responsivo */
+@media (max-width: 900px) {
+  .venda-pagamento-header {
+    flex-wrap: wrap;
+  }
+  
+  .venda-valores {
+    flex-wrap: wrap;
+    gap: 12px;
+    width: 100%;
+    margin-top: 12px;
+  }
+  
+  .valor-item {
+    min-width: 80px;
+    align-items: flex-start;
+  }
+}
+
+@media (max-width: 600px) {
+  .venda-valores {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+  
+  .parcelas-table th:nth-child(4),
+  .parcelas-table td:nth-child(4) {
+    display: none;
+  }
+}
