@@ -4,7 +4,7 @@ import { supabase } from '../lib/supabase'
 import { 
   Users, DollarSign, TrendingUp, Plus, Edit2, Trash2, 
   Search, Filter, LogOut, Menu, X, ChevronDown, Save, Eye,
-  Calculator, Calendar, User, Briefcase, CheckCircle, Clock, UserPlus, Mail, Lock, Percent, Building, PlusCircle, CreditCard, Check, Upload, FileText, Trash
+  Calculator, Calendar, User, Briefcase, CheckCircle, Clock, UserPlus, Mail, Lock, Percent, Building, PlusCircle, CreditCard, Check, Upload, FileText, Trash, UserCircle, Phone, MapPin, Camera
 } from 'lucide-react'
 import logo from '../imgs/logo.png'
 import '../styles/Dashboard.css'
@@ -29,6 +29,8 @@ const AdminDashboard = () => {
   const [uploadingContrato, setUploadingContrato] = useState(false)
   const [pagamentoDetalhe, setPagamentoDetalhe] = useState(null)
   const [vendaExpandida, setVendaExpandida] = useState(null)
+  const [clientes, setClientes] = useState([])
+  const [uploadingDoc, setUploadingDoc] = useState(false)
 
   // Agrupar pagamentos por venda
   const pagamentosAgrupados = pagamentos.reduce((acc, pag) => {
@@ -109,6 +111,45 @@ const AdminDashboard = () => {
     imobiliaria: '',
     creci: ''
   })
+
+  // Formulário de cliente
+  const [clienteForm, setClienteForm] = useState({
+    nome_completo: '',
+    data_nascimento: '',
+    cpf: '',
+    rg: '',
+    endereco: '',
+    telefone: '',
+    email: '',
+    profissao: '',
+    empresa_trabalho: '',
+    renda_mensal: '',
+    // Documentos
+    rg_frente_url: '',
+    rg_verso_url: '',
+    cpf_url: '',
+    comprovante_residencia_url: '',
+    comprovante_renda_url: '',
+    certidao_casamento_url: '',
+    // FGTS
+    possui_3_anos_fgts: false,
+    beneficiado_subsidio_fgts: false,
+    // Complemento
+    tem_complemento_renda: false,
+    complementadores: []
+  })
+
+  const complementadorVazio = {
+    nome: '',
+    cpf: '',
+    rg: '',
+    data_nascimento: '',
+    profissao: '',
+    empresa_trabalho: '',
+    valor_complemento: '',
+    telefone: '',
+    email: ''
+  }
 
   // Cargos filtrados por empreendimento selecionado
   const [cargosDisponiveis, setCargosDisponiveis] = useState([])
@@ -260,10 +301,28 @@ const AdminDashboard = () => {
       }
     })
 
+    // Buscar clientes
+    const { data: clientesData } = await supabase
+      .from('clientes')
+      .select('*')
+      .eq('ativo', true)
+
+    // Buscar complementadores de renda
+    const { data: complementadoresData } = await supabase
+      .from('complementadores_renda')
+      .select('*')
+
+    // Associar complementadores aos clientes
+    const clientesComComplementadores = (clientesData || []).map(cliente => ({
+      ...cliente,
+      complementadores: (complementadoresData || []).filter(c => c.cliente_id === cliente.id)
+    }))
+
     setCorretores(corretoresComRelacionamentos || [])
     setVendas(vendasComRelacionamentos || [])
     setEmpreendimentos(empreendimentosComCargos || [])
     setPagamentos(pagamentosComRelacionamentos || [])
+    setClientes(clientesComComplementadores || [])
     setLoading(false)
   }
 
@@ -865,6 +924,193 @@ const AdminDashboard = () => {
     setCargosDisponiveis([])
   }
 
+  const resetClienteForm = () => {
+    setClienteForm({
+      nome_completo: '',
+      data_nascimento: '',
+      cpf: '',
+      rg: '',
+      endereco: '',
+      telefone: '',
+      email: '',
+      profissao: '',
+      empresa_trabalho: '',
+      renda_mensal: '',
+      rg_frente_url: '',
+      rg_verso_url: '',
+      cpf_url: '',
+      comprovante_residencia_url: '',
+      comprovante_renda_url: '',
+      certidao_casamento_url: '',
+      possui_3_anos_fgts: false,
+      beneficiado_subsidio_fgts: false,
+      tem_complemento_renda: false,
+      complementadores: []
+    })
+  }
+
+  // Upload de documento do cliente
+  const uploadDocumentoCliente = async (file, tipo) => {
+    setUploadingDoc(true)
+    try {
+      const fileExt = file.name.split('.').pop()
+      const fileName = `${tipo}_${Date.now()}.${fileExt}`
+      const filePath = `clientes/${fileName}`
+
+      const { error: uploadError } = await supabase.storage
+        .from('documentos')
+        .upload(filePath, file)
+
+      if (uploadError) throw uploadError
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('documentos')
+        .getPublicUrl(filePath)
+
+      setClienteForm(prev => ({ ...prev, [`${tipo}_url`]: publicUrl }))
+      return publicUrl
+    } catch (error) {
+      console.error('Erro no upload:', error)
+      setMessage({ type: 'error', text: 'Erro ao fazer upload do documento' })
+      return null
+    } finally {
+      setUploadingDoc(false)
+    }
+  }
+
+  // Salvar cliente
+  const handleSaveCliente = async () => {
+    if (!clienteForm.nome_completo) {
+      setMessage({ type: 'error', text: 'Nome completo é obrigatório' })
+      return
+    }
+
+    setSaving(true)
+    try {
+      const clienteData = {
+        nome_completo: clienteForm.nome_completo,
+        data_nascimento: clienteForm.data_nascimento || null,
+        cpf: clienteForm.cpf,
+        rg: clienteForm.rg,
+        endereco: clienteForm.endereco,
+        telefone: clienteForm.telefone,
+        email: clienteForm.email,
+        profissao: clienteForm.profissao,
+        empresa_trabalho: clienteForm.empresa_trabalho,
+        renda_mensal: clienteForm.renda_mensal ? parseFloat(clienteForm.renda_mensal.replace(/[^\d,]/g, '').replace(',', '.')) : null,
+        rg_frente_url: clienteForm.rg_frente_url,
+        rg_verso_url: clienteForm.rg_verso_url,
+        cpf_url: clienteForm.cpf_url,
+        comprovante_residencia_url: clienteForm.comprovante_residencia_url,
+        comprovante_renda_url: clienteForm.comprovante_renda_url,
+        certidao_casamento_url: clienteForm.certidao_casamento_url,
+        possui_3_anos_fgts: clienteForm.possui_3_anos_fgts,
+        beneficiado_subsidio_fgts: clienteForm.beneficiado_subsidio_fgts,
+        tem_complemento_renda: clienteForm.tem_complemento_renda
+      }
+
+      let clienteId = selectedItem?.id
+
+      if (selectedItem) {
+        // Atualizar cliente existente
+        const { error } = await supabase
+          .from('clientes')
+          .update(clienteData)
+          .eq('id', clienteId)
+        if (error) throw error
+
+        // Deletar complementadores antigos
+        await supabase
+          .from('complementadores_renda')
+          .delete()
+          .eq('cliente_id', clienteId)
+      } else {
+        // Criar novo cliente
+        const { data, error } = await supabase
+          .from('clientes')
+          .insert([clienteData])
+          .select()
+          .single()
+        if (error) throw error
+        clienteId = data.id
+      }
+
+      // Inserir complementadores
+      if (clienteForm.tem_complemento_renda && clienteForm.complementadores.length > 0) {
+        const complementadores = clienteForm.complementadores.map(c => ({
+          cliente_id: clienteId,
+          nome: c.nome,
+          cpf: c.cpf,
+          rg: c.rg,
+          data_nascimento: c.data_nascimento || null,
+          profissao: c.profissao,
+          empresa_trabalho: c.empresa_trabalho,
+          valor_complemento: c.valor_complemento ? parseFloat(c.valor_complemento.replace(/[^\d,]/g, '').replace(',', '.')) : null,
+          telefone: c.telefone,
+          email: c.email
+        }))
+
+        const { error: compError } = await supabase
+          .from('complementadores_renda')
+          .insert(complementadores)
+        if (compError) throw compError
+      }
+
+      setMessage({ type: 'success', text: selectedItem ? 'Cliente atualizado!' : 'Cliente cadastrado!' })
+      setShowModal(false)
+      resetClienteForm()
+      fetchData()
+    } catch (error) {
+      console.error('Erro ao salvar cliente:', error)
+      setMessage({ type: 'error', text: 'Erro ao salvar cliente: ' + error.message })
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  // Adicionar complementador
+  const addComplementador = () => {
+    setClienteForm(prev => ({
+      ...prev,
+      complementadores: [...prev.complementadores, { ...complementadorVazio }]
+    }))
+  }
+
+  // Remover complementador
+  const removeComplementador = (index) => {
+    setClienteForm(prev => ({
+      ...prev,
+      complementadores: prev.complementadores.filter((_, i) => i !== index)
+    }))
+  }
+
+  // Atualizar complementador
+  const updateComplementador = (index, field, value) => {
+    setClienteForm(prev => ({
+      ...prev,
+      complementadores: prev.complementadores.map((c, i) => 
+        i === index ? { ...c, [field]: value } : c
+      )
+    }))
+  }
+
+  // Deletar cliente
+  const handleDeleteCliente = async (clienteId) => {
+    if (!window.confirm('Tem certeza que deseja excluir este cliente?')) return
+
+    try {
+      const { error } = await supabase
+        .from('clientes')
+        .update({ ativo: false })
+        .eq('id', clienteId)
+      if (error) throw error
+      setMessage({ type: 'success', text: 'Cliente excluído!' })
+      fetchData()
+    } catch (error) {
+      setMessage({ type: 'error', text: 'Erro ao excluir: ' + error.message })
+    }
+  }
+
   const openEditModal = (venda) => {
     setSelectedItem(venda)
     setVendaForm({
@@ -1058,6 +1304,13 @@ const AdminDashboard = () => {
             <span>Pagamentos</span>
           </button>
           <button 
+            className={`nav-item ${activeTab === 'clientes' ? 'active' : ''}`}
+            onClick={() => setActiveTab('clientes')}
+          >
+            <UserCircle size={20} />
+            <span>Clientes</span>
+          </button>
+          <button 
             className={`nav-item ${activeTab === 'relatorios' ? 'active' : ''}`}
             onClick={() => setActiveTab('relatorios')}
           >
@@ -1094,6 +1347,7 @@ const AdminDashboard = () => {
             {activeTab === 'corretores' && 'Corretores'}
             {activeTab === 'empreendimentos' && 'Empreendimentos'}
             {activeTab === 'pagamentos' && 'Acompanhamento de Pagamentos'}
+            {activeTab === 'clientes' && 'Cadastro de Clientes'}
             {activeTab === 'relatorios' && 'Relatórios'}
           </h1>
           <div className="header-actions">
@@ -1144,6 +1398,20 @@ const AdminDashboard = () => {
               >
                 <Plus size={20} />
                 <span>Novo Empreendimento</span>
+              </button>
+            )}
+            {activeTab === 'clientes' && (
+              <button 
+                className="btn-primary"
+                onClick={() => {
+                  resetClienteForm()
+                  setSelectedItem(null)
+                  setModalType('cliente')
+                  setShowModal(true)
+                }}
+              >
+                <UserPlus size={20} />
+                <span>Novo Cliente</span>
               </button>
             )}
           </div>
@@ -1719,6 +1987,92 @@ const AdminDashboard = () => {
                   </div>
                 )}
               </>
+            )}
+          </div>
+        )}
+
+        {activeTab === 'clientes' && (
+          <div className="content-section">
+            {clientes.length === 0 ? (
+              <div className="empty-state-box">
+                <UserCircle size={48} />
+                <h3>Nenhum cliente cadastrado</h3>
+                <p>Clique em "Novo Cliente" para adicionar</p>
+              </div>
+            ) : (
+              <div className="clientes-grid">
+                {clientes.map((cliente) => (
+                  <div key={cliente.id} className="cliente-card">
+                    <div className="cliente-header">
+                      <div className="cliente-avatar">
+                        <UserCircle size={40} />
+                      </div>
+                      <div className="cliente-info">
+                        <h3>{cliente.nome_completo}</h3>
+                        <p className="cliente-cpf">{cliente.cpf || 'CPF não informado'}</p>
+                      </div>
+                      <div className="cliente-actions">
+                        <button 
+                          className="action-btn edit small"
+                          onClick={() => {
+                            setSelectedItem(cliente)
+                            setClienteForm({
+                              ...cliente,
+                              renda_mensal: cliente.renda_mensal?.toString() || '',
+                              complementadores: cliente.complementadores || []
+                            })
+                            setModalType('cliente')
+                            setShowModal(true)
+                          }}
+                        >
+                          <Edit2 size={16} />
+                        </button>
+                        <button 
+                          className="action-btn delete small"
+                          onClick={() => handleDeleteCliente(cliente.id)}
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    </div>
+                    <div className="cliente-details">
+                      <div className="detail-row">
+                        <Phone size={14} />
+                        <span>{cliente.telefone || '-'}</span>
+                      </div>
+                      <div className="detail-row">
+                        <Mail size={14} />
+                        <span>{cliente.email || '-'}</span>
+                      </div>
+                      <div className="detail-row">
+                        <MapPin size={14} />
+                        <span>{cliente.endereco || '-'}</span>
+                      </div>
+                      <div className="detail-row">
+                        <Briefcase size={14} />
+                        <span>{cliente.profissao || '-'} {cliente.empresa_trabalho ? `- ${cliente.empresa_trabalho}` : ''}</span>
+                      </div>
+                      <div className="detail-row">
+                        <DollarSign size={14} />
+                        <span>Renda: {cliente.renda_mensal ? formatCurrency(cliente.renda_mensal) : '-'}</span>
+                      </div>
+                    </div>
+                    <div className="cliente-badges">
+                      {cliente.possui_3_anos_fgts && <span className="badge fgts">3+ anos FGTS</span>}
+                      {cliente.beneficiado_subsidio_fgts && <span className="badge subsidio">Subsidiado FGTS</span>}
+                      {cliente.tem_complemento_renda && <span className="badge complemento">{cliente.complementadores?.length || 0} Complementador(es)</span>}
+                    </div>
+                    <div className="cliente-docs">
+                      {cliente.rg_frente_url && <a href={cliente.rg_frente_url} target="_blank" rel="noopener noreferrer" className="doc-link">RG Frente</a>}
+                      {cliente.rg_verso_url && <a href={cliente.rg_verso_url} target="_blank" rel="noopener noreferrer" className="doc-link">RG Verso</a>}
+                      {cliente.cpf_url && <a href={cliente.cpf_url} target="_blank" rel="noopener noreferrer" className="doc-link">CPF</a>}
+                      {cliente.comprovante_residencia_url && <a href={cliente.comprovante_residencia_url} target="_blank" rel="noopener noreferrer" className="doc-link">Residência</a>}
+                      {cliente.comprovante_renda_url && <a href={cliente.comprovante_renda_url} target="_blank" rel="noopener noreferrer" className="doc-link">Renda</a>}
+                      {cliente.certidao_casamento_url && <a href={cliente.certidao_casamento_url} target="_blank" rel="noopener noreferrer" className="doc-link">Casamento</a>}
+                    </div>
+                  </div>
+                ))}
+              </div>
             )}
           </div>
         )}
@@ -2527,6 +2881,352 @@ const AdminDashboard = () => {
                     Cancelar
                   </button>
                   <button className="btn-primary" onClick={handleSaveEmpreendimento} disabled={saving}>
+                    {saving ? <div className="btn-spinner"></div> : <Save size={18} />}
+                    <span>{saving ? 'Salvando...' : 'Salvar'}</span>
+                  </button>
+                </div>
+              </>
+            )}
+
+            {/* Modal de Cliente */}
+            {modalType === 'cliente' && (
+              <>
+                <div className="modal-body modal-body-scroll">
+                  {/* Dados Pessoais */}
+                  <div className="section-divider"><span>Dados Pessoais</span></div>
+                  
+                  <div className="form-group">
+                    <label>Nome Completo *</label>
+                    <input
+                      type="text"
+                      placeholder="Nome completo do cliente"
+                      value={clienteForm.nome_completo}
+                      onChange={(e) => setClienteForm({...clienteForm, nome_completo: e.target.value})}
+                    />
+                  </div>
+
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label>Data de Nascimento</label>
+                      <input
+                        type="date"
+                        value={clienteForm.data_nascimento}
+                        onChange={(e) => setClienteForm({...clienteForm, data_nascimento: e.target.value})}
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>CPF</label>
+                      <input
+                        type="text"
+                        placeholder="000.000.000-00"
+                        value={clienteForm.cpf}
+                        onChange={(e) => setClienteForm({...clienteForm, cpf: e.target.value})}
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>RG</label>
+                      <input
+                        type="text"
+                        placeholder="Número do RG"
+                        value={clienteForm.rg}
+                        onChange={(e) => setClienteForm({...clienteForm, rg: e.target.value})}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="form-group">
+                    <label>Endereço</label>
+                    <input
+                      type="text"
+                      placeholder="Endereço completo"
+                      value={clienteForm.endereco}
+                      onChange={(e) => setClienteForm({...clienteForm, endereco: e.target.value})}
+                    />
+                  </div>
+
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label>Telefone</label>
+                      <input
+                        type="text"
+                        placeholder="(00) 00000-0000"
+                        value={clienteForm.telefone}
+                        onChange={(e) => setClienteForm({...clienteForm, telefone: e.target.value})}
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>E-mail</label>
+                      <input
+                        type="email"
+                        placeholder="email@exemplo.com"
+                        value={clienteForm.email}
+                        onChange={(e) => setClienteForm({...clienteForm, email: e.target.value})}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Dados Profissionais */}
+                  <div className="section-divider"><span>Dados Profissionais</span></div>
+
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label>Profissão</label>
+                      <input
+                        type="text"
+                        placeholder="Ex: Engenheiro, Advogado"
+                        value={clienteForm.profissao}
+                        onChange={(e) => setClienteForm({...clienteForm, profissao: e.target.value})}
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>Empresa onde trabalha</label>
+                      <input
+                        type="text"
+                        placeholder="Nome da empresa"
+                        value={clienteForm.empresa_trabalho}
+                        onChange={(e) => setClienteForm({...clienteForm, empresa_trabalho: e.target.value})}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="form-group">
+                    <label>Renda Mensal</label>
+                    <div className="input-currency">
+                      <span className="currency-prefix">R$</span>
+                      <input
+                        type="text"
+                        placeholder="0,00"
+                        value={clienteForm.renda_mensal}
+                        onChange={(e) => setClienteForm({...clienteForm, renda_mensal: e.target.value})}
+                      />
+                    </div>
+                  </div>
+
+                  {/* FGTS */}
+                  <div className="section-divider"><span>Informações FGTS</span></div>
+
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label>Possui 3 anos de FGTS?</label>
+                      <select
+                        value={clienteForm.possui_3_anos_fgts ? 'sim' : 'nao'}
+                        onChange={(e) => setClienteForm({...clienteForm, possui_3_anos_fgts: e.target.value === 'sim'})}
+                      >
+                        <option value="nao">Não</option>
+                        <option value="sim">Sim</option>
+                      </select>
+                    </div>
+                    <div className="form-group">
+                      <label>Já foi subsidiado após 16/05/05?</label>
+                      <select
+                        value={clienteForm.beneficiado_subsidio_fgts ? 'sim' : 'nao'}
+                        onChange={(e) => setClienteForm({...clienteForm, beneficiado_subsidio_fgts: e.target.value === 'sim'})}
+                      >
+                        <option value="nao">Não</option>
+                        <option value="sim">Sim</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Documentos */}
+                  <div className="section-divider"><span>Documentos</span></div>
+
+                  <div className="docs-upload-grid">
+                    <div className="doc-upload-item">
+                      <label>RG Frente</label>
+                      <input
+                        type="file"
+                        accept="image/*,.pdf"
+                        onChange={(e) => e.target.files[0] && uploadDocumentoCliente(e.target.files[0], 'rg_frente')}
+                      />
+                      {clienteForm.rg_frente_url && <a href={clienteForm.rg_frente_url} target="_blank" rel="noopener noreferrer" className="doc-preview">Ver arquivo</a>}
+                    </div>
+                    <div className="doc-upload-item">
+                      <label>RG Verso</label>
+                      <input
+                        type="file"
+                        accept="image/*,.pdf"
+                        onChange={(e) => e.target.files[0] && uploadDocumentoCliente(e.target.files[0], 'rg_verso')}
+                      />
+                      {clienteForm.rg_verso_url && <a href={clienteForm.rg_verso_url} target="_blank" rel="noopener noreferrer" className="doc-preview">Ver arquivo</a>}
+                    </div>
+                    <div className="doc-upload-item">
+                      <label>CPF</label>
+                      <input
+                        type="file"
+                        accept="image/*,.pdf"
+                        onChange={(e) => e.target.files[0] && uploadDocumentoCliente(e.target.files[0], 'cpf')}
+                      />
+                      {clienteForm.cpf_url && <a href={clienteForm.cpf_url} target="_blank" rel="noopener noreferrer" className="doc-preview">Ver arquivo</a>}
+                    </div>
+                    <div className="doc-upload-item">
+                      <label>Comprovante Residência</label>
+                      <input
+                        type="file"
+                        accept="image/*,.pdf"
+                        onChange={(e) => e.target.files[0] && uploadDocumentoCliente(e.target.files[0], 'comprovante_residencia')}
+                      />
+                      {clienteForm.comprovante_residencia_url && <a href={clienteForm.comprovante_residencia_url} target="_blank" rel="noopener noreferrer" className="doc-preview">Ver arquivo</a>}
+                    </div>
+                    <div className="doc-upload-item">
+                      <label>Comprovante Renda</label>
+                      <input
+                        type="file"
+                        accept="image/*,.pdf"
+                        onChange={(e) => e.target.files[0] && uploadDocumentoCliente(e.target.files[0], 'comprovante_renda')}
+                      />
+                      {clienteForm.comprovante_renda_url && <a href={clienteForm.comprovante_renda_url} target="_blank" rel="noopener noreferrer" className="doc-preview">Ver arquivo</a>}
+                    </div>
+                    <div className="doc-upload-item">
+                      <label>Certidão Casamento/União</label>
+                      <input
+                        type="file"
+                        accept="image/*,.pdf"
+                        onChange={(e) => e.target.files[0] && uploadDocumentoCliente(e.target.files[0], 'certidao_casamento')}
+                      />
+                      {clienteForm.certidao_casamento_url && <a href={clienteForm.certidao_casamento_url} target="_blank" rel="noopener noreferrer" className="doc-preview">Ver arquivo</a>}
+                    </div>
+                  </div>
+
+                  {uploadingDoc && <div className="upload-status">Enviando documento...</div>}
+
+                  {/* Complemento de Renda */}
+                  <div className="section-divider"><span>Complemento de Renda</span></div>
+
+                  <div className="form-group">
+                    <label>Haverá complemento de renda?</label>
+                    <select
+                      value={clienteForm.tem_complemento_renda ? 'sim' : 'nao'}
+                      onChange={(e) => {
+                        const temComplemento = e.target.value === 'sim'
+                        setClienteForm({
+                          ...clienteForm, 
+                          tem_complemento_renda: temComplemento,
+                          complementadores: temComplemento && clienteForm.complementadores.length === 0 
+                            ? [{ ...complementadorVazio }] 
+                            : clienteForm.complementadores
+                        })
+                      }}
+                    >
+                      <option value="nao">Não</option>
+                      <option value="sim">Sim</option>
+                    </select>
+                  </div>
+
+                  {clienteForm.tem_complemento_renda && (
+                    <div className="complementadores-section">
+                      {clienteForm.complementadores.map((comp, index) => (
+                        <div key={index} className="complementador-card">
+                          <div className="complementador-header">
+                            <h4>Complementador {index + 1}</h4>
+                            <button 
+                              type="button" 
+                              className="action-btn delete small"
+                              onClick={() => removeComplementador(index)}
+                            >
+                              <X size={14} />
+                            </button>
+                          </div>
+                          <div className="form-row">
+                            <div className="form-group">
+                              <label>Nome</label>
+                              <input
+                                type="text"
+                                placeholder="Nome completo"
+                                value={comp.nome}
+                                onChange={(e) => updateComplementador(index, 'nome', e.target.value)}
+                              />
+                            </div>
+                            <div className="form-group">
+                              <label>CPF</label>
+                              <input
+                                type="text"
+                                placeholder="000.000.000-00"
+                                value={comp.cpf}
+                                onChange={(e) => updateComplementador(index, 'cpf', e.target.value)}
+                              />
+                            </div>
+                          </div>
+                          <div className="form-row">
+                            <div className="form-group">
+                              <label>RG</label>
+                              <input
+                                type="text"
+                                value={comp.rg}
+                                onChange={(e) => updateComplementador(index, 'rg', e.target.value)}
+                              />
+                            </div>
+                            <div className="form-group">
+                              <label>Data Nascimento</label>
+                              <input
+                                type="date"
+                                value={comp.data_nascimento}
+                                onChange={(e) => updateComplementador(index, 'data_nascimento', e.target.value)}
+                              />
+                            </div>
+                          </div>
+                          <div className="form-row">
+                            <div className="form-group">
+                              <label>Profissão</label>
+                              <input
+                                type="text"
+                                value={comp.profissao}
+                                onChange={(e) => updateComplementador(index, 'profissao', e.target.value)}
+                              />
+                            </div>
+                            <div className="form-group">
+                              <label>Empresa</label>
+                              <input
+                                type="text"
+                                value={comp.empresa_trabalho}
+                                onChange={(e) => updateComplementador(index, 'empresa_trabalho', e.target.value)}
+                              />
+                            </div>
+                          </div>
+                          <div className="form-row">
+                            <div className="form-group">
+                              <label>Valor Complemento</label>
+                              <div className="input-currency">
+                                <span className="currency-prefix">R$</span>
+                                <input
+                                  type="text"
+                                  placeholder="0,00"
+                                  value={comp.valor_complemento}
+                                  onChange={(e) => updateComplementador(index, 'valor_complemento', e.target.value)}
+                                />
+                              </div>
+                            </div>
+                            <div className="form-group">
+                              <label>Telefone</label>
+                              <input
+                                type="text"
+                                value={comp.telefone}
+                                onChange={(e) => updateComplementador(index, 'telefone', e.target.value)}
+                              />
+                            </div>
+                            <div className="form-group">
+                              <label>E-mail</label>
+                              <input
+                                type="email"
+                                value={comp.email}
+                                onChange={(e) => updateComplementador(index, 'email', e.target.value)}
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                      <button type="button" className="btn-add-complementador" onClick={addComplementador}>
+                        <PlusCircle size={16} />
+                        <span>Adicionar Complementador</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
+                <div className="modal-footer">
+                  <button className="btn-secondary" onClick={() => setShowModal(false)}>
+                    Cancelar
+                  </button>
+                  <button className="btn-primary" onClick={handleSaveCliente} disabled={saving || uploadingDoc}>
                     {saving ? <div className="btn-spinner"></div> : <Save size={18} />}
                     <span>{saving ? 'Salvando...' : 'Salvar'}</span>
                   </button>

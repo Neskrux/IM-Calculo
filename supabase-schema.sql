@@ -300,3 +300,61 @@ ALTER TABLE vendas ADD COLUMN IF NOT EXISTS fator_comissao DECIMAL(10, 6);
 -- - Coordenadora: 0%
 -- =============================================
 
+-- =============================================
+-- TABELA DE CLIENTES
+-- =============================================
+CREATE TABLE IF NOT EXISTS clientes (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    nome_completo TEXT NOT NULL,
+    data_nascimento DATE,
+    cpf TEXT,
+    rg TEXT,
+    endereco TEXT,
+    telefone TEXT,
+    email TEXT,
+    profissao TEXT,
+    empresa_trabalho TEXT,
+    renda_mensal DECIMAL(15, 2),
+    
+    -- Documentos (URLs do Storage)
+    rg_frente_url TEXT,
+    rg_verso_url TEXT,
+    cpf_url TEXT,
+    comprovante_residencia_url TEXT,
+    comprovante_renda_url TEXT,
+    certidao_casamento_url TEXT,
+    
+    -- FGTS
+    possui_3_anos_fgts BOOLEAN DEFAULT false,
+    beneficiado_subsidio_fgts BOOLEAN DEFAULT false,
+    
+    -- Complemento de Renda
+    tem_complemento_renda BOOLEAN DEFAULT false,
+    
+    ativo BOOLEAN DEFAULT true,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- =============================================
+-- TABELA DE COMPLEMENTADORES DE RENDA
+-- =============================================
+CREATE TABLE IF NOT EXISTS complementadores_renda (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    cliente_id UUID NOT NULL REFERENCES clientes(id) ON DELETE CASCADE,
+    nome TEXT NOT NULL,
+    cpf TEXT,
+    rg TEXT,
+    data_nascimento DATE,
+    profissao TEXT,
+    empresa_trabalho TEXT,
+    valor_complemento DECIMAL(15, 2),
+    telefone TEXT,
+    email TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Desabilitar RLS nas novas tabelas
+ALTER TABLE clientes DISABLE ROW LEVEL SECURITY;
+ALTER TABLE complementadores_renda DISABLE ROW LEVEL SECURITY;
+

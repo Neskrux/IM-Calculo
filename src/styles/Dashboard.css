@@ -2025,3 +2025,236 @@
     display: none;
   }
 }
+
+/* ======================== */
+/* Aba de Clientes */
+/* ======================== */
+
+.clientes-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: 16px;
+}
+
+.cliente-card {
+  background: #232936;
+  border-radius: 10px;
+  padding: 16px;
+  border: 1px solid #2d3548;
+}
+
+.cliente-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #2d3548;
+}
+
+.cliente-avatar {
+  color: #d4af37;
+}
+
+.cliente-info {
+  flex: 1;
+}
+
+.cliente-info h3 {
+  font-size: 16px;
+  color: #fff;
+  margin: 0 0 2px 0;
+}
+
+.cliente-cpf {
+  font-size: 13px;
+  color: #9ca3af;
+  margin: 0;
+}
+
+.cliente-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.cliente-details {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.cliente-details .detail-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #9ca3af;
+}
+
+.cliente-details .detail-row svg {
+  color: #6b7280;
+  flex-shrink: 0;
+}
+
+.cliente-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.cliente-badges .badge {
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-weight: 500;
+}
+
+.cliente-badges .badge.fgts {
+  background: rgba(16, 185, 129, 0.15);
+  color: #10b981;
+}
+
+.cliente-badges .badge.subsidio {
+  background: rgba(245, 158, 11, 0.15);
+  color: #f59e0b;
+}
+
+.cliente-badges .badge.complemento {
+  background: rgba(59, 130, 246, 0.15);
+  color: #3b82f6;
+}
+
+.cliente-docs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.doc-link {
+  font-size: 11px;
+  padding: 4px 8px;
+  background: #2a3142;
+  color: #9ca3af;
+  border-radius: 4px;
+  text-decoration: none;
+  transition: all 0.2s;
+}
+
+.doc-link:hover {
+  background: #343b4d;
+  color: #fff;
+}
+
+/* Upload de Documentos no Modal */
+.docs-upload-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 12px;
+}
+
+.doc-upload-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.doc-upload-item label {
+  font-size: 12px;
+  color: #9ca3af;
+  font-weight: 500;
+}
+
+.doc-upload-item input[type="file"] {
+  font-size: 12px;
+  padding: 8px;
+  background: #2a3142;
+  border: 1px dashed #4b5563;
+  border-radius: 6px;
+  color: #9ca3af;
+  cursor: pointer;
+}
+
+.doc-upload-item input[type="file"]:hover {
+  border-color: #d4af37;
+}
+
+.doc-preview {
+  font-size: 11px;
+  color: #10b981;
+  text-decoration: none;
+}
+
+.doc-preview:hover {
+  text-decoration: underline;
+}
+
+.upload-status {
+  text-align: center;
+  padding: 10px;
+  background: rgba(212, 175, 55, 0.1);
+  color: #d4af37;
+  border-radius: 6px;
+  font-size: 13px;
+  margin-top: 10px;
+}
+
+/* Complementadores */
+.complementadores-section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.complementador-card {
+  background: #1e2433;
+  border: 1px solid #343b4d;
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.complementador-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #343b4d;
+}
+
+.complementador-header h4 {
+  margin: 0;
+  font-size: 14px;
+  color: #d4af37;
+}
+
+.btn-add-complementador {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px;
+  background: transparent;
+  border: 1px dashed #4b5563;
+  border-radius: 8px;
+  color: #9ca3af;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.btn-add-complementador:hover {
+  border-color: #d4af37;
+  color: #d4af37;
+}
+
+@media (max-width: 500px) {
+  .clientes-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .docs-upload-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
