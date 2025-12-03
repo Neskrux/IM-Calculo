@@ -232,6 +232,11 @@ const AdminDashboard = () => {
       return
     }
 
+    if (!corretorForm.empreendimento_id || !corretorForm.cargo_id) {
+      setMessage({ type: 'error', text: 'Selecione o empreendimento e cargo' })
+      return
+    }
+
     // Se é edição, não precisa de senha
     if (!selectedItem && !corretorForm.senha) {
       setMessage({ type: 'error', text: 'A senha é obrigatória para novos corretores' })
@@ -255,7 +260,9 @@ const AdminDashboard = () => {
             nome: corretorForm.nome,
             tipo_corretor: corretorForm.tipo_corretor,
             telefone: corretorForm.telefone || null,
-            percentual_corretor: parseFloat(corretorForm.percentual_corretor) || null
+            percentual_corretor: parseFloat(corretorForm.percentual_corretor) || null,
+            empreendimento_id: corretorForm.empreendimento_id || null,
+            cargo_id: corretorForm.cargo_id || null
           })
           .eq('id', selectedItem.id)
 
@@ -293,7 +300,9 @@ const AdminDashboard = () => {
             tipo: 'corretor',
             tipo_corretor: corretorForm.tipo_corretor,
             telefone: corretorForm.telefone || null,
-            percentual_corretor: parseFloat(corretorForm.percentual_corretor) || null
+            percentual_corretor: parseFloat(corretorForm.percentual_corretor) || null,
+            empreendimento_id: corretorForm.empreendimento_id || null,
+            cargo_id: corretorForm.cargo_id || null
           }])
 
         if (dbError) {
@@ -482,13 +491,24 @@ const AdminDashboard = () => {
 
   const openEditCorretor = (corretor) => {
     setSelectedItem(corretor)
+    
+    // Carregar cargos do empreendimento se existir
+    if (corretor.empreendimento_id) {
+      const emp = empreendimentos.find(e => e.id === corretor.empreendimento_id)
+      setCargosDisponiveis(emp?.cargos || [])
+    } else {
+      setCargosDisponiveis([])
+    }
+
     setCorretorForm({
       nome: corretor.nome,
       email: corretor.email,
       senha: '',
       tipo_corretor: corretor.tipo_corretor || 'externo',
       telefone: corretor.telefone || '',
-      percentual_corretor: corretor.percentual_corretor?.toString() || (corretor.tipo_corretor === 'interno' ? '2.5' : '4')
+      percentual_corretor: corretor.percentual_corretor?.toString() || '',
+      empreendimento_id: corretor.empreendimento_id || '',
+      cargo_id: corretor.cargo_id || ''
     })
     setModalType('corretor')
     setShowModal(true)
@@ -520,8 +540,11 @@ const AdminDashboard = () => {
       senha: '',
       tipo_corretor: 'externo',
       telefone: '',
-      percentual_corretor: '4'
+      percentual_corretor: '',
+      empreendimento_id: '',
+      cargo_id: ''
     })
+    setCargosDisponiveis([])
   }
 
   const openEditModal = (venda) => {
@@ -902,6 +925,21 @@ const AdminDashboard = () => {
                               {percentual}%
                             </span>
                           </div>
+                          {(corretor.empreendimento?.nome || corretor.cargo?.nome_cargo) && (
+                            <div className="corretor-vinculo">
+                              {corretor.empreendimento?.nome && (
+                                <span className="vinculo-item">
+                                  <Building size={12} />
+                                  {corretor.empreendimento.nome}
+                                </span>
+                              )}
+                              {corretor.cargo?.nome_cargo && (
+                                <span className="vinculo-item cargo">
+                                  {corretor.cargo.nome_cargo}
+                                </span>
+                              )}
+                            </div>
+                          )}
                         </div>
                         <div className="corretor-actions">
                           <button 
@@ -1391,49 +1429,85 @@ const AdminDashboard = () => {
                       </div>
                     </div>
                   )}
+
+                  <div className="section-divider">
+                    <span>Vínculo com Empreendimento</span>
+                  </div>
+
+                  <div className="form-group">
+                    <label>Empreendimento *</label>
+                    <select
+                      value={corretorForm.empreendimento_id}
+                      onChange={(e) => handleEmpreendimentoChange(e.target.value)}
+                    >
+                      <option value="">Selecione um empreendimento</option>
+                      {empreendimentos.map((emp) => (
+                        <option key={emp.id} value={emp.id}>{emp.nome}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {corretorForm.empreendimento_id && (
+                    <div className="form-group">
+                      <label>Cargo *</label>
+                      <select
+                        value={corretorForm.cargo_id}
+                        onChange={(e) => handleCargoChange(e.target.value)}
+                      >
+                        <option value="">Selecione um cargo</option>
+                        {cargosDisponiveis
+                          .filter(cargo => {
+                            // Filtrar cargos já ocupados (exceto se for edição do mesmo corretor)
+                            const ocupado = corretores.some(c => 
+                              c.cargo_id === cargo.id && c.id !== selectedItem?.id
+                            )
+                            return !ocupado
+                          })
+                          .map((cargo) => (
+                            <option key={cargo.id} value={cargo.id}>
+                              {cargo.nome_cargo} ({cargo.percentual}%)
+                            </option>
+                          ))
+                        }
+                      </select>
+                      {cargosDisponiveis.length > 0 && 
+                       cargosDisponiveis.filter(c => !corretores.some(cor => cor.cargo_id === c.id && cor.id !== selectedItem?.id)).length === 0 && (
+                        <p className="field-hint error">Todos os cargos deste empreendimento já estão ocupados</p>
+                      )}
+                    </div>
+                  )}
+
+                  {corretorForm.cargo_id && corretorForm.percentual_corretor && (
+                    <div className="cargo-preview">
+                      <span>Comissão do cargo:</span>
+                      <strong>{corretorForm.percentual_corretor}%</strong>
+                    </div>
+                  )}
+
+                  <div className="section-divider">
+                    <span>Informações Adicionais</span>
+                  </div>
+
                   <div className="form-row">
                     <div className="form-group">
                       <label>Tipo de Corretor</label>
                       <select
                         value={corretorForm.tipo_corretor}
-                        onChange={(e) => handleTipoCorretorChange(e.target.value)}
+                        onChange={(e) => setCorretorForm({...corretorForm, tipo_corretor: e.target.value})}
                       >
                         <option value="externo">Externo</option>
                         <option value="interno">Interno</option>
                       </select>
                     </div>
                     <div className="form-group">
-                      <label>Percentual de Comissão (%)</label>
-                      <div className="input-with-icon">
-                        <Percent size={18} />
-                        <input
-                          type="number"
-                          step="0.1"
-                          min="0"
-                          max="100"
-                          placeholder="Ex: 4"
-                          value={corretorForm.percentual_corretor}
-                          onChange={(e) => setCorretorForm({...corretorForm, percentual_corretor: e.target.value})}
-                        />
-                      </div>
+                      <label>Telefone</label>
+                      <input
+                        type="tel"
+                        placeholder="(00) 00000-0000"
+                        value={corretorForm.telefone}
+                        onChange={(e) => setCorretorForm({...corretorForm, telefone: e.target.value})}
+                      />
                     </div>
-                  </div>
-                  <div className="form-group">
-                    <label>Telefone</label>
-                    <input
-                      type="tel"
-                      placeholder="(00) 00000-0000"
-                      value={corretorForm.telefone}
-                      onChange={(e) => setCorretorForm({...corretorForm, telefone: e.target.value})}
-                    />
-                  </div>
-                  
-                  <div className="info-box">
-                    <p>
-                      <strong>Percentuais padrão:</strong><br/>
-                      Externo: 4% | Interno: 2,5%<br/>
-                      <small>Você pode definir um percentual personalizado para este corretor.</small>
-                    </p>
                   </div>
                 </div>
                 <div className="modal-footer">
