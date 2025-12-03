@@ -461,25 +461,42 @@ const AdminDashboard = () => {
       // Criar pagamentos pro-soluto
       const pagamentos = []
       
+      // Calcular valor inicial (sinal + entrada) para verificar regra dos 10%
+      const valorInicial = valorSinal + valorEntrada
+      const percentualEntrada = valorVenda > 0 ? (valorInicial / valorVenda) * 100 : 0
+      const comissaoTotalVenda = comissoesDinamicas.total
+      
+      // REGRA: Se entrada >= 10% do valor da venda, comissão é paga toda na entrada
+      const comissaoIntegralNaEntrada = percentualEntrada >= 10
+      
       // Sinal
       if (valorSinal > 0) {
+        let comissaoSinal = 0
+        if (comissaoIntegralNaEntrada) {
+          // Se não tem entrada separada, toda comissão vai no sinal
+          comissaoSinal = valorEntrada > 0 ? 0 : comissaoTotalVenda
+        } else {
+          // Comissão proporcional
+          comissaoSinal = valorSinal * fatorComissao
+        }
         pagamentos.push({
           venda_id: vendaId,
           tipo: 'sinal',
           valor: valorSinal,
           data_prevista: vendaForm.data_venda,
-          comissao_gerada: valorSinal * fatorComissao
+          comissao_gerada: comissaoSinal
         })
       }
 
       // Entrada (à vista)
       if (valorEntrada > 0 && !vendaForm.parcelou_entrada) {
+        const comissaoEntrada = comissaoIntegralNaEntrada ? comissaoTotalVenda : valorEntrada * fatorComissao
         pagamentos.push({
           venda_id: vendaId,
           tipo: 'entrada',
           valor: valorEntrada,
           data_prevista: vendaForm.data_venda,
-          comissao_gerada: valorEntrada * fatorComissao
+          comissao_gerada: comissaoEntrada
         })
       }
       
@@ -487,21 +504,32 @@ const AdminDashboard = () => {
       if (vendaForm.parcelou_entrada) {
         const qtdParcelas = parseInt(vendaForm.qtd_parcelas_entrada) || 0
         const valorParcelaEnt = parseFloat(vendaForm.valor_parcela_entrada) || 0
+        const valorTotalParcelas = qtdParcelas * valorParcelaEnt
+        
         for (let i = 1; i <= qtdParcelas; i++) {
           const dataParcela = new Date(vendaForm.data_venda)
           dataParcela.setMonth(dataParcela.getMonth() + i)
+          
+          // Se comissão integral na entrada, primeira parcela recebe tudo
+          let comissaoParcela = 0
+          if (comissaoIntegralNaEntrada) {
+            comissaoParcela = i === 1 ? comissaoTotalVenda : 0
+          } else {
+            comissaoParcela = valorParcelaEnt * fatorComissao
+          }
+          
           pagamentos.push({
             venda_id: vendaId,
             tipo: 'parcela_entrada',
             numero_parcela: i,
             valor: valorParcelaEnt,
             data_prevista: dataParcela.toISOString().split('T')[0],
-            comissao_gerada: valorParcelaEnt * fatorComissao
+            comissao_gerada: comissaoParcela
           })
         }
       }
       
-      // Balões
+      // Balões - comissão proporcional (não afetados pela regra dos 10%)
       if (vendaForm.teve_balao === 'sim') {
         const qtdBalao = parseInt(vendaForm.qtd_balao) || 0
         const valorBalaoUnit = parseFloat(vendaForm.valor_balao) || 0
@@ -511,7 +539,8 @@ const AdminDashboard = () => {
             tipo: 'balao',
             numero_parcela: i,
             valor: valorBalaoUnit,
-            comissao_gerada: valorBalaoUnit * fatorComissao
+            // Balões: se comissão foi paga na entrada, não gera mais comissão
+            comissao_gerada: comissaoIntegralNaEntrada ? 0 : valorBalaoUnit * fatorComissao
           })
         }
       }
