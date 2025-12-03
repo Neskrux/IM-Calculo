@@ -1038,6 +1038,132 @@
   color: #4ade80;
 }
 
+/* Comissões Totais no Card */
+.comissoes-totais {
+  display: flex;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.comissoes-totais .badge {
+  font-size: 11px;
+  padding: 3px 8px;
+}
+
+.comissoes-totais .badge.externo {
+  background: #1a472a;
+  color: #4ade80;
+}
+
+.comissoes-totais .badge.interno {
+  background: #1e3a5f;
+  color: #60a5fa;
+}
+
+/* Seção de Tipo no Modal */
+.tipo-section {
+  background: #1a1f2e;
+  border: 1px solid #2d3548;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.tipo-section.externo {
+  border-left: 3px solid #4ade80;
+}
+
+.tipo-section.interno {
+  border-left: 3px solid #60a5fa;
+}
+
+.tipo-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #2d3548;
+}
+
+.tipo-header h4 {
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+  margin: 0;
+}
+
+.tipo-section.externo .tipo-header h4 {
+  color: #4ade80;
+}
+
+.tipo-section.interno .tipo-header h4 {
+  color: #60a5fa;
+}
+
+.form-group.inline {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+}
+
+.form-group.inline label {
+  font-size: 12px;
+  color: #9ca3af;
+  margin: 0;
+  white-space: nowrap;
+}
+
+.form-group.inline input {
+  width: 70px;
+  padding: 6px 10px;
+  background: #232936;
+  border: 1px solid #2d3548;
+  border-radius: 4px;
+  color: #fff;
+  font-size: 13px;
+  text-align: center;
+}
+
+.form-group.inline span {
+  color: #9ca3af;
+  font-size: 13px;
+}
+
+.btn-add-cargo.interno {
+  border-color: #1e3a5f;
+  color: #60a5fa;
+}
+
+.btn-add-cargo.interno:hover {
+  border-color: #60a5fa;
+  color: #60a5fa;
+}
+
+.preview-comissoes.interno {
+  background: #1e3a5f20;
+}
+
+.preview-comissoes.interno span {
+  color: #60a5fa;
+}
+
+.preview-comissoes span {
+  font-size: 13px;
+  font-weight: 500;
+  color: #4ade80;
+}
+
+.cargo-item.interno {
+  border-left: 2px solid #60a5fa;
+}
+
+.modal-body-scroll {
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
 .info-box {
   background: #1a1f2e;
   border: 1px solid #2d3548;

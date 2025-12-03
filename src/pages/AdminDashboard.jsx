@@ -29,8 +29,10 @@ const AdminDashboard = () => {
   const [empreendimentoForm, setEmpreendimentoForm] = useState({
     nome: '',
     descricao: '',
-    comissao_total: '7',
-    cargos: [{ nome_cargo: '', percentual: '' }]
+    comissao_total_externo: '7',
+    comissao_total_interno: '6',
+    cargos_externo: [{ nome_cargo: '', percentual: '' }],
+    cargos_interno: [{ nome_cargo: '', percentual: '' }]
   })
 
   // Dados do formulário de venda
@@ -370,7 +372,8 @@ const AdminDashboard = () => {
           .update({
             nome: empreendimentoForm.nome,
             descricao: empreendimentoForm.descricao,
-            comissao_total: parseFloat(empreendimentoForm.comissao_total) || 7
+            comissao_total_externo: parseFloat(empreendimentoForm.comissao_total_externo) || 7,
+            comissao_total_interno: parseFloat(empreendimentoForm.comissao_total_interno) || 6
           })
           .eq('id', selectedItem.id)
 
@@ -389,7 +392,8 @@ const AdminDashboard = () => {
           .insert([{
             nome: empreendimentoForm.nome,
             descricao: empreendimentoForm.descricao,
-            comissao_total: parseFloat(empreendimentoForm.comissao_total) || 7
+            comissao_total_externo: parseFloat(empreendimentoForm.comissao_total_externo) || 7,
+            comissao_total_interno: parseFloat(empreendimentoForm.comissao_total_interno) || 6
           }])
           .select()
           .single()
@@ -398,11 +402,30 @@ const AdminDashboard = () => {
         empreendimentoId = data.id
       }
 
-      // Inserir cargos
-      const cargosValidos = empreendimentoForm.cargos.filter(c => c.nome_cargo && c.percentual)
-      if (cargosValidos.length > 0) {
-        const cargosData = cargosValidos.map((cargo, idx) => ({
+      // Inserir cargos EXTERNOS
+      const cargosExternoValidos = empreendimentoForm.cargos_externo.filter(c => c.nome_cargo && c.percentual)
+      if (cargosExternoValidos.length > 0) {
+        const cargosData = cargosExternoValidos.map((cargo, idx) => ({
           empreendimento_id: empreendimentoId,
+          tipo_corretor: 'externo',
+          nome_cargo: cargo.nome_cargo,
+          percentual: parseFloat(cargo.percentual),
+          ordem: idx
+        }))
+
+        const { error: cargosError } = await supabase
+          .from('cargos_empreendimento')
+          .insert(cargosData)
+
+        if (cargosError) throw new Error(cargosError.message)
+      }
+
+      // Inserir cargos INTERNOS
+      const cargosInternoValidos = empreendimentoForm.cargos_interno.filter(c => c.nome_cargo && c.percentual)
+      if (cargosInternoValidos.length > 0) {
+        const cargosData = cargosInternoValidos.map((cargo, idx) => ({
+          empreendimento_id: empreendimentoId,
+          tipo_corretor: 'interno',
           nome_cargo: cargo.nome_cargo,
           percentual: parseFloat(cargo.percentual),
           ordem: idx
@@ -446,34 +469,52 @@ const AdminDashboard = () => {
     }
   }
 
-  const addCargo = () => {
+  const addCargo = (tipo) => {
+    const key = tipo === 'externo' ? 'cargos_externo' : 'cargos_interno'
     setEmpreendimentoForm({
       ...empreendimentoForm,
-      cargos: [...empreendimentoForm.cargos, { nome_cargo: '', percentual: '' }]
+      [key]: [...empreendimentoForm[key], { nome_cargo: '', percentual: '' }]
     })
   }
 
-  const removeCargo = (index) => {
-    const newCargos = empreendimentoForm.cargos.filter((_, i) => i !== index)
+  const removeCargo = (tipo, index) => {
+    const key = tipo === 'externo' ? 'cargos_externo' : 'cargos_interno'
+    const newCargos = empreendimentoForm[key].filter((_, i) => i !== index)
     setEmpreendimentoForm({
       ...empreendimentoForm,
-      cargos: newCargos.length > 0 ? newCargos : [{ nome_cargo: '', percentual: '' }]
+      [key]: newCargos.length > 0 ? newCargos : [{ nome_cargo: '', percentual: '' }]
     })
   }
 
-  const updateCargo = (index, field, value) => {
-    const newCargos = [...empreendimentoForm.cargos]
+  const updateCargo = (tipo, index, field, value) => {
+    const key = tipo === 'externo' ? 'cargos_externo' : 'cargos_interno'
+    const newCargos = [...empreendimentoForm[key]]
     newCargos[index][field] = value
-    setEmpreendimentoForm({ ...empreendimentoForm, cargos: newCargos })
+    setEmpreendimentoForm({ ...empreendimentoForm, [key]: newCargos })
   }
 
   // Quando seleciona empreendimento no formulário de corretor
   const handleEmpreendimentoChange = (empId) => {
     const emp = empreendimentos.find(e => e.id === empId)
-    setCargosDisponiveis(emp?.cargos || [])
+    // Filtra cargos pelo tipo de corretor selecionado
+    const cargosFiltrados = emp?.cargos?.filter(c => c.tipo_corretor === corretorForm.tipo_corretor) || []
+    setCargosDisponiveis(cargosFiltrados)
     setCorretorForm({ 
       ...corretorForm, 
       empreendimento_id: empId, 
+      cargo_id: '',
+      percentual_corretor: ''
+    })
+  }
+
+  // Quando muda o tipo de corretor, atualiza os cargos disponíveis
+  const handleTipoCorretorChangeEmp = (tipo) => {
+    const emp = empreendimentos.find(e => e.id === corretorForm.empreendimento_id)
+    const cargosFiltrados = emp?.cargos?.filter(c => c.tipo_corretor === tipo) || []
+    setCargosDisponiveis(cargosFiltrados)
+    setCorretorForm({ 
+      ...corretorForm, 
+      tipo_corretor: tipo,
       cargo_id: '',
       percentual_corretor: ''
     })
@@ -729,8 +770,10 @@ const AdminDashboard = () => {
                   setEmpreendimentoForm({
                     nome: '',
                     descricao: '',
-                    comissao_total: '7',
-                    cargos: [{ nome_cargo: '', percentual: '' }]
+                    comissao_total_externo: '7',
+                    comissao_total_interno: '6',
+                    cargos_externo: [{ nome_cargo: '', percentual: '' }],
+                    cargos_interno: [{ nome_cargo: '', percentual: '' }]
                   })
                   setSelectedItem(null)
                   setModalType('empreendimento')
@@ -999,22 +1042,32 @@ const AdminDashboard = () => {
                     <div className="empreendimento-header">
                       <div className="empreendimento-info">
                         <h3>{emp.nome}</h3>
-                        <span className="badge percent">
-                          <Percent size={12} />
-                          {emp.comissao_total}% Total
-                        </span>
+                        <div className="comissoes-totais">
+                          <span className="badge externo">
+                            Externo: {emp.comissao_total_externo || 7}%
+                          </span>
+                          <span className="badge interno">
+                            Interno: {emp.comissao_total_interno || 6}%
+                          </span>
+                        </div>
                       </div>
                       <div className="empreendimento-actions">
                         <button 
                           className="action-btn edit small"
                           onClick={() => {
+                            const cargosExt = emp.cargos?.filter(c => c.tipo_corretor === 'externo') || []
+                            const cargosInt = emp.cargos?.filter(c => c.tipo_corretor === 'interno') || []
                             setSelectedItem(emp)
                             setEmpreendimentoForm({
                               nome: emp.nome,
                               descricao: emp.descricao || '',
-                              comissao_total: emp.comissao_total?.toString() || '7',
-                              cargos: emp.cargos?.length > 0 
-                                ? emp.cargos.map(c => ({ nome_cargo: c.nome_cargo, percentual: c.percentual?.toString() || '' }))
+                              comissao_total_externo: emp.comissao_total_externo?.toString() || '7',
+                              comissao_total_interno: emp.comissao_total_interno?.toString() || '6',
+                              cargos_externo: cargosExt.length > 0 
+                                ? cargosExt.map(c => ({ nome_cargo: c.nome_cargo, percentual: c.percentual?.toString() || '' }))
+                                : [{ nome_cargo: '', percentual: '' }],
+                              cargos_interno: cargosInt.length > 0 
+                                ? cargosInt.map(c => ({ nome_cargo: c.nome_cargo, percentual: c.percentual?.toString() || '' }))
                                 : [{ nome_cargo: '', percentual: '' }]
                             })
                             setModalType('empreendimento')
@@ -1034,11 +1087,13 @@ const AdminDashboard = () => {
                     {emp.descricao && (
                       <p className="empreendimento-descricao">{emp.descricao}</p>
                     )}
+                    
+                    {/* Cargos Externos */}
                     <div className="empreendimento-cargos">
-                      <h4>Cargos e Comissões</h4>
-                      {emp.cargos?.length > 0 ? (
+                      <h4>Cargos Externos</h4>
+                      {emp.cargos?.filter(c => c.tipo_corretor === 'externo').length > 0 ? (
                         <div className="cargos-list">
-                          {emp.cargos.map((cargo, idx) => (
+                          {emp.cargos.filter(c => c.tipo_corretor === 'externo').map((cargo, idx) => (
                             <div key={idx} className="cargo-item">
                               <span>{cargo.nome_cargo}</span>
                               <span className="cargo-percent">{cargo.percentual}%</span>
@@ -1046,7 +1101,24 @@ const AdminDashboard = () => {
                           ))}
                         </div>
                       ) : (
-                        <p className="no-cargos">Nenhum cargo cadastrado</p>
+                        <p className="no-cargos">Nenhum cargo externo</p>
+                      )}
+                    </div>
+
+                    {/* Cargos Internos */}
+                    <div className="empreendimento-cargos">
+                      <h4>Cargos Internos</h4>
+                      {emp.cargos?.filter(c => c.tipo_corretor === 'interno').length > 0 ? (
+                        <div className="cargos-list">
+                          {emp.cargos.filter(c => c.tipo_corretor === 'interno').map((cargo, idx) => (
+                            <div key={idx} className="cargo-item interno">
+                              <span>{cargo.nome_cargo}</span>
+                              <span className="cargo-percent">{cargo.percentual}%</span>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="no-cargos">Nenhum cargo interno</p>
                       )}
                     </div>
                   </div>
@@ -1434,17 +1506,29 @@ const AdminDashboard = () => {
                     <span>Vínculo com Empreendimento</span>
                   </div>
 
-                  <div className="form-group">
-                    <label>Empreendimento *</label>
-                    <select
-                      value={corretorForm.empreendimento_id}
-                      onChange={(e) => handleEmpreendimentoChange(e.target.value)}
-                    >
-                      <option value="">Selecione um empreendimento</option>
-                      {empreendimentos.map((emp) => (
-                        <option key={emp.id} value={emp.id}>{emp.nome}</option>
-                      ))}
-                    </select>
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label>Tipo de Corretor *</label>
+                      <select
+                        value={corretorForm.tipo_corretor}
+                        onChange={(e) => handleTipoCorretorChangeEmp(e.target.value)}
+                      >
+                        <option value="externo">Externo</option>
+                        <option value="interno">Interno</option>
+                      </select>
+                    </div>
+                    <div className="form-group">
+                      <label>Empreendimento *</label>
+                      <select
+                        value={corretorForm.empreendimento_id}
+                        onChange={(e) => handleEmpreendimentoChange(e.target.value)}
+                      >
+                        <option value="">Selecione um empreendimento</option>
+                        {empreendimentos.map((emp) => (
+                          <option key={emp.id} value={emp.id}>{emp.nome}</option>
+                        ))}
+                      </select>
+                    </div>
                   </div>
 
                   {corretorForm.empreendimento_id && (
@@ -1484,30 +1568,14 @@ const AdminDashboard = () => {
                     </div>
                   )}
 
-                  <div className="section-divider">
-                    <span>Informações Adicionais</span>
-                  </div>
-
-                  <div className="form-row">
-                    <div className="form-group">
-                      <label>Tipo de Corretor</label>
-                      <select
-                        value={corretorForm.tipo_corretor}
-                        onChange={(e) => setCorretorForm({...corretorForm, tipo_corretor: e.target.value})}
-                      >
-                        <option value="externo">Externo</option>
-                        <option value="interno">Interno</option>
-                      </select>
-                    </div>
-                    <div className="form-group">
-                      <label>Telefone</label>
-                      <input
-                        type="tel"
-                        placeholder="(00) 00000-0000"
-                        value={corretorForm.telefone}
-                        onChange={(e) => setCorretorForm({...corretorForm, telefone: e.target.value})}
-                      />
-                    </div>
+                  <div className="form-group">
+                    <label>Telefone</label>
+                    <input
+                      type="tel"
+                      placeholder="(00) 00000-0000"
+                      value={corretorForm.telefone}
+                      onChange={(e) => setCorretorForm({...corretorForm, telefone: e.target.value})}
+                    />
                   </div>
                 </div>
                 <div className="modal-footer">
@@ -1525,7 +1593,7 @@ const AdminDashboard = () => {
             {/* Modal de Empreendimento */}
             {modalType === 'empreendimento' && (
               <>
-                <div className="modal-body">
+                <div className="modal-body modal-body-scroll">
                   <div className="form-group">
                     <label>Nome do Empreendimento *</label>
                     <input
@@ -1544,54 +1612,107 @@ const AdminDashboard = () => {
                       onChange={(e) => setEmpreendimentoForm({...empreendimentoForm, descricao: e.target.value})}
                     />
                   </div>
-                  <div className="form-group">
-                    <label>Comissão Total (%)</label>
-                    <input
-                      type="number"
-                      step="0.1"
-                      placeholder="Ex: 7"
-                      value={empreendimentoForm.comissao_total}
-                      onChange={(e) => setEmpreendimentoForm({...empreendimentoForm, comissao_total: e.target.value})}
-                    />
-                  </div>
 
-                  <div className="section-divider">
-                    <span>Cargos e Percentuais</span>
-                  </div>
-
-                  <div className="cargos-form">
-                    {empreendimentoForm.cargos.map((cargo, index) => (
-                      <div key={index} className="cargo-form-row">
-                        <input
-                          type="text"
-                          placeholder="Nome do cargo"
-                          value={cargo.nome_cargo}
-                          onChange={(e) => updateCargo(index, 'nome_cargo', e.target.value)}
-                        />
+                  {/* SEÇÃO EXTERNO */}
+                  <div className="tipo-section externo">
+                    <div className="tipo-header">
+                      <h4>Corretor Externo</h4>
+                      <div className="form-group inline">
+                        <label>Comissão Total:</label>
                         <input
                           type="number"
                           step="0.1"
-                          placeholder="%"
-                          value={cargo.percentual}
-                          onChange={(e) => updateCargo(index, 'percentual', e.target.value)}
+                          placeholder="7"
+                          value={empreendimentoForm.comissao_total_externo}
+                          onChange={(e) => setEmpreendimentoForm({...empreendimentoForm, comissao_total_externo: e.target.value})}
                         />
-                        <button 
-                          type="button" 
-                          className="action-btn delete small"
-                          onClick={() => removeCargo(index)}
-                        >
-                          <X size={14} />
-                        </button>
+                        <span>%</span>
                       </div>
-                    ))}
-                    <button type="button" className="btn-add-cargo" onClick={addCargo}>
-                      <PlusCircle size={16} />
-                      <span>Adicionar Cargo</span>
-                    </button>
+                    </div>
+                    <div className="cargos-form">
+                      {empreendimentoForm.cargos_externo.map((cargo, index) => (
+                        <div key={index} className="cargo-form-row">
+                          <input
+                            type="text"
+                            placeholder="Nome do cargo"
+                            value={cargo.nome_cargo}
+                            onChange={(e) => updateCargo('externo', index, 'nome_cargo', e.target.value)}
+                          />
+                          <input
+                            type="number"
+                            step="0.1"
+                            placeholder="%"
+                            value={cargo.percentual}
+                            onChange={(e) => updateCargo('externo', index, 'percentual', e.target.value)}
+                          />
+                          <button 
+                            type="button" 
+                            className="action-btn delete small"
+                            onClick={() => removeCargo('externo', index)}
+                          >
+                            <X size={14} />
+                          </button>
+                        </div>
+                      ))}
+                      <button type="button" className="btn-add-cargo" onClick={() => addCargo('externo')}>
+                        <PlusCircle size={16} />
+                        <span>Adicionar Cargo Externo</span>
+                      </button>
+                    </div>
+                    <div className="preview-comissoes">
+                      <span>Total Cargos Externos: {empreendimentoForm.cargos_externo.reduce((acc, c) => acc + (parseFloat(c.percentual) || 0), 0).toFixed(2)}%</span>
+                    </div>
                   </div>
 
-                  <div className="preview-comissoes">
-                    <h4>Total dos Cargos: {empreendimentoForm.cargos.reduce((acc, c) => acc + (parseFloat(c.percentual) || 0), 0).toFixed(2)}%</h4>
+                  {/* SEÇÃO INTERNO */}
+                  <div className="tipo-section interno">
+                    <div className="tipo-header">
+                      <h4>Corretor Interno</h4>
+                      <div className="form-group inline">
+                        <label>Comissão Total:</label>
+                        <input
+                          type="number"
+                          step="0.1"
+                          placeholder="6"
+                          value={empreendimentoForm.comissao_total_interno}
+                          onChange={(e) => setEmpreendimentoForm({...empreendimentoForm, comissao_total_interno: e.target.value})}
+                        />
+                        <span>%</span>
+                      </div>
+                    </div>
+                    <div className="cargos-form">
+                      {empreendimentoForm.cargos_interno.map((cargo, index) => (
+                        <div key={index} className="cargo-form-row">
+                          <input
+                            type="text"
+                            placeholder="Nome do cargo"
+                            value={cargo.nome_cargo}
+                            onChange={(e) => updateCargo('interno', index, 'nome_cargo', e.target.value)}
+                          />
+                          <input
+                            type="number"
+                            step="0.1"
+                            placeholder="%"
+                            value={cargo.percentual}
+                            onChange={(e) => updateCargo('interno', index, 'percentual', e.target.value)}
+                          />
+                          <button 
+                            type="button" 
+                            className="action-btn delete small"
+                            onClick={() => removeCargo('interno', index)}
+                          >
+                            <X size={14} />
+                          </button>
+                        </div>
+                      ))}
+                      <button type="button" className="btn-add-cargo interno" onClick={() => addCargo('interno')}>
+                        <PlusCircle size={16} />
+                        <span>Adicionar Cargo Interno</span>
+                      </button>
+                    </div>
+                    <div className="preview-comissoes interno">
+                      <span>Total Cargos Internos: {empreendimentoForm.cargos_interno.reduce((acc, c) => acc + (parseFloat(c.percentual) || 0), 0).toFixed(2)}%</span>
+                    </div>
                   </div>
                 </div>
                 <div className="modal-footer">

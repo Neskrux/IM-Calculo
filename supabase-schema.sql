@@ -187,7 +187,8 @@ CREATE TABLE IF NOT EXISTS empreendimentos (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     nome TEXT NOT NULL,
     descricao TEXT,
-    comissao_total DECIMAL(5, 2) NOT NULL DEFAULT 7.0,
+    comissao_total_externo DECIMAL(5, 2) NOT NULL DEFAULT 7.0,
+    comissao_total_interno DECIMAL(5, 2) NOT NULL DEFAULT 6.0,
     ativo BOOLEAN DEFAULT true,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
@@ -195,11 +196,12 @@ CREATE TABLE IF NOT EXISTS empreendimentos (
 
 -- =============================================
 -- TABELA: cargos_empreendimento
--- Cargos e percentuais por empreendimento
+-- Cargos e percentuais por empreendimento (interno/externo)
 -- =============================================
 CREATE TABLE IF NOT EXISTS cargos_empreendimento (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     empreendimento_id UUID NOT NULL REFERENCES empreendimentos(id) ON DELETE CASCADE,
+    tipo_corretor TEXT NOT NULL DEFAULT 'externo', -- 'externo' ou 'interno'
     nome_cargo TEXT NOT NULL,
     percentual DECIMAL(5, 2) NOT NULL,
     ordem INTEGER DEFAULT 0,
