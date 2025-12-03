@@ -38,6 +38,7 @@ const AdminDashboard = () => {
   // Dados do formulário de venda
   const [vendaForm, setVendaForm] = useState({
     corretor_id: '',
+    empreendimento_id: '',
     valor_venda: '',
     tipo_corretor: 'externo',
     data_venda: new Date().toISOString().split('T')[0],
@@ -150,8 +151,8 @@ const AdminDashboard = () => {
   }
 
   const handleSaveVenda = async () => {
-    if (!vendaForm.corretor_id || !vendaForm.valor_venda) {
-      setMessage({ type: 'error', text: 'Preencha todos os campos obrigatórios' })
+    if (!vendaForm.corretor_id || !vendaForm.valor_venda || !vendaForm.empreendimento_id) {
+      setMessage({ type: 'error', text: 'Preencha todos os campos obrigatórios (Corretor, Empreendimento e Valor)' })
       return
     }
 
@@ -176,6 +177,7 @@ const AdminDashboard = () => {
 
     const vendaData = {
       corretor_id: vendaForm.corretor_id,
+      empreendimento_id: vendaForm.empreendimento_id,
       valor_venda: parseFloat(vendaForm.valor_venda),
       tipo_corretor: vendaForm.tipo_corretor,
       data_venda: vendaForm.data_venda,
@@ -558,6 +560,7 @@ const AdminDashboard = () => {
   const resetVendaForm = () => {
     setVendaForm({
       corretor_id: '',
+      empreendimento_id: '',
       valor_venda: '',
       tipo_corretor: 'externo',
       data_venda: new Date().toISOString().split('T')[0],
@@ -592,6 +595,7 @@ const AdminDashboard = () => {
     setSelectedItem(venda)
     setVendaForm({
       corretor_id: venda.corretor_id,
+      empreendimento_id: venda.empreendimento_id || '',
       valor_venda: venda.valor_venda.toString(),
       tipo_corretor: venda.tipo_corretor,
       data_venda: venda.data_venda,
@@ -638,7 +642,8 @@ const AdminDashboard = () => {
     setVendaForm({
       ...vendaForm, 
       corretor_id: corretorId,
-      tipo_corretor: corretor?.tipo_corretor || 'externo'
+      tipo_corretor: corretor?.tipo_corretor || 'externo',
+      empreendimento_id: corretor?.empreendimento_id || vendaForm.empreendimento_id
     })
   }
 
@@ -1287,14 +1292,30 @@ const AdminDashboard = () => {
                     </div>
                   </div>
 
-                  <div className="form-group">
-                    <label>Descrição (Imóvel)</label>
-                    <input
-                      type="text"
-                      placeholder="Ex: Apartamento 3 quartos - Centro"
-                      value={vendaForm.descricao}
-                      onChange={(e) => setVendaForm({...vendaForm, descricao: e.target.value})}
-                    />
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label>Empreendimento *</label>
+                      <select
+                        value={vendaForm.empreendimento_id || ''}
+                        onChange={(e) => setVendaForm({...vendaForm, empreendimento_id: e.target.value})}
+                      >
+                        <option value="">Selecione o empreendimento</option>
+                        {empreendimentos.map((emp) => (
+                          <option key={emp.id} value={emp.id}>
+                            {emp.nome}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="form-group">
+                      <label>Descrição (opcional)</label>
+                      <input
+                        type="text"
+                        placeholder="Ex: Unidade 101, Bloco A"
+                        value={vendaForm.descricao}
+                        onChange={(e) => setVendaForm({...vendaForm, descricao: e.target.value})}
+                      />
+                    </div>
                   </div>
 
                   <div className="section-divider">
