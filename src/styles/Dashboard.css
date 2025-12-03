@@ -1233,7 +1233,12 @@
   color: #60a5fa;
 }
 
-.badge-tipo.parcela {
+.badge-tipo.entrada {
+  background: #1a472a;
+  color: #4ade80;
+}
+
+.badge-tipo.parcela_entrada {
   background: #3b2f4a;
   color: #a78bfa;
 }

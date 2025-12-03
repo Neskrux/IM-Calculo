@@ -47,9 +47,11 @@ const AdminDashboard = () => {
     data_venda: new Date().toISOString().split('T')[0],
     descricao: '',
     status: 'pendente',
-    // Novos campos pro-soluto
+    // Campos pro-soluto
     teve_sinal: false,
     valor_sinal: '',
+    teve_entrada: false,
+    valor_entrada: '',
     parcelou_entrada: false,
     qtd_parcelas_entrada: '',
     valor_parcela_entrada: '',
@@ -197,9 +199,12 @@ const AdminDashboard = () => {
 
     // Calcular valor pro-soluto e fator de comissão
     const valorSinal = parseFloat(vendaForm.valor_sinal) || 0
-    const valorParcelas = (parseFloat(vendaForm.qtd_parcelas_entrada) || 0) * (parseFloat(vendaForm.valor_parcela_entrada) || 0)
+    const valorEntrada = parseFloat(vendaForm.valor_entrada) || 0
+    const valorParcelas = vendaForm.parcelou_entrada 
+      ? (parseFloat(vendaForm.qtd_parcelas_entrada) || 0) * (parseFloat(vendaForm.valor_parcela_entrada) || 0)
+      : 0
     const valorBalao = parseFloat(vendaForm.valor_balao) || 0
-    const valorProSoluto = valorSinal + valorParcelas + valorBalao
+    const valorProSoluto = valorSinal + valorEntrada + valorParcelas + valorBalao
     const fatorComissao = valorProSoluto > 0 ? comissoesDinamicas.total / valorProSoluto : 0
 
     const vendaData = {
@@ -212,6 +217,8 @@ const AdminDashboard = () => {
       status: vendaForm.status,
       teve_sinal: vendaForm.teve_sinal,
       valor_sinal: valorSinal || null,
+      teve_entrada: vendaForm.teve_entrada,
+      valor_entrada: valorEntrada || null,
       parcelou_entrada: vendaForm.parcelou_entrada,
       qtd_parcelas_entrada: parseInt(vendaForm.qtd_parcelas_entrada) || null,
       valor_parcela_entrada: parseFloat(vendaForm.valor_parcela_entrada) || null,
@@ -285,21 +292,34 @@ const AdminDashboard = () => {
           comissao_gerada: valorSinal * fatorComissao
         })
       }
-      
-      // Parcelas
-      const qtdParcelas = parseInt(vendaForm.qtd_parcelas_entrada) || 0
-      const valorParcela = parseFloat(vendaForm.valor_parcela_entrada) || 0
-      for (let i = 1; i <= qtdParcelas; i++) {
-        const dataParcela = new Date(vendaForm.data_venda)
-        dataParcela.setMonth(dataParcela.getMonth() + i)
+
+      // Entrada (à vista)
+      if (valorEntrada > 0 && !vendaForm.parcelou_entrada) {
         pagamentos.push({
           venda_id: vendaId,
-          tipo: 'parcela',
-          numero_parcela: i,
-          valor: valorParcela,
-          data_prevista: dataParcela.toISOString().split('T')[0],
-          comissao_gerada: valorParcela * fatorComissao
+          tipo: 'entrada',
+          valor: valorEntrada,
+          data_prevista: vendaForm.data_venda,
+          comissao_gerada: valorEntrada * fatorComissao
         })
+      }
+      
+      // Parcelas da entrada
+      if (vendaForm.parcelou_entrada) {
+        const qtdParcelas = parseInt(vendaForm.qtd_parcelas_entrada) || 0
+        const valorParcelaEnt = parseFloat(vendaForm.valor_parcela_entrada) || 0
+        for (let i = 1; i <= qtdParcelas; i++) {
+          const dataParcela = new Date(vendaForm.data_venda)
+          dataParcela.setMonth(dataParcela.getMonth() + i)
+          pagamentos.push({
+            venda_id: vendaId,
+            tipo: 'parcela_entrada',
+            numero_parcela: i,
+            valor: valorParcelaEnt,
+            data_prevista: dataParcela.toISOString().split('T')[0],
+            comissao_gerada: valorParcelaEnt * fatorComissao
+          })
+        }
       }
       
       // Balão
@@ -685,6 +705,8 @@ const AdminDashboard = () => {
       status: 'pendente',
       teve_sinal: false,
       valor_sinal: '',
+      teve_entrada: false,
+      valor_entrada: '',
       parcelou_entrada: false,
       qtd_parcelas_entrada: '',
       valor_parcela_entrada: '',
@@ -723,6 +745,8 @@ const AdminDashboard = () => {
       status: venda.status,
       teve_sinal: venda.teve_sinal || false,
       valor_sinal: venda.valor_sinal?.toString() || '',
+      teve_entrada: venda.teve_entrada || false,
+      valor_entrada: venda.valor_entrada?.toString() || '',
       parcelou_entrada: venda.parcelou_entrada || false,
       qtd_parcelas_entrada: venda.qtd_parcelas_entrada?.toString() || '',
       valor_parcela_entrada: venda.valor_parcela_entrada?.toString() || '',
@@ -1388,7 +1412,8 @@ const AdminDashboard = () => {
                           <td>
                             <span className={`badge-tipo ${pag.tipo}`}>
                               {pag.tipo === 'sinal' && 'Sinal'}
-                              {pag.tipo === 'parcela' && `Parcela ${pag.numero_parcela}`}
+                              {pag.tipo === 'entrada' && 'Entrada'}
+                              {pag.tipo === 'parcela_entrada' && `Parcela ${pag.numero_parcela}`}
                               {pag.tipo === 'balao' && 'Balão'}
                             </span>
                           </td>
@@ -1616,12 +1641,13 @@ const AdminDashboard = () => {
                     <span>Condições de Pagamento (Pro-Soluto)</span>
                   </div>
 
+                  {/* SINAL */}
                   <div className="form-row">
                     <div className="form-group">
-                      <label>Teve Sinal (Entrada)?</label>
+                      <label>Teve Sinal?</label>
                       <select
                         value={vendaForm.teve_sinal ? 'sim' : 'nao'}
-                        onChange={(e) => setVendaForm({...vendaForm, teve_sinal: e.target.value === 'sim'})}
+                        onChange={(e) => setVendaForm({...vendaForm, teve_sinal: e.target.value === 'sim', valor_sinal: e.target.value === 'nao' ? '' : vendaForm.valor_sinal})}
                       >
                         <option value="nao">Não</option>
                         <option value="sim">Sim</option>
@@ -1643,43 +1669,79 @@ const AdminDashboard = () => {
                     )}
                   </div>
 
+                  {/* ENTRADA */}
                   <div className="form-row">
                     <div className="form-group">
-                      <label>Parcelou a Entrada?</label>
+                      <label>Teve Entrada?</label>
                       <select
-                        value={vendaForm.parcelou_entrada ? 'sim' : 'nao'}
-                        onChange={(e) => setVendaForm({...vendaForm, parcelou_entrada: e.target.value === 'sim'})}
+                        value={vendaForm.teve_entrada ? 'sim' : 'nao'}
+                        onChange={(e) => setVendaForm({
+                          ...vendaForm, 
+                          teve_entrada: e.target.value === 'sim',
+                          valor_entrada: e.target.value === 'nao' ? '' : vendaForm.valor_entrada,
+                          parcelou_entrada: e.target.value === 'nao' ? false : vendaForm.parcelou_entrada
+                        })}
                       >
                         <option value="nao">Não</option>
                         <option value="sim">Sim</option>
                       </select>
                     </div>
-                    {vendaForm.parcelou_entrada && (
-                      <>
-                        <div className="form-group">
-                          <label>Qtd. Parcelas</label>
-                          <input
-                            type="number"
-                            placeholder="Ex: 12"
-                            value={vendaForm.qtd_parcelas_entrada}
-                            onChange={(e) => setVendaForm({...vendaForm, qtd_parcelas_entrada: e.target.value})}
-                          />
-                        </div>
-                        <div className="form-group">
-                          <label>Valor Parcela</label>
-                          <div className="input-currency">
-                            <span className="currency-prefix">R$</span>
-                            <input
-                              type="text"
-                              placeholder="0,00"
-                              value={formatCurrencyInput(vendaForm.valor_parcela_entrada)}
-                              onChange={(e) => handleCurrencyChange('valor_parcela_entrada', e.target.value)}
-                            />
-                          </div>
-                        </div>
-                      </>
+                    {vendaForm.teve_entrada && (
+                      <div className="form-group">
+                        <label>Parcelou a Entrada?</label>
+                        <select
+                          value={vendaForm.parcelou_entrada ? 'sim' : 'nao'}
+                          onChange={(e) => setVendaForm({...vendaForm, parcelou_entrada: e.target.value === 'sim'})}
+                        >
+                          <option value="nao">Não (à vista)</option>
+                          <option value="sim">Sim</option>
+                        </select>
+                      </div>
                     )}
                   </div>
+
+                  {/* Valor entrada à vista */}
+                  {vendaForm.teve_entrada && !vendaForm.parcelou_entrada && (
+                    <div className="form-group">
+                      <label>Valor da Entrada</label>
+                      <div className="input-currency">
+                        <span className="currency-prefix">R$</span>
+                        <input
+                          type="text"
+                          placeholder="0,00"
+                          value={formatCurrencyInput(vendaForm.valor_entrada)}
+                          onChange={(e) => handleCurrencyChange('valor_entrada', e.target.value)}
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Parcelas da entrada */}
+                  {vendaForm.teve_entrada && vendaForm.parcelou_entrada && (
+                    <div className="form-row">
+                      <div className="form-group">
+                        <label>Qtd. Parcelas</label>
+                        <input
+                          type="number"
+                          placeholder="Ex: 12"
+                          value={vendaForm.qtd_parcelas_entrada}
+                          onChange={(e) => setVendaForm({...vendaForm, qtd_parcelas_entrada: e.target.value})}
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label>Valor Parcela</label>
+                        <div className="input-currency">
+                          <span className="currency-prefix">R$</span>
+                          <input
+                            type="text"
+                            placeholder="0,00"
+                            value={formatCurrencyInput(vendaForm.valor_parcela_entrada)}
+                            onChange={(e) => handleCurrencyChange('valor_parcela_entrada', e.target.value)}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
                   <div className="form-row">
                     <div className="form-group">
@@ -1794,7 +1856,9 @@ const AdminDashboard = () => {
                           <span>Pro-Soluto</span>
                           <span>{formatCurrency(
                             (parseFloat(vendaForm.valor_sinal) || 0) +
-                            ((parseFloat(vendaForm.qtd_parcelas_entrada) || 0) * (parseFloat(vendaForm.valor_parcela_entrada) || 0)) +
+                            (vendaForm.parcelou_entrada 
+                              ? ((parseFloat(vendaForm.qtd_parcelas_entrada) || 0) * (parseFloat(vendaForm.valor_parcela_entrada) || 0))
+                              : (parseFloat(vendaForm.valor_entrada) || 0)) +
                             (parseFloat(vendaForm.valor_balao) || 0)
                           )}</span>
                         </div>
