@@ -132,7 +132,6 @@ const AdminDashboard = () => {
         corretor:usuarios(nome, email, tipo_corretor, percentual_corretor),
         empreendimento:empreendimentos(nome)
       `)
-      .order('created_at', { ascending: false })
     
     if (vendasError) console.error('Erro ao buscar vendas:', vendasError)
 
@@ -159,7 +158,6 @@ const AdminDashboard = () => {
           empreendimento:empreendimentos(nome)
         )
       `)
-      .order('created_at', { ascending: false })
     
     if (pagamentosError) console.error('Erro ao buscar pagamentos:', pagamentosError)
 
