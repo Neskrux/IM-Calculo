@@ -56,6 +56,7 @@ const AdminDashboard = () => {
     qtd_parcelas_entrada: '',
     valor_parcela_entrada: '',
     teve_balao: 'nao', // 'nao', 'sim', 'pendente'
+    qtd_balao: '',
     valor_balao: '',
     valor_pro_soluto: '',
     contrato_url: '',
@@ -203,8 +204,8 @@ const AdminDashboard = () => {
     const valorParcelas = vendaForm.parcelou_entrada 
       ? (parseFloat(vendaForm.qtd_parcelas_entrada) || 0) * (parseFloat(vendaForm.valor_parcela_entrada) || 0)
       : 0
-    const valorBalao = parseFloat(vendaForm.valor_balao) || 0
-    const valorProSoluto = valorSinal + valorEntrada + valorParcelas + valorBalao
+    const valorTotalBalao = (parseFloat(vendaForm.qtd_balao) || 0) * (parseFloat(vendaForm.valor_balao) || 0)
+    const valorProSoluto = valorSinal + valorEntrada + valorParcelas + valorTotalBalao
     const fatorComissao = valorProSoluto > 0 ? comissoesDinamicas.total / valorProSoluto : 0
 
     const vendaData = {
@@ -223,7 +224,8 @@ const AdminDashboard = () => {
       qtd_parcelas_entrada: parseInt(vendaForm.qtd_parcelas_entrada) || null,
       valor_parcela_entrada: parseFloat(vendaForm.valor_parcela_entrada) || null,
       teve_balao: vendaForm.teve_balao,
-      valor_balao: valorBalao || null,
+      qtd_balao: parseInt(vendaForm.qtd_balao) || null,
+      valor_balao: parseFloat(vendaForm.valor_balao) || null,
       valor_pro_soluto: valorProSoluto || null,
       fator_comissao: fatorComissao || null,
       comissao_total: comissoesDinamicas.total,
@@ -322,14 +324,19 @@ const AdminDashboard = () => {
         }
       }
       
-      // Balão
-      if (valorBalao > 0 && vendaForm.teve_balao === 'sim') {
-        pagamentos.push({
-          venda_id: vendaId,
-          tipo: 'balao',
-          valor: valorBalao,
-          comissao_gerada: valorBalao * fatorComissao
-        })
+      // Balões
+      if (vendaForm.teve_balao === 'sim') {
+        const qtdBalao = parseInt(vendaForm.qtd_balao) || 0
+        const valorBalaoUnit = parseFloat(vendaForm.valor_balao) || 0
+        for (let i = 1; i <= qtdBalao; i++) {
+          pagamentos.push({
+            venda_id: vendaId,
+            tipo: 'balao',
+            numero_parcela: i,
+            valor: valorBalaoUnit,
+            comissao_gerada: valorBalaoUnit * fatorComissao
+          })
+        }
       }
 
       if (pagamentos.length > 0) {
@@ -711,6 +718,7 @@ const AdminDashboard = () => {
       qtd_parcelas_entrada: '',
       valor_parcela_entrada: '',
       teve_balao: 'nao',
+      qtd_balao: '',
       valor_balao: '',
       valor_pro_soluto: '',
       contrato_url: '',
@@ -751,6 +759,7 @@ const AdminDashboard = () => {
       qtd_parcelas_entrada: venda.qtd_parcelas_entrada?.toString() || '',
       valor_parcela_entrada: venda.valor_parcela_entrada?.toString() || '',
       teve_balao: venda.teve_balao || 'nao',
+      qtd_balao: venda.qtd_balao?.toString() || '',
       valor_balao: venda.valor_balao?.toString() || '',
       valor_pro_soluto: venda.valor_pro_soluto?.toString() || '',
       contrato_url: venda.contrato_url || '',
@@ -1414,7 +1423,7 @@ const AdminDashboard = () => {
                               {pag.tipo === 'sinal' && 'Sinal'}
                               {pag.tipo === 'entrada' && 'Entrada'}
                               {pag.tipo === 'parcela_entrada' && `Parcela ${pag.numero_parcela}`}
-                              {pag.tipo === 'balao' && 'Balão'}
+                              {pag.tipo === 'balao' && (pag.numero_parcela ? `Balão ${pag.numero_parcela}` : 'Balão')}
                             </span>
                           </td>
                           <td>{formatCurrency(pag.valor)}</td>
@@ -1743,21 +1752,40 @@ const AdminDashboard = () => {
                     </div>
                   )}
 
+                  {/* BALÃO */}
                   <div className="form-row">
                     <div className="form-group">
                       <label>Teve Balão?</label>
                       <select
                         value={vendaForm.teve_balao}
-                        onChange={(e) => setVendaForm({...vendaForm, teve_balao: e.target.value})}
+                        onChange={(e) => setVendaForm({
+                          ...vendaForm, 
+                          teve_balao: e.target.value,
+                          qtd_balao: e.target.value === 'nao' ? '' : vendaForm.qtd_balao,
+                          valor_balao: e.target.value === 'nao' ? '' : vendaForm.valor_balao
+                        })}
                       >
                         <option value="nao">Não</option>
                         <option value="sim">Sim</option>
                         <option value="pendente">Ainda não (pendente)</option>
                       </select>
                     </div>
-                    {(vendaForm.teve_balao === 'sim' || vendaForm.teve_balao === 'pendente') && (
+                  </div>
+
+                  {(vendaForm.teve_balao === 'sim' || vendaForm.teve_balao === 'pendente') && (
+                    <div className="form-row">
                       <div className="form-group">
-                        <label>Valor do Balão</label>
+                        <label>Quantos Balões?</label>
+                        <input
+                          type="number"
+                          placeholder="Ex: 2"
+                          min="1"
+                          value={vendaForm.qtd_balao}
+                          onChange={(e) => setVendaForm({...vendaForm, qtd_balao: e.target.value})}
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label>Valor de Cada Balão</label>
                         <div className="input-currency">
                           <span className="currency-prefix">R$</span>
                           <input
@@ -1768,8 +1796,8 @@ const AdminDashboard = () => {
                           />
                         </div>
                       </div>
-                    )}
-                  </div>
+                    </div>
+                  )}
 
                   <div className="form-group">
                     <label>Status</label>
@@ -1859,7 +1887,7 @@ const AdminDashboard = () => {
                             (vendaForm.parcelou_entrada 
                               ? ((parseFloat(vendaForm.qtd_parcelas_entrada) || 0) * (parseFloat(vendaForm.valor_parcela_entrada) || 0))
                               : (parseFloat(vendaForm.valor_entrada) || 0)) +
-                            (parseFloat(vendaForm.valor_balao) || 0)
+                            ((parseFloat(vendaForm.qtd_balao) || 0) * (parseFloat(vendaForm.valor_balao) || 0))
                           )}</span>
                         </div>
                         {getPreviewComissoes().cargos.map((cargo, idx) => (
