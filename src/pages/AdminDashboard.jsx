@@ -125,14 +125,16 @@ const AdminDashboard = () => {
       .order('nome')
 
     // Buscar vendas
-    const { data: vendasData } = await supabase
+    const { data: vendasData, error: vendasError } = await supabase
       .from('vendas')
       .select(`
         *,
         corretor:usuarios(nome, email, tipo_corretor, percentual_corretor),
         empreendimento:empreendimentos(nome)
       `)
-      .order('data_venda', { ascending: false })
+      .order('created_at', { ascending: false })
+    
+    if (vendasError) console.error('Erro ao buscar vendas:', vendasError)
 
     // Buscar empreendimentos com cargos
     const { data: empreendimentosData } = await supabase
@@ -144,21 +146,22 @@ const AdminDashboard = () => {
       .order('nome')
 
     // Buscar pagamentos pro-soluto
-    const { data: pagamentosData } = await supabase
+    const { data: pagamentosData, error: pagamentosError } = await supabase
       .from('pagamentos_prosoluto')
       .select(`
         *,
         venda:vendas(
           id,
           valor_venda,
-          data_venda,
           descricao,
           fator_comissao,
           corretor:usuarios(nome),
           empreendimento:empreendimentos(nome)
         )
       `)
-      .order('data_prevista', { ascending: true })
+      .order('created_at', { ascending: false })
+    
+    if (pagamentosError) console.error('Erro ao buscar pagamentos:', pagamentosError)
 
     setCorretores(corretoresData || [])
     setVendas(vendasData || [])
