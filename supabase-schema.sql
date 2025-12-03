@@ -181,6 +181,46 @@ CREATE POLICY "Admin pode deletar vendas" ON vendas
 -- VALUES ('UUID_DO_USUARIO_CRIADO', 'corretor@nohros.com', 'João Silva', 'corretor', 'externo');
 
 -- =============================================
+-- TABELA: empreendimentos
+-- =============================================
+CREATE TABLE IF NOT EXISTS empreendimentos (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    nome TEXT NOT NULL,
+    descricao TEXT,
+    comissao_total DECIMAL(5, 2) NOT NULL DEFAULT 7.0,
+    ativo BOOLEAN DEFAULT true,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- =============================================
+-- TABELA: cargos_empreendimento
+-- Cargos e percentuais por empreendimento
+-- =============================================
+CREATE TABLE IF NOT EXISTS cargos_empreendimento (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    empreendimento_id UUID NOT NULL REFERENCES empreendimentos(id) ON DELETE CASCADE,
+    nome_cargo TEXT NOT NULL,
+    percentual DECIMAL(5, 2) NOT NULL,
+    ordem INTEGER DEFAULT 0,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Índice para buscar cargos por empreendimento
+CREATE INDEX IF NOT EXISTS idx_cargos_empreendimento ON cargos_empreendimento(empreendimento_id);
+
+-- Desabilitar RLS nas novas tabelas
+ALTER TABLE empreendimentos DISABLE ROW LEVEL SECURITY;
+ALTER TABLE cargos_empreendimento DISABLE ROW LEVEL SECURITY;
+
+-- Adicionar coluna de empreendimento e cargo no usuário
+ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS empreendimento_id UUID REFERENCES empreendimentos(id);
+ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS cargo_id UUID REFERENCES cargos_empreendimento(id);
+
+-- Adicionar coluna de empreendimento na venda
+ALTER TABLE vendas ADD COLUMN IF NOT EXISTS empreendimento_id UUID REFERENCES empreendimentos(id);
+
+-- =============================================
 -- ADICIONAR COLUNAS PRO-SOLUTO (execute se já tem a tabela)
 -- =============================================
 ALTER TABLE vendas ADD COLUMN IF NOT EXISTS teve_sinal BOOLEAN DEFAULT false;

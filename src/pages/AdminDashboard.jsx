@@ -4,7 +4,7 @@ import { supabase } from '../lib/supabase'
 import { 
   Users, DollarSign, TrendingUp, Plus, Edit2, Trash2, 
   Search, Filter, LogOut, Menu, X, ChevronDown, Save, Eye,
-  Calculator, Calendar, User, Briefcase, CheckCircle, Clock, UserPlus, Mail, Lock, Percent
+  Calculator, Calendar, User, Briefcase, CheckCircle, Clock, UserPlus, Mail, Lock, Percent, Building, PlusCircle
 } from 'lucide-react'
 import logo from '../imgs/logo.png'
 import '../styles/Dashboard.css'
@@ -13,6 +13,7 @@ const AdminDashboard = () => {
   const { userProfile, signOut } = useAuth()
   const [corretores, setCorretores] = useState([])
   const [vendas, setVendas] = useState([])
+  const [empreendimentos, setEmpreendimentos] = useState([])
   const [loading, setLoading] = useState(true)
   const [menuOpen, setMenuOpen] = useState(false)
   const [activeTab, setActiveTab] = useState('vendas')
@@ -23,6 +24,14 @@ const AdminDashboard = () => {
   const [filterTipo, setFilterTipo] = useState('todos')
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState({ type: '', text: '' })
+
+  // Formulário de empreendimento
+  const [empreendimentoForm, setEmpreendimentoForm] = useState({
+    nome: '',
+    descricao: '',
+    comissao_total: '7',
+    cargos: [{ nome_cargo: '', percentual: '' }]
+  })
 
   // Dados do formulário de venda
   const [vendaForm, setVendaForm] = useState({
@@ -50,8 +59,13 @@ const AdminDashboard = () => {
     senha: '',
     tipo_corretor: 'externo',
     telefone: '',
-    percentual_corretor: '4'
+    percentual_corretor: '4',
+    empreendimento_id: '',
+    cargo_id: ''
   })
+
+  // Cargos filtrados por empreendimento selecionado
+  const [cargosDisponiveis, setCargosDisponiveis] = useState([])
 
   // Percentuais base de comissão (exceto corretor que é personalizado)
   const getComissoesBase = (tipoCorretor) => ({
@@ -72,7 +86,11 @@ const AdminDashboard = () => {
     // Buscar corretores
     const { data: corretoresData } = await supabase
       .from('usuarios')
-      .select('*')
+      .select(`
+        *,
+        empreendimento:empreendimentos(nome),
+        cargo:cargos_empreendimento(nome_cargo, percentual)
+      `)
       .eq('tipo', 'corretor')
       .order('nome')
 
@@ -81,12 +99,23 @@ const AdminDashboard = () => {
       .from('vendas')
       .select(`
         *,
-        corretor:usuarios(nome, email, tipo_corretor, percentual_corretor)
+        corretor:usuarios(nome, email, tipo_corretor, percentual_corretor),
+        empreendimento:empreendimentos(nome)
       `)
       .order('data_venda', { ascending: false })
 
+    // Buscar empreendimentos com cargos
+    const { data: empreendimentosData } = await supabase
+      .from('empreendimentos')
+      .select(`
+        *,
+        cargos:cargos_empreendimento(*)
+      `)
+      .order('nome')
+
     setCorretores(corretoresData || [])
     setVendas(vendasData || [])
+    setEmpreendimentos(empreendimentosData || [])
     setLoading(false)
   }
 
@@ -312,6 +341,145 @@ const AdminDashboard = () => {
     }
   }
 
+  // Funções de Empreendimento
+  const handleSaveEmpreendimento = async () => {
+    if (!empreendimentoForm.nome) {
+      setMessage({ type: 'error', text: 'Nome do empreendimento é obrigatório' })
+      return
+    }
+
+    setSaving(true)
+    setMessage({ type: '', text: '' })
+
+    try {
+      let empreendimentoId = selectedItem?.id
+
+      if (selectedItem) {
+        // Atualizar empreendimento existente
+        const { error } = await supabase
+          .from('empreendimentos')
+          .update({
+            nome: empreendimentoForm.nome,
+            descricao: empreendimentoForm.descricao,
+            comissao_total: parseFloat(empreendimentoForm.comissao_total) || 7
+          })
+          .eq('id', selectedItem.id)
+
+        if (error) throw new Error(error.message)
+
+        // Deletar cargos antigos
+        await supabase
+          .from('cargos_empreendimento')
+          .delete()
+          .eq('empreendimento_id', selectedItem.id)
+
+      } else {
+        // Criar novo empreendimento
+        const { data, error } = await supabase
+          .from('empreendimentos')
+          .insert([{
+            nome: empreendimentoForm.nome,
+            descricao: empreendimentoForm.descricao,
+            comissao_total: parseFloat(empreendimentoForm.comissao_total) || 7
+          }])
+          .select()
+          .single()
+
+        if (error) throw new Error(error.message)
+        empreendimentoId = data.id
+      }
+
+      // Inserir cargos
+      const cargosValidos = empreendimentoForm.cargos.filter(c => c.nome_cargo && c.percentual)
+      if (cargosValidos.length > 0) {
+        const cargosData = cargosValidos.map((cargo, idx) => ({
+          empreendimento_id: empreendimentoId,
+          nome_cargo: cargo.nome_cargo,
+          percentual: parseFloat(cargo.percentual),
+          ordem: idx
+        }))
+
+        const { error: cargosError } = await supabase
+          .from('cargos_empreendimento')
+          .insert(cargosData)
+
+        if (cargosError) throw new Error(cargosError.message)
+      }
+
+      setSaving(false)
+      setShowModal(false)
+      setSelectedItem(null)
+      fetchData()
+      setMessage({ type: 'success', text: `Empreendimento ${selectedItem ? 'atualizado' : 'criado'} com sucesso!` })
+      setTimeout(() => setMessage({ type: '', text: '' }), 3000)
+
+    } catch (err) {
+      setSaving(false)
+      setMessage({ type: 'error', text: err.message })
+    }
+  }
+
+  const handleDeleteEmpreendimento = async (emp) => {
+    if (confirm(`Tem certeza que deseja excluir o empreendimento ${emp.nome}?`)) {
+      const { error } = await supabase
+        .from('empreendimentos')
+        .delete()
+        .eq('id', emp.id)
+      
+      if (error) {
+        setMessage({ type: 'error', text: 'Erro ao excluir: ' + error.message })
+        return
+      }
+      
+      fetchData()
+      setMessage({ type: 'success', text: 'Empreendimento excluído!' })
+      setTimeout(() => setMessage({ type: '', text: '' }), 3000)
+    }
+  }
+
+  const addCargo = () => {
+    setEmpreendimentoForm({
+      ...empreendimentoForm,
+      cargos: [...empreendimentoForm.cargos, { nome_cargo: '', percentual: '' }]
+    })
+  }
+
+  const removeCargo = (index) => {
+    const newCargos = empreendimentoForm.cargos.filter((_, i) => i !== index)
+    setEmpreendimentoForm({
+      ...empreendimentoForm,
+      cargos: newCargos.length > 0 ? newCargos : [{ nome_cargo: '', percentual: '' }]
+    })
+  }
+
+  const updateCargo = (index, field, value) => {
+    const newCargos = [...empreendimentoForm.cargos]
+    newCargos[index][field] = value
+    setEmpreendimentoForm({ ...empreendimentoForm, cargos: newCargos })
+  }
+
+  // Quando seleciona empreendimento no formulário de corretor
+  const handleEmpreendimentoChange = (empId) => {
+    const emp = empreendimentos.find(e => e.id === empId)
+    setCargosDisponiveis(emp?.cargos || [])
+    setCorretorForm({ 
+      ...corretorForm, 
+      empreendimento_id: empId, 
+      cargo_id: '',
+      percentual_corretor: ''
+    })
+  }
+
+  // Quando seleciona cargo, atualiza o percentual
+  const handleCargoChange = (cargoId) => {
+    const cargo = cargosDisponiveis.find(c => c.id === cargoId)
+    setCorretorForm({ 
+      ...corretorForm, 
+      cargo_id: cargoId,
+      percentual_corretor: cargo?.percentual?.toString() || ''
+    })
+  }
+
   const openEditCorretor = (corretor) => {
     setSelectedItem(corretor)
     setCorretorForm({
@@ -458,6 +626,13 @@ const AdminDashboard = () => {
             <span>Corretores</span>
           </button>
           <button 
+            className={`nav-item ${activeTab === 'empreendimentos' ? 'active' : ''}`}
+            onClick={() => setActiveTab('empreendimentos')}
+          >
+            <Building size={20} />
+            <span>Empreendimentos</span>
+          </button>
+          <button 
             className={`nav-item ${activeTab === 'relatorios' ? 'active' : ''}`}
             onClick={() => setActiveTab('relatorios')}
           >
@@ -492,6 +667,7 @@ const AdminDashboard = () => {
           <h1>
             {activeTab === 'vendas' && 'Gestão de Vendas'}
             {activeTab === 'corretores' && 'Corretores'}
+            {activeTab === 'empreendimentos' && 'Empreendimentos'}
             {activeTab === 'relatorios' && 'Relatórios'}
           </h1>
           <div className="header-actions">
@@ -521,6 +697,25 @@ const AdminDashboard = () => {
               >
                 <UserPlus size={20} />
                 <span>Novo Corretor</span>
+              </button>
+            )}
+            {activeTab === 'empreendimentos' && (
+              <button 
+                className="btn-primary"
+                onClick={() => {
+                  setEmpreendimentoForm({
+                    nome: '',
+                    descricao: '',
+                    comissao_total: '7',
+                    cargos: [{ nome_cargo: '', percentual: '' }]
+                  })
+                  setSelectedItem(null)
+                  setModalType('empreendimento')
+                  setShowModal(true)
+                }}
+              >
+                <Plus size={20} />
+                <span>Novo Empreendimento</span>
               </button>
             )}
           </div>
@@ -746,6 +941,78 @@ const AdminDashboard = () => {
                     </div>
                   )
                 })}
+              </div>
+            )}
+          </div>
+        )}
+
+        {activeTab === 'empreendimentos' && (
+          <div className="content-section">
+            {empreendimentos.length === 0 ? (
+              <div className="empty-state-box">
+                <Building size={48} />
+                <h3>Nenhum empreendimento cadastrado</h3>
+                <p>Clique em "Novo Empreendimento" para adicionar</p>
+              </div>
+            ) : (
+              <div className="empreendimentos-grid">
+                {empreendimentos.map((emp) => (
+                  <div key={emp.id} className="empreendimento-card">
+                    <div className="empreendimento-header">
+                      <div className="empreendimento-info">
+                        <h3>{emp.nome}</h3>
+                        <span className="badge percent">
+                          <Percent size={12} />
+                          {emp.comissao_total}% Total
+                        </span>
+                      </div>
+                      <div className="empreendimento-actions">
+                        <button 
+                          className="action-btn edit small"
+                          onClick={() => {
+                            setSelectedItem(emp)
+                            setEmpreendimentoForm({
+                              nome: emp.nome,
+                              descricao: emp.descricao || '',
+                              comissao_total: emp.comissao_total?.toString() || '7',
+                              cargos: emp.cargos?.length > 0 
+                                ? emp.cargos.map(c => ({ nome_cargo: c.nome_cargo, percentual: c.percentual?.toString() || '' }))
+                                : [{ nome_cargo: '', percentual: '' }]
+                            })
+                            setModalType('empreendimento')
+                            setShowModal(true)
+                          }}
+                        >
+                          <Edit2 size={14} />
+                        </button>
+                        <button 
+                          className="action-btn delete small"
+                          onClick={() => handleDeleteEmpreendimento(emp)}
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    </div>
+                    {emp.descricao && (
+                      <p className="empreendimento-descricao">{emp.descricao}</p>
+                    )}
+                    <div className="empreendimento-cargos">
+                      <h4>Cargos e Comissões</h4>
+                      {emp.cargos?.length > 0 ? (
+                        <div className="cargos-list">
+                          {emp.cargos.map((cargo, idx) => (
+                            <div key={idx} className="cargo-item">
+                              <span>{cargo.nome_cargo}</span>
+                              <span className="cargo-percent">{cargo.percentual}%</span>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="no-cargos">Nenhum cargo cadastrado</p>
+                      )}
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
           </div>
@@ -1176,6 +1443,90 @@ const AdminDashboard = () => {
                   <button className="btn-primary" onClick={handleSaveCorretor} disabled={saving}>
                     {saving ? <div className="btn-spinner"></div> : (selectedItem ? <Save size={18} /> : <UserPlus size={18} />)}
                     <span>{saving ? 'Salvando...' : (selectedItem ? 'Salvar' : 'Criar Corretor')}</span>
+                  </button>
+                </div>
+              </>
+            )}
+
+            {/* Modal de Empreendimento */}
+            {modalType === 'empreendimento' && (
+              <>
+                <div className="modal-body">
+                  <div className="form-group">
+                    <label>Nome do Empreendimento *</label>
+                    <input
+                      type="text"
+                      placeholder="Ex: Residencial Park"
+                      value={empreendimentoForm.nome}
+                      onChange={(e) => setEmpreendimentoForm({...empreendimentoForm, nome: e.target.value})}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Descrição</label>
+                    <input
+                      type="text"
+                      placeholder="Descrição do empreendimento"
+                      value={empreendimentoForm.descricao}
+                      onChange={(e) => setEmpreendimentoForm({...empreendimentoForm, descricao: e.target.value})}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Comissão Total (%)</label>
+                    <input
+                      type="number"
+                      step="0.1"
+                      placeholder="Ex: 7"
+                      value={empreendimentoForm.comissao_total}
+                      onChange={(e) => setEmpreendimentoForm({...empreendimentoForm, comissao_total: e.target.value})}
+                    />
+                  </div>
+
+                  <div className="section-divider">
+                    <span>Cargos e Percentuais</span>
+                  </div>
+
+                  <div className="cargos-form">
+                    {empreendimentoForm.cargos.map((cargo, index) => (
+                      <div key={index} className="cargo-form-row">
+                        <input
+                          type="text"
+                          placeholder="Nome do cargo"
+                          value={cargo.nome_cargo}
+                          onChange={(e) => updateCargo(index, 'nome_cargo', e.target.value)}
+                        />
+                        <input
+                          type="number"
+                          step="0.1"
+                          placeholder="%"
+                          value={cargo.percentual}
+                          onChange={(e) => updateCargo(index, 'percentual', e.target.value)}
+                        />
+                        <button 
+                          type="button" 
+                          className="action-btn delete small"
+                          onClick={() => removeCargo(index)}
+                        >
+                          <X size={14} />
+                        </button>
+                      </div>
+                    ))}
+                    <button type="button" className="btn-add-cargo" onClick={addCargo}>
+                      <PlusCircle size={16} />
+                      <span>Adicionar Cargo</span>
+                    </button>
+                  </div>
+
+                  <div className="preview-comissoes">
+                    <h4>Total dos Cargos: {empreendimentoForm.cargos.reduce((acc, c) => acc + (parseFloat(c.percentual) || 0), 0).toFixed(2)}%</h4>
+                  </div>
+                </div>
+                <div className="modal-footer">
+                  <button className="btn-secondary" onClick={() => setShowModal(false)}>
+                    Cancelar
+                  </button>
+                  <button className="btn-primary" onClick={handleSaveEmpreendimento} disabled={saving}>
+                    {saving ? <div className="btn-spinner"></div> : <Save size={18} />}
+                    <span>{saving ? 'Salvando...' : 'Salvar'}</span>
                   </button>
                 </div>
               </>
