@@ -31,7 +31,16 @@ const AdminDashboard = () => {
     tipo_corretor: 'externo',
     data_venda: new Date().toISOString().split('T')[0],
     descricao: '',
-    status: 'pendente'
+    status: 'pendente',
+    // Novos campos pro-soluto
+    teve_sinal: false,
+    valor_sinal: '',
+    parcelou_entrada: false,
+    qtd_parcelas_entrada: '',
+    valor_parcela_entrada: '',
+    teve_balao: 'nao', // 'nao', 'sim', 'pendente'
+    valor_balao: '',
+    valor_pro_soluto: ''
   })
 
   // Dados do formulário de corretor
@@ -127,9 +136,29 @@ const AdminDashboard = () => {
       percentualCorretor
     )
 
+    // Calcular valor pro-soluto e fator de comissão
+    const valorSinal = parseFloat(vendaForm.valor_sinal) || 0
+    const valorParcelas = (parseFloat(vendaForm.qtd_parcelas_entrada) || 0) * (parseFloat(vendaForm.valor_parcela_entrada) || 0)
+    const valorBalao = parseFloat(vendaForm.valor_balao) || 0
+    const valorProSoluto = valorSinal + valorParcelas + valorBalao
+    const fatorComissao = valorProSoluto > 0 ? comissoes.total / valorProSoluto : 0
+
     const vendaData = {
-      ...vendaForm,
+      corretor_id: vendaForm.corretor_id,
       valor_venda: parseFloat(vendaForm.valor_venda),
+      tipo_corretor: vendaForm.tipo_corretor,
+      data_venda: vendaForm.data_venda,
+      descricao: vendaForm.descricao,
+      status: vendaForm.status,
+      teve_sinal: vendaForm.teve_sinal,
+      valor_sinal: valorSinal || null,
+      parcelou_entrada: vendaForm.parcelou_entrada,
+      qtd_parcelas_entrada: parseInt(vendaForm.qtd_parcelas_entrada) || null,
+      valor_parcela_entrada: parseFloat(vendaForm.valor_parcela_entrada) || null,
+      teve_balao: vendaForm.teve_balao,
+      valor_balao: valorBalao || null,
+      valor_pro_soluto: valorProSoluto || null,
+      fator_comissao: fatorComissao || null,
       comissao_diretor: comissoes.diretor,
       comissao_nohros_imobiliaria: comissoes.nohros_imobiliaria,
       comissao_nohros_gestao: comissoes.nohros_gestao,
@@ -304,7 +333,15 @@ const AdminDashboard = () => {
       tipo_corretor: 'externo',
       data_venda: new Date().toISOString().split('T')[0],
       descricao: '',
-      status: 'pendente'
+      status: 'pendente',
+      teve_sinal: false,
+      valor_sinal: '',
+      parcelou_entrada: false,
+      qtd_parcelas_entrada: '',
+      valor_parcela_entrada: '',
+      teve_balao: 'nao',
+      valor_balao: '',
+      valor_pro_soluto: ''
     })
   }
 
@@ -327,7 +364,15 @@ const AdminDashboard = () => {
       tipo_corretor: venda.tipo_corretor,
       data_venda: venda.data_venda,
       descricao: venda.descricao || '',
-      status: venda.status
+      status: venda.status,
+      teve_sinal: venda.teve_sinal || false,
+      valor_sinal: venda.valor_sinal?.toString() || '',
+      parcelou_entrada: venda.parcelou_entrada || false,
+      qtd_parcelas_entrada: venda.qtd_parcelas_entrada?.toString() || '',
+      valor_parcela_entrada: venda.valor_parcela_entrada?.toString() || '',
+      teve_balao: venda.teve_balao || 'nao',
+      valor_balao: venda.valor_balao?.toString() || '',
+      valor_pro_soluto: venda.valor_pro_soluto?.toString() || ''
     })
     setModalType('venda')
     setShowModal(true)
@@ -827,47 +872,53 @@ const AdminDashboard = () => {
             {modalType === 'venda' && (
               <>
                 <div className="modal-body">
-                  <div className="form-group">
-                    <label>Corretor *</label>
-                    <select
-                      value={vendaForm.corretor_id}
-                      onChange={(e) => handleCorretorChange(e.target.value)}
-                    >
-                      <option value="">Selecione um corretor</option>
-                      {corretores.map((c) => (
-                        <option key={c.id} value={c.id}>
-                          {c.nome} ({c.percentual_corretor || (c.tipo_corretor === 'interno' ? 2.5 : 4)}%)
-                        </option>
-                      ))}
-                    </select>
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label>Corretor *</label>
+                      <select
+                        value={vendaForm.corretor_id}
+                        onChange={(e) => handleCorretorChange(e.target.value)}
+                      >
+                        <option value="">Selecione</option>
+                        {corretores.map((c) => (
+                          <option key={c.id} value={c.id}>
+                            {c.nome} ({c.percentual_corretor || (c.tipo_corretor === 'interno' ? 2.5 : 4)}%)
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="form-group">
+                      <label>Tipo</label>
+                      <select
+                        value={vendaForm.tipo_corretor}
+                        onChange={(e) => setVendaForm({...vendaForm, tipo_corretor: e.target.value})}
+                      >
+                        <option value="externo">Externo</option>
+                        <option value="interno">Interno</option>
+                      </select>
+                    </div>
                   </div>
-                  <div className="form-group">
-                    <label>Tipo do Corretor</label>
-                    <select
-                      value={vendaForm.tipo_corretor}
-                      onChange={(e) => setVendaForm({...vendaForm, tipo_corretor: e.target.value})}
-                    >
-                      <option value="externo">Externo</option>
-                      <option value="interno">Interno</option>
-                    </select>
+
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label>Valor da Venda *</label>
+                      <input
+                        type="number"
+                        placeholder="Ex: 500000"
+                        value={vendaForm.valor_venda}
+                        onChange={(e) => setVendaForm({...vendaForm, valor_venda: e.target.value})}
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>Data da Venda</label>
+                      <input
+                        type="date"
+                        value={vendaForm.data_venda}
+                        onChange={(e) => setVendaForm({...vendaForm, data_venda: e.target.value})}
+                      />
+                    </div>
                   </div>
-                  <div className="form-group">
-                    <label>Valor da Venda *</label>
-                    <input
-                      type="number"
-                      placeholder="Ex: 500000"
-                      value={vendaForm.valor_venda}
-                      onChange={(e) => setVendaForm({...vendaForm, valor_venda: e.target.value})}
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>Data da Venda</label>
-                    <input
-                      type="date"
-                      value={vendaForm.data_venda}
-                      onChange={(e) => setVendaForm({...vendaForm, data_venda: e.target.value})}
-                    />
-                  </div>
+
                   <div className="form-group">
                     <label>Descrição (Imóvel)</label>
                     <input
@@ -877,8 +928,97 @@ const AdminDashboard = () => {
                       onChange={(e) => setVendaForm({...vendaForm, descricao: e.target.value})}
                     />
                   </div>
+
+                  <div className="section-divider">
+                    <span>Condições de Pagamento (Pro-Soluto)</span>
+                  </div>
+
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label>Teve Sinal (Entrada)?</label>
+                      <select
+                        value={vendaForm.teve_sinal ? 'sim' : 'nao'}
+                        onChange={(e) => setVendaForm({...vendaForm, teve_sinal: e.target.value === 'sim'})}
+                      >
+                        <option value="nao">Não</option>
+                        <option value="sim">Sim</option>
+                      </select>
+                    </div>
+                    {vendaForm.teve_sinal && (
+                      <div className="form-group">
+                        <label>Valor do Sinal</label>
+                        <input
+                          type="number"
+                          placeholder="Ex: 50000"
+                          value={vendaForm.valor_sinal}
+                          onChange={(e) => setVendaForm({...vendaForm, valor_sinal: e.target.value})}
+                        />
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label>Parcelou a Entrada?</label>
+                      <select
+                        value={vendaForm.parcelou_entrada ? 'sim' : 'nao'}
+                        onChange={(e) => setVendaForm({...vendaForm, parcelou_entrada: e.target.value === 'sim'})}
+                      >
+                        <option value="nao">Não</option>
+                        <option value="sim">Sim</option>
+                      </select>
+                    </div>
+                    {vendaForm.parcelou_entrada && (
+                      <>
+                        <div className="form-group">
+                          <label>Qtd. Parcelas</label>
+                          <input
+                            type="number"
+                            placeholder="Ex: 12"
+                            value={vendaForm.qtd_parcelas_entrada}
+                            onChange={(e) => setVendaForm({...vendaForm, qtd_parcelas_entrada: e.target.value})}
+                          />
+                        </div>
+                        <div className="form-group">
+                          <label>Valor Parcela</label>
+                          <input
+                            type="number"
+                            placeholder="Ex: 5000"
+                            value={vendaForm.valor_parcela_entrada}
+                            onChange={(e) => setVendaForm({...vendaForm, valor_parcela_entrada: e.target.value})}
+                          />
+                        </div>
+                      </>
+                    )}
+                  </div>
+
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label>Teve Balão?</label>
+                      <select
+                        value={vendaForm.teve_balao}
+                        onChange={(e) => setVendaForm({...vendaForm, teve_balao: e.target.value})}
+                      >
+                        <option value="nao">Não</option>
+                        <option value="sim">Sim</option>
+                        <option value="pendente">Ainda não (pendente)</option>
+                      </select>
+                    </div>
+                    {(vendaForm.teve_balao === 'sim' || vendaForm.teve_balao === 'pendente') && (
+                      <div className="form-group">
+                        <label>Valor do Balão</label>
+                        <input
+                          type="number"
+                          placeholder="Ex: 100000"
+                          value={vendaForm.valor_balao}
+                          onChange={(e) => setVendaForm({...vendaForm, valor_balao: e.target.value})}
+                        />
+                      </div>
+                    )}
+                  </div>
+
                   <div className="form-group">
-                    <label>Status</label>
+                    <label>Status do Pagamento</label>
                     <select
                       value={vendaForm.status}
                       onChange={(e) => setVendaForm({...vendaForm, status: e.target.value})}
@@ -890,10 +1030,22 @@ const AdminDashboard = () => {
 
                   {vendaForm.valor_venda && vendaForm.corretor_id && (
                     <div className="preview-comissoes">
-                      <h4>Prévia das Comissões</h4>
-                      <div className="preview-grid">
+                      <h4>Resumo da Venda</h4>
+                      <div className="preview-grid four-cols">
                         <div className="preview-item">
-                          <span>Corretor ({getCorretorPercentual(vendaForm.corretor_id)}%)</span>
+                          <span>Valor Venda</span>
+                          <span>{formatCurrency(parseFloat(vendaForm.valor_venda || 0))}</span>
+                        </div>
+                        <div className="preview-item">
+                          <span>Pro-Soluto</span>
+                          <span>{formatCurrency(
+                            (parseFloat(vendaForm.valor_sinal) || 0) +
+                            ((parseFloat(vendaForm.qtd_parcelas_entrada) || 0) * (parseFloat(vendaForm.valor_parcela_entrada) || 0)) +
+                            (parseFloat(vendaForm.valor_balao) || 0)
+                          )}</span>
+                        </div>
+                        <div className="preview-item">
+                          <span>Comissão Corretor</span>
                           <span>{formatCurrency(calcularComissoes(
                             parseFloat(vendaForm.valor_venda || 0), 
                             vendaForm.tipo_corretor,
@@ -901,7 +1053,7 @@ const AdminDashboard = () => {
                           ).corretor)}</span>
                         </div>
                         <div className="preview-item">
-                          <span>Total Comissões</span>
+                          <span>Comissão Total (7%)</span>
                           <span>{formatCurrency(calcularComissoes(
                             parseFloat(vendaForm.valor_venda || 0), 
                             vendaForm.tipo_corretor,

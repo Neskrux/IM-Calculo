@@ -181,6 +181,19 @@ CREATE POLICY "Admin pode deletar vendas" ON vendas
 -- VALUES ('UUID_DO_USUARIO_CRIADO', 'corretor@nohros.com', 'João Silva', 'corretor', 'externo');
 
 -- =============================================
+-- ADICIONAR COLUNAS PRO-SOLUTO (execute se já tem a tabela)
+-- =============================================
+ALTER TABLE vendas ADD COLUMN IF NOT EXISTS teve_sinal BOOLEAN DEFAULT false;
+ALTER TABLE vendas ADD COLUMN IF NOT EXISTS valor_sinal DECIMAL(15, 2);
+ALTER TABLE vendas ADD COLUMN IF NOT EXISTS parcelou_entrada BOOLEAN DEFAULT false;
+ALTER TABLE vendas ADD COLUMN IF NOT EXISTS qtd_parcelas_entrada INTEGER;
+ALTER TABLE vendas ADD COLUMN IF NOT EXISTS valor_parcela_entrada DECIMAL(15, 2);
+ALTER TABLE vendas ADD COLUMN IF NOT EXISTS teve_balao TEXT DEFAULT 'nao' CHECK (teve_balao IN ('nao', 'sim', 'pendente'));
+ALTER TABLE vendas ADD COLUMN IF NOT EXISTS valor_balao DECIMAL(15, 2);
+ALTER TABLE vendas ADD COLUMN IF NOT EXISTS valor_pro_soluto DECIMAL(15, 2);
+ALTER TABLE vendas ADD COLUMN IF NOT EXISTS fator_comissao DECIMAL(10, 6);
+
+-- =============================================
 -- NOTAS SOBRE OS PERCENTUAIS DE COMISSÃO:
 -- =============================================
 -- 
