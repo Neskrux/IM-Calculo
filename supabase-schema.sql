@@ -223,6 +223,46 @@ ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS cargo_id UUID REFERENCES cargos_em
 ALTER TABLE vendas ADD COLUMN IF NOT EXISTS empreendimento_id UUID REFERENCES empreendimentos(id);
 
 -- =============================================
+-- TABELA: comissoes_venda
+-- Armazena as comissões calculadas por cargo para cada venda
+-- =============================================
+CREATE TABLE IF NOT EXISTS comissoes_venda (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    venda_id UUID NOT NULL REFERENCES vendas(id) ON DELETE CASCADE,
+    cargo_id UUID REFERENCES cargos_empreendimento(id),
+    nome_cargo TEXT NOT NULL,
+    percentual DECIMAL(5, 2) NOT NULL,
+    valor_comissao DECIMAL(15, 2) NOT NULL,
+    valor_pago DECIMAL(15, 2) DEFAULT 0,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- =============================================
+-- TABELA: pagamentos_prosoluto
+-- Acompanhamento dos pagamentos do pro-soluto
+-- =============================================
+CREATE TABLE IF NOT EXISTS pagamentos_prosoluto (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    venda_id UUID NOT NULL REFERENCES vendas(id) ON DELETE CASCADE,
+    tipo TEXT NOT NULL, -- 'sinal', 'parcela', 'balao'
+    numero_parcela INTEGER,
+    valor DECIMAL(15, 2) NOT NULL,
+    data_prevista DATE,
+    data_pagamento DATE,
+    status TEXT DEFAULT 'pendente', -- 'pendente', 'pago', 'atrasado'
+    comissao_gerada DECIMAL(15, 2),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Índices
+CREATE INDEX IF NOT EXISTS idx_comissoes_venda ON comissoes_venda(venda_id);
+CREATE INDEX IF NOT EXISTS idx_pagamentos_venda ON pagamentos_prosoluto(venda_id);
+
+-- Desabilitar RLS
+ALTER TABLE comissoes_venda DISABLE ROW LEVEL SECURITY;
+ALTER TABLE pagamentos_prosoluto DISABLE ROW LEVEL SECURITY;
+
+-- =============================================
 -- ADICIONAR COLUNAS PRO-SOLUTO (execute se já tem a tabela)
 -- =============================================
 ALTER TABLE vendas ADD COLUMN IF NOT EXISTS teve_sinal BOOLEAN DEFAULT false;

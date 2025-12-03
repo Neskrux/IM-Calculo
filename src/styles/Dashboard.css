@@ -1164,6 +1164,112 @@
   overflow-y: auto;
 }
 
+/* Pagamentos */
+.pagamentos-resumo {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.resumo-card {
+  background: #1a1f2e;
+  border: 1px solid #2d3548;
+  border-radius: 8px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.resumo-label {
+  font-size: 12px;
+  color: #9ca3af;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.resumo-valor {
+  font-size: 24px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.resumo-valor.pendente {
+  color: #fbbf24;
+}
+
+.resumo-valor.pago {
+  color: #4ade80;
+}
+
+.venda-info-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.venda-info-cell strong {
+  font-size: 13px;
+  color: #fff;
+}
+
+.venda-info-cell small {
+  font-size: 11px;
+  color: #6b7280;
+}
+
+.badge-tipo {
+  display: inline-flex;
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.badge-tipo.sinal {
+  background: #1e3a5f;
+  color: #60a5fa;
+}
+
+.badge-tipo.parcela {
+  background: #3b2f4a;
+  color: #a78bfa;
+}
+
+.badge-tipo.balao {
+  background: #4a3728;
+  color: #fb923c;
+}
+
+.comissao-cell {
+  color: #4ade80;
+  font-weight: 600;
+}
+
+.row-pago {
+  opacity: 0.6;
+}
+
+.btn-confirmar-pag {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  background: #1a472a;
+  border: 1px solid #4f7942;
+  border-radius: 4px;
+  color: #4ade80;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.btn-confirmar-pag:hover {
+  background: #2d5a3a;
+}
+
 .info-box {
   background: #1a1f2e;
   border: 1px solid #2d3548;

@@ -4,7 +4,7 @@ import { supabase } from '../lib/supabase'
 import { 
   Users, DollarSign, TrendingUp, Plus, Edit2, Trash2, 
   Search, Filter, LogOut, Menu, X, ChevronDown, Save, Eye,
-  Calculator, Calendar, User, Briefcase, CheckCircle, Clock, UserPlus, Mail, Lock, Percent, Building, PlusCircle
+  Calculator, Calendar, User, Briefcase, CheckCircle, Clock, UserPlus, Mail, Lock, Percent, Building, PlusCircle, CreditCard, Check
 } from 'lucide-react'
 import logo from '../imgs/logo.png'
 import '../styles/Dashboard.css'
@@ -14,6 +14,7 @@ const AdminDashboard = () => {
   const [corretores, setCorretores] = useState([])
   const [vendas, setVendas] = useState([])
   const [empreendimentos, setEmpreendimentos] = useState([])
+  const [pagamentos, setPagamentos] = useState([])
   const [loading, setLoading] = useState(true)
   const [menuOpen, setMenuOpen] = useState(false)
   const [activeTab, setActiveTab] = useState('vendas')
@@ -70,14 +71,27 @@ const AdminDashboard = () => {
   // Cargos filtrados por empreendimento selecionado
   const [cargosDisponiveis, setCargosDisponiveis] = useState([])
 
-  // Percentuais base de comissão (exceto corretor que é personalizado)
-  const getComissoesBase = (tipoCorretor) => ({
-    diretor: 0.5,
-    nohros_imobiliaria: tipoCorretor === 'externo' ? 0.5 : 1.25,
-    nohros_gestao: 1.0,
-    wsc: tipoCorretor === 'externo' ? 0.5 : 1.25,
-    coordenadora: tipoCorretor === 'externo' ? 0.5 : 0
-  })
+  // Calcular comissões baseado nos cargos do empreendimento (DINÂMICO)
+  const calcularComissoesDinamicas = (valorVenda, empreendimentoId, tipoCorretor) => {
+    const emp = empreendimentos.find(e => e.id === empreendimentoId)
+    if (!emp) return { cargos: [], total: 0, fator: 0 }
+    
+    // Filtrar cargos pelo tipo de corretor
+    const cargosDoTipo = emp.cargos?.filter(c => c.tipo_corretor === tipoCorretor) || []
+    
+    // Calcular comissão para cada cargo
+    const comissoesPorCargo = cargosDoTipo.map(cargo => ({
+      cargo_id: cargo.id,
+      nome_cargo: cargo.nome_cargo,
+      percentual: parseFloat(cargo.percentual),
+      valor: (valorVenda * parseFloat(cargo.percentual)) / 100
+    }))
+    
+    // Total
+    const total = comissoesPorCargo.reduce((acc, c) => acc + c.valor, 0)
+    
+    return { cargos: comissoesPorCargo, total }
+  }
 
   useEffect(() => {
     fetchData()
@@ -116,9 +130,27 @@ const AdminDashboard = () => {
       `)
       .order('nome')
 
+    // Buscar pagamentos pro-soluto
+    const { data: pagamentosData } = await supabase
+      .from('pagamentos_prosoluto')
+      .select(`
+        *,
+        venda:vendas(
+          id,
+          valor_venda,
+          data_venda,
+          descricao,
+          fator_comissao,
+          corretor:usuarios(nome),
+          empreendimento:empreendimentos(nome)
+        )
+      `)
+      .order('data_prevista', { ascending: true })
+
     setCorretores(corretoresData || [])
     setVendas(vendasData || [])
     setEmpreendimentos(empreendimentosData || [])
+    setPagamentos(pagamentosData || [])
     setLoading(false)
   }
 
@@ -158,14 +190,13 @@ const AdminDashboard = () => {
 
     setSaving(true)
     
-    // Buscar o percentual do corretor selecionado
-    const corretor = corretores.find(c => c.id === vendaForm.corretor_id)
-    const percentualCorretor = corretor?.percentual_corretor || (vendaForm.tipo_corretor === 'externo' ? 4 : 2.5)
+    const valorVenda = parseFloat(vendaForm.valor_venda)
     
-    const comissoes = calcularComissoes(
-      parseFloat(vendaForm.valor_venda),
-      vendaForm.tipo_corretor,
-      percentualCorretor
+    // Calcular comissões dinâmicas baseadas no empreendimento
+    const comissoesDinamicas = calcularComissoesDinamicas(
+      valorVenda,
+      vendaForm.empreendimento_id,
+      vendaForm.tipo_corretor
     )
 
     // Calcular valor pro-soluto e fator de comissão
@@ -173,12 +204,12 @@ const AdminDashboard = () => {
     const valorParcelas = (parseFloat(vendaForm.qtd_parcelas_entrada) || 0) * (parseFloat(vendaForm.valor_parcela_entrada) || 0)
     const valorBalao = parseFloat(vendaForm.valor_balao) || 0
     const valorProSoluto = valorSinal + valorParcelas + valorBalao
-    const fatorComissao = valorProSoluto > 0 ? comissoes.total / valorProSoluto : 0
+    const fatorComissao = valorProSoluto > 0 ? comissoesDinamicas.total / valorProSoluto : 0
 
     const vendaData = {
       corretor_id: vendaForm.corretor_id,
       empreendimento_id: vendaForm.empreendimento_id,
-      valor_venda: parseFloat(vendaForm.valor_venda),
+      valor_venda: valorVenda,
       tipo_corretor: vendaForm.tipo_corretor,
       data_venda: vendaForm.data_venda,
       descricao: vendaForm.descricao,
@@ -192,16 +223,12 @@ const AdminDashboard = () => {
       valor_balao: valorBalao || null,
       valor_pro_soluto: valorProSoluto || null,
       fator_comissao: fatorComissao || null,
-      comissao_diretor: comissoes.diretor,
-      comissao_nohros_imobiliaria: comissoes.nohros_imobiliaria,
-      comissao_nohros_gestao: comissoes.nohros_gestao,
-      comissao_wsc: comissoes.wsc,
-      comissao_corretor: comissoes.corretor,
-      comissao_coordenadora: comissoes.coordenadora,
-      comissao_total: comissoes.total
+      comissao_total: comissoesDinamicas.total
     }
 
     let error
+    let vendaId = selectedItem?.id
+
     if (selectedItem) {
       const result = await supabase
         .from('vendas')
@@ -212,15 +239,78 @@ const AdminDashboard = () => {
       const result = await supabase
         .from('vendas')
         .insert([vendaData])
+        .select()
+        .single()
       error = result.error
+      vendaId = result.data?.id
     }
 
-    setSaving(false)
-
     if (error) {
+      setSaving(false)
       setMessage({ type: 'error', text: 'Erro ao salvar venda: ' + error.message })
       return
     }
+
+    // Se é nova venda, salvar comissões por cargo e pagamentos pro-soluto
+    if (!selectedItem && vendaId) {
+      // Salvar comissões por cargo
+      if (comissoesDinamicas.cargos.length > 0) {
+        const comissoesData = comissoesDinamicas.cargos.map(c => ({
+          venda_id: vendaId,
+          cargo_id: c.cargo_id,
+          nome_cargo: c.nome_cargo,
+          percentual: c.percentual,
+          valor_comissao: c.valor
+        }))
+        await supabase.from('comissoes_venda').insert(comissoesData)
+      }
+
+      // Criar pagamentos pro-soluto
+      const pagamentos = []
+      
+      // Sinal
+      if (valorSinal > 0) {
+        pagamentos.push({
+          venda_id: vendaId,
+          tipo: 'sinal',
+          valor: valorSinal,
+          data_prevista: vendaForm.data_venda,
+          comissao_gerada: valorSinal * fatorComissao
+        })
+      }
+      
+      // Parcelas
+      const qtdParcelas = parseInt(vendaForm.qtd_parcelas_entrada) || 0
+      const valorParcela = parseFloat(vendaForm.valor_parcela_entrada) || 0
+      for (let i = 1; i <= qtdParcelas; i++) {
+        const dataParcela = new Date(vendaForm.data_venda)
+        dataParcela.setMonth(dataParcela.getMonth() + i)
+        pagamentos.push({
+          venda_id: vendaId,
+          tipo: 'parcela',
+          numero_parcela: i,
+          valor: valorParcela,
+          data_prevista: dataParcela.toISOString().split('T')[0],
+          comissao_gerada: valorParcela * fatorComissao
+        })
+      }
+      
+      // Balão
+      if (valorBalao > 0 && vendaForm.teve_balao === 'sim') {
+        pagamentos.push({
+          venda_id: vendaId,
+          tipo: 'balao',
+          valor: valorBalao,
+          comissao_gerada: valorBalao * fatorComissao
+        })
+      }
+
+      if (pagamentos.length > 0) {
+        await supabase.from('pagamentos_prosoluto').insert(pagamentos)
+      }
+    }
+
+    setSaving(false)
 
     setShowModal(false)
     setSelectedItem(null)
@@ -471,6 +561,26 @@ const AdminDashboard = () => {
     }
   }
 
+  // Confirmar pagamento pro-soluto
+  const confirmarPagamento = async (pagamentoId) => {
+    const { error } = await supabase
+      .from('pagamentos_prosoluto')
+      .update({ 
+        status: 'pago',
+        data_pagamento: new Date().toISOString().split('T')[0]
+      })
+      .eq('id', pagamentoId)
+    
+    if (error) {
+      setMessage({ type: 'error', text: 'Erro ao confirmar: ' + error.message })
+      return
+    }
+    
+    fetchData()
+    setMessage({ type: 'success', text: 'Pagamento confirmado!' })
+    setTimeout(() => setMessage({ type: '', text: '' }), 3000)
+  }
+
   const addCargo = (tipo) => {
     const key = tipo === 'externo' ? 'cargos_externo' : 'cargos_interno'
     setEmpreendimentoForm({
@@ -702,6 +812,13 @@ const AdminDashboard = () => {
             <span>Empreendimentos</span>
           </button>
           <button 
+            className={`nav-item ${activeTab === 'pagamentos' ? 'active' : ''}`}
+            onClick={() => setActiveTab('pagamentos')}
+          >
+            <CreditCard size={20} />
+            <span>Pagamentos</span>
+          </button>
+          <button 
             className={`nav-item ${activeTab === 'relatorios' ? 'active' : ''}`}
             onClick={() => setActiveTab('relatorios')}
           >
@@ -737,6 +854,7 @@ const AdminDashboard = () => {
             {activeTab === 'vendas' && 'Gestão de Vendas'}
             {activeTab === 'corretores' && 'Corretores'}
             {activeTab === 'empreendimentos' && 'Empreendimentos'}
+            {activeTab === 'pagamentos' && 'Acompanhamento de Pagamentos'}
             {activeTab === 'relatorios' && 'Relatórios'}
           </h1>
           <div className="header-actions">
@@ -1129,6 +1247,100 @@ const AdminDashboard = () => {
                   </div>
                 ))}
               </div>
+            )}
+          </div>
+        )}
+
+        {activeTab === 'pagamentos' && (
+          <div className="content-section">
+            {pagamentos.length === 0 ? (
+              <div className="empty-state-box">
+                <CreditCard size={48} />
+                <h3>Nenhum pagamento cadastrado</h3>
+                <p>Os pagamentos são criados automaticamente ao registrar uma venda</p>
+              </div>
+            ) : (
+              <>
+                {/* Resumo */}
+                <div className="pagamentos-resumo">
+                  <div className="resumo-card">
+                    <span className="resumo-label">Total Pendente</span>
+                    <span className="resumo-valor pendente">
+                      {formatCurrency(pagamentos.filter(p => p.status === 'pendente').reduce((acc, p) => acc + p.valor, 0))}
+                    </span>
+                  </div>
+                  <div className="resumo-card">
+                    <span className="resumo-label">Total Pago</span>
+                    <span className="resumo-valor pago">
+                      {formatCurrency(pagamentos.filter(p => p.status === 'pago').reduce((acc, p) => acc + p.valor, 0))}
+                    </span>
+                  </div>
+                  <div className="resumo-card">
+                    <span className="resumo-label">Comissão a Receber</span>
+                    <span className="resumo-valor">
+                      {formatCurrency(pagamentos.filter(p => p.status === 'pendente').reduce((acc, p) => acc + (p.comissao_gerada || 0), 0))}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Tabela de Pagamentos */}
+                <div className="table-container">
+                  <table className="data-table">
+                    <thead>
+                      <tr>
+                        <th>Venda</th>
+                        <th>Tipo</th>
+                        <th>Valor</th>
+                        <th>Comissão</th>
+                        <th>Data Prevista</th>
+                        <th>Status</th>
+                        <th>Ações</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {pagamentos.map((pag) => (
+                        <tr key={pag.id} className={pag.status === 'pago' ? 'row-pago' : ''}>
+                          <td>
+                            <div className="venda-info-cell">
+                              <strong>{pag.venda?.empreendimento?.nome || 'N/A'}</strong>
+                              <small>{pag.venda?.corretor?.nome}</small>
+                            </div>
+                          </td>
+                          <td>
+                            <span className={`badge-tipo ${pag.tipo}`}>
+                              {pag.tipo === 'sinal' && 'Sinal'}
+                              {pag.tipo === 'parcela' && `Parcela ${pag.numero_parcela}`}
+                              {pag.tipo === 'balao' && 'Balão'}
+                            </span>
+                          </td>
+                          <td>{formatCurrency(pag.valor)}</td>
+                          <td className="comissao-cell">{formatCurrency(pag.comissao_gerada || 0)}</td>
+                          <td>{pag.data_prevista ? new Date(pag.data_prevista).toLocaleDateString('pt-BR') : '-'}</td>
+                          <td>
+                            <span className={`status-badge ${pag.status}`}>
+                              {pag.status === 'pendente' && 'Pendente'}
+                              {pag.status === 'pago' && 'Pago'}
+                              {pag.status === 'atrasado' && 'Atrasado'}
+                            </span>
+                          </td>
+                          <td>
+                            {pag.status !== 'pago' && (
+                              <button 
+                                className="btn-confirmar-pag"
+                                onClick={() => confirmarPagamento(pag.id)}
+                                title="Confirmar pagamento"
+                              >
+                                <Check size={16} />
+                                Confirmar
+                              </button>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </>
             )}
           </div>
         )}
