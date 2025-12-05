@@ -367,13 +367,25 @@ const AdminDashboard = () => {
     )
 
     // Calcular valor pro-soluto e fator de comissão
-    const valorSinal = parseFloat(vendaForm.valor_sinal) || 0
-    const valorEntrada = parseFloat(vendaForm.valor_entrada) || 0
-    const valorParcelas = vendaForm.parcelou_entrada 
-      ? (parseFloat(vendaForm.qtd_parcelas_entrada) || 0) * (parseFloat(vendaForm.valor_parcela_entrada) || 0)
+    const valorSinal = vendaForm.teve_sinal === 'sim' ? (parseFloat(vendaForm.valor_sinal) || 0) : 0
+    
+    // Entrada: se parcelou, usa qtd × valor_parcela. Se não parcelou, usa valor_entrada
+    let valorEntradaTotal = 0
+    if (vendaForm.teve_entrada === 'sim') {
+      if (vendaForm.parcelou_entrada) {
+        valorEntradaTotal = (parseFloat(vendaForm.qtd_parcelas_entrada) || 0) * (parseFloat(vendaForm.valor_parcela_entrada) || 0)
+      } else {
+        valorEntradaTotal = parseFloat(vendaForm.valor_entrada) || 0
+      }
+    }
+    
+    // Balões
+    const valorTotalBalao = vendaForm.teve_balao === 'sim' 
+      ? (parseFloat(vendaForm.qtd_balao) || 0) * (parseFloat(vendaForm.valor_balao) || 0)
       : 0
-    const valorTotalBalao = (parseFloat(vendaForm.qtd_balao) || 0) * (parseFloat(vendaForm.valor_balao) || 0)
-    const valorProSoluto = valorSinal + valorEntrada + valorParcelas + valorTotalBalao
+    
+    // Pro-soluto = sinal + entrada + balões
+    const valorProSoluto = valorSinal + valorEntradaTotal + valorTotalBalao
     
     // Fórmula: Fcom = Vcom / Vsoluto
     // Fator de comissão = Valor da Comissão / Valor do Pro-Soluto
@@ -393,7 +405,7 @@ const AdminDashboard = () => {
       teve_sinal: vendaForm.teve_sinal,
       valor_sinal: valorSinal || null,
       teve_entrada: vendaForm.teve_entrada,
-      valor_entrada: valorEntrada || null,
+      valor_entrada: parseFloat(vendaForm.valor_entrada) || null,
       parcelou_entrada: vendaForm.parcelou_entrada,
       qtd_parcelas_entrada: parseInt(vendaForm.qtd_parcelas_entrada) || null,
       valor_parcela_entrada: parseFloat(vendaForm.valor_parcela_entrada) || null,
@@ -473,19 +485,22 @@ const AdminDashboard = () => {
         })
       }
 
-      // Entrada (à vista)
-      if (valorEntrada > 0 && !vendaForm.parcelou_entrada) {
-        pagamentos.push({
-          venda_id: vendaId,
-          tipo: 'entrada',
-          valor: valorEntrada,
-          data_prevista: vendaForm.data_venda,
-          comissao_gerada: valorEntrada * fatorComissao
-        })
+      // Entrada (à vista) - só se teve entrada E não parcelou
+      if (vendaForm.teve_entrada === 'sim' && !vendaForm.parcelou_entrada) {
+        const valorEntradaAvista = parseFloat(vendaForm.valor_entrada) || 0
+        if (valorEntradaAvista > 0) {
+          pagamentos.push({
+            venda_id: vendaId,
+            tipo: 'entrada',
+            valor: valorEntradaAvista,
+            data_prevista: vendaForm.data_venda,
+            comissao_gerada: valorEntradaAvista * fatorComissao
+          })
+        }
       }
       
-      // Parcelas da entrada
-      if (vendaForm.parcelou_entrada) {
+      // Parcelas da entrada - só se teve entrada E parcelou
+      if (vendaForm.teve_entrada === 'sim' && vendaForm.parcelou_entrada) {
         const qtdParcelas = parseInt(vendaForm.qtd_parcelas_entrada) || 0
         const valorParcelaEnt = parseFloat(vendaForm.valor_parcela_entrada) || 0
         
