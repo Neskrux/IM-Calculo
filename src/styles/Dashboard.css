@@ -2377,6 +2377,22 @@
   color: #10b981;
 }
 
+.comissao-total {
+  background: rgba(16, 185, 129, 0.1);
+  border-radius: 6px;
+  padding: 4px 12px !important;
+  margin-left: 8px;
+}
+
+.comissao-total .comissao-nome {
+  color: #10b981;
+  font-weight: 600;
+}
+
+.comissao-total .comissao-valor {
+  color: #fff;
+}
+
 /* Responsivo */
 @media (max-width: 800px) {
   .parcela-main {

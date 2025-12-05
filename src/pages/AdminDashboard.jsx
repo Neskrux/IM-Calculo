@@ -301,11 +301,15 @@ const AdminDashboard = () => {
       const venda = (vendasData || []).find(v => v.id === pag.venda_id)
       const corretor = venda ? (corretoresData || []).find(c => c.id === venda.corretor_id) : null
       const empreendimento = venda ? (empreendimentosData || []).find(e => e.id === venda.empreendimento_id) : null
+      
       return {
         ...pag,
         venda: venda ? {
           id: venda.id,
           valor_venda: venda.valor_venda,
+          comissao_total: venda.comissao_total,
+          tipo_corretor: venda.tipo_corretor,
+          empreendimento_id: venda.empreendimento_id,
           descricao: venda.descricao,
           fator_comissao: venda.fator_comissao,
           corretor: corretor ? { nome: corretor.nome } : null,
@@ -2042,26 +2046,32 @@ const AdminDashboard = () => {
                 {/* Resumo */}
                 <div className="pagamentos-resumo">
                   <div className="resumo-card">
-                    <span className="resumo-label">Total Pendente</span>
+                    <span className="resumo-label">Comissão Pendente</span>
                     <span className="resumo-valor pendente">
-                      {formatCurrency(pagamentos.filter(p => p.status === 'pendente').reduce((acc, p) => acc + p.valor, 0))}
-                    </span>
-                  </div>
-                  <div className="resumo-card">
-                    <span className="resumo-label">Total Pago</span>
-                    <span className="resumo-valor pago">
-                      {formatCurrency(pagamentos.filter(p => p.status === 'pago').reduce((acc, p) => acc + p.valor, 0))}
-                    </span>
-                  </div>
-                  <div className="resumo-card">
-                    <span className="resumo-label">Comissão a Receber</span>
-                    <span className="resumo-valor">
                       {formatCurrency(listaVendasComPagamentos.reduce((acc, grupo) => {
                         const comissaoTotal = parseFloat(grupo.venda?.comissao_total) || 0
                         const totalParcelas = grupo.totalValor
                         const parcelasPendentes = grupo.pagamentos.filter(p => p.status === 'pendente').reduce((a, p) => a + (parseFloat(p.valor) || 0), 0)
-                        const proporcao = totalParcelas > 0 ? parcelasPendentes / totalParcelas : 0
-                        return acc + (comissaoTotal * proporcao)
+                        return totalParcelas > 0 ? acc + (comissaoTotal * parcelasPendentes / totalParcelas) : acc
+                      }, 0))}
+                    </span>
+                  </div>
+                  <div className="resumo-card">
+                    <span className="resumo-label">Comissão Paga</span>
+                    <span className="resumo-valor pago">
+                      {formatCurrency(listaVendasComPagamentos.reduce((acc, grupo) => {
+                        const comissaoTotal = parseFloat(grupo.venda?.comissao_total) || 0
+                        const totalParcelas = grupo.totalValor
+                        const parcelasPagas = grupo.pagamentos.filter(p => p.status === 'pago').reduce((a, p) => a + (parseFloat(p.valor) || 0), 0)
+                        return totalParcelas > 0 ? acc + (comissaoTotal * parcelasPagas / totalParcelas) : acc
+                      }, 0))}
+                    </span>
+                  </div>
+                  <div className="resumo-card">
+                    <span className="resumo-label">Comissão Total</span>
+                    <span className="resumo-valor">
+                      {formatCurrency(listaVendasComPagamentos.reduce((acc, grupo) => {
+                        return acc + (parseFloat(grupo.venda?.comissao_total) || 0)
                       }, 0))}
                     </span>
                   </div>
@@ -2098,12 +2108,26 @@ const AdminDashboard = () => {
                             <span className="valor-number comissao">{formatCurrency(grupo.venda?.comissao_total || 0)}</span>
                           </div>
                           <div className="valor-item">
-                            <span className="valor-label">Pago</span>
-                            <span className="valor-number pago">{formatCurrency(grupo.totalPago)}</span>
+                            <span className="valor-label">Comissão Paga</span>
+                            <span className="valor-number pago">{formatCurrency(
+                              (() => {
+                                const comissaoTotal = parseFloat(grupo.venda?.comissao_total) || 0
+                                const totalParcelas = grupo.totalValor
+                                const parcelasPagas = grupo.pagamentos.filter(p => p.status === 'pago').reduce((a, p) => a + (parseFloat(p.valor) || 0), 0)
+                                return totalParcelas > 0 ? (comissaoTotal * parcelasPagas / totalParcelas) : 0
+                              })()
+                            )}</span>
                           </div>
                           <div className="valor-item">
-                            <span className="valor-label">Pendente</span>
-                            <span className="valor-number pendente">{formatCurrency(grupo.totalPendente)}</span>
+                            <span className="valor-label">Comissão Pendente</span>
+                            <span className="valor-number pendente">{formatCurrency(
+                              (() => {
+                                const comissaoTotal = parseFloat(grupo.venda?.comissao_total) || 0
+                                const totalParcelas = grupo.totalValor
+                                const parcelasPendentes = grupo.pagamentos.filter(p => p.status === 'pendente').reduce((a, p) => a + (parseFloat(p.valor) || 0), 0)
+                                return totalParcelas > 0 ? (comissaoTotal * parcelasPendentes / totalParcelas) : 0
+                              })()
+                            )}</span>
                           </div>
                         </div>
                         <div className="expand-icon">
@@ -2154,6 +2178,10 @@ const AdminDashboard = () => {
                                     <span className="comissao-valor">{formatCurrency(cargo.valor)}</span>
                                   </div>
                                 ))}
+                                <div className="comissao-item comissao-total">
+                                  <span className="comissao-nome">Total</span>
+                                  <span className="comissao-valor">{formatCurrency(calcularComissaoTotalPagamento(pag))}</span>
+                                </div>
                               </div>
                             </div>
                           ))}
