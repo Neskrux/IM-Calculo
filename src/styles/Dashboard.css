@@ -2258,3 +2258,144 @@
     grid-template-columns: 1fr 1fr;
   }
 }
+
+/* ===== PARCELAS COM COMISSÕES ===== */
+.venda-pagamento-body {
+  padding: 0;
+}
+
+.parcela-row {
+  border-bottom: 1px solid #2d3548;
+}
+
+.parcela-row:last-child {
+  border-bottom: none;
+}
+
+.parcela-row.pago {
+  opacity: 0.5;
+}
+
+.parcela-main {
+  display: grid;
+  grid-template-columns: 120px 100px 120px 100px 1fr;
+  align-items: center;
+  padding: 16px 20px;
+  gap: 16px;
+  background: #252c3d;
+}
+
+.parcela-tipo {
+  font-weight: 600;
+  color: #fff;
+  font-size: 14px;
+}
+
+.parcela-data {
+  color: #9ca3af;
+  font-size: 13px;
+}
+
+.parcela-valor {
+  font-weight: 600;
+  color: #fff;
+  font-size: 15px;
+}
+
+.parcela-status {
+  display: flex;
+}
+
+.parcela-acao {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.status-pill {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.status-pill.pendente {
+  background: rgba(234, 179, 8, 0.15);
+  color: #eab308;
+}
+
+.status-pill.pago {
+  background: rgba(16, 185, 129, 0.15);
+  color: #10b981;
+}
+
+.btn-small-confirm {
+  padding: 6px 14px;
+  background: #10b981;
+  border: none;
+  border-radius: 6px;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-small-confirm:hover {
+  background: #059669;
+}
+
+/* Comissões por parcela */
+.parcela-comissoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0;
+  padding: 12px 20px;
+  background: #1e2433;
+}
+
+.comissao-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 16px;
+  border-right: 1px solid #343b4d;
+}
+
+.comissao-item:last-child {
+  border-right: none;
+}
+
+.comissao-nome {
+  font-size: 12px;
+  color: #9ca3af;
+}
+
+.comissao-valor {
+  font-size: 13px;
+  font-weight: 600;
+  color: #10b981;
+}
+
+/* Responsivo */
+@media (max-width: 800px) {
+  .parcela-main {
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  
+  .parcela-comissoes {
+    flex-direction: column;
+  }
+  
+  .comissao-item {
+    border-right: none;
+    border-bottom: 1px solid #343b4d;
+    padding: 8px 0;
+    justify-content: space-between;
+  }
+  
+  .comissao-item:last-child {
+    border-bottom: none;
+  }
+}

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useParams, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { supabase } from '../lib/supabase'
 import { 
@@ -11,13 +12,16 @@ import '../styles/Dashboard.css'
 
 const AdminDashboard = () => {
   const { userProfile, signOut } = useAuth()
+  const { tab } = useParams()
+  const navigate = useNavigate()
+  const activeTab = tab || 'vendas'
+  
   const [corretores, setCorretores] = useState([])
   const [vendas, setVendas] = useState([])
   const [empreendimentos, setEmpreendimentos] = useState([])
   const [pagamentos, setPagamentos] = useState([])
   const [loading, setLoading] = useState(true)
   const [menuOpen, setMenuOpen] = useState(false)
-  const [activeTab, setActiveTab] = useState('vendas')
   const [searchTerm, setSearchTerm] = useState('')
   const [showModal, setShowModal] = useState(false)
   const [modalType, setModalType] = useState('')
@@ -160,10 +164,13 @@ const AdminDashboard = () => {
   // Calcular comissões baseado nos cargos do empreendimento (DINÂMICO)
   const calcularComissoesDinamicas = (valorVenda, empreendimentoId, tipoCorretor) => {
     const emp = empreendimentos.find(e => e.id === empreendimentoId)
-    if (!emp) return { cargos: [], total: 0, fator: 0 }
+    if (!emp) return { cargos: [], total: 0, percentualTotal: 0 }
     
     // Filtrar cargos pelo tipo de corretor
     const cargosDoTipo = emp.cargos?.filter(c => c.tipo_corretor === tipoCorretor) || []
+    
+    // Calcular percentual total primeiro
+    const percentualTotal = cargosDoTipo.reduce((acc, c) => acc + parseFloat(c.percentual || 0), 0)
     
     // Calcular comissão para cada cargo
     const comissoesPorCargo = cargosDoTipo.map(cargo => ({
@@ -173,10 +180,10 @@ const AdminDashboard = () => {
       valor: (valorVenda * parseFloat(cargo.percentual)) / 100
     }))
     
-    // Total
+    // Total em reais
     const total = comissoesPorCargo.reduce((acc, c) => acc + c.valor, 0)
     
-    return { cargos: comissoesPorCargo, total }
+    return { cargos: comissoesPorCargo, total, percentualTotal }
   }
 
   // Calcular comissão detalhada por cargo para um pagamento específico
@@ -195,23 +202,13 @@ const AdminDashboard = () => {
     const tipoCorretor = venda.tipo_corretor || 'externo'
     const cargosDoTipo = emp.cargos.filter(c => c.tipo_corretor === tipoCorretor)
     
-    // Calcular a comissão proporcional do pagamento para cada cargo
-    // fator_comissao da venda já foi calculado no momento da criação
-    const fatorComissao = parseFloat(venda.fator_comissao) || 0
     const valorPagamento = parseFloat(pagamento.valor) || 0
     
-    // Total percentual dos cargos
-    const totalPercentualCargos = cargosDoTipo.reduce((acc, c) => acc + parseFloat(c.percentual || 0), 0)
-    
-    // Comissão total desse pagamento
-    const comissaoTotalPagamento = pagamento.comissao_gerada || (valorPagamento * fatorComissao)
-    
-    // Distribuir proporcionalmente entre os cargos
+    // Calcular comissão por cargo baseado no percentual individual de cada cargo
+    // Ex: Parcela de R$ 1.000, cargo tem 2% -> comissão do cargo = R$ 1.000 * 0.02 = R$ 20
     return cargosDoTipo.map(cargo => {
       const percentualCargo = parseFloat(cargo.percentual) || 0
-      // Proporção desse cargo no total
-      const proporcao = totalPercentualCargos > 0 ? percentualCargo / totalPercentualCargos : 0
-      const valorComissaoCargo = comissaoTotalPagamento * proporcao
+      const valorComissaoCargo = (valorPagamento * percentualCargo) / 100
       
       return {
         nome_cargo: cargo.nome_cargo,
@@ -219,6 +216,12 @@ const AdminDashboard = () => {
         valor: valorComissaoCargo
       }
     })
+  }
+  
+  // Calcular comissão total de um pagamento (soma de todos os cargos)
+  const calcularComissaoTotalPagamento = (pagamento) => {
+    const comissoesPorCargo = calcularComissaoPorCargoPagamento(pagamento)
+    return comissoesPorCargo.reduce((acc, c) => acc + c.valor, 0)
   }
 
   useEffect(() => {
@@ -368,11 +371,11 @@ const AdminDashboard = () => {
     )
 
     // Calcular valor pro-soluto e fator de comissão
-    const valorSinal = vendaForm.teve_sinal === 'sim' ? (parseFloat(vendaForm.valor_sinal) || 0) : 0
+    const valorSinal = vendaForm.teve_sinal ? (parseFloat(vendaForm.valor_sinal) || 0) : 0
     
     // Entrada: se parcelou, usa qtd × valor_parcela. Se não parcelou, usa valor_entrada
     let valorEntradaTotal = 0
-    if (vendaForm.teve_entrada === 'sim') {
+    if (vendaForm.teve_entrada) {
       if (vendaForm.parcelou_entrada) {
         valorEntradaTotal = (parseFloat(vendaForm.qtd_parcelas_entrada) || 0) * (parseFloat(vendaForm.valor_parcela_entrada) || 0)
       } else {
@@ -388,9 +391,9 @@ const AdminDashboard = () => {
     // Pro-soluto = sinal + entrada + balões
     const valorProSoluto = valorSinal + valorEntradaTotal + valorTotalBalao
     
-    // Fórmula: Fcom = Vcom / Vsoluto
-    // Fator de comissão = Valor da Comissão / Valor do Pro-Soluto
-    const fatorComissao = valorProSoluto > 0 ? comissoesDinamicas.total / valorProSoluto : 0
+    // Fator de comissão = Percentual total de comissão / 100
+    // Ex: 7% -> 0.07, então parcela de R$ 1.000 x 0.07 = R$ 70 de comissão
+    const fatorComissao = comissoesDinamicas.percentualTotal / 100
     
     console.log('Cálculo venda:', {
       valorVenda,
@@ -501,7 +504,7 @@ const AdminDashboard = () => {
       }
 
       // Entrada (à vista) - só se teve entrada E não parcelou
-      if (vendaForm.teve_entrada === 'sim' && !vendaForm.parcelou_entrada) {
+      if (vendaForm.teve_entrada && !vendaForm.parcelou_entrada) {
         const valorEntradaAvista = parseFloat(vendaForm.valor_entrada) || 0
         if (valorEntradaAvista > 0) {
           pagamentos.push({
@@ -515,7 +518,7 @@ const AdminDashboard = () => {
       }
       
       // Parcelas da entrada - só se teve entrada E parcelou
-      if (vendaForm.teve_entrada === 'sim' && vendaForm.parcelou_entrada) {
+      if (vendaForm.teve_entrada && vendaForm.parcelou_entrada) {
         const qtdParcelas = parseInt(vendaForm.qtd_parcelas_entrada) || 0
         const valorParcelaEnt = parseFloat(vendaForm.valor_parcela_entrada) || 0
         
@@ -835,6 +838,139 @@ const AdminDashboard = () => {
     
     fetchData()
     setMessage({ type: 'success', text: 'Pagamento confirmado!' })
+    setTimeout(() => setMessage({ type: '', text: '' }), 3000)
+  }
+
+  // Identificar vendas sem pagamentos
+  const vendasSemPagamentos = vendas.filter(v => {
+    const temPagamento = pagamentos.some(p => p.venda_id === v.id)
+    return !temPagamento
+  })
+
+  // Gerar pagamentos para uma venda específica
+  const gerarPagamentosVenda = async (venda) => {
+    setSaving(true)
+    
+    // Calcular fator de comissão
+    const valorVenda = parseFloat(venda.valor_venda) || 0
+    const comissoesDinamicas = calcularComissoesDinamicas(
+      valorVenda,
+      venda.empreendimento_id,
+      venda.tipo_corretor
+    )
+    
+    const valorSinal = venda.teve_sinal ? (parseFloat(venda.valor_sinal) || 0) : 0
+    
+    let valorEntradaTotal = 0
+    if (venda.teve_entrada) {
+      if (venda.parcelou_entrada) {
+        valorEntradaTotal = (parseFloat(venda.qtd_parcelas_entrada) || 0) * (parseFloat(venda.valor_parcela_entrada) || 0)
+      } else {
+        valorEntradaTotal = parseFloat(venda.valor_entrada) || 0
+      }
+    }
+    
+    const valorTotalBalao = venda.teve_balao === 'sim' 
+      ? (parseFloat(venda.qtd_balao) || 0) * (parseFloat(venda.valor_balao) || 0)
+      : 0
+    
+    const valorProSoluto = valorSinal + valorEntradaTotal + valorTotalBalao
+    // Fator de comissão = Percentual total / 100
+    const fatorComissao = comissoesDinamicas.percentualTotal / 100
+    
+    const novosPagamentos = []
+    
+    // Sinal
+    if (valorSinal > 0) {
+      novosPagamentos.push({
+        venda_id: venda.id,
+        tipo: 'sinal',
+        valor: valorSinal,
+        data_prevista: venda.data_venda,
+        comissao_gerada: valorSinal * fatorComissao
+      })
+    }
+
+    // Entrada à vista
+    if (venda.teve_entrada && !venda.parcelou_entrada) {
+      const valorEntradaAvista = parseFloat(venda.valor_entrada) || 0
+      if (valorEntradaAvista > 0) {
+        novosPagamentos.push({
+          venda_id: venda.id,
+          tipo: 'entrada',
+          valor: valorEntradaAvista,
+          data_prevista: venda.data_venda,
+          comissao_gerada: valorEntradaAvista * fatorComissao
+        })
+      }
+    }
+    
+    // Parcelas da entrada
+    if (venda.teve_entrada && venda.parcelou_entrada) {
+      const qtdParcelas = parseInt(venda.qtd_parcelas_entrada) || 0
+      const valorParcelaEnt = parseFloat(venda.valor_parcela_entrada) || 0
+      
+      for (let i = 1; i <= qtdParcelas; i++) {
+        const dataParcela = new Date(venda.data_venda)
+        dataParcela.setMonth(dataParcela.getMonth() + i)
+        
+        novosPagamentos.push({
+          venda_id: venda.id,
+          tipo: 'parcela_entrada',
+          numero_parcela: i,
+          valor: valorParcelaEnt,
+          data_prevista: dataParcela.toISOString().split('T')[0],
+          comissao_gerada: valorParcelaEnt * fatorComissao
+        })
+      }
+    }
+    
+    // Balões
+    if (venda.teve_balao === 'sim') {
+      const qtdBalao = parseInt(venda.qtd_balao) || 0
+      const valorBalaoUnit = parseFloat(venda.valor_balao) || 0
+      for (let i = 1; i <= qtdBalao; i++) {
+        novosPagamentos.push({
+          venda_id: venda.id,
+          tipo: 'balao',
+          numero_parcela: i,
+          valor: valorBalaoUnit,
+          comissao_gerada: valorBalaoUnit * fatorComissao
+        })
+      }
+    }
+
+    if (novosPagamentos.length > 0) {
+      const { error } = await supabase.from('pagamentos_prosoluto').insert(novosPagamentos)
+      if (error) {
+        setMessage({ type: 'error', text: 'Erro ao gerar pagamentos: ' + error.message })
+      } else {
+        setMessage({ type: 'success', text: `${novosPagamentos.length} pagamentos gerados!` })
+        fetchData()
+      }
+    } else {
+      setMessage({ type: 'warning', text: 'Esta venda não tem parcelas pro-soluto configuradas (sinal, entrada ou balão)' })
+    }
+    
+    setSaving(false)
+    setTimeout(() => setMessage({ type: '', text: '' }), 3000)
+  }
+
+  // Gerar pagamentos para todas as vendas sem pagamentos
+  const gerarTodosPagamentos = async () => {
+    if (vendasSemPagamentos.length === 0) return
+    
+    setSaving(true)
+    let totalGerados = 0
+    
+    for (const venda of vendasSemPagamentos) {
+      await gerarPagamentosVenda(venda)
+      totalGerados++
+    }
+    
+    setSaving(false)
+    fetchData()
+    setMessage({ type: 'success', text: `Pagamentos gerados para ${totalGerados} vendas!` })
     setTimeout(() => setMessage({ type: '', text: '' }), 3000)
   }
 
@@ -1332,42 +1468,42 @@ const AdminDashboard = () => {
         <nav className="sidebar-nav">
           <button 
             className={`nav-item ${activeTab === 'vendas' ? 'active' : ''}`}
-            onClick={() => setActiveTab('vendas')}
+            onClick={() => navigate('/admin/vendas')}
           >
             <DollarSign size={20} />
             <span>Vendas</span>
           </button>
           <button 
             className={`nav-item ${activeTab === 'corretores' ? 'active' : ''}`}
-            onClick={() => setActiveTab('corretores')}
+            onClick={() => navigate('/admin/corretores')}
           >
             <Users size={20} />
             <span>Corretores</span>
           </button>
           <button 
             className={`nav-item ${activeTab === 'empreendimentos' ? 'active' : ''}`}
-            onClick={() => setActiveTab('empreendimentos')}
+            onClick={() => navigate('/admin/empreendimentos')}
           >
             <Building size={20} />
             <span>Empreendimentos</span>
           </button>
           <button 
             className={`nav-item ${activeTab === 'pagamentos' ? 'active' : ''}`}
-            onClick={() => setActiveTab('pagamentos')}
+            onClick={() => navigate('/admin/pagamentos')}
           >
             <CreditCard size={20} />
             <span>Pagamentos</span>
           </button>
           <button 
             className={`nav-item ${activeTab === 'clientes' ? 'active' : ''}`}
-            onClick={() => setActiveTab('clientes')}
+            onClick={() => navigate('/admin/clientes')}
           >
             <UserCircle size={20} />
             <span>Clientes</span>
           </button>
           <button 
             className={`nav-item ${activeTab === 'relatorios' ? 'active' : ''}`}
-            onClick={() => setActiveTab('relatorios')}
+            onClick={() => navigate('/admin/relatorios')}
           >
             <TrendingUp size={20} />
             <span>Relatórios</span>
@@ -1823,11 +1959,61 @@ const AdminDashboard = () => {
 
         {activeTab === 'pagamentos' && (
           <div className="content-section">
-            {pagamentos.length === 0 ? (
+            {/* Aviso de vendas sem pagamentos */}
+            {vendasSemPagamentos.length > 0 && (
+              <div className="alert-box warning" style={{
+                background: 'rgba(234, 179, 8, 0.1)',
+                border: '1px solid rgba(234, 179, 8, 0.3)',
+                borderRadius: '12px',
+                padding: '16px 20px',
+                marginBottom: '20px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: '16px'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <Clock size={24} style={{ color: '#eab308' }} />
+                  <div>
+                    <strong style={{ color: '#eab308' }}>
+                      {vendasSemPagamentos.length} venda(s) sem pagamentos cadastrados
+                    </strong>
+                    <p style={{ margin: '4px 0 0', fontSize: '13px', color: 'rgba(255,255,255,0.7)' }}>
+                      Essas vendas precisam ter os pagamentos gerados para aparecerem aqui
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={gerarTodosPagamentos}
+                  disabled={saving}
+                  style={{
+                    background: '#eab308',
+                    color: '#000',
+                    border: 'none',
+                    padding: '10px 20px',
+                    borderRadius: '8px',
+                    cursor: 'pointer',
+                    fontWeight: '600',
+                    fontSize: '14px',
+                    whiteSpace: 'nowrap'
+                  }}
+                >
+                  {saving ? 'Gerando...' : 'Gerar Pagamentos'}
+                </button>
+              </div>
+            )}
+
+            {pagamentos.length === 0 && vendasSemPagamentos.length === 0 ? (
               <div className="empty-state-box">
                 <CreditCard size={48} />
                 <h3>Nenhum pagamento cadastrado</h3>
                 <p>Os pagamentos são criados automaticamente ao registrar uma venda</p>
+              </div>
+            ) : pagamentos.length === 0 ? (
+              <div className="empty-state-box">
+                <CreditCard size={48} />
+                <h3>Nenhum pagamento gerado ainda</h3>
+                <p>Clique no botão acima para gerar os pagamentos das vendas existentes</p>
               </div>
             ) : (
               <>
@@ -1848,7 +2034,7 @@ const AdminDashboard = () => {
                   <div className="resumo-card">
                     <span className="resumo-label">Comissão a Receber</span>
                     <span className="resumo-valor">
-                      {formatCurrency(pagamentos.filter(p => p.status === 'pendente').reduce((acc, p) => acc + (p.comissao_gerada || 0), 0))}
+                      {formatCurrency(pagamentos.filter(p => p.status === 'pendente').reduce((acc, p) => acc + calcularComissaoTotalPagamento(p), 0))}
                     </span>
                   </div>
                 </div>
@@ -1881,7 +2067,7 @@ const AdminDashboard = () => {
                           </div>
                           <div className="valor-item">
                             <span className="valor-label">Comissão Total</span>
-                            <span className="valor-number comissao">{formatCurrency(grupo.totalComissao)}</span>
+                            <span className="valor-number comissao">{formatCurrency(grupo.pagamentos.reduce((acc, p) => acc + calcularComissaoTotalPagamento(p), 0))}</span>
                           </div>
                           <div className="valor-item">
                             <span className="valor-label">Pago</span>
@@ -1900,69 +2086,49 @@ const AdminDashboard = () => {
                       {/* Lista de Parcelas - Expandível */}
                       {vendaExpandida === grupo.venda_id && (
                         <div className="venda-pagamento-body">
-                          <table className="parcelas-table">
-                            <thead>
-                              <tr>
-                                <th>Tipo</th>
-                                <th>Valor</th>
-                                <th>Comissão</th>
-                                <th>Data Prevista</th>
-                                <th>Status</th>
-                                <th>Ações</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {grupo.pagamentos
-                                .sort((a, b) => {
-                                  // Ordenar: sinal primeiro, depois entrada, depois parcelas por número
-                                  const ordem = { sinal: 0, entrada: 1, parcela_entrada: 2, balao: 3 }
-                                  if (ordem[a.tipo] !== ordem[b.tipo]) return ordem[a.tipo] - ordem[b.tipo]
-                                  return (a.numero_parcela || 0) - (b.numero_parcela || 0)
-                                })
-                                .map((pag) => (
-                                <tr key={pag.id} className={pag.status === 'pago' ? 'row-pago' : ''}>
-                                  <td>
-                                    <span className={`badge-tipo ${pag.tipo}`}>
-                                      {pag.tipo === 'sinal' && 'Sinal'}
-                                      {pag.tipo === 'entrada' && 'Entrada'}
-                                      {pag.tipo === 'parcela_entrada' && `Parcela ${pag.numero_parcela}`}
-                                      {pag.tipo === 'balao' && (pag.numero_parcela ? `Balão ${pag.numero_parcela}` : 'Balão')}
-                                    </span>
-                                  </td>
-                                  <td>{formatCurrency(pag.valor)}</td>
-                                  <td className="comissao-cell">{formatCurrency(pag.comissao_gerada || 0)}</td>
-                                  <td>{pag.data_prevista ? new Date(pag.data_prevista).toLocaleDateString('pt-BR') : '-'}</td>
-                                  <td>
-                                    <span className={`status-badge ${pag.status}`}>
-                                      {pag.status === 'pendente' && 'Pendente'}
-                                      {pag.status === 'pago' && 'Pago'}
-                                      {pag.status === 'atrasado' && 'Atrasado'}
-                                    </span>
-                                  </td>
-                                  <td>
-                                    <div className="action-buttons">
-                                      <button 
-                                        className="btn-ver-detalhe"
-                                        onClick={(e) => { e.stopPropagation(); setPagamentoDetalhe(pag); }}
-                                        title="Ver divisão de comissões"
-                                      >
-                                        <Eye size={16} />
-                                      </button>
-                                      {pag.status !== 'pago' && (
-                                        <button 
-                                          className="btn-confirmar-pag"
-                                          onClick={(e) => { e.stopPropagation(); confirmarPagamento(pag.id); }}
-                                          title="Confirmar pagamento"
-                                        >
-                                          <Check size={16} />
-                                        </button>
-                                      )}
-                                    </div>
-                                  </td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
+                          {grupo.pagamentos
+                            .sort((a, b) => {
+                              const ordem = { sinal: 0, entrada: 1, parcela_entrada: 2, balao: 3 }
+                              if (ordem[a.tipo] !== ordem[b.tipo]) return ordem[a.tipo] - ordem[b.tipo]
+                              return (a.numero_parcela || 0) - (b.numero_parcela || 0)
+                            })
+                            .map((pag) => (
+                            <div key={pag.id} className={`parcela-row ${pag.status === 'pago' ? 'pago' : ''}`}>
+                              <div className="parcela-main">
+                                <div className="parcela-tipo">
+                                  {pag.tipo === 'sinal' && 'Sinal'}
+                                  {pag.tipo === 'entrada' && 'Entrada'}
+                                  {pag.tipo === 'parcela_entrada' && `Parcela ${pag.numero_parcela}`}
+                                  {pag.tipo === 'balao' && `Balão ${pag.numero_parcela || ''}`}
+                                </div>
+                                <div className="parcela-data">{pag.data_prevista ? new Date(pag.data_prevista).toLocaleDateString('pt-BR') : '-'}</div>
+                                <div className="parcela-valor">{formatCurrency(pag.valor)}</div>
+                                <div className="parcela-status">
+                                  <span className={`status-pill ${pag.status}`}>
+                                    {pag.status === 'pago' ? 'Pago' : 'Pendente'}
+                                  </span>
+                                </div>
+                                <div className="parcela-acao">
+                                  {pag.status !== 'pago' && (
+                                    <button 
+                                      className="btn-small-confirm"
+                                      onClick={(e) => { e.stopPropagation(); confirmarPagamento(pag.id); }}
+                                    >
+                                      Confirmar
+                                    </button>
+                                  )}
+                                </div>
+                              </div>
+                              <div className="parcela-comissoes">
+                                {calcularComissaoPorCargoPagamento(pag).map((cargo, idx) => (
+                                  <div key={idx} className="comissao-item">
+                                    <span className="comissao-nome">{cargo.nome_cargo}</span>
+                                    <span className="comissao-valor">{formatCurrency(cargo.valor)}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          ))}
                         </div>
                       )}
                     </div>
@@ -2005,7 +2171,7 @@ const AdminDashboard = () => {
                           </div>
                           <div className="detalhe-row highlight">
                             <span className="label">Comissão Total:</span>
-                            <span className="value comissao">{formatCurrency(pagamentoDetalhe.comissao_gerada || 0)}</span>
+                            <span className="value comissao">{formatCurrency(calcularComissaoTotalPagamento(pagamentoDetalhe))}</span>
                           </div>
                         </div>
 
@@ -2040,7 +2206,7 @@ const AdminDashboard = () => {
                               <tr className="total-row">
                                 <td><strong>TOTAL</strong></td>
                                 <td>-</td>
-                                <td className="valor-comissao"><strong>{formatCurrency(pagamentoDetalhe.comissao_gerada || 0)}</strong></td>
+                                <td className="valor-comissao"><strong>{formatCurrency(calcularComissaoTotalPagamento(pagamentoDetalhe))}</strong></td>
                               </tr>
                             </tfoot>
                           </table>

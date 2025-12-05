@@ -190,6 +190,14 @@ function AppRoutes() {
         } 
       />
       <Route 
+        path="/admin/:tab" 
+        element={
+          <ProtectedRoute requiredRole="admin">
+            <AdminDashboard />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
         path="/corretor" 
         element={
           <ProtectedRoute requiredRole="corretor">
