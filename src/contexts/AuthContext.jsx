@@ -5,221 +5,125 @@ const AuthContext = createContext({})
 
 export const useAuth = () => useContext(AuthContext)
 
-// Limpar todo o storage relacionado ao Supabase
-const clearAuthStorage = () => {
-  const keysToRemove = []
-  for (let i = 0; i < localStorage.length; i++) {
-    const key = localStorage.key(i)
-    if (key && (key.includes('supabase') || key.includes('sb-'))) {
-      keysToRemove.push(key)
-    }
-  }
-  keysToRemove.forEach(key => localStorage.removeItem(key))
-  sessionStorage.clear()
-}
-
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null)
   const [userProfile, setUserProfile] = useState(null)
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    let isMounted = true
-    let timeoutId = null
-
-    // Timeout de segurança - máximo 4 segundos
-    timeoutId = setTimeout(() => {
-      if (isMounted && loading) {
-        console.log('Timeout: forçando fim do loading')
-        setLoading(false)
-      }
-    }, 4000)
-
-    const initAuth = async () => {
-      try {
-        const { data: { session }, error } = await supabase.auth.getSession()
-        
-        if (error) {
-          console.error('Erro ao buscar sessão:', error)
-          clearAuthStorage()
-          if (isMounted) {
-            setUser(null)
-            setUserProfile(null)
-            setLoading(false)
-          }
-          return
-        }
-
-        if (!isMounted) return
-
-        if (session?.user) {
-          setUser(session.user)
-          await fetchUserProfile(session.user.id)
-        } else {
-          setUser(null)
-          setUserProfile(null)
-        }
-      } catch (error) {
-        console.error('Erro ao inicializar auth:', error)
-        clearAuthStorage()
-      } finally {
-        if (isMounted) {
-          setLoading(false)
-          if (timeoutId) clearTimeout(timeoutId)
-        }
-      }
+  // Função para buscar/criar perfil
+  const loadProfile = async (authUser) => {
+    if (!authUser) {
+      setUser(null)
+      setUserProfile(null)
+      setLoading(false)
+      return
     }
 
-    initAuth()
+    console.log('Carregando perfil para:', authUser.email)
+    setUser(authUser)
 
-    // Escutar mudanças de autenticação
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+    try {
+      // Buscar perfil existente
+      const { data: profile, error } = await supabase
+        .from('usuarios')
+        .select('*')
+        .eq('id', authUser.id)
+        .maybeSingle()
+
+      console.log('Perfil encontrado:', profile, 'Erro:', error)
+
+      if (profile) {
+        setUserProfile(profile)
+        setLoading(false)
+        return
+      }
+
+      // Se não existe, criar como admin
+      console.log('Criando perfil automaticamente...')
+      const { data: newProfile, error: createError } = await supabase
+        .from('usuarios')
+        .upsert({
+          id: authUser.id,
+          email: authUser.email,
+          nome: 'Administrador',
+          tipo: 'admin'
+        }, { onConflict: 'id' })
+        .select()
+        .single()
+
+      console.log('Novo perfil:', newProfile, 'Erro:', createError)
+
+      if (newProfile) {
+        setUserProfile(newProfile)
+      } else {
+        // Última tentativa: buscar novamente
+        const { data: retry } = await supabase
+          .from('usuarios')
+          .select('*')
+          .eq('id', authUser.id)
+          .maybeSingle()
+        
+        setUserProfile(retry || { id: authUser.id, email: authUser.email, nome: 'Admin', tipo: 'admin' })
+      }
+    } catch (err) {
+      console.error('Erro ao carregar perfil:', err)
+      // Fallback: criar perfil local para não travar
+      setUserProfile({ id: authUser.id, email: authUser.email, nome: 'Admin', tipo: 'admin' })
+    }
+
+    setLoading(false)
+  }
+
+  useEffect(() => {
+    // Verificar sessão atual
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log('Sessão inicial:', session?.user?.email || 'nenhuma')
+      loadProfile(session?.user || null)
+    })
+
+    // Escutar mudanças
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       console.log('Auth event:', event)
       
-      if (!isMounted) return
-
-      // Token inválido ou expirado
-      if (event === 'TOKEN_REFRESHED' && !session) {
-        clearAuthStorage()
+      if (event === 'SIGNED_IN') {
+        loadProfile(session?.user || null)
+      } else if (event === 'SIGNED_OUT') {
         setUser(null)
         setUserProfile(null)
-        setLoading(false)
-        return
-      }
-
-      if (event === 'SIGNED_OUT') {
-        clearAuthStorage()
-        setUser(null)
-        setUserProfile(null)
-        setLoading(false)
-        return
-      }
-
-      if (event === 'SIGNED_IN' && session?.user) {
-        setUser(session.user)
-        await fetchUserProfile(session.user.id)
         setLoading(false)
       }
     })
 
-    return () => {
-      isMounted = false
-      if (timeoutId) clearTimeout(timeoutId)
-      subscription.unsubscribe()
-    }
+    return () => subscription.unsubscribe()
   }, [])
-
-  const fetchUserProfile = async (userId) => {
-    console.log('Buscando perfil para userId:', userId)
-    try {
-      // Buscar sessão para pegar email
-      const { data: { session } } = await supabase.auth.getSession()
-      const userEmail = session?.user?.email
-      console.log('Email do usuário:', userEmail)
-      
-      const { data, error } = await supabase
-        .from('usuarios')
-        .select('*')
-        .eq('id', userId)
-        .maybeSingle()
-      
-      console.log('Resultado busca perfil:', { data, error })
-      
-      if (error) {
-        console.error('Erro ao buscar perfil:', error)
-        // Tentar criar mesmo com erro
-      }
-      
-      // Se não encontrou o perfil, criar automaticamente como admin
-      if (!data && userEmail) {
-        console.log('Perfil não encontrado, criando automaticamente...')
-        const { data: newProfile, error: insertError } = await supabase
-          .from('usuarios')
-          .upsert([{
-            id: userId,
-            email: userEmail,
-            nome: 'Administrador',
-            tipo: 'admin'
-          }], { onConflict: 'id' })
-          .select()
-          .single()
-        
-        console.log('Resultado criar perfil:', { newProfile, insertError })
-        
-        if (insertError) {
-          console.error('Erro ao criar perfil:', insertError)
-          // Mesmo com erro, tentar buscar novamente
-          const { data: retryData } = await supabase
-            .from('usuarios')
-            .select('*')
-            .eq('id', userId)
-            .maybeSingle()
-          
-          if (retryData) {
-            console.log('Perfil encontrado na segunda tentativa:', retryData)
-            setUserProfile(retryData)
-            return
-          }
-          setUserProfile(null)
-          return
-        }
-        
-        setUserProfile(newProfile)
-        return
-      }
-      
-      console.log('Perfil carregado:', data)
-      setUserProfile(data)
-    } catch (err) {
-      console.error('Erro geral:', err)
-      setUserProfile(null)
-    }
-  }
 
   const signIn = async (email, password) => {
     setLoading(true)
-    try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password
-      })
-      if (error) {
-        setLoading(false)
-        return { data: null, error }
-      }
-      return { data, error: null }
-    } catch (err) {
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password })
+    if (error) {
       setLoading(false)
-      return { data: null, error: err }
+      return { error }
     }
+    return { data }
   }
 
   const signOut = async () => {
-    setLoading(true)
-    try {
-      await supabase.auth.signOut()
-    } catch (err) {
-      console.error('Erro no signOut:', err)
-    } finally {
-      clearAuthStorage()
-      setUser(null)
-      setUserProfile(null)
-      setLoading(false)
-    }
-  }
-
-  const value = {
-    user,
-    userProfile,
-    loading,
-    signIn,
-    signOut,
-    isAdmin: userProfile?.tipo === 'admin',
-    isCorretor: userProfile?.tipo === 'corretor'
+    await supabase.auth.signOut()
+    localStorage.clear()
+    setUser(null)
+    setUserProfile(null)
   }
 
   return (
-    <AuthContext.Provider value={value}>
+    <AuthContext.Provider value={{
+      user,
+      userProfile,
+      loading,
+      signIn,
+      signOut,
+      isAdmin: userProfile?.tipo === 'admin',
+      isCorretor: userProfile?.tipo === 'corretor'
+    }}>
       {children}
     </AuthContext.Provider>
   )
