@@ -257,6 +257,7 @@ const AdminDashboard = () => {
       .select('*')
     
     if (pagamentosError) console.error('Erro ao buscar pagamentos:', pagamentosError)
+    console.log('Pagamentos do banco:', pagamentosData)
 
     // Associar cargos aos empreendimentos manualmente
     const empreendimentosComCargos = (empreendimentosData || []).map(emp => ({
