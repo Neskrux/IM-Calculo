@@ -204,11 +204,28 @@ const AdminDashboard = () => {
     
     const valorPagamento = parseFloat(pagamento.valor) || 0
     
-    // Calcular comissão por cargo baseado no percentual individual de cada cargo
-    // Ex: Parcela de R$ 1.000, cargo tem 2% -> comissão do cargo = R$ 1.000 * 0.02 = R$ 20
+    // PEGAR A COMISSÃO TOTAL JÁ CALCULADA NA VENDA
+    const comissaoTotalVenda = parseFloat(venda.comissao_total) || 0
+    
+    // Buscar todas as parcelas desta venda para calcular o total pro-soluto
+    const parcelasVenda = pagamentos.filter(p => p.venda_id === venda.id)
+    const valorTotalParcelas = parcelasVenda.reduce((acc, p) => acc + (parseFloat(p.valor) || 0), 0)
+    
+    // Fator de proporção = comissão total da venda / valor total das parcelas
+    const fatorProporcao = valorTotalParcelas > 0 ? comissaoTotalVenda / valorTotalParcelas : 0
+    
+    // Comissão desta parcela = valor da parcela × fator de proporção
+    const comissaoTotalParcela = valorPagamento * fatorProporcao
+    
+    // Calcular percentual total dos cargos para distribuição
+    const percentualTotal = cargosDoTipo.reduce((acc, c) => acc + (parseFloat(c.percentual) || 0), 0)
+    
+    // Distribuir entre os cargos proporcionalmente
     return cargosDoTipo.map(cargo => {
       const percentualCargo = parseFloat(cargo.percentual) || 0
-      const valorComissaoCargo = (valorPagamento * percentualCargo) / 100
+      // Proporção deste cargo no total
+      const proporcaoCargo = percentualTotal > 0 ? percentualCargo / percentualTotal : 0
+      const valorComissaoCargo = comissaoTotalParcela * proporcaoCargo
       
       return {
         nome_cargo: cargo.nome_cargo,
@@ -731,11 +748,16 @@ const AdminDashboard = () => {
 
         if (error) throw new Error(error.message)
 
-        // Deletar cargos antigos
-        await supabase
+        // Deletar cargos antigos PRIMEIRO
+        const { error: deleteError } = await supabase
           .from('cargos_empreendimento')
           .delete()
           .eq('empreendimento_id', selectedItem.id)
+        
+        if (deleteError) {
+          console.error('Erro ao deletar cargos antigos:', deleteError)
+          throw new Error('Erro ao atualizar cargos: ' + deleteError.message)
+        }
 
       } else {
         // Criar novo empreendimento
@@ -2034,7 +2056,13 @@ const AdminDashboard = () => {
                   <div className="resumo-card">
                     <span className="resumo-label">Comissão a Receber</span>
                     <span className="resumo-valor">
-                      {formatCurrency(pagamentos.filter(p => p.status === 'pendente').reduce((acc, p) => acc + calcularComissaoTotalPagamento(p), 0))}
+                      {formatCurrency(listaVendasComPagamentos.reduce((acc, grupo) => {
+                        const comissaoTotal = parseFloat(grupo.venda?.comissao_total) || 0
+                        const totalParcelas = grupo.totalValor
+                        const parcelasPendentes = grupo.pagamentos.filter(p => p.status === 'pendente').reduce((a, p) => a + (parseFloat(p.valor) || 0), 0)
+                        const proporcao = totalParcelas > 0 ? parcelasPendentes / totalParcelas : 0
+                        return acc + (comissaoTotal * proporcao)
+                      }, 0))}
                     </span>
                   </div>
                 </div>
@@ -2062,12 +2090,12 @@ const AdminDashboard = () => {
                         </div>
                         <div className="venda-valores">
                           <div className="valor-item">
-                            <span className="valor-label">Valor Total</span>
+                            <span className="valor-label">Pro-Soluto</span>
                             <span className="valor-number">{formatCurrency(grupo.totalValor)}</span>
                           </div>
                           <div className="valor-item">
                             <span className="valor-label">Comissão Total</span>
-                            <span className="valor-number comissao">{formatCurrency(grupo.pagamentos.reduce((acc, p) => acc + calcularComissaoTotalPagamento(p), 0))}</span>
+                            <span className="valor-number comissao">{formatCurrency(grupo.venda?.comissao_total || 0)}</span>
                           </div>
                           <div className="valor-item">
                             <span className="valor-label">Pago</span>
