@@ -390,6 +390,20 @@ const AdminDashboard = () => {
     // Fórmula: Fcom = Vcom / Vsoluto
     // Fator de comissão = Valor da Comissão / Valor do Pro-Soluto
     const fatorComissao = valorProSoluto > 0 ? comissoesDinamicas.total / valorProSoluto : 0
+    
+    console.log('Cálculo venda:', {
+      valorVenda,
+      valorSinal,
+      valorEntradaTotal,
+      valorTotalBalao,
+      valorProSoluto,
+      comissaoTotal: comissoesDinamicas.total,
+      fatorComissao,
+      teveSinal: vendaForm.teve_sinal,
+      teveEntrada: vendaForm.teve_entrada,
+      parcelouEntrada: vendaForm.parcelou_entrada,
+      teveBalao: vendaForm.teve_balao
+    })
 
     const vendaData = {
       corretor_id: vendaForm.corretor_id,
@@ -535,7 +549,14 @@ const AdminDashboard = () => {
       }
 
       if (pagamentos.length > 0) {
-        await supabase.from('pagamentos_prosoluto').insert(pagamentos)
+        const { error: pagError } = await supabase.from('pagamentos_prosoluto').insert(pagamentos)
+        if (pagError) {
+          console.error('Erro ao criar pagamentos:', pagError)
+        } else {
+          console.log('Pagamentos criados:', pagamentos.length)
+        }
+      } else {
+        console.log('Nenhum pagamento para criar. Pro-soluto:', valorProSoluto)
       }
     }
 
