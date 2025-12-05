@@ -111,6 +111,10 @@ export const AuthProvider = ({ children }) => {
 
   const fetchUserProfile = async (userId) => {
     try {
+      // Buscar sessão para pegar email
+      const { data: { session } } = await supabase.auth.getSession()
+      const userEmail = session?.user?.email
+      
       const { data, error } = await supabase
         .from('usuarios')
         .select('*')
@@ -120,6 +124,30 @@ export const AuthProvider = ({ children }) => {
       if (error) {
         console.error('Erro ao buscar perfil:', error)
         setUserProfile(null)
+        return
+      }
+      
+      // Se não encontrou o perfil, criar automaticamente como admin
+      if (!data && userEmail) {
+        console.log('Criando perfil de usuário automaticamente...')
+        const { data: newProfile, error: insertError } = await supabase
+          .from('usuarios')
+          .insert([{
+            id: userId,
+            email: userEmail,
+            nome: 'Administrador',
+            tipo: 'admin'
+          }])
+          .select()
+          .single()
+        
+        if (insertError) {
+          console.error('Erro ao criar perfil:', insertError)
+          setUserProfile(null)
+          return
+        }
+        
+        setUserProfile(newProfile)
         return
       }
       
