@@ -358,3 +358,18 @@ CREATE TABLE IF NOT EXISTS complementadores_renda (
 ALTER TABLE clientes DISABLE ROW LEVEL SECURITY;
 ALTER TABLE complementadores_renda DISABLE ROW LEVEL SECURITY;
 
+-- =============================================
+-- ADICIONAR COLUNA user_id NA TABELA CLIENTES
+-- Para vincular cliente ao usuário de acesso
+-- =============================================
+ALTER TABLE clientes ADD COLUMN IF NOT EXISTS user_id UUID REFERENCES auth.users(id);
+
+-- =============================================
+-- ATUALIZAR TIPO DE USUÁRIO PARA INCLUIR CLIENTE
+-- =============================================
+ALTER TABLE usuarios DROP CONSTRAINT IF EXISTS usuarios_tipo_check;
+ALTER TABLE usuarios ADD CONSTRAINT usuarios_tipo_check CHECK (tipo IN ('admin', 'corretor', 'cliente'));
+
+-- Adicionar coluna role se não existir (para compatibilidade)
+ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS role TEXT;
+

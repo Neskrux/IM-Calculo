@@ -2415,3 +2415,298 @@
     border-bottom: none;
   }
 }
+
+/* ===== RELATÓRIOS ===== */
+.relatorio-gerador {
+  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+  border-radius: 16px;
+  padding: 32px;
+  margin-bottom: 24px;
+  border: 1px solid #334155;
+}
+
+.gerador-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.gerador-header svg {
+  color: #10b981;
+  width: 32px;
+  height: 32px;
+}
+
+.gerador-header h3 {
+  font-size: 20px;
+  color: #fff;
+  margin: 0;
+}
+
+.gerador-header p {
+  font-size: 14px;
+  color: #94a3b8;
+  margin: 4px 0 0 0;
+}
+
+.gerador-filtros {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.filtro-grupo {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.filtro-grupo label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.filtro-grupo select,
+.filtro-grupo input {
+  background: #0f172a;
+  border: 1px solid #334155;
+  border-radius: 8px;
+  padding: 12px 16px;
+  color: #fff;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.filtro-grupo select:hover,
+.filtro-grupo input:hover {
+  border-color: #10b981;
+}
+
+.filtro-grupo select:focus,
+.filtro-grupo input:focus {
+  border-color: #10b981;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+}
+
+.btn-gerar-pdf {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  padding: 16px 32px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+  width: 100%;
+  max-width: 300px;
+}
+
+.btn-gerar-pdf:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(16, 185, 129, 0.3);
+}
+
+.btn-gerar-pdf:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.btn-gerar-pdf .spinning {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Resumo Relatórios */
+.relatorio-resumo {
+  background: #1e2433;
+  border-radius: 16px;
+  padding: 24px;
+  margin-bottom: 24px;
+}
+
+.relatorio-resumo h3 {
+  font-size: 16px;
+  color: #fff;
+  margin: 0 0 20px 0;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #343b4d;
+}
+
+.resumo-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 16px;
+}
+
+.resumo-card-item {
+  background: #0f172a;
+  border-radius: 12px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.resumo-titulo {
+  font-size: 12px;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.resumo-numero {
+  font-size: 24px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.resumo-numero.verde {
+  color: #10b981;
+}
+
+.resumo-numero.azul {
+  color: #3b82f6;
+}
+
+.resumo-numero.amarelo {
+  color: #f59e0b;
+}
+
+/* Beneficiários Relatório */
+.relatorio-beneficiarios {
+  background: #1e2433;
+  border-radius: 16px;
+  padding: 24px;
+}
+
+.relatorio-beneficiarios h3 {
+  font-size: 16px;
+  color: #fff;
+  margin: 0 0 20px 0;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #343b4d;
+}
+
+.beneficiarios-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.beneficiario-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #0f172a;
+  border-radius: 10px;
+  padding: 16px 20px;
+  transition: all 0.2s;
+}
+
+.beneficiario-row:hover {
+  background: #162032;
+}
+
+.beneficiario-row .beneficiario-nome {
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+}
+
+.beneficiario-valores {
+  display: flex;
+  gap: 24px;
+}
+
+.beneficiario-valores span {
+  font-size: 13px;
+}
+
+.beneficiario-valores .valor-pago {
+  color: #10b981;
+}
+
+.beneficiario-valores .valor-pendente {
+  color: #f59e0b;
+}
+
+.beneficiario-valores .valor-total {
+  color: #fff;
+  font-weight: 600;
+}
+
+@media (max-width: 768px) {
+  .beneficiario-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  
+  .beneficiario-valores {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  
+  .gerador-filtros {
+    grid-template-columns: 1fr;
+  }
+  
+  .btn-gerar-pdf {
+    max-width: 100%;
+  }
+}
+
+/* ===== ACESSO AO SISTEMA (CLIENTE) ===== */
+.acesso-box {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(16, 185, 129, 0.05) 100%);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.acesso-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+  padding: 10px 14px;
+  background: rgba(16, 185, 129, 0.1);
+  border-radius: 8px;
+}
+
+.acesso-info svg {
+  color: #10b981;
+  flex-shrink: 0;
+}
+
+.acesso-info span {
+  font-size: 13px;
+  color: #10b981;
+}
+
+.form-hint {
+  display: block;
+  font-size: 12px;
+  margin-top: 6px;
+  color: #94a3b8;
+}
+
+.form-hint.success {
+  color: #10b981;
+}
