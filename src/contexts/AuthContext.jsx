@@ -110,10 +110,12 @@ export const AuthProvider = ({ children }) => {
   }, [])
 
   const fetchUserProfile = async (userId) => {
+    console.log('Buscando perfil para userId:', userId)
     try {
       // Buscar sessão para pegar email
       const { data: { session } } = await supabase.auth.getSession()
       const userEmail = session?.user?.email
+      console.log('Email do usuário:', userEmail)
       
       const { data, error } = await supabase
         .from('usuarios')
@@ -121,28 +123,43 @@ export const AuthProvider = ({ children }) => {
         .eq('id', userId)
         .maybeSingle()
       
+      console.log('Resultado busca perfil:', { data, error })
+      
       if (error) {
         console.error('Erro ao buscar perfil:', error)
-        setUserProfile(null)
-        return
+        // Tentar criar mesmo com erro
       }
       
       // Se não encontrou o perfil, criar automaticamente como admin
       if (!data && userEmail) {
-        console.log('Criando perfil de usuário automaticamente...')
+        console.log('Perfil não encontrado, criando automaticamente...')
         const { data: newProfile, error: insertError } = await supabase
           .from('usuarios')
-          .insert([{
+          .upsert([{
             id: userId,
             email: userEmail,
             nome: 'Administrador',
             tipo: 'admin'
-          }])
+          }], { onConflict: 'id' })
           .select()
           .single()
         
+        console.log('Resultado criar perfil:', { newProfile, insertError })
+        
         if (insertError) {
           console.error('Erro ao criar perfil:', insertError)
+          // Mesmo com erro, tentar buscar novamente
+          const { data: retryData } = await supabase
+            .from('usuarios')
+            .select('*')
+            .eq('id', userId)
+            .maybeSingle()
+          
+          if (retryData) {
+            console.log('Perfil encontrado na segunda tentativa:', retryData)
+            setUserProfile(retryData)
+            return
+          }
           setUserProfile(null)
           return
         }
@@ -151,9 +168,10 @@ export const AuthProvider = ({ children }) => {
         return
       }
       
+      console.log('Perfil carregado:', data)
       setUserProfile(data)
     } catch (err) {
-      console.error('Erro:', err)
+      console.error('Erro geral:', err)
       setUserProfile(null)
     }
   }
