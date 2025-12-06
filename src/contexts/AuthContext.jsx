@@ -10,7 +10,7 @@ export const AuthProvider = ({ children }) => {
   const [userProfile, setUserProfile] = useState(null)
   const [loading, setLoading] = useState(true)
 
-  // Função para buscar/criar perfil
+  // Função para buscar perfil
   const loadProfile = async (authUser) => {
     if (!authUser) {
       setUser(null)
@@ -23,14 +23,14 @@ export const AuthProvider = ({ children }) => {
     setUser(authUser)
 
     try {
-      // Buscar perfil existente
+      // Buscar perfil existente pelo ID
       const { data: profile, error } = await supabase
         .from('usuarios')
         .select('*')
         .eq('id', authUser.id)
         .maybeSingle()
 
-      console.log('Perfil encontrado:', profile, 'Erro:', error)
+      console.log('Perfil encontrado por ID:', profile, 'Erro:', error)
 
       if (profile) {
         setUserProfile(profile)
@@ -38,37 +38,43 @@ export const AuthProvider = ({ children }) => {
         return
       }
 
-      // Se não existe, criar como admin
-      console.log('Criando perfil automaticamente...')
-      const { data: newProfile, error: createError } = await supabase
+      // Se não encontrou pelo ID, tentar buscar pelo email
+      console.log('Perfil não encontrado pelo ID, buscando pelo email...')
+      const { data: profileByEmail, error: emailError } = await supabase
         .from('usuarios')
-        .upsert({
-          id: authUser.id,
-          email: authUser.email,
-          nome: 'Administrador',
-          tipo: 'admin'
-        }, { onConflict: 'id' })
-        .select()
-        .single()
+        .select('*')
+        .eq('email', authUser.email)
+        .maybeSingle()
 
-      console.log('Novo perfil:', newProfile, 'Erro:', createError)
+      console.log('Perfil encontrado por email:', profileByEmail, 'Erro:', emailError)
 
-      if (newProfile) {
-        setUserProfile(newProfile)
-      } else {
-        // Última tentativa: buscar novamente
-        const { data: retry } = await supabase
+      if (profileByEmail) {
+        // Se encontrou pelo email mas com ID diferente, atualizar o ID
+        console.log('Atualizando ID do perfil...')
+        const { error: updateError } = await supabase
           .from('usuarios')
-          .select('*')
-          .eq('id', authUser.id)
-          .maybeSingle()
-        
-        setUserProfile(retry || { id: authUser.id, email: authUser.email, nome: 'Admin', tipo: 'admin' })
+          .update({ id: authUser.id })
+          .eq('email', authUser.email)
+
+        if (!updateError) {
+          setUserProfile({ ...profileByEmail, id: authUser.id })
+        } else {
+          // Usar o perfil mesmo assim
+          setUserProfile(profileByEmail)
+        }
+        setLoading(false)
+        return
       }
+
+      // Se não encontrou de nenhuma forma, perfil não existe no sistema
+      console.error('Usuário não cadastrado no sistema:', authUser.email)
+      setUserProfile(null)
+      // Fazer logout
+      await supabase.auth.signOut()
+      alert('Seu usuário não está cadastrado no sistema. Entre em contato com o administrador.')
     } catch (err) {
       console.error('Erro ao carregar perfil:', err)
-      // Fallback: criar perfil local para não travar
-      setUserProfile({ id: authUser.id, email: authUser.email, nome: 'Admin', tipo: 'admin' })
+      setUserProfile(null)
     }
 
     setLoading(false)

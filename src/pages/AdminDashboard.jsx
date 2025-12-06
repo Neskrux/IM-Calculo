@@ -1,29 +1,23 @@
 import { useState, useEffect } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { supabase } from '../lib/supabase'
-import { jsPDF } from 'jspdf'
-import autoTable from 'jspdf-autotable'
 import { 
   Users, DollarSign, TrendingUp, Plus, Edit2, Trash2, 
   Search, Filter, LogOut, Menu, X, ChevronDown, Save, Eye,
-  Calculator, Calendar, User, Briefcase, CheckCircle, Clock, UserPlus, Mail, Lock, Percent, Building, PlusCircle, CreditCard, Check, Upload, FileText, Trash, UserCircle, Phone, MapPin, Camera, Download, FileDown
+  Calculator, Calendar, User, Briefcase, CheckCircle, Clock, UserPlus, Mail, Lock, Percent, Building, PlusCircle, CreditCard, Check, Upload, FileText, Trash, UserCircle, Phone, MapPin, Camera
 } from 'lucide-react'
 import logo from '../imgs/logo.png'
 import '../styles/Dashboard.css'
 
 const AdminDashboard = () => {
   const { userProfile, signOut } = useAuth()
-  const { tab } = useParams()
-  const navigate = useNavigate()
-  const activeTab = tab || 'vendas'
-  
   const [corretores, setCorretores] = useState([])
   const [vendas, setVendas] = useState([])
   const [empreendimentos, setEmpreendimentos] = useState([])
   const [pagamentos, setPagamentos] = useState([])
   const [loading, setLoading] = useState(true)
   const [menuOpen, setMenuOpen] = useState(false)
+  const [activeTab, setActiveTab] = useState('vendas')
   const [searchTerm, setSearchTerm] = useState('')
   const [showModal, setShowModal] = useState(false)
   const [modalType, setModalType] = useState('')
@@ -37,17 +31,6 @@ const AdminDashboard = () => {
   const [vendaExpandida, setVendaExpandida] = useState(null)
   const [clientes, setClientes] = useState([])
   const [uploadingDoc, setUploadingDoc] = useState(false)
-  
-  // Estados para relatórios
-  const [relatorioFiltros, setRelatorioFiltros] = useState({
-    tipo: 'pagamentos', // pagamentos, comissoes, vendas
-    vendaId: '',
-    cargoId: '',
-    status: 'todos',
-    dataInicio: '',
-    dataFim: ''
-  })
-  const [gerandoPdf, setGerandoPdf] = useState(false)
 
   // Agrupar pagamentos por venda
   const pagamentosAgrupados = pagamentos.reduce((acc, pag) => {
@@ -156,10 +139,7 @@ const AdminDashboard = () => {
     beneficiado_subsidio_fgts: false,
     // Complemento
     tem_complemento_renda: false,
-    complementadores: [],
-    // Acesso ao sistema
-    criar_acesso: false,
-    senha: ''
+    complementadores: []
   })
 
   const complementadorVazio = {
@@ -180,13 +160,10 @@ const AdminDashboard = () => {
   // Calcular comissões baseado nos cargos do empreendimento (DINÂMICO)
   const calcularComissoesDinamicas = (valorVenda, empreendimentoId, tipoCorretor) => {
     const emp = empreendimentos.find(e => e.id === empreendimentoId)
-    if (!emp) return { cargos: [], total: 0, percentualTotal: 0 }
+    if (!emp) return { cargos: [], total: 0, fator: 0 }
     
     // Filtrar cargos pelo tipo de corretor
     const cargosDoTipo = emp.cargos?.filter(c => c.tipo_corretor === tipoCorretor) || []
-    
-    // Calcular percentual total primeiro
-    const percentualTotal = cargosDoTipo.reduce((acc, c) => acc + parseFloat(c.percentual || 0), 0)
     
     // Calcular comissão para cada cargo
     const comissoesPorCargo = cargosDoTipo.map(cargo => ({
@@ -196,10 +173,10 @@ const AdminDashboard = () => {
       valor: (valorVenda * parseFloat(cargo.percentual)) / 100
     }))
     
-    // Total em reais
+    // Total
     const total = comissoesPorCargo.reduce((acc, c) => acc + c.valor, 0)
     
-    return { cargos: comissoesPorCargo, total, percentualTotal }
+    return { cargos: comissoesPorCargo, total }
   }
 
   // Calcular comissão detalhada por cargo para um pagamento específico
@@ -218,30 +195,23 @@ const AdminDashboard = () => {
     const tipoCorretor = venda.tipo_corretor || 'externo'
     const cargosDoTipo = emp.cargos.filter(c => c.tipo_corretor === tipoCorretor)
     
+    // Calcular a comissão proporcional do pagamento para cada cargo
+    // fator_comissao da venda já foi calculado no momento da criação
+    const fatorComissao = parseFloat(venda.fator_comissao) || 0
     const valorPagamento = parseFloat(pagamento.valor) || 0
     
-    // PEGAR A COMISSÃO TOTAL JÁ CALCULADA NA VENDA
-    const comissaoTotalVenda = parseFloat(venda.comissao_total) || 0
+    // Total percentual dos cargos
+    const totalPercentualCargos = cargosDoTipo.reduce((acc, c) => acc + parseFloat(c.percentual || 0), 0)
     
-    // Buscar todas as parcelas desta venda para calcular o total pro-soluto
-    const parcelasVenda = pagamentos.filter(p => p.venda_id === venda.id)
-    const valorTotalParcelas = parcelasVenda.reduce((acc, p) => acc + (parseFloat(p.valor) || 0), 0)
+    // Comissão total desse pagamento
+    const comissaoTotalPagamento = pagamento.comissao_gerada || (valorPagamento * fatorComissao)
     
-    // Fator de proporção = comissão total da venda / valor total das parcelas
-    const fatorProporcao = valorTotalParcelas > 0 ? comissaoTotalVenda / valorTotalParcelas : 0
-    
-    // Comissão desta parcela = valor da parcela × fator de proporção
-    const comissaoTotalParcela = valorPagamento * fatorProporcao
-    
-    // Calcular percentual total dos cargos para distribuição
-    const percentualTotal = cargosDoTipo.reduce((acc, c) => acc + (parseFloat(c.percentual) || 0), 0)
-    
-    // Distribuir entre os cargos proporcionalmente
+    // Distribuir proporcionalmente entre os cargos
     return cargosDoTipo.map(cargo => {
       const percentualCargo = parseFloat(cargo.percentual) || 0
-      // Proporção deste cargo no total
-      const proporcaoCargo = percentualTotal > 0 ? percentualCargo / percentualTotal : 0
-      const valorComissaoCargo = comissaoTotalParcela * proporcaoCargo
+      // Proporção desse cargo no total
+      const proporcao = totalPercentualCargos > 0 ? percentualCargo / totalPercentualCargos : 0
+      const valorComissaoCargo = comissaoTotalPagamento * proporcao
       
       return {
         nome_cargo: cargo.nome_cargo,
@@ -249,12 +219,6 @@ const AdminDashboard = () => {
         valor: valorComissaoCargo
       }
     })
-  }
-  
-  // Calcular comissão total de um pagamento (soma de todos os cargos)
-  const calcularComissaoTotalPagamento = (pagamento) => {
-    const comissoesPorCargo = calcularComissaoPorCargoPagamento(pagamento)
-    return comissoesPorCargo.reduce((acc, c) => acc + c.valor, 0)
   }
 
   useEffect(() => {
@@ -317,15 +281,11 @@ const AdminDashboard = () => {
       const venda = (vendasData || []).find(v => v.id === pag.venda_id)
       const corretor = venda ? (corretoresData || []).find(c => c.id === venda.corretor_id) : null
       const empreendimento = venda ? (empreendimentosData || []).find(e => e.id === venda.empreendimento_id) : null
-      
       return {
         ...pag,
         venda: venda ? {
           id: venda.id,
           valor_venda: venda.valor_venda,
-          comissao_total: venda.comissao_total,
-          tipo_corretor: venda.tipo_corretor,
-          empreendimento_id: venda.empreendimento_id,
           descricao: venda.descricao,
           fator_comissao: venda.fator_comissao,
           corretor: corretor ? { nome: corretor.nome } : null,
@@ -408,11 +368,11 @@ const AdminDashboard = () => {
     )
 
     // Calcular valor pro-soluto e fator de comissão
-    const valorSinal = vendaForm.teve_sinal ? (parseFloat(vendaForm.valor_sinal) || 0) : 0
+    const valorSinal = vendaForm.teve_sinal === 'sim' ? (parseFloat(vendaForm.valor_sinal) || 0) : 0
     
     // Entrada: se parcelou, usa qtd × valor_parcela. Se não parcelou, usa valor_entrada
     let valorEntradaTotal = 0
-    if (vendaForm.teve_entrada) {
+    if (vendaForm.teve_entrada === 'sim') {
       if (vendaForm.parcelou_entrada) {
         valorEntradaTotal = (parseFloat(vendaForm.qtd_parcelas_entrada) || 0) * (parseFloat(vendaForm.valor_parcela_entrada) || 0)
       } else {
@@ -428,9 +388,9 @@ const AdminDashboard = () => {
     // Pro-soluto = sinal + entrada + balões
     const valorProSoluto = valorSinal + valorEntradaTotal + valorTotalBalao
     
-    // Fator de comissão = Percentual total de comissão / 100
-    // Ex: 7% -> 0.07, então parcela de R$ 1.000 x 0.07 = R$ 70 de comissão
-    const fatorComissao = comissoesDinamicas.percentualTotal / 100
+    // Fórmula: Fcom = Vcom / Vsoluto
+    // Fator de comissão = Valor da Comissão / Valor do Pro-Soluto
+    const fatorComissao = valorProSoluto > 0 ? comissoesDinamicas.total / valorProSoluto : 0
     
     console.log('Cálculo venda:', {
       valorVenda,
@@ -541,7 +501,7 @@ const AdminDashboard = () => {
       }
 
       // Entrada (à vista) - só se teve entrada E não parcelou
-      if (vendaForm.teve_entrada && !vendaForm.parcelou_entrada) {
+      if (vendaForm.teve_entrada === 'sim' && !vendaForm.parcelou_entrada) {
         const valorEntradaAvista = parseFloat(vendaForm.valor_entrada) || 0
         if (valorEntradaAvista > 0) {
           pagamentos.push({
@@ -555,7 +515,7 @@ const AdminDashboard = () => {
       }
       
       // Parcelas da entrada - só se teve entrada E parcelou
-      if (vendaForm.teve_entrada && vendaForm.parcelou_entrada) {
+      if (vendaForm.teve_entrada === 'sim' && vendaForm.parcelou_entrada) {
         const qtdParcelas = parseInt(vendaForm.qtd_parcelas_entrada) || 0
         const valorParcelaEnt = parseFloat(vendaForm.valor_parcela_entrada) || 0
         
@@ -768,16 +728,11 @@ const AdminDashboard = () => {
 
         if (error) throw new Error(error.message)
 
-        // Deletar cargos antigos PRIMEIRO
-        const { error: deleteError } = await supabase
+        // Deletar cargos antigos
+        await supabase
           .from('cargos_empreendimento')
           .delete()
           .eq('empreendimento_id', selectedItem.id)
-        
-        if (deleteError) {
-          console.error('Erro ao deletar cargos antigos:', deleteError)
-          throw new Error('Erro ao atualizar cargos: ' + deleteError.message)
-        }
 
       } else {
         // Criar novo empreendimento
@@ -880,139 +835,6 @@ const AdminDashboard = () => {
     
     fetchData()
     setMessage({ type: 'success', text: 'Pagamento confirmado!' })
-    setTimeout(() => setMessage({ type: '', text: '' }), 3000)
-  }
-
-  // Identificar vendas sem pagamentos
-  const vendasSemPagamentos = vendas.filter(v => {
-    const temPagamento = pagamentos.some(p => p.venda_id === v.id)
-    return !temPagamento
-  })
-
-  // Gerar pagamentos para uma venda específica
-  const gerarPagamentosVenda = async (venda) => {
-    setSaving(true)
-    
-    // Calcular fator de comissão
-    const valorVenda = parseFloat(venda.valor_venda) || 0
-    const comissoesDinamicas = calcularComissoesDinamicas(
-      valorVenda,
-      venda.empreendimento_id,
-      venda.tipo_corretor
-    )
-    
-    const valorSinal = venda.teve_sinal ? (parseFloat(venda.valor_sinal) || 0) : 0
-    
-    let valorEntradaTotal = 0
-    if (venda.teve_entrada) {
-      if (venda.parcelou_entrada) {
-        valorEntradaTotal = (parseFloat(venda.qtd_parcelas_entrada) || 0) * (parseFloat(venda.valor_parcela_entrada) || 0)
-      } else {
-        valorEntradaTotal = parseFloat(venda.valor_entrada) || 0
-      }
-    }
-    
-    const valorTotalBalao = venda.teve_balao === 'sim' 
-      ? (parseFloat(venda.qtd_balao) || 0) * (parseFloat(venda.valor_balao) || 0)
-      : 0
-    
-    const valorProSoluto = valorSinal + valorEntradaTotal + valorTotalBalao
-    // Fator de comissão = Percentual total / 100
-    const fatorComissao = comissoesDinamicas.percentualTotal / 100
-    
-    const novosPagamentos = []
-    
-    // Sinal
-    if (valorSinal > 0) {
-      novosPagamentos.push({
-        venda_id: venda.id,
-        tipo: 'sinal',
-        valor: valorSinal,
-        data_prevista: venda.data_venda,
-        comissao_gerada: valorSinal * fatorComissao
-      })
-    }
-
-    // Entrada à vista
-    if (venda.teve_entrada && !venda.parcelou_entrada) {
-      const valorEntradaAvista = parseFloat(venda.valor_entrada) || 0
-      if (valorEntradaAvista > 0) {
-        novosPagamentos.push({
-          venda_id: venda.id,
-          tipo: 'entrada',
-          valor: valorEntradaAvista,
-          data_prevista: venda.data_venda,
-          comissao_gerada: valorEntradaAvista * fatorComissao
-        })
-      }
-    }
-    
-    // Parcelas da entrada
-    if (venda.teve_entrada && venda.parcelou_entrada) {
-      const qtdParcelas = parseInt(venda.qtd_parcelas_entrada) || 0
-      const valorParcelaEnt = parseFloat(venda.valor_parcela_entrada) || 0
-      
-      for (let i = 1; i <= qtdParcelas; i++) {
-        const dataParcela = new Date(venda.data_venda)
-        dataParcela.setMonth(dataParcela.getMonth() + i)
-        
-        novosPagamentos.push({
-          venda_id: venda.id,
-          tipo: 'parcela_entrada',
-          numero_parcela: i,
-          valor: valorParcelaEnt,
-          data_prevista: dataParcela.toISOString().split('T')[0],
-          comissao_gerada: valorParcelaEnt * fatorComissao
-        })
-      }
-    }
-    
-    // Balões
-    if (venda.teve_balao === 'sim') {
-      const qtdBalao = parseInt(venda.qtd_balao) || 0
-      const valorBalaoUnit = parseFloat(venda.valor_balao) || 0
-      for (let i = 1; i <= qtdBalao; i++) {
-        novosPagamentos.push({
-          venda_id: venda.id,
-          tipo: 'balao',
-          numero_parcela: i,
-          valor: valorBalaoUnit,
-          comissao_gerada: valorBalaoUnit * fatorComissao
-        })
-      }
-    }
-
-    if (novosPagamentos.length > 0) {
-      const { error } = await supabase.from('pagamentos_prosoluto').insert(novosPagamentos)
-      if (error) {
-        setMessage({ type: 'error', text: 'Erro ao gerar pagamentos: ' + error.message })
-      } else {
-        setMessage({ type: 'success', text: `${novosPagamentos.length} pagamentos gerados!` })
-        fetchData()
-      }
-    } else {
-      setMessage({ type: 'warning', text: 'Esta venda não tem parcelas pro-soluto configuradas (sinal, entrada ou balão)' })
-    }
-    
-    setSaving(false)
-    setTimeout(() => setMessage({ type: '', text: '' }), 3000)
-  }
-
-  // Gerar pagamentos para todas as vendas sem pagamentos
-  const gerarTodosPagamentos = async () => {
-    if (vendasSemPagamentos.length === 0) return
-    
-    setSaving(true)
-    let totalGerados = 0
-    
-    for (const venda of vendasSemPagamentos) {
-      await gerarPagamentosVenda(venda)
-      totalGerados++
-    }
-    
-    setSaving(false)
-    fetchData()
-    setMessage({ type: 'success', text: `Pagamentos gerados para ${totalGerados} vendas!` })
     setTimeout(() => setMessage({ type: '', text: '' }), 3000)
   }
 
@@ -1214,22 +1036,9 @@ const AdminDashboard = () => {
       setMessage({ type: 'error', text: 'Nome completo é obrigatório' })
       return
     }
-    
-    // Validar se está criando acesso
-    if (clienteForm.criar_acesso && !selectedItem?.user_id) {
-      if (!clienteForm.email) {
-        setMessage({ type: 'error', text: 'E-mail é obrigatório para criar acesso' })
-        return
-      }
-      if (!clienteForm.senha || clienteForm.senha.length < 6) {
-        setMessage({ type: 'error', text: 'Senha deve ter no mínimo 6 caracteres' })
-        return
-      }
-    }
 
     setSaving(true)
     try {
-      // Primeiro salvar o cliente SEM user_id
       const clienteData = {
         nome_completo: clienteForm.nome_completo,
         data_nascimento: clienteForm.data_nascimento || null,
@@ -1299,60 +1108,7 @@ const AdminDashboard = () => {
         if (compError) throw compError
       }
 
-      // Criar acesso ao sistema (após salvar cliente)
-      let acessoCriado = false
-      if (clienteForm.criar_acesso && !selectedItem?.user_id) {
-        try {
-          // Criar usuário na autenticação
-          const { data: authData, error: authError } = await supabase.auth.signUp({
-            email: clienteForm.email,
-            password: clienteForm.senha,
-            options: {
-              data: {
-                nome: clienteForm.nome_completo,
-                role: 'cliente'
-              }
-            }
-          })
-          
-          if (authError) throw authError
-          
-          const userId = authData.user?.id
-          
-          if (userId) {
-            // Atualizar cliente com user_id
-            await supabase
-              .from('clientes')
-              .update({ user_id: userId })
-              .eq('id', clienteId)
-            
-            // Criar registro na tabela usuarios
-            await supabase
-              .from('usuarios')
-              .insert([{
-                id: userId,
-                nome: clienteForm.nome_completo,
-                email: clienteForm.email,
-                tipo: 'cliente',
-                ativo: true
-              }])
-            
-            acessoCriado = true
-          }
-        } catch (acessoError) {
-          console.error('Erro ao criar acesso:', acessoError)
-          // Não impede o salvamento do cliente, apenas mostra aviso
-        }
-      }
-
-      let successMsg = selectedItem ? 'Cliente atualizado!' : 'Cliente cadastrado!'
-      if (acessoCriado) {
-        successMsg += ' Acesso criado com sucesso!'
-      } else if (clienteForm.criar_acesso && !selectedItem?.user_id) {
-        successMsg += ' (Erro ao criar acesso - verifique se o e-mail já existe)'
-      }
-      
-      setMessage({ type: 'success', text: successMsg })
+      setMessage({ type: 'success', text: selectedItem ? 'Cliente atualizado!' : 'Cliente cadastrado!' })
       setShowModal(false)
       resetClienteForm()
       fetchData()
@@ -1442,30 +1198,6 @@ const AdminDashboard = () => {
     setShowModal(true)
   }
 
-  // Formatar CPF: 000.000.000-00
-  const formatCPF = (value) => {
-    if (!value) return ''
-    // Remove tudo que não é número
-    const numbers = value.replace(/\D/g, '')
-    // Limita a 11 dígitos
-    const limited = numbers.slice(0, 11)
-    // Aplica a máscara
-    if (limited.length <= 3) return limited
-    if (limited.length <= 6) return `${limited.slice(0, 3)}.${limited.slice(3)}`
-    if (limited.length <= 9) return `${limited.slice(0, 3)}.${limited.slice(3, 6)}.${limited.slice(6)}`
-    return `${limited.slice(0, 3)}.${limited.slice(3, 6)}.${limited.slice(6, 9)}-${limited.slice(9)}`
-  }
-
-  // Formatar telefone: (00) 00000-0000
-  const formatTelefone = (value) => {
-    if (!value) return ''
-    const numbers = value.replace(/\D/g, '')
-    const limited = numbers.slice(0, 11)
-    if (limited.length <= 2) return `(${limited}`
-    if (limited.length <= 7) return `(${limited.slice(0, 2)}) ${limited.slice(2)}`
-    return `(${limited.slice(0, 2)}) ${limited.slice(2, 7)}-${limited.slice(7)}`
-  }
-
   const formatCurrency = (value) => {
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
@@ -1487,303 +1219,6 @@ const AdminDashboard = () => {
     // Remove tudo exceto números e vírgula
     const cleanValue = formattedValue.replace(/[^\d,]/g, '').replace(',', '.')
     return cleanValue
-  }
-
-  // Função para gerar PDF de relatório
-  const gerarRelatorioPDF = async () => {
-    setGerandoPdf(true)
-    
-    try {
-      const doc = new jsPDF()
-      const pageWidth = doc.internal.pageSize.getWidth()
-      
-      // Cores do tema
-      const corPrimaria = [30, 41, 59] // #1e293b
-      const corSecundaria = [16, 185, 129] // #10b981
-      const corTexto = [51, 65, 85] // #334155
-      
-      // Cabeçalho
-      doc.setFillColor(...corPrimaria)
-      doc.rect(0, 0, pageWidth, 40, 'F')
-      
-      doc.setTextColor(255, 255, 255)
-      doc.setFontSize(22)
-      doc.setFont('helvetica', 'bold')
-      doc.text('RELATÓRIO DE COMISSÕES', pageWidth / 2, 18, { align: 'center' })
-      
-      doc.setFontSize(11)
-      doc.setFont('helvetica', 'normal')
-      doc.text(`Gerado em: ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR')}`, pageWidth / 2, 30, { align: 'center' })
-      
-      let yPosition = 50
-      
-      // Filtrar dados
-      let dadosFiltrados = [...listaVendasComPagamentos]
-      
-      if (relatorioFiltros.vendaId) {
-        dadosFiltrados = dadosFiltrados.filter(g => g.venda_id === relatorioFiltros.vendaId)
-      }
-      
-      if (relatorioFiltros.status !== 'todos') {
-        dadosFiltrados = dadosFiltrados.map(g => ({
-          ...g,
-          pagamentos: g.pagamentos.filter(p => p.status === relatorioFiltros.status)
-        })).filter(g => g.pagamentos.length > 0)
-      }
-      
-      // Filtro por data
-      if (relatorioFiltros.dataInicio || relatorioFiltros.dataFim) {
-        const dataInicio = relatorioFiltros.dataInicio ? new Date(relatorioFiltros.dataInicio) : null
-        const dataFim = relatorioFiltros.dataFim ? new Date(relatorioFiltros.dataFim + 'T23:59:59') : null
-        
-        dadosFiltrados = dadosFiltrados.map(g => ({
-          ...g,
-          pagamentos: g.pagamentos.filter(p => {
-            const dataPagamento = new Date(p.data_prevista)
-            if (dataInicio && dataPagamento < dataInicio) return false
-            if (dataFim && dataPagamento > dataFim) return false
-            return true
-          })
-        })).filter(g => g.pagamentos.length > 0)
-      }
-      
-      // Título do filtro aplicado
-      doc.setTextColor(...corTexto)
-      doc.setFontSize(12)
-      doc.setFont('helvetica', 'bold')
-      
-      let filtroTexto = 'Todas as vendas'
-      if (relatorioFiltros.vendaId) {
-        const vendaSelecionada = dadosFiltrados[0]
-        filtroTexto = `Venda: ${vendaSelecionada?.venda?.corretor?.nome || 'N/A'} - Unidade ${vendaSelecionada?.venda?.unidade || 'N/A'}`
-      }
-      if (relatorioFiltros.status !== 'todos') {
-        filtroTexto += ` | Status: ${relatorioFiltros.status === 'pago' ? 'Pago' : 'Pendente'}`
-      }
-      if (relatorioFiltros.cargoId) {
-        filtroTexto += ` | Cargo: ${relatorioFiltros.cargoId}`
-      }
-      if (relatorioFiltros.dataInicio || relatorioFiltros.dataFim) {
-        const inicio = relatorioFiltros.dataInicio ? new Date(relatorioFiltros.dataInicio).toLocaleDateString('pt-BR') : 'início'
-        const fim = relatorioFiltros.dataFim ? new Date(relatorioFiltros.dataFim).toLocaleDateString('pt-BR') : 'hoje'
-        filtroTexto += ` | Período: ${inicio} a ${fim}`
-      }
-      
-      doc.text(filtroTexto, 14, yPosition)
-      yPosition += 10
-      
-      // Resumo geral - calcular baseado no cargo selecionado ou total
-      let totalComissao = 0
-      let totalPago = 0
-      
-      if (relatorioFiltros.cargoId) {
-        // Filtrar apenas comissões do cargo selecionado
-        dadosFiltrados.forEach(grupo => {
-          grupo.pagamentos.forEach(pag => {
-            const comissoesCargo = calcularComissaoPorCargoPagamento(pag)
-            const cargoEncontrado = comissoesCargo.find(c => c.nome_cargo === relatorioFiltros.cargoId)
-            if (cargoEncontrado) {
-              totalComissao += cargoEncontrado.valor
-              if (pag.status === 'pago') {
-                totalPago += cargoEncontrado.valor
-              }
-            }
-          })
-        })
-      } else {
-        totalComissao = dadosFiltrados.reduce((acc, g) => acc + (parseFloat(g.venda?.comissao_total) || 0), 0)
-        totalPago = dadosFiltrados.reduce((acc, g) => {
-          const comissaoTotal = parseFloat(g.venda?.comissao_total) || 0
-          const totalParcelas = g.totalValor
-          const parcelasPagas = g.pagamentos.filter(p => p.status === 'pago').reduce((a, p) => a + (parseFloat(p.valor) || 0), 0)
-          return totalParcelas > 0 ? acc + (comissaoTotal * parcelasPagas / totalParcelas) : acc
-        }, 0)
-      }
-      const totalPendente = totalComissao - totalPago
-      
-      // Box de resumo
-      doc.setFillColor(241, 245, 249) // #f1f5f9
-      doc.roundedRect(14, yPosition, pageWidth - 28, 25, 3, 3, 'F')
-      
-      doc.setFontSize(10)
-      doc.setFont('helvetica', 'normal')
-      doc.setTextColor(...corTexto)
-      
-      const resumoY = yPosition + 10
-      doc.text('Comissão Total:', 20, resumoY)
-      doc.setFont('helvetica', 'bold')
-      doc.text(formatCurrency(totalComissao), 20, resumoY + 8)
-      
-      doc.setFont('helvetica', 'normal')
-      doc.text('Comissão Paga:', 80, resumoY)
-      doc.setTextColor(16, 185, 129)
-      doc.setFont('helvetica', 'bold')
-      doc.text(formatCurrency(totalPago), 80, resumoY + 8)
-      
-      doc.setTextColor(...corTexto)
-      doc.setFont('helvetica', 'normal')
-      doc.text('Comissão Pendente:', 140, resumoY)
-      doc.setTextColor(245, 158, 11)
-      doc.setFont('helvetica', 'bold')
-      doc.text(formatCurrency(totalPendente), 140, resumoY + 8)
-      
-      yPosition += 35
-      
-      // Para cada venda
-      dadosFiltrados.forEach((grupo, idx) => {
-        // Verificar se precisa nova página
-        if (yPosition > 250) {
-          doc.addPage()
-          yPosition = 20
-        }
-        
-        const venda = grupo.venda
-        const corretor = venda?.corretor?.nome || 'N/A'
-        const empreendimento = venda?.empreendimento?.nome || 'N/A'
-        const unidade = venda?.unidade || 'N/A'
-        const comissaoVenda = parseFloat(venda?.comissao_total) || 0
-        
-        // Título da venda
-        doc.setFillColor(...corPrimaria)
-        doc.rect(14, yPosition, pageWidth - 28, 8, 'F')
-        doc.setTextColor(255, 255, 255)
-        doc.setFontSize(10)
-        doc.setFont('helvetica', 'bold')
-        doc.text(`${empreendimento} - Unidade ${unidade} | Corretor: ${corretor}`, 18, yPosition + 5.5)
-        doc.text(`Comissão: ${formatCurrency(comissaoVenda)}`, pageWidth - 18, yPosition + 5.5, { align: 'right' })
-        
-        yPosition += 12
-        
-        // Tabela de parcelas
-        const parcelas = grupo.pagamentos.map(pag => {
-          const comissoesCargo = calcularComissaoPorCargoPagamento(pag)
-          let comissaoExibir = calcularComissaoTotalPagamento(pag)
-          
-          // Se filtro por cargo, mostrar apenas comissão daquele cargo
-          if (relatorioFiltros.cargoId) {
-            const cargoEncontrado = comissoesCargo.find(c => c.nome_cargo === relatorioFiltros.cargoId)
-            comissaoExibir = cargoEncontrado ? cargoEncontrado.valor : 0
-          }
-          
-          // Calcular percentual da comissão em relação ao valor da parcela (sem arredondamento)
-          const valorParcela = parseFloat(pag.valor) || 0
-          const percentualComissao = valorParcela > 0 ? ((comissaoExibir / valorParcela) * 100).toFixed(6).replace(/\.?0+$/, '') : '0'
-          
-          return [
-            pag.tipo_pagamento?.charAt(0).toUpperCase() + pag.tipo_pagamento?.slice(1) || '-',
-            new Date(pag.data_prevista).toLocaleDateString('pt-BR'),
-            formatCurrency(pag.valor),
-            pag.status === 'pago' ? 'Pago' : 'Pendente',
-            `${percentualComissao}%`,
-            formatCurrency(comissaoExibir)
-          ]
-        })
-        
-        autoTable(doc, {
-          startY: yPosition,
-          head: [['Tipo', 'Data', 'Valor Parcela', 'Status', '% Comissão', 'Comissão']],
-          body: parcelas,
-          theme: 'striped',
-          headStyles: {
-            fillColor: corSecundaria,
-            textColor: 255,
-            fontStyle: 'bold',
-            fontSize: 9
-          },
-          bodyStyles: {
-            fontSize: 8,
-            textColor: corTexto
-          },
-          alternateRowStyles: {
-            fillColor: [248, 250, 252]
-          },
-          columnStyles: {
-            0: { cellWidth: 25 },
-            1: { cellWidth: 25 },
-            2: { cellWidth: 35, halign: 'right' },
-            3: { cellWidth: 22, halign: 'center' },
-            4: { cellWidth: 25, halign: 'center' },
-            5: { cellWidth: 35, halign: 'right' }
-          },
-          margin: { left: 14, right: 14 }
-        })
-        
-        yPosition = doc.lastAutoTable.finalY + 5
-        
-        // Divisão por cargo (se filtro de cargo específico não estiver ativo)
-        if (!relatorioFiltros.cargoId) {
-          const cargosVenda = {}
-          grupo.pagamentos.forEach(pag => {
-            const comissoesCargo = calcularComissaoPorCargoPagamento(pag)
-            comissoesCargo.forEach(cargo => {
-              if (!cargosVenda[cargo.nome_cargo]) {
-                cargosVenda[cargo.nome_cargo] = 0
-              }
-              cargosVenda[cargo.nome_cargo] += cargo.valor
-            })
-          })
-          
-          const cargosData = Object.entries(cargosVenda).map(([nome, valor]) => [nome, formatCurrency(valor)])
-          
-          if (cargosData.length > 0) {
-            doc.setFontSize(9)
-            doc.setFont('helvetica', 'bold')
-            doc.setTextColor(...corTexto)
-            doc.text('Divisão por Beneficiário:', 14, yPosition + 3)
-            
-            autoTable(doc, {
-              startY: yPosition + 6,
-              head: [['Beneficiário', 'Valor Total']],
-              body: cargosData,
-              theme: 'plain',
-              headStyles: {
-                fillColor: [226, 232, 240],
-                textColor: corTexto,
-                fontStyle: 'bold',
-                fontSize: 8
-              },
-              bodyStyles: {
-                fontSize: 8,
-                textColor: corTexto
-              },
-              columnStyles: {
-                0: { cellWidth: 80 },
-                1: { cellWidth: 50, halign: 'right' }
-              },
-              margin: { left: 14, right: 14 },
-              tableWidth: 130
-            })
-            
-            yPosition = doc.lastAutoTable.finalY + 10
-          }
-        }
-        
-        yPosition += 5
-      })
-      
-      // Rodapé em todas as páginas
-      const pageCount = doc.internal.getNumberOfPages()
-      for (let i = 1; i <= pageCount; i++) {
-        doc.setPage(i)
-        doc.setFillColor(...corPrimaria)
-        doc.rect(0, doc.internal.pageSize.getHeight() - 15, pageWidth, 15, 'F')
-        doc.setTextColor(255, 255, 255)
-        doc.setFontSize(8)
-        doc.text('Sistema de Gestão de Comissões - InvestMoney', 14, doc.internal.pageSize.getHeight() - 6)
-        doc.text(`Página ${i} de ${pageCount}`, pageWidth - 14, doc.internal.pageSize.getHeight() - 6, { align: 'right' })
-      }
-      
-      // Salvar PDF
-      const nomeArquivo = `relatorio_comissoes_${new Date().toISOString().split('T')[0]}.pdf`
-      doc.save(nomeArquivo)
-      
-      setMessage({ type: 'success', text: 'Relatório gerado com sucesso!' })
-    } catch (error) {
-      console.error('Erro ao gerar PDF:', error)
-      setMessage({ type: 'error', text: 'Erro ao gerar relatório: ' + error.message })
-    } finally {
-      setGerandoPdf(false)
-    }
   }
 
   // Handler para campo de moeda
@@ -1897,42 +1332,42 @@ const AdminDashboard = () => {
         <nav className="sidebar-nav">
           <button 
             className={`nav-item ${activeTab === 'vendas' ? 'active' : ''}`}
-            onClick={() => navigate('/admin/vendas')}
+            onClick={() => setActiveTab('vendas')}
           >
             <DollarSign size={20} />
             <span>Vendas</span>
           </button>
           <button 
             className={`nav-item ${activeTab === 'corretores' ? 'active' : ''}`}
-            onClick={() => navigate('/admin/corretores')}
+            onClick={() => setActiveTab('corretores')}
           >
             <Users size={20} />
             <span>Corretores</span>
           </button>
           <button 
             className={`nav-item ${activeTab === 'empreendimentos' ? 'active' : ''}`}
-            onClick={() => navigate('/admin/empreendimentos')}
+            onClick={() => setActiveTab('empreendimentos')}
           >
             <Building size={20} />
             <span>Empreendimentos</span>
           </button>
           <button 
             className={`nav-item ${activeTab === 'pagamentos' ? 'active' : ''}`}
-            onClick={() => navigate('/admin/pagamentos')}
+            onClick={() => setActiveTab('pagamentos')}
           >
             <CreditCard size={20} />
             <span>Pagamentos</span>
           </button>
           <button 
             className={`nav-item ${activeTab === 'clientes' ? 'active' : ''}`}
-            onClick={() => navigate('/admin/clientes')}
+            onClick={() => setActiveTab('clientes')}
           >
             <UserCircle size={20} />
             <span>Clientes</span>
           </button>
           <button 
             className={`nav-item ${activeTab === 'relatorios' ? 'active' : ''}`}
-            onClick={() => navigate('/admin/relatorios')}
+            onClick={() => setActiveTab('relatorios')}
           >
             <TrendingUp size={20} />
             <span>Relatórios</span>
@@ -2388,94 +1823,32 @@ const AdminDashboard = () => {
 
         {activeTab === 'pagamentos' && (
           <div className="content-section">
-            {/* Aviso de vendas sem pagamentos */}
-            {vendasSemPagamentos.length > 0 && (
-              <div className="alert-box warning" style={{
-                background: 'rgba(234, 179, 8, 0.1)',
-                border: '1px solid rgba(234, 179, 8, 0.3)',
-                borderRadius: '12px',
-                padding: '16px 20px',
-                marginBottom: '20px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                gap: '16px'
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <Clock size={24} style={{ color: '#eab308' }} />
-                  <div>
-                    <strong style={{ color: '#eab308' }}>
-                      {vendasSemPagamentos.length} venda(s) sem pagamentos cadastrados
-                    </strong>
-                    <p style={{ margin: '4px 0 0', fontSize: '13px', color: 'rgba(255,255,255,0.7)' }}>
-                      Essas vendas precisam ter os pagamentos gerados para aparecerem aqui
-                    </p>
-                  </div>
-                </div>
-                <button
-                  onClick={gerarTodosPagamentos}
-                  disabled={saving}
-                  style={{
-                    background: '#eab308',
-                    color: '#000',
-                    border: 'none',
-                    padding: '10px 20px',
-                    borderRadius: '8px',
-                    cursor: 'pointer',
-                    fontWeight: '600',
-                    fontSize: '14px',
-                    whiteSpace: 'nowrap'
-                  }}
-                >
-                  {saving ? 'Gerando...' : 'Gerar Pagamentos'}
-                </button>
-              </div>
-            )}
-
-            {pagamentos.length === 0 && vendasSemPagamentos.length === 0 ? (
+            {pagamentos.length === 0 ? (
               <div className="empty-state-box">
                 <CreditCard size={48} />
                 <h3>Nenhum pagamento cadastrado</h3>
                 <p>Os pagamentos são criados automaticamente ao registrar uma venda</p>
-              </div>
-            ) : pagamentos.length === 0 ? (
-              <div className="empty-state-box">
-                <CreditCard size={48} />
-                <h3>Nenhum pagamento gerado ainda</h3>
-                <p>Clique no botão acima para gerar os pagamentos das vendas existentes</p>
               </div>
             ) : (
               <>
                 {/* Resumo */}
                 <div className="pagamentos-resumo">
                   <div className="resumo-card">
-                    <span className="resumo-label">Comissão Pendente</span>
+                    <span className="resumo-label">Total Pendente</span>
                     <span className="resumo-valor pendente">
-                      {formatCurrency(listaVendasComPagamentos.reduce((acc, grupo) => {
-                        const comissaoTotal = parseFloat(grupo.venda?.comissao_total) || 0
-                        const totalParcelas = grupo.totalValor
-                        const parcelasPendentes = grupo.pagamentos.filter(p => p.status === 'pendente').reduce((a, p) => a + (parseFloat(p.valor) || 0), 0)
-                        return totalParcelas > 0 ? acc + (comissaoTotal * parcelasPendentes / totalParcelas) : acc
-                      }, 0))}
+                      {formatCurrency(pagamentos.filter(p => p.status === 'pendente').reduce((acc, p) => acc + p.valor, 0))}
                     </span>
                   </div>
                   <div className="resumo-card">
-                    <span className="resumo-label">Comissão Paga</span>
+                    <span className="resumo-label">Total Pago</span>
                     <span className="resumo-valor pago">
-                      {formatCurrency(listaVendasComPagamentos.reduce((acc, grupo) => {
-                        const comissaoTotal = parseFloat(grupo.venda?.comissao_total) || 0
-                        const totalParcelas = grupo.totalValor
-                        const parcelasPagas = grupo.pagamentos.filter(p => p.status === 'pago').reduce((a, p) => a + (parseFloat(p.valor) || 0), 0)
-                        return totalParcelas > 0 ? acc + (comissaoTotal * parcelasPagas / totalParcelas) : acc
-                      }, 0))}
+                      {formatCurrency(pagamentos.filter(p => p.status === 'pago').reduce((acc, p) => acc + p.valor, 0))}
                     </span>
                   </div>
                   <div className="resumo-card">
-                    <span className="resumo-label">Comissão Total</span>
+                    <span className="resumo-label">Comissão a Receber</span>
                     <span className="resumo-valor">
-                      {formatCurrency(listaVendasComPagamentos.reduce((acc, grupo) => {
-                        return acc + (parseFloat(grupo.venda?.comissao_total) || 0)
-                      }, 0))}
+                      {formatCurrency(pagamentos.filter(p => p.status === 'pendente').reduce((acc, p) => acc + (p.comissao_gerada || 0), 0))}
                     </span>
                   </div>
                 </div>
@@ -2503,34 +1876,20 @@ const AdminDashboard = () => {
                         </div>
                         <div className="venda-valores">
                           <div className="valor-item">
-                            <span className="valor-label">Pro-Soluto</span>
+                            <span className="valor-label">Valor Total</span>
                             <span className="valor-number">{formatCurrency(grupo.totalValor)}</span>
                           </div>
                           <div className="valor-item">
                             <span className="valor-label">Comissão Total</span>
-                            <span className="valor-number comissao">{formatCurrency(grupo.venda?.comissao_total || 0)}</span>
+                            <span className="valor-number comissao">{formatCurrency(grupo.totalComissao)}</span>
                           </div>
                           <div className="valor-item">
-                            <span className="valor-label">Comissão Paga</span>
-                            <span className="valor-number pago">{formatCurrency(
-                              (() => {
-                                const comissaoTotal = parseFloat(grupo.venda?.comissao_total) || 0
-                                const totalParcelas = grupo.totalValor
-                                const parcelasPagas = grupo.pagamentos.filter(p => p.status === 'pago').reduce((a, p) => a + (parseFloat(p.valor) || 0), 0)
-                                return totalParcelas > 0 ? (comissaoTotal * parcelasPagas / totalParcelas) : 0
-                              })()
-                            )}</span>
+                            <span className="valor-label">Pago</span>
+                            <span className="valor-number pago">{formatCurrency(grupo.totalPago)}</span>
                           </div>
                           <div className="valor-item">
-                            <span className="valor-label">Comissão Pendente</span>
-                            <span className="valor-number pendente">{formatCurrency(
-                              (() => {
-                                const comissaoTotal = parseFloat(grupo.venda?.comissao_total) || 0
-                                const totalParcelas = grupo.totalValor
-                                const parcelasPendentes = grupo.pagamentos.filter(p => p.status === 'pendente').reduce((a, p) => a + (parseFloat(p.valor) || 0), 0)
-                                return totalParcelas > 0 ? (comissaoTotal * parcelasPendentes / totalParcelas) : 0
-                              })()
-                            )}</span>
+                            <span className="valor-label">Pendente</span>
+                            <span className="valor-number pendente">{formatCurrency(grupo.totalPendente)}</span>
                           </div>
                         </div>
                         <div className="expand-icon">
@@ -2541,53 +1900,69 @@ const AdminDashboard = () => {
                       {/* Lista de Parcelas - Expandível */}
                       {vendaExpandida === grupo.venda_id && (
                         <div className="venda-pagamento-body">
-                          {grupo.pagamentos
-                            .sort((a, b) => {
-                              const ordem = { sinal: 0, entrada: 1, parcela_entrada: 2, balao: 3 }
-                              if (ordem[a.tipo] !== ordem[b.tipo]) return ordem[a.tipo] - ordem[b.tipo]
-                              return (a.numero_parcela || 0) - (b.numero_parcela || 0)
-                            })
-                            .map((pag) => (
-                            <div key={pag.id} className={`parcela-row ${pag.status === 'pago' ? 'pago' : ''}`}>
-                              <div className="parcela-main">
-                                <div className="parcela-tipo">
-                                  {pag.tipo === 'sinal' && 'Sinal'}
-                                  {pag.tipo === 'entrada' && 'Entrada'}
-                                  {pag.tipo === 'parcela_entrada' && `Parcela ${pag.numero_parcela}`}
-                                  {pag.tipo === 'balao' && `Balão ${pag.numero_parcela || ''}`}
-                                </div>
-                                <div className="parcela-data">{pag.data_prevista ? new Date(pag.data_prevista).toLocaleDateString('pt-BR') : '-'}</div>
-                                <div className="parcela-valor">{formatCurrency(pag.valor)}</div>
-                                <div className="parcela-status">
-                                  <span className={`status-pill ${pag.status}`}>
-                                    {pag.status === 'pago' ? 'Pago' : 'Pendente'}
-                                  </span>
-                                </div>
-                                <div className="parcela-acao">
-                                  {pag.status !== 'pago' && (
-                                    <button 
-                                      className="btn-small-confirm"
-                                      onClick={(e) => { e.stopPropagation(); confirmarPagamento(pag.id); }}
-                                    >
-                                      Confirmar
-                                    </button>
-                                  )}
-                                </div>
-                              </div>
-                              <div className="parcela-comissoes">
-                                {calcularComissaoPorCargoPagamento(pag).map((cargo, idx) => (
-                                  <div key={idx} className="comissao-item">
-                                    <span className="comissao-nome">{cargo.nome_cargo}</span>
-                                    <span className="comissao-valor">{formatCurrency(cargo.valor)}</span>
-                                  </div>
-                                ))}
-                                <div className="comissao-item comissao-total">
-                                  <span className="comissao-nome">Total</span>
-                                  <span className="comissao-valor">{formatCurrency(calcularComissaoTotalPagamento(pag))}</span>
-                                </div>
-                              </div>
-                            </div>
-                          ))}
+                          <table className="parcelas-table">
+                            <thead>
+                              <tr>
+                                <th>Tipo</th>
+                                <th>Valor</th>
+                                <th>Comissão</th>
+                                <th>Data Prevista</th>
+                                <th>Status</th>
+                                <th>Ações</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {grupo.pagamentos
+                                .sort((a, b) => {
+                                  // Ordenar: sinal primeiro, depois entrada, depois parcelas por número
+                                  const ordem = { sinal: 0, entrada: 1, parcela_entrada: 2, balao: 3 }
+                                  if (ordem[a.tipo] !== ordem[b.tipo]) return ordem[a.tipo] - ordem[b.tipo]
+                                  return (a.numero_parcela || 0) - (b.numero_parcela || 0)
+                                })
+                                .map((pag) => (
+                                <tr key={pag.id} className={pag.status === 'pago' ? 'row-pago' : ''}>
+                                  <td>
+                                    <span className={`badge-tipo ${pag.tipo}`}>
+                                      {pag.tipo === 'sinal' && 'Sinal'}
+                                      {pag.tipo === 'entrada' && 'Entrada'}
+                                      {pag.tipo === 'parcela_entrada' && `Parcela ${pag.numero_parcela}`}
+                                      {pag.tipo === 'balao' && (pag.numero_parcela ? `Balão ${pag.numero_parcela}` : 'Balão')}
+                                    </span>
+                                  </td>
+                                  <td>{formatCurrency(pag.valor)}</td>
+                                  <td className="comissao-cell">{formatCurrency(pag.comissao_gerada || 0)}</td>
+                                  <td>{pag.data_prevista ? new Date(pag.data_prevista).toLocaleDateString('pt-BR') : '-'}</td>
+                                  <td>
+                                    <span className={`status-badge ${pag.status}`}>
+                                      {pag.status === 'pendente' && 'Pendente'}
+                                      {pag.status === 'pago' && 'Pago'}
+                                      {pag.status === 'atrasado' && 'Atrasado'}
+                                    </span>
+                                  </td>
+                                  <td>
+                                    <div className="action-buttons">
+                                      <button 
+                                        className="btn-ver-detalhe"
+                                        onClick={(e) => { e.stopPropagation(); setPagamentoDetalhe(pag); }}
+                                        title="Ver divisão de comissões"
+                                      >
+                                        <Eye size={16} />
+                                      </button>
+                                      {pag.status !== 'pago' && (
+                                        <button 
+                                          className="btn-confirmar-pag"
+                                          onClick={(e) => { e.stopPropagation(); confirmarPagamento(pag.id); }}
+                                          title="Confirmar pagamento"
+                                        >
+                                          <Check size={16} />
+                                        </button>
+                                      )}
+                                    </div>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
                         </div>
                       )}
                     </div>
@@ -2630,7 +2005,7 @@ const AdminDashboard = () => {
                           </div>
                           <div className="detalhe-row highlight">
                             <span className="label">Comissão Total:</span>
-                            <span className="value comissao">{formatCurrency(calcularComissaoTotalPagamento(pagamentoDetalhe))}</span>
+                            <span className="value comissao">{formatCurrency(pagamentoDetalhe.comissao_gerada || 0)}</span>
                           </div>
                         </div>
 
@@ -2665,7 +2040,7 @@ const AdminDashboard = () => {
                               <tr className="total-row">
                                 <td><strong>TOTAL</strong></td>
                                 <td>-</td>
-                                <td className="valor-comissao"><strong>{formatCurrency(calcularComissaoTotalPagamento(pagamentoDetalhe))}</strong></td>
+                                <td className="valor-comissao"><strong>{formatCurrency(pagamentoDetalhe.comissao_gerada || 0)}</strong></td>
                               </tr>
                             </tfoot>
                           </table>
@@ -2767,177 +2142,102 @@ const AdminDashboard = () => {
 
         {activeTab === 'relatorios' && (
           <div className="content-section">
-            {/* Gerador de Relatórios */}
-            <div className="relatorio-gerador">
-              <div className="gerador-header">
-                <FileDown size={24} />
-                <div>
-                  <h3>Gerar Relatório em PDF</h3>
-                  <p>Selecione os filtros e gere um relatório profissional</p>
+            <div className="relatorio-grid">
+              <div className="relatorio-card">
+                <h3>Distribuição de Comissões</h3>
+                <div className="comissao-breakdown">
+                  <div className="breakdown-item">
+                    <span className="entity">Diretor</span>
+                    <span className="percent">0,5%</span>
+                    <span className="value">
+                      {formatCurrency(vendas.reduce((acc, v) => acc + (v.comissao_diretor || 0), 0))}
+                    </span>
+                  </div>
+                  <div className="breakdown-item">
+                    <span className="entity">IM Figueira Garcia</span>
+                    <span className="percent">0,5% - 1,25%</span>
+                    <span className="value">
+                      {formatCurrency(vendas.reduce((acc, v) => acc + (v.comissao_nohros_imobiliaria || 0), 0))}
+                    </span>
+                  </div>
+                  <div className="breakdown-item">
+                    <span className="entity">Ferretti Consultoria</span>
+                    <span className="percent">1%</span>
+                    <span className="value">
+                      {formatCurrency(vendas.reduce((acc, v) => acc + (v.comissao_nohros_gestao || 0), 0))}
+                    </span>
+                  </div>
+                  <div className="breakdown-item">
+                    <span className="entity">Beton Arme</span>
+                    <span className="percent">0,5% - 1,25%</span>
+                    <span className="value">
+                      {formatCurrency(vendas.reduce((acc, v) => acc + (v.comissao_wsc || 0), 0))}
+                    </span>
+                  </div>
+                  <div className="breakdown-item">
+                    <span className="entity">Coordenadora</span>
+                    <span className="percent">0,5%</span>
+                    <span className="value">
+                      {formatCurrency(vendas.reduce((acc, v) => acc + (v.comissao_coordenadora || 0), 0))}
+                    </span>
+                  </div>
+                  <div className="breakdown-item highlight">
+                    <span className="entity">Corretores</span>
+                    <span className="percent">Personalizado</span>
+                    <span className="value">
+                      {formatCurrency(vendas.reduce((acc, v) => acc + (v.comissao_corretor || 0), 0))}
+                    </span>
+                  </div>
                 </div>
               </div>
-              
-              <div className="gerador-filtros">
-                <div className="filtro-grupo">
-                  <label>Venda</label>
-                  <select
-                    value={relatorioFiltros.vendaId}
-                    onChange={(e) => setRelatorioFiltros({...relatorioFiltros, vendaId: e.target.value})}
-                  >
-                    <option value="">Todas as vendas</option>
-                    {listaVendasComPagamentos.map((grupo) => (
-                      <option key={grupo.venda_id} value={grupo.venda_id}>
-                        {grupo.venda?.empreendimento?.nome} - Un. {grupo.venda?.unidade} ({grupo.venda?.corretor?.nome})
-                      </option>
-                    ))}
-                  </select>
+
+              <div className="relatorio-card">
+                <h3>Tabela de Percentuais Base</h3>
+                <div className="percentuais-table">
+                  <div className="percentuais-header">
+                    <span></span>
+                    <span>Externo</span>
+                    <span>Interno</span>
+                  </div>
+                  <div className="percentuais-row">
+                    <span>Diretor</span>
+                    <span>0,5%</span>
+                    <span>0,5%</span>
+                  </div>
+                  <div className="percentuais-row">
+                    <span>IM Figueira Garcia</span>
+                    <span>0,5%</span>
+                    <span>1,25%</span>
+                  </div>
+                  <div className="percentuais-row">
+                    <span>Ferretti Consultoria</span>
+                    <span>1%</span>
+                    <span>1%</span>
+                  </div>
+                  <div className="percentuais-row">
+                    <span>Beton Arme</span>
+                    <span>0,5%</span>
+                    <span>1,25%</span>
+                  </div>
+                  <div className="percentuais-row">
+                    <span>Corretor (padrão)</span>
+                    <span>4%</span>
+                    <span>2,5%</span>
+                  </div>
+                  <div className="percentuais-row">
+                    <span>Coordenadora</span>
+                    <span>0,5%</span>
+                    <span>-</span>
+                  </div>
+                  <div className="percentuais-row total">
+                    <span>Total (padrão)</span>
+                    <span>7%</span>
+                    <span>6,5%</span>
+                  </div>
                 </div>
-                
-                <div className="filtro-grupo">
-                  <label>Status</label>
-                  <select
-                    value={relatorioFiltros.status}
-                    onChange={(e) => setRelatorioFiltros({...relatorioFiltros, status: e.target.value})}
-                  >
-                    <option value="todos">Todos</option>
-                    <option value="pendente">Pendentes</option>
-                    <option value="pago">Pagos</option>
-                  </select>
-                </div>
-                
-                <div className="filtro-grupo">
-                  <label>Beneficiário / Cargo</label>
-                  <select
-                    value={relatorioFiltros.cargoId}
-                    onChange={(e) => setRelatorioFiltros({...relatorioFiltros, cargoId: e.target.value})}
-                  >
-                    <option value="">Todos os cargos</option>
-                    {(() => {
-                      // Coletar todos os cargos únicos
-                      const cargosUnicos = new Set()
-                      listaVendasComPagamentos.forEach(grupo => {
-                        grupo.pagamentos.forEach(pag => {
-                          const comissoes = calcularComissaoPorCargoPagamento(pag)
-                          comissoes.forEach(c => cargosUnicos.add(c.nome_cargo))
-                        })
-                      })
-                      return Array.from(cargosUnicos).map(cargo => (
-                        <option key={cargo} value={cargo}>{cargo}</option>
-                      ))
-                    })()}
-                  </select>
-                </div>
-                
-                <div className="filtro-grupo">
-                  <label>Data Início</label>
-                  <input
-                    type="date"
-                    value={relatorioFiltros.dataInicio}
-                    onChange={(e) => setRelatorioFiltros({...relatorioFiltros, dataInicio: e.target.value})}
-                  />
-                </div>
-                
-                <div className="filtro-grupo">
-                  <label>Data Fim</label>
-                  <input
-                    type="date"
-                    value={relatorioFiltros.dataFim}
-                    onChange={(e) => setRelatorioFiltros({...relatorioFiltros, dataFim: e.target.value})}
-                  />
-                </div>
-              </div>
-              
-              <button 
-                className="btn-gerar-pdf"
-                onClick={gerarRelatorioPDF}
-                disabled={gerandoPdf}
-              >
-                {gerandoPdf ? (
-                  <>
-                    <Clock size={20} className="spinning" />
-                    Gerando...
-                  </>
-                ) : (
-                  <>
-                    <Download size={20} />
-                    Gerar Relatório PDF
-                  </>
-                )}
-              </button>
-            </div>
-            
-            {/* Resumo Rápido */}
-            <div className="relatorio-resumo">
-              <h3>Resumo Geral</h3>
-              <div className="resumo-cards">
-                <div className="resumo-card-item">
-                  <span className="resumo-titulo">Total de Vendas</span>
-                  <span className="resumo-numero">{vendas.length}</span>
-                </div>
-                <div className="resumo-card-item">
-                  <span className="resumo-titulo">Comissão Total</span>
-                  <span className="resumo-numero verde">
-                    {formatCurrency(vendas.reduce((acc, v) => acc + (parseFloat(v.comissao_total) || 0), 0))}
-                  </span>
-                </div>
-                <div className="resumo-card-item">
-                  <span className="resumo-titulo">Comissão Paga</span>
-                  <span className="resumo-numero azul">
-                    {formatCurrency(listaVendasComPagamentos.reduce((acc, grupo) => {
-                      const comissaoTotal = parseFloat(grupo.venda?.comissao_total) || 0
-                      const totalParcelas = grupo.totalValor
-                      const parcelasPagas = grupo.pagamentos.filter(p => p.status === 'pago').reduce((a, p) => a + (parseFloat(p.valor) || 0), 0)
-                      return totalParcelas > 0 ? acc + (comissaoTotal * parcelasPagas / totalParcelas) : acc
-                    }, 0))}
-                  </span>
-                </div>
-                <div className="resumo-card-item">
-                  <span className="resumo-titulo">Comissão Pendente</span>
-                  <span className="resumo-numero amarelo">
-                    {formatCurrency(listaVendasComPagamentos.reduce((acc, grupo) => {
-                      const comissaoTotal = parseFloat(grupo.venda?.comissao_total) || 0
-                      const totalParcelas = grupo.totalValor
-                      const parcelasPendentes = grupo.pagamentos.filter(p => p.status === 'pendente').reduce((a, p) => a + (parseFloat(p.valor) || 0), 0)
-                      return totalParcelas > 0 ? acc + (comissaoTotal * parcelasPendentes / totalParcelas) : acc
-                    }, 0))}
-                  </span>
-                </div>
-              </div>
-            </div>
-            
-            {/* Divisão por Beneficiário */}
-            <div className="relatorio-beneficiarios">
-              <h3>Comissão por Beneficiário</h3>
-              <div className="beneficiarios-lista">
-                {(() => {
-                  const cargosTotal = {}
-                  listaVendasComPagamentos.forEach(grupo => {
-                    grupo.pagamentos.forEach(pag => {
-                      const comissoesCargo = calcularComissaoPorCargoPagamento(pag)
-                      comissoesCargo.forEach(cargo => {
-                        if (!cargosTotal[cargo.nome_cargo]) {
-                          cargosTotal[cargo.nome_cargo] = { pendente: 0, pago: 0 }
-                        }
-                        if (pag.status === 'pago') {
-                          cargosTotal[cargo.nome_cargo].pago += cargo.valor
-                        } else {
-                          cargosTotal[cargo.nome_cargo].pendente += cargo.valor
-                        }
-                      })
-                    })
-                  })
-                  
-                  return Object.entries(cargosTotal).map(([nome, valores]) => (
-                    <div key={nome} className="beneficiario-row">
-                      <span className="beneficiario-nome">{nome}</span>
-                      <div className="beneficiario-valores">
-                        <span className="valor-pago">Pago: {formatCurrency(valores.pago)}</span>
-                        <span className="valor-pendente">Pendente: {formatCurrency(valores.pendente)}</span>
-                        <span className="valor-total">Total: {formatCurrency(valores.pago + valores.pendente)}</span>
-                      </div>
-                    </div>
-                  ))
-                })()}
+                <p className="percentuais-note">
+                  * O percentual do corretor pode ser personalizado individualmente
+                </p>
               </div>
             </div>
           </div>
@@ -3506,7 +2806,7 @@ const AdminDashboard = () => {
                       type="tel"
                       placeholder="(00) 00000-0000"
                       value={corretorForm.telefone}
-                      onChange={(e) => setCorretorForm({...corretorForm, telefone: formatTelefone(e.target.value)})}
+                      onChange={(e) => setCorretorForm({...corretorForm, telefone: e.target.value})}
                     />
                   </div>
 
@@ -3726,7 +3026,7 @@ const AdminDashboard = () => {
                         type="text"
                         placeholder="000.000.000-00"
                         value={clienteForm.cpf}
-                        onChange={(e) => setClienteForm({...clienteForm, cpf: formatCPF(e.target.value)})}
+                        onChange={(e) => setClienteForm({...clienteForm, cpf: e.target.value})}
                       />
                     </div>
                     <div className="form-group">
@@ -3757,7 +3057,7 @@ const AdminDashboard = () => {
                         type="text"
                         placeholder="(00) 00000-0000"
                         value={clienteForm.telefone}
-                        onChange={(e) => setClienteForm({...clienteForm, telefone: formatTelefone(e.target.value)})}
+                        onChange={(e) => setClienteForm({...clienteForm, telefone: e.target.value})}
                       />
                     </div>
                     <div className="form-group">
@@ -3770,42 +3070,6 @@ const AdminDashboard = () => {
                       />
                     </div>
                   </div>
-
-                  {/* Acesso ao Sistema */}
-                  <div className="section-divider"><span>Acesso ao Sistema</span></div>
-                  
-                  <div className="form-group">
-                    <label>Criar acesso para o cliente?</label>
-                    <select
-                      value={clienteForm.criar_acesso ? 'sim' : 'nao'}
-                      onChange={(e) => setClienteForm({...clienteForm, criar_acesso: e.target.value === 'sim'})}
-                      disabled={selectedItem?.user_id}
-                    >
-                      <option value="nao">Não</option>
-                      <option value="sim">Sim</option>
-                    </select>
-                    {selectedItem?.user_id && (
-                      <small className="form-hint success">✓ Cliente já possui acesso ao sistema</small>
-                    )}
-                  </div>
-                  
-                  {clienteForm.criar_acesso && !selectedItem?.user_id && (
-                    <div className="acesso-box">
-                      <div className="acesso-info">
-                        <Lock size={16} />
-                        <span>O cliente usará o e-mail acima para fazer login</span>
-                      </div>
-                      <div className="form-group">
-                        <label>Senha de acesso *</label>
-                        <input
-                          type="password"
-                          placeholder="Mínimo 6 caracteres"
-                          value={clienteForm.senha}
-                          onChange={(e) => setClienteForm({...clienteForm, senha: e.target.value})}
-                        />
-                      </div>
-                    </div>
-                  )}
 
                   {/* Dados Profissionais */}
                   <div className="section-divider"><span>Dados Profissionais</span></div>
@@ -3985,7 +3249,7 @@ const AdminDashboard = () => {
                                 type="text"
                                 placeholder="000.000.000-00"
                                 value={comp.cpf}
-                                onChange={(e) => updateComplementador(index, 'cpf', formatCPF(e.target.value))}
+                                onChange={(e) => updateComplementador(index, 'cpf', e.target.value)}
                               />
                             </div>
                           </div>
@@ -4042,9 +3306,8 @@ const AdminDashboard = () => {
                               <label>Telefone</label>
                               <input
                                 type="text"
-                                placeholder="(00) 00000-0000"
                                 value={comp.telefone}
-                                onChange={(e) => updateComplementador(index, 'telefone', formatTelefone(e.target.value))}
+                                onChange={(e) => updateComplementador(index, 'telefone', e.target.value)}
                               />
                             </div>
                             <div className="form-group">
