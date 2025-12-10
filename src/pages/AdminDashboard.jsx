@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { supabase } from '../lib/supabase'
 import { jsPDF } from 'jspdf'
@@ -7,16 +7,32 @@ import autoTable from 'jspdf-autotable'
 import { 
   Users, DollarSign, TrendingUp, Plus, Edit2, Trash2, 
   Search, Filter, LogOut, Menu, X, ChevronDown, Save, Eye,
-  Calculator, Calendar, User, Briefcase, CheckCircle, Clock, UserPlus, Mail, Lock, Percent, Building, PlusCircle, CreditCard, Check, Upload, FileText, Trash, UserCircle, Phone, MapPin, Camera, Download, FileDown
+  Calculator, Calendar, User, Briefcase, CheckCircle, Clock, UserPlus, Mail, Lock, Percent, Building, PlusCircle, CreditCard, Check, Upload, FileText, Trash, UserCircle, Phone, MapPin, Camera, Download, FileDown, LayoutDashboard
 } from 'lucide-react'
 import logo from '../imgs/logo.png'
+import Ticker from '../components/Ticker'
+import HomeDashboard from './HomeDashboard'
 import '../styles/Dashboard.css'
 
 const AdminDashboard = () => {
   const { userProfile, signOut } = useAuth()
   const { tab } = useParams()
   const navigate = useNavigate()
-  const activeTab = tab || 'vendas'
+  const location = useLocation()
+  
+  // Detectar activeTab baseado na URL
+  // Se a URL é /admin/dashboard, activeTab é 'dashboard'
+  // Se a URL é /admin/:tab, activeTab é o valor de tab
+  // Se a URL é /admin (sem tab), activeTab é 'dashboard'
+  let activeTab = 'dashboard'
+  
+  if (location.pathname === '/admin/dashboard') {
+    activeTab = 'dashboard'
+  } else if (tab) {
+    activeTab = tab
+  } else if (location.pathname === '/admin') {
+    activeTab = 'dashboard'
+  }
   
   const [corretores, setCorretores] = useState([])
   const [vendas, setVendas] = useState([])
@@ -260,6 +276,13 @@ const AdminDashboard = () => {
   useEffect(() => {
     fetchData()
   }, [])
+
+  // Redirecionar para dashboard se não houver tab
+  useEffect(() => {
+    if (!tab && window.location.pathname === '/admin') {
+      navigate('/admin/dashboard', { replace: true })
+    }
+  }, [tab, navigate])
 
   const fetchData = async () => {
     setLoading(true)
@@ -1896,6 +1919,13 @@ const AdminDashboard = () => {
 
         <nav className="sidebar-nav">
           <button 
+            className={`nav-item ${activeTab === 'dashboard' ? 'active' : ''}`}
+            onClick={() => navigate('/admin/dashboard')}
+          >
+            <LayoutDashboard size={20} />
+            <span>Dashboard</span>
+          </button>
+          <button 
             className={`nav-item ${activeTab === 'vendas' ? 'active' : ''}`}
             onClick={() => navigate('/admin/vendas')}
           >
@@ -1957,12 +1987,16 @@ const AdminDashboard = () => {
 
       {/* Main Content */}
       <main className="main-content">
+        {/* Ticker */}
+        <Ticker />
+        
         {/* Header */}
         <header className="main-header">
           <button className="menu-toggle" onClick={() => setMenuOpen(true)}>
             <Menu size={24} />
           </button>
           <h1>
+            {activeTab === 'dashboard' && 'Dashboard Executivo'}
             {activeTab === 'vendas' && 'Gestão de Vendas'}
             {activeTab === 'corretores' && 'Corretores'}
             {activeTab === 'empreendimentos' && 'Empreendimentos'}
@@ -2078,6 +2112,11 @@ const AdminDashboard = () => {
         </div>
 
         {/* Content */}
+        {activeTab === 'dashboard' && (
+          <div style={{ padding: '0', flex: 1, overflow: 'auto' }}>
+            <HomeDashboard showTicker={false} showHeader={false} />
+          </div>
+        )}
         {activeTab === 'vendas' && (
           <div className="content-section">
             <div className="section-header">

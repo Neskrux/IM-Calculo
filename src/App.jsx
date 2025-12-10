@@ -4,6 +4,7 @@ import { supabase } from './lib/supabase'
 import Login from './pages/Login'
 import AdminDashboard from './pages/AdminDashboard'
 import CorretorDashboard from './pages/CorretorDashboard'
+import HomeDashboard from './pages/HomeDashboard'
 import './App.css'
 
 // Componente de Loading com botão de sair
@@ -163,11 +164,8 @@ const DashboardRedirect = () => {
     )
   }
 
-  if (userProfile?.tipo === 'admin') {
-    return <Navigate to="/admin" replace />
-  }
-  
-  return <Navigate to="/corretor" replace />
+  // Mostrar HomeDashboard inicialmente
+  return <HomeDashboard />
 }
 
 function AppRoutes() {
@@ -183,6 +181,14 @@ function AppRoutes() {
       />
       <Route 
         path="/admin" 
+        element={
+          <ProtectedRoute requiredRole="admin">
+            <AdminDashboard />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/admin/dashboard" 
         element={
           <ProtectedRoute requiredRole="admin">
             <AdminDashboard />
@@ -210,6 +216,14 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <DashboardRedirect />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/home" 
+        element={
+          <ProtectedRoute>
+            <HomeDashboard />
           </ProtectedRoute>
         } 
       />

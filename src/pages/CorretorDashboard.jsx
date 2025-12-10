@@ -7,6 +7,7 @@ import {
   Wallet, Target, Award, BarChart3
 } from 'lucide-react'
 import logo from '../imgs/logo.png'
+import Ticker from '../components/Ticker'
 import '../styles/Dashboard.css'
 import '../styles/CorretorDashboard.css'
 
@@ -85,6 +86,9 @@ const CorretorDashboard = () => {
 
   return (
     <div className="corretor-dashboard">
+      {/* Ticker */}
+      <Ticker />
+      
       {/* Header */}
       <header className="corretor-header">
         <div className="header-left">
