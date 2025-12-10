@@ -2564,6 +2564,14 @@ const AdminDashboard = () => {
                                   </span>
                                 </div>
                                 <div className="parcela-acao">
+                                  <button 
+                                    className="btn-ver-detalhe"
+                                    onClick={(e) => { e.stopPropagation(); setPagamentoDetalhe(pag); }}
+                                    title="Ver detalhes"
+                                  >
+                                    <Eye size={14} />
+                                    Ver
+                                  </button>
                                   {pag.status !== 'pago' && (
                                     <button 
                                       className="btn-small-confirm"
