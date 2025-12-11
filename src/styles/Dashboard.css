@@ -204,7 +204,7 @@
   }
   
   .menu-toggle {
-    display: block;
+    display: flex !important;
   }
   
   .header-actions {
@@ -295,7 +295,7 @@
 
 /* Sidebar */
 .sidebar {
-  width: 240px;
+  width: 260px;
   background: linear-gradient(180deg, var(--im-bg-secondary, #0a1628) 0%, var(--im-bg-primary, #050a12) 100%);
   border-right: 1px solid var(--im-border, rgba(74, 144, 217, 0.15));
   border-left: none;
@@ -304,12 +304,80 @@
   position: fixed;
   height: 100vh;
   z-index: 100;
-  transition: width 0.3s ease, transform 0.2s;
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   left: 0;
   top: 0;
   overflow: hidden;
   box-shadow: var(--im-shadow, 0 4px 20px rgba(0, 0, 0, 0.3));
   transform: translateX(0);
+}
+
+/* Sidebar Collapsed State */
+.sidebar.collapsed {
+  width: 72px;
+}
+
+.sidebar.collapsed .logo-text {
+  opacity: 0;
+  width: 0;
+  overflow: hidden;
+}
+
+.sidebar.collapsed .nav-item span {
+  opacity: 0;
+  width: 0;
+  overflow: hidden;
+  position: absolute;
+}
+
+.sidebar.collapsed .nav-item {
+  justify-content: center;
+  padding: 12px;
+}
+
+.sidebar.collapsed .user-details {
+  opacity: 0;
+  width: 0;
+  overflow: hidden;
+  position: absolute;
+}
+
+/* Collapsed footer styles moved to .sidebar-footer section */
+
+/* Sidebar Collapse Button */
+.sidebar-collapse-btn {
+  position: absolute;
+  bottom: 80px;
+  right: -12px;
+  width: 24px;
+  height: 24px;
+  background: var(--im-accent, #4a90d9);
+  border: 2px solid var(--im-bg-primary, #050a12);
+  border-radius: 50%;
+  color: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  z-index: 101;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.sidebar-collapse-btn:hover {
+  background: var(--im-accent-light, #6ba8ed);
+  transform: scale(1.1);
+}
+
+.sidebar.collapsed .sidebar-collapse-btn {
+  right: -12px;
+}
+
+/* Hide collapse button on mobile */
+@media (max-width: 1024px) {
+  .sidebar-collapse-btn {
+    display: none;
+  }
 }
 
 .sidebar.collapsed {
@@ -323,8 +391,14 @@
   align-items: center;
   border-bottom: 1px solid var(--im-border, rgba(74, 144, 217, 0.15));
   position: relative;
-  min-height: 60px;
+  min-height: 64px;
   background: var(--im-bg-tertiary, #0d1f3c);
+  transition: padding 0.3s ease;
+}
+
+.sidebar.collapsed .sidebar-header {
+  padding: 16px 12px;
+  justify-content: center;
 }
 
 .sidebar-header-content {
@@ -396,29 +470,34 @@
   display: flex;
 }
 
-.sidebar.collapsed .logo {
-  display: none;
-}
-
-.sidebar:not(.collapsed) .logo-collapsed {
-  display: none;
-}
-
 .logo {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   color: #fff;
   font-size: 14px;
   font-weight: 600;
   flex: 1;
   min-width: 0;
+  transition: gap 0.3s ease;
 }
 
-.logo span {
+.sidebar.collapsed .logo {
+  gap: 0;
+  justify-content: center;
+}
+
+.logo-text {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  transition: opacity 0.2s ease, width 0.3s ease;
+}
+
+.sidebar.collapsed .logo-text {
+  opacity: 0;
+  width: 0;
+  position: absolute;
 }
 
 .logo-sidebar {
@@ -490,49 +569,77 @@
 .nav-item {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 10px 12px;
+  gap: 12px;
+  padding: 12px 14px;
   border: none;
   background: transparent;
   color: var(--im-text-secondary, #94a3b8);
   font-size: 13px;
   font-weight: 500;
-  border-radius: 6px;
+  border-radius: 8px;
   cursor: pointer;
-  transition: all 0.15s;
+  transition: all 0.2s ease;
   text-align: left;
   width: 100%;
   position: relative;
 }
 
+.nav-item span {
+  transition: opacity 0.2s ease;
+  white-space: nowrap;
+}
+
+.nav-item svg {
+  flex-shrink: 0;
+  transition: transform 0.2s ease;
+}
+
+.nav-item:hover svg {
+  transform: scale(1.1);
+}
+
+/* Collapsed nav items */
 .sidebar.collapsed .nav-item {
-  padding: 10px;
+  padding: 12px;
   justify-content: center;
 }
 
 .sidebar.collapsed .nav-item span {
-  display: none;
+  opacity: 0;
+  width: 0;
+  position: absolute;
+  overflow: hidden;
 }
 
-.sidebar.collapsed .nav-item {
-  width: 100%;
-}
-
+/* Tooltip on hover when collapsed */
 .sidebar.collapsed .nav-item:hover::after {
   content: attr(title);
   position: absolute;
-  left: 100%;
-  margin-left: 12px;
-  padding: 8px 12px;
-  background: var(--im-bg-primary, #050a12);
+  left: calc(100% + 8px);
+  top: 50%;
+  transform: translateY(-50%);
+  padding: 8px 14px;
+  background: var(--im-bg-tertiary, #0d1f3c);
   border: 1px solid var(--im-border, rgba(74, 144, 217, 0.15));
-  border-radius: 6px;
+  border-radius: 8px;
   color: #fff;
-  font-size: 12px;
+  font-size: 13px;
   white-space: nowrap;
   z-index: 1000;
   pointer-events: none;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  animation: tooltipFade 0.2s ease;
+}
+
+@keyframes tooltipFade {
+  from {
+    opacity: 0;
+    transform: translateY(-50%) translateX(-5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(-50%) translateX(0);
+  }
 }
 
 .nav-item:hover {
@@ -564,16 +671,23 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 12px;
+  transition: padding 0.3s ease;
 }
 
 .sidebar.collapsed .sidebar-footer {
-  padding: 16px 8px;
+  padding: 12px;
   flex-direction: column;
-  gap: 12px;
+  justify-content: center;
 }
 
 .sidebar.collapsed .user-info {
   display: none;
+}
+
+.sidebar.collapsed .logout-btn {
+  width: 100%;
+  justify-content: center;
 }
 
 .user-info-collapsed {
@@ -685,13 +799,7 @@
   margin-top: 0;
 }
 
-.menu-toggle {
-  display: none;
-  background: none;
-  border: none;
-  color: #fff;
-  cursor: pointer;
-}
+/* Menu toggle já definido acima */
 
 .main-header h1 {
   font-size: 20px;
@@ -2650,9 +2758,16 @@
   }
   
   .main-content {
-    margin-left: 240px;
-    width: calc(100% - 240px);
-    max-width: calc(100% - 240px);
+    margin-left: 260px;
+    width: calc(100% - 260px);
+    max-width: calc(100% - 260px);
+    transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1), width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  .main-content.sidebar-collapsed {
+    margin-left: 72px;
+    width: calc(100% - 72px);
+    max-width: calc(100% - 72px);
   }
 }
 

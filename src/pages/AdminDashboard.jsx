@@ -7,7 +7,7 @@ import autoTable from 'jspdf-autotable'
 import { 
   Users, DollarSign, TrendingUp, Plus, Edit2, Trash2, 
   Search, Filter, LogOut, Menu, X, ChevronDown, Save, Eye,
-  Calculator, Calendar, User, Briefcase, CheckCircle, Clock, UserPlus, Mail, Lock, Percent, Building, PlusCircle, CreditCard, Check, Upload, FileText, Trash, UserCircle, Phone, MapPin, Camera, Download, FileDown, LayoutDashboard
+  Calculator, Calendar, User, Briefcase, CheckCircle, Clock, UserPlus, Mail, Lock, Percent, Building, PlusCircle, CreditCard, Check, Upload, FileText, Trash, UserCircle, Phone, MapPin, Camera, Download, FileDown, LayoutDashboard, ChevronLeft, ChevronRight, PanelLeftClose, PanelLeft
 } from 'lucide-react'
 import logo from '../imgs/logo.png'
 import Ticker from '../components/Ticker'
@@ -40,6 +40,10 @@ const AdminDashboard = () => {
   const [pagamentos, setPagamentos] = useState([])
   const [loading, setLoading] = useState(true)
   const [menuOpen, setMenuOpen] = useState(false)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
+    const saved = localStorage.getItem('sidebar-collapsed')
+    return saved === 'true'
+  })
   const [searchTerm, setSearchTerm] = useState('')
   const [showModal, setShowModal] = useState(false)
   const [modalType, setModalType] = useState('')
@@ -64,6 +68,15 @@ const AdminDashboard = () => {
     dataFim: ''
   })
   const [gerandoPdf, setGerandoPdf] = useState(false)
+
+  // Toggle sidebar collapsed state
+  const toggleSidebar = () => {
+    setSidebarCollapsed(prev => {
+      const newValue = !prev
+      localStorage.setItem('sidebar-collapsed', String(newValue))
+      return newValue
+    })
+  }
 
   // Agrupar pagamentos por venda
   const pagamentosAgrupados = pagamentos.reduce((acc, pag) => {
@@ -1929,14 +1942,14 @@ const AdminDashboard = () => {
       )}
 
       {/* Sidebar */}
-      <aside className={`sidebar ${menuOpen ? 'open' : ''}`}>
+      <aside className={`sidebar ${menuOpen ? 'open' : ''} ${sidebarCollapsed ? 'collapsed' : ''}`}>
         <div className="sidebar-header">
           <div className="logo">
             <img src={logo} alt="IM Incorporadora" className="logo-sidebar" />
-            <span>IM Incorporadora</span>
+            <span className="logo-text">IM Incorporadora</span>
           </div>
           <button className="close-menu" onClick={() => setMenuOpen(false)}>
-            <X size={24} />
+            <X size={20} />
           </button>
         </div>
 
@@ -1944,6 +1957,7 @@ const AdminDashboard = () => {
           <button 
             className={`nav-item ${activeTab === 'dashboard' ? 'active' : ''}`}
             onClick={() => navigate('/admin/dashboard')}
+            title="Dashboard"
           >
             <LayoutDashboard size={20} />
             <span>Dashboard</span>
@@ -1951,6 +1965,7 @@ const AdminDashboard = () => {
           <button 
             className={`nav-item ${activeTab === 'vendas' ? 'active' : ''}`}
             onClick={() => navigate('/admin/vendas')}
+            title="Vendas"
           >
             <DollarSign size={20} />
             <span>Vendas</span>
@@ -1958,6 +1973,7 @@ const AdminDashboard = () => {
           <button 
             className={`nav-item ${activeTab === 'corretores' ? 'active' : ''}`}
             onClick={() => navigate('/admin/corretores')}
+            title="Corretores"
           >
             <Users size={20} />
             <span>Corretores</span>
@@ -1965,6 +1981,7 @@ const AdminDashboard = () => {
           <button 
             className={`nav-item ${activeTab === 'empreendimentos' ? 'active' : ''}`}
             onClick={() => navigate('/admin/empreendimentos')}
+            title="Empreendimentos"
           >
             <Building size={20} />
             <span>Empreendimentos</span>
@@ -1972,6 +1989,7 @@ const AdminDashboard = () => {
           <button 
             className={`nav-item ${activeTab === 'pagamentos' ? 'active' : ''}`}
             onClick={() => navigate('/admin/pagamentos')}
+            title="Pagamentos"
           >
             <CreditCard size={20} />
             <span>Pagamentos</span>
@@ -1979,6 +1997,7 @@ const AdminDashboard = () => {
           <button 
             className={`nav-item ${activeTab === 'clientes' ? 'active' : ''}`}
             onClick={() => navigate('/admin/clientes')}
+            title="Clientes"
           >
             <UserCircle size={20} />
             <span>Clientes</span>
@@ -1986,6 +2005,7 @@ const AdminDashboard = () => {
           <button 
             className={`nav-item ${activeTab === 'relatorios' ? 'active' : ''}`}
             onClick={() => navigate('/admin/relatorios')}
+            title="Relatórios"
           >
             <TrendingUp size={20} />
             <span>Relatórios</span>
@@ -2002,14 +2022,23 @@ const AdminDashboard = () => {
               <span className="user-role">Administrador</span>
             </div>
           </div>
-          <button className="logout-btn" onClick={signOut}>
+          <button className="logout-btn" onClick={signOut} title="Sair">
             <LogOut size={20} />
           </button>
         </div>
+
+        {/* Collapse Toggle Button */}
+        <button 
+          className="sidebar-collapse-btn" 
+          onClick={toggleSidebar}
+          title={sidebarCollapsed ? 'Expandir menu' : 'Recolher menu'}
+        >
+          {sidebarCollapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
+        </button>
       </aside>
 
       {/* Main Content */}
-      <main className="main-content">
+      <main className={`main-content ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
         {/* Ticker */}
         <Ticker />
         
