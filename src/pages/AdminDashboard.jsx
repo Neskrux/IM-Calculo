@@ -2085,46 +2085,6 @@ const AdminDashboard = () => {
           </div>
         </header>
 
-        {/* Stats Cards */}
-        <div className="stats-grid">
-          <div className="stat-card">
-            <div className="stat-icon blue">
-              <DollarSign size={24} />
-            </div>
-            <div className="stat-info">
-              <span className="stat-label">Total em Vendas</span>
-              <span className="stat-value">{formatCurrency(getTotalVendas())}</span>
-            </div>
-          </div>
-          <div className="stat-card">
-            <div className="stat-icon gold">
-              <Calculator size={24} />
-            </div>
-            <div className="stat-info">
-              <span className="stat-label">Total Comissões</span>
-              <span className="stat-value">{formatCurrency(getTotalComissoes())}</span>
-            </div>
-          </div>
-          <div className="stat-card">
-            <div className="stat-icon green">
-              <Users size={24} />
-            </div>
-            <div className="stat-info">
-              <span className="stat-label">Corretores Ativos</span>
-              <span className="stat-value">{corretores.length}</span>
-            </div>
-          </div>
-          <div className="stat-card">
-            <div className="stat-icon purple">
-              <Briefcase size={24} />
-            </div>
-            <div className="stat-info">
-              <span className="stat-label">Vendas do Mês</span>
-              <span className="stat-value">{vendas.length}</span>
-            </div>
-          </div>
-        </div>
-
         {/* Content */}
         {activeTab === 'dashboard' && (
           <div style={{ padding: '0', flex: 1, overflow: 'auto' }}>
