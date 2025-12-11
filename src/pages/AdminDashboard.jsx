@@ -1919,6 +1919,15 @@ const AdminDashboard = () => {
         </div>
       )}
 
+      {/* Sidebar Overlay for Mobile */}
+      {menuOpen && (
+        <div 
+          className="sidebar-overlay" 
+          onClick={() => setMenuOpen(false)}
+          style={{ display: 'block' }}
+        />
+      )}
+
       {/* Sidebar */}
       <aside className={`sidebar ${menuOpen ? 'open' : ''}`}>
         <div className="sidebar-header">

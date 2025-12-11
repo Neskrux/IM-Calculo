@@ -1,4 +1,46 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Montserrat:wght@300;400;500;600;700&display=swap');
+
+/* ============================================
+   IM INCORPORADORA - LUXURY THEME
+   Global Styles
+   ============================================ */
+
+:root {
+  /* Primary Blue Palette */
+  --im-blue-dark: #061E42;
+  --im-blue: #0a2d5e;
+  --im-blue-medium: #0d3a7a;
+  --im-blue-light: #4a90d9;
+  --im-blue-accent: #6ba8ed;
+  
+  /* Backgrounds */
+  --im-bg-primary: #050a12;
+  --im-bg-secondary: #0a1628;
+  --im-bg-tertiary: #0d1f3c;
+  --im-bg-card: #0f2847;
+  --im-bg-hover: #142f52;
+  
+  /* Text Colors */
+  --im-text-primary: #f0f4f8;
+  --im-text-secondary: #94a3b8;
+  --im-text-muted: #64748b;
+  
+  /* Accent Colors */
+  --im-accent: #4a90d9;
+  --im-accent-light: #6ba8ed;
+  --im-success: #10b981;
+  --im-warning: #f59e0b;
+  --im-danger: #ef4444;
+  
+  /* Borders */
+  --im-border: rgba(74, 144, 217, 0.15);
+  --im-border-light: rgba(74, 144, 217, 0.08);
+  
+  /* Shadows */
+  --im-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  --im-shadow-lg: 0 10px 40px rgba(0, 0, 0, 0.4);
+  --im-glow: 0 0 20px rgba(74, 144, 217, 0.15);
+}
 
 * {
   margin: 0;
@@ -16,39 +58,64 @@ html {
 }
 
 body {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  background: #1a1f2e;
-  color: #fff;
-  line-height: 1.5;
+  font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: var(--im-bg-primary);
+  color: var(--im-text-primary);
+  line-height: 1.6;
   overflow-x: hidden;
   width: 100%;
   max-width: 100vw;
 }
 
+/* Scrollbar Styling */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #1a1f2e;
+  background: var(--im-bg-primary);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #3d4654;
+  background: var(--im-blue-medium);
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #4f5a6a;
+  background: var(--im-blue-light);
 }
 
+/* Selection */
+::selection {
+  background: rgba(74, 144, 217, 0.3);
+  color: #fff;
+}
+
+/* Focus States */
+:focus-visible {
+  outline: 2px solid var(--im-accent);
+  outline-offset: 2px;
+}
+
+/* Links */
+a {
+  color: var(--im-accent);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+a:hover {
+  color: var(--im-accent-light);
+}
+
+/* Loading Screen */
 .loading-screen {
   min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #1a1f2e;
+  background: linear-gradient(135deg, var(--im-bg-primary) 0%, var(--im-bg-secondary) 100%);
 }
 
 .loading-content {
@@ -56,18 +123,19 @@ body {
 }
 
 .loading-spinner-screen {
-  width: 32px;
-  height: 32px;
-  border: 2px solid #2d3548;
-  border-top-color: #4f7942;
+  width: 40px;
+  height: 40px;
+  border: 2px solid var(--im-border);
+  border-top-color: var(--im-accent);
   border-radius: 50%;
-  animation: spin 0.7s linear infinite;
-  margin: 0 auto 12px;
+  animation: spin 0.8s linear infinite;
+  margin: 0 auto 16px;
 }
 
 .loading-content p {
-  color: #6b7280;
-  font-size: 13px;
+  color: var(--im-text-secondary);
+  font-size: 14px;
+  letter-spacing: 1px;
 }
 
 @keyframes spin {
@@ -76,21 +144,36 @@ body {
   }
 }
 
-::selection {
-  background: rgba(79, 121, 66, 0.3);
-  color: #fff;
+/* Typography Helpers */
+.font-serif {
+  font-family: 'Cormorant Garamond', serif;
 }
 
-:focus-visible {
-  outline: 2px solid #4f7942;
-  outline-offset: 2px;
+.font-sans {
+  font-family: 'Montserrat', sans-serif;
 }
 
-a {
-  color: #4ade80;
-  text-decoration: none;
+/* Utility Classes */
+.text-accent {
+  color: var(--im-accent);
 }
 
-a:hover {
-  color: #86efac;
+.text-success {
+  color: var(--im-success);
+}
+
+.text-warning {
+  color: var(--im-warning);
+}
+
+.text-danger {
+  color: var(--im-danger);
+}
+
+.bg-card {
+  background: var(--im-bg-card);
+}
+
+.border-accent {
+  border-color: var(--im-border);
 }
