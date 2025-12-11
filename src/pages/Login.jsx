@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
-import { Mail, Lock, LogIn, AlertCircle } from 'lucide-react'
+import { Mail, Lock, ArrowRight, AlertCircle } from 'lucide-react'
 import logo from '../imgs/logo.png'
 import '../styles/Login.css'
 
@@ -10,6 +10,7 @@ const Login = () => {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [focusedField, setFocusedField] = useState(null)
   const { signIn } = useAuth()
   const navigate = useNavigate()
 
@@ -30,67 +31,149 @@ const Login = () => {
   }
 
   return (
-    <div className="login-container">
-      <div className="login-background">
-        <div className="bg-shape shape-1"></div>
-        <div className="bg-shape shape-2"></div>
-        <div className="bg-shape shape-3"></div>
+    <div className="luxury-login theme-blue">
+      {/* Background Elements */}
+      <div className="luxury-bg">
+        <div className="bg-gradient"></div>
+        <div className="bg-pattern"></div>
+        <div className="bg-glow"></div>
       </div>
-      
-      <div className="login-card">
-        <div className="login-header">
-          <div className="logo-container">
-            <img src={logo} alt="IM Incorporadora" className="logo-img" />
-          </div>
-          <h1>IM Incorporadora</h1>
-          <p>Sistema de Comissões</p>
-        </div>
 
-        <form onSubmit={handleSubmit} className="login-form">
-          {error && (
-            <div className="error-message">
-              <AlertCircle size={18} />
-              <span>{error}</span>
+      {/* Decorative Lines */}
+      <div className="deco-line deco-top-left"></div>
+      <div className="deco-line deco-top-right"></div>
+      <div className="deco-line deco-bottom-left"></div>
+      <div className="deco-line deco-bottom-right"></div>
+
+      {/* Main Container */}
+      <div className="luxury-container">
+        {/* Left Side - Branding */}
+        <div className="luxury-branding">
+          <div className="brand-content">
+            <div className="brand-logo-wrapper">
+              <div className="logo-glow"></div>
+              <img src={logo} alt="IM Incorporadora" className="brand-logo" />
             </div>
-          )}
+            
+            <div className="brand-text">
+              <div className="brand-divider">
+                <span className="divider-line"></span>
+                <span className="divider-diamond">◆</span>
+                <span className="divider-line"></span>
+              </div>
+              
+              <h1 className="brand-title">Incorporadora</h1>
+              
+              <p className="brand-tagline">Excellence in Real Estate</p>
+              
+              <div className="brand-subtitle">
+                <span>Sistema de Comissões</span>
+              </div>
+            </div>
 
-          <div className="input-group">
-            <Mail size={20} className="input-icon" />
-            <input
-              type="email"
-              placeholder="Seu email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
+            <div className="brand-footer">
+              <div className="footer-line"></div>
+              <span>Est. 2024</span>
+              <div className="footer-line"></div>
+            </div>
           </div>
 
-          <div className="input-group">
-            <Lock size={20} className="input-icon" />
-            <input
-              type="password"
-              placeholder="Sua senha"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
+          {/* Animated Background Elements */}
+          <div className="floating-elements">
+            <div className="float-element float-1"></div>
+            <div className="float-element float-2"></div>
+            <div className="float-element float-3"></div>
           </div>
-
-          <button type="submit" className="login-button" disabled={loading}>
-            {loading ? (
-              <span className="loading-spinner"></span>
-            ) : (
-              <>
-                <LogIn size={20} />
-                <span>Entrar</span>
-              </>
-            )}
-          </button>
-        </form>
-
-        <div className="login-footer">
-          <p>IM Incorporadora</p>
         </div>
+
+        {/* Right Side - Login Form */}
+        <div className="luxury-form-section">
+          <div className="form-container">
+            <div className="form-header">
+              <span className="form-welcome">Bem-vindo</span>
+              <h2 className="form-title">Acesse sua conta</h2>
+              <p className="form-subtitle">Entre com suas credenciais para continuar</p>
+            </div>
+
+            <form onSubmit={handleSubmit} className="luxury-form">
+              {error && (
+                <div className="luxury-error">
+                  <AlertCircle size={18} />
+                  <span>{error}</span>
+                </div>
+              )}
+
+              <div className={`luxury-input-group ${focusedField === 'email' ? 'focused' : ''} ${email ? 'filled' : ''}`}>
+                <label className="luxury-label">Email</label>
+                <div className="input-wrapper">
+                  <Mail size={18} className="input-icon" />
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    onFocus={() => setFocusedField('email')}
+                    onBlur={() => setFocusedField(null)}
+                    required
+                    autoComplete="email"
+                  />
+                  <div className="input-line"></div>
+                </div>
+              </div>
+
+              <div className={`luxury-input-group ${focusedField === 'password' ? 'focused' : ''} ${password ? 'filled' : ''}`}>
+                <label className="luxury-label">Senha</label>
+                <div className="input-wrapper">
+                  <Lock size={18} className="input-icon" />
+                  <input
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    onFocus={() => setFocusedField('password')}
+                    onBlur={() => setFocusedField(null)}
+                    required
+                    autoComplete="current-password"
+                  />
+                  <div className="input-line"></div>
+                </div>
+              </div>
+
+              <button type="submit" className="luxury-button" disabled={loading}>
+                {loading ? (
+                  <div className="button-loading">
+                    <span className="loading-dot"></span>
+                    <span className="loading-dot"></span>
+                    <span className="loading-dot"></span>
+                  </div>
+                ) : (
+                  <>
+                    <span>Entrar</span>
+                    <ArrowRight size={18} className="button-arrow" />
+                  </>
+                )}
+              </button>
+            </form>
+
+            <div className="form-footer">
+              <div className="footer-decoration">
+                <span className="footer-dot"></span>
+                <span className="footer-text">IM Incorporadora</span>
+                <span className="footer-dot"></span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Corner Decorations */}
+      <div className="corner-deco corner-tl">
+        <svg viewBox="0 0 100 100" fill="none">
+          <path d="M0 0 L100 0 L100 10 L10 10 L10 100 L0 100 Z" fill="currentColor"/>
+        </svg>
+      </div>
+      <div className="corner-deco corner-br">
+        <svg viewBox="0 0 100 100" fill="none">
+          <path d="M100 100 L0 100 L0 90 L90 90 L90 0 L100 0 Z" fill="currentColor"/>
+        </svg>
       </div>
     </div>
   )
