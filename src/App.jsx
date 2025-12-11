@@ -164,7 +164,17 @@ const DashboardRedirect = () => {
     )
   }
 
-  // Mostrar HomeDashboard inicialmente
+  // Redirecionar baseado no tipo de usuário
+  if (userProfile) {
+    if (userProfile.tipo === 'admin') {
+      return <Navigate to="/admin" replace />
+    }
+    if (userProfile.tipo === 'corretor') {
+      return <Navigate to="/corretor" replace />
+    }
+  }
+
+  // Fallback: mostrar HomeDashboard
   return <HomeDashboard />
 }
 

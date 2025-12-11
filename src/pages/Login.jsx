@@ -26,7 +26,9 @@ const Login = () => {
       return
     }
 
-    navigate('/dashboard')
+    // Não precisa redirecionar manualmente
+    // O PublicRoute vai redirecionar automaticamente quando o perfil carregar
+    setLoading(false)
   }
 
   return (

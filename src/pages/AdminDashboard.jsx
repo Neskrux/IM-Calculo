@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
-import { supabase } from '../lib/supabase'
+import { supabase, getCurrentSiteUrl } from '../lib/supabase'
 import { jsPDF } from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import { 
@@ -684,10 +684,34 @@ const AdminDashboard = () => {
         setMessage({ type: 'success', text: `Corretor ${corretorForm.nome} atualizado com sucesso!` })
       } else {
         // CRIAÇÃO de novo corretor
+        console.group('👤 Cadastrando Novo Corretor')
+        
+        const siteUrl = getCurrentSiteUrl()
+        const redirectUrl = `${siteUrl}/login`
+        
+        // Logs detalhados da detecção de URL
+        console.log('🔗 Detecção de URL:')
+        console.log('  📍 URL Base:', siteUrl)
+        console.log('  🌐 URL Completa:', window.location.href)
+        console.log('  🔒 Protocolo:', window.location.protocol)
+        console.log('  🏠 Host:', window.location.host)
+        console.log('  ⚙️ Modo DEV:', import.meta.env.DEV ? 'Sim' : 'Não')
+        console.log('  📦 VITE_SITE_URL:', import.meta.env.VITE_SITE_URL || 'Não definido')
+        
+        console.log('📧 Email do corretor:', corretorForm.email)
+        console.log('👤 Nome do corretor:', corretorForm.nome)
+        console.log('🔗 URL de redirect configurada:', redirectUrl)
+        console.log('📋 Opções do signUp:', {
+          email: corretorForm.email,
+          emailRedirectTo: redirectUrl,
+          data: { nome: corretorForm.nome }
+        })
+        
         const { data: authData, error: authError } = await supabase.auth.signUp({
           email: corretorForm.email,
           password: corretorForm.senha,
           options: {
+            emailRedirectTo: redirectUrl,
             data: {
               nome: corretorForm.nome
             }
@@ -695,8 +719,41 @@ const AdminDashboard = () => {
         })
 
         if (authError) {
+          console.error('❌ Erro ao criar usuário:', authError)
+          console.error('📝 Detalhes do erro:', {
+            message: authError.message,
+            status: authError.status,
+            name: authError.name
+          })
+          console.groupEnd()
           throw new Error(authError.message)
         }
+        
+        console.log('✅ Usuário criado com sucesso:', {
+          userId: authData.user?.id,
+          email: authData.user?.email,
+          emailConfirmed: authData.user?.email_confirmed_at ? 'Sim' : 'Não'
+        })
+        
+        // Logs adicionais para debug do email
+        console.log('📬 Informações do email:')
+        console.log('  - Email enviado?', authData.user ? 'Sim' : 'Não')
+        console.log('  - Email confirmado?', authData.user?.email_confirmed_at ? 'Sim' : 'Não')
+        console.log('  - Confirmation sent?', authData.user?.confirmation_sent_at ? 'Sim' : 'Não')
+        
+        // Em desenvolvimento, mostrar link de confirmação manual
+        if (import.meta.env.DEV && authData.user) {
+          const confirmationToken = authData.user.confirmation_token || 'Token não disponível'
+          const confirmationLink = `${redirectUrl}?token=${confirmationToken}`
+          console.log('🔗 Link de confirmação (DEV):', confirmationLink)
+          console.log('📋 Token de confirmação:', confirmationToken)
+        }
+        
+        console.log('  - Último sign in:', authData.user?.last_sign_in_at || 'Nunca')
+        console.log('  - Dados completos do usuário:', authData.user)
+        console.log('  - Session:', authData.session)
+        
+        console.groupEnd()
 
         if (!authData.user) {
           throw new Error('Erro ao criar usuário')
@@ -734,6 +791,14 @@ const AdminDashboard = () => {
       setTimeout(() => setMessage({ type: '', text: '' }), 5000)
 
     } catch (err) {
+      console.group('❌ Erro ao Salvar Corretor')
+      console.error('Erro completo:', err)
+      console.error('📝 Detalhes do erro:', {
+        message: err?.message,
+        name: err?.name,
+        stack: err?.stack
+      })
+      console.groupEnd()
       setSaving(false)
       setMessage({ type: 'error', text: err.message })
     }
@@ -1326,11 +1391,25 @@ const AdminDashboard = () => {
       let acessoCriado = false
       if (clienteForm.criar_acesso && !selectedItem?.user_id) {
         try {
+          console.group('👤 Criando Acesso para Cliente')
           // Criar usuário na autenticação
+          const siteUrl = getCurrentSiteUrl()
+          const redirectUrl = `${siteUrl}/login`
+          
+          console.log('📧 Email do cliente:', clienteForm.email)
+          console.log('👤 Nome do cliente:', clienteForm.nome_completo)
+          console.log('🔗 URL de redirect configurada:', redirectUrl)
+          console.log('📋 Opções do signUp:', {
+            email: clienteForm.email,
+            emailRedirectTo: redirectUrl,
+            data: { nome: clienteForm.nome_completo, role: 'cliente' }
+          })
+          
           const { data: authData, error: authError } = await supabase.auth.signUp({
             email: clienteForm.email,
             password: clienteForm.senha,
             options: {
+              emailRedirectTo: redirectUrl,
               data: {
                 nome: clienteForm.nome_completo,
                 role: 'cliente'
@@ -1338,7 +1417,23 @@ const AdminDashboard = () => {
             }
           })
           
-          if (authError) throw authError
+          if (authError) {
+            console.error('❌ Erro ao criar acesso:', authError)
+            console.error('📝 Detalhes do erro:', {
+              message: authError.message,
+              status: authError.status,
+              name: authError.name
+            })
+            console.groupEnd()
+            throw authError
+          }
+          
+          console.log('✅ Acesso criado com sucesso:', {
+            userId: authData.user?.id,
+            email: authData.user?.email,
+            emailConfirmed: authData.user?.email_confirmed_at ? 'Sim' : 'Não'
+          })
+          console.groupEnd()
           
           const userId = authData.user?.id
           
@@ -1363,7 +1458,15 @@ const AdminDashboard = () => {
             acessoCriado = true
           }
         } catch (acessoError) {
-          console.error('Erro ao criar acesso:', acessoError)
+          console.group('❌ Erro ao Criar Acesso do Cliente')
+          console.error('Erro completo:', acessoError)
+          console.error('📝 Detalhes:', {
+            message: acessoError?.message || 'Erro desconhecido',
+            status: acessoError?.status,
+            name: acessoError?.name,
+            stack: acessoError?.stack
+          })
+          console.groupEnd()
           // Não impede o salvamento do cliente, apenas mostra aviso
         }
       }

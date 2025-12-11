@@ -19,7 +19,8 @@ export const AuthProvider = ({ children }) => {
       return
     }
 
-    console.log('Carregando perfil para:', authUser.email)
+    console.log('🔍 Carregando perfil para:', authUser.email)
+    console.log('🆔 User ID:', authUser.id)
     setUser(authUser)
 
     try {
@@ -30,13 +31,22 @@ export const AuthProvider = ({ children }) => {
         .eq('id', authUser.id)
         .maybeSingle()
 
-      console.log('Perfil encontrado:', profile, 'Erro:', error)
+      console.log('📋 Perfil encontrado:', profile)
+      console.log('❌ Erro (se houver):', error)
+      console.log('✅ Tipo do usuário:', profile?.tipo)
 
       if (profile) {
+        console.log('✅ Perfil carregado com sucesso!')
+        console.log('   - Nome:', profile.nome)
+        console.log('   - Email:', profile.email)
+        console.log('   - Tipo:', profile.tipo)
+        console.log('   - Tipo Corretor:', profile.tipo_corretor)
         setUserProfile(profile)
         setLoading(false)
         return
       }
+
+      console.warn('⚠️ Perfil não encontrado na tabela usuarios')
 
       // Se não existe, criar como admin
       console.log('Criando perfil automaticamente...')
