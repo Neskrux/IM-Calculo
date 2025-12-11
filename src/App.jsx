@@ -1,4 +1,5 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom'
+import { useEffect } from 'react'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { supabase } from './lib/supabase'
 import Login from './pages/Login'
@@ -146,6 +147,7 @@ const PublicRoute = ({ children }) => {
 // Componente de Dashboard que redireciona baseado no tipo de usuário
 const DashboardRedirect = () => {
   const { userProfile, loading, user } = useAuth()
+  const navigate = useNavigate()
 
   if (loading) {
     return <LoadingScreen showLogout={true} />
@@ -164,7 +166,18 @@ const DashboardRedirect = () => {
     )
   }
 
-  // Mostrar HomeDashboard inicialmente
+  // Redirecionar baseado no tipo de usuário
+  useEffect(() => {
+    if (userProfile) {
+      if (userProfile.tipo === 'admin') {
+        navigate('/admin/dashboard', { replace: true })
+      } else if (userProfile.tipo === 'corretor') {
+        navigate('/corretor', { replace: true })
+      }
+    }
+  }, [userProfile, navigate])
+
+  // Mostrar HomeDashboard enquanto redireciona
   return <HomeDashboard />
 }
 

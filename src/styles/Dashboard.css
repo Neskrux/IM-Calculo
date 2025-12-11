@@ -264,6 +264,7 @@
   top: 0;
   overflow: hidden;
   box-shadow: none;
+  transform: translateX(0);
 }
 
 .sidebar.collapsed {
@@ -2583,6 +2584,13 @@
   .sidebar.open {
     transform: translateX(0);
     box-shadow: 2px 0 20px rgba(0, 0, 0, 0.5);
+  }
+}
+
+/* Em telas grandes, sidebar sempre visível */
+@media (min-width: 1025px) {
+  .sidebar {
+    transform: translateX(0) !important;
   }
   
   .sidebar.collapsed {

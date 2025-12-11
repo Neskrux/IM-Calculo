@@ -284,6 +284,20 @@ const AdminDashboard = () => {
     }
   }, [tab, navigate])
 
+  // Inicializar sidebar como aberta em telas grandes
+  useEffect(() => {
+    const checkScreenSize = () => {
+      if (window.innerWidth > 1024) {
+        setMenuOpen(true)
+      }
+    }
+    
+    checkScreenSize()
+    window.addEventListener('resize', checkScreenSize)
+    
+    return () => window.removeEventListener('resize', checkScreenSize)
+  }, [])
+
   const fetchData = async () => {
     setLoading(true)
     
