@@ -215,7 +215,8 @@ const AdminDashboard = () => {
     empresa_trabalho: '',
     valor_complemento: '',
     telefone: '',
-    email: ''
+    email: '',
+    tipo_relacionamento: ''
   }
 
   // Cargos filtrados por empreendimento selecionado
@@ -1550,7 +1551,8 @@ const AdminDashboard = () => {
           empresa_trabalho: c.empresa_trabalho,
           valor_complemento: c.valor_complemento ? parseFloat(c.valor_complemento.replace(/[^\d,]/g, '').replace(',', '.')) : null,
           telefone: c.telefone,
-          email: c.email
+          email: c.email,
+          tipo_relacionamento: c.tipo_relacionamento || null
         }))
 
         const { error: compError } = await supabase
@@ -4477,6 +4479,15 @@ const AdminDashboard = () => {
                           </div>
                           <div className="form-row">
                             <div className="form-group">
+                              <label>Tipo de Relacionamento</label>
+                              <input
+                                type="text"
+                                placeholder="Ex: Cônjuge, Mãe, Pai, Irmão(ã)"
+                                value={comp.tipo_relacionamento || ''}
+                                onChange={(e) => updateComplementador(index, 'tipo_relacionamento', e.target.value)}
+                              />
+                            </div>
+                            <div className="form-group">
                               <label>Nome</label>
                               <input
                                 type="text"
@@ -4485,6 +4496,8 @@ const AdminDashboard = () => {
                                 onChange={(e) => updateComplementador(index, 'nome', e.target.value)}
                               />
                             </div>
+                          </div>
+                          <div className="form-row">
                             <div className="form-group">
                               <label>CPF</label>
                               <input
