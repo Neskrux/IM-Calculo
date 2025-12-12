@@ -40,6 +40,7 @@ export const AuthProvider = ({ children }) => {
       console.log('Perfil encontrado:', profile, 'Erro:', error)
 
       if (profile) {
+        clearTimeout(timeoutId)
         setUserProfile(profile)
         setLoading(false)
         return
@@ -68,6 +69,7 @@ export const AuthProvider = ({ children }) => {
           .select()
           .single()
 
+        clearTimeout(timeoutId)
         if (newProfile) {
           setUserProfile(newProfile)
         } else {
@@ -98,6 +100,7 @@ export const AuthProvider = ({ children }) => {
 
       console.log('Novo perfil:', newProfile, 'Erro:', createError)
 
+      clearTimeout(timeoutId)
       if (newProfile) {
         setUserProfile(newProfile)
       } else {
@@ -110,12 +113,12 @@ export const AuthProvider = ({ children }) => {
         
         setUserProfile(retry || { id: authUser.id, email: authUser.email, nome: 'Admin', tipo: 'admin' })
       }
+      setLoading(false)
     } catch (err) {
       console.error('Erro ao carregar perfil:', err)
+      clearTimeout(timeoutId)
       // Fallback: criar perfil local para não travar
       setUserProfile({ id: authUser.id, email: authUser.email, nome: 'Admin', tipo: 'admin' })
-    } finally {
-      clearTimeout(timeoutId)
       setLoading(false)
     }
   }
