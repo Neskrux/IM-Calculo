@@ -4360,81 +4360,147 @@ const AdminDashboard = () => {
                   <div className="docs-upload-grid">
                     <div className="form-group">
                       <label>RG Frente</label>
-                      <input
-                        type="file"
-                        accept="image/*,.pdf"
-                        onChange={(e) => e.target.files[0] && uploadDocumentoCliente(e.target.files[0], 'rg_frente')}
-                      />
-                      {clienteForm.rg_frente_url && (
-                        <a href={clienteForm.rg_frente_url} target="_blank" rel="noopener noreferrer" className="doc-preview">
-                          Ver arquivo
-                        </a>
-                      )}
+                      <div className="file-upload-wrapper">
+                        {clienteForm.rg_frente_url ? (
+                          <div className="file-upload-info">
+                            <span className="file-name" title={clienteForm.rg_frente_url.split('/').pop()}>
+                              {clienteForm.rg_frente_url.split('/').pop()}
+                            </span>
+                            <a href={clienteForm.rg_frente_url} target="_blank" rel="noopener noreferrer" className="doc-preview">
+                              Ver arquivo
+                            </a>
+                          </div>
+                        ) : null}
+                        <label className="file-upload-label">
+                          <input
+                            type="file"
+                            accept="image/*,.pdf"
+                            onChange={(e) => e.target.files[0] && uploadDocumentoCliente(e.target.files[0], 'rg_frente')}
+                            className="file-upload-input"
+                          />
+                          <span className="file-upload-button">Escolher Arquivo</span>
+                        </label>
+                      </div>
                     </div>
                     <div className="form-group">
                       <label>RG Verso</label>
-                      <input
-                        type="file"
-                        accept="image/*,.pdf"
-                        onChange={(e) => e.target.files[0] && uploadDocumentoCliente(e.target.files[0], 'rg_verso')}
-                      />
-                      {clienteForm.rg_verso_url && (
-                        <a href={clienteForm.rg_verso_url} target="_blank" rel="noopener noreferrer" className="doc-preview">
-                          Ver arquivo
-                        </a>
-                      )}
+                      <div className="file-upload-wrapper">
+                        {clienteForm.rg_verso_url ? (
+                          <div className="file-upload-info">
+                            <span className="file-name" title={clienteForm.rg_verso_url.split('/').pop()}>
+                              {clienteForm.rg_verso_url.split('/').pop()}
+                            </span>
+                            <a href={clienteForm.rg_verso_url} target="_blank" rel="noopener noreferrer" className="doc-preview">
+                              Ver arquivo
+                            </a>
+                          </div>
+                        ) : null}
+                        <label className="file-upload-label">
+                          <input
+                            type="file"
+                            accept="image/*,.pdf"
+                            onChange={(e) => e.target.files[0] && uploadDocumentoCliente(e.target.files[0], 'rg_verso')}
+                            className="file-upload-input"
+                          />
+                          <span className="file-upload-button">Escolher Arquivo</span>
+                        </label>
+                      </div>
                     </div>
                     <div className="form-group">
                       <label>CPF</label>
-                      <input
-                        type="file"
-                        accept="image/*,.pdf"
-                        onChange={(e) => e.target.files[0] && uploadDocumentoCliente(e.target.files[0], 'cpf')}
-                      />
-                      {clienteForm.cpf_url && (
-                        <a href={clienteForm.cpf_url} target="_blank" rel="noopener noreferrer" className="doc-preview">
-                          Ver arquivo
-                        </a>
-                      )}
+                      <div className="file-upload-wrapper">
+                        {clienteForm.cpf_url ? (
+                          <div className="file-upload-info">
+                            <span className="file-name" title={clienteForm.cpf_url.split('/').pop()}>
+                              {clienteForm.cpf_url.split('/').pop()}
+                            </span>
+                            <a href={clienteForm.cpf_url} target="_blank" rel="noopener noreferrer" className="doc-preview">
+                              Ver arquivo
+                            </a>
+                          </div>
+                        ) : null}
+                        <label className="file-upload-label">
+                          <input
+                            type="file"
+                            accept="image/*,.pdf"
+                            onChange={(e) => e.target.files[0] && uploadDocumentoCliente(e.target.files[0], 'cpf')}
+                            className="file-upload-input"
+                          />
+                          <span className="file-upload-button">Escolher Arquivo</span>
+                        </label>
+                      </div>
                     </div>
                     <div className="form-group">
                       <label>Comprovante Residência</label>
-                      <input
-                        type="file"
-                        accept="image/*,.pdf"
-                        onChange={(e) => e.target.files[0] && uploadDocumentoCliente(e.target.files[0], 'comprovante_residencia')}
-                      />
-                      {clienteForm.comprovante_residencia_url && (
-                        <a href={clienteForm.comprovante_residencia_url} target="_blank" rel="noopener noreferrer" className="doc-preview">
-                          Ver arquivo
-                        </a>
-                      )}
+                      <div className="file-upload-wrapper">
+                        {clienteForm.comprovante_residencia_url ? (
+                          <div className="file-upload-info">
+                            <span className="file-name" title={clienteForm.comprovante_residencia_url.split('/').pop()}>
+                              {clienteForm.comprovante_residencia_url.split('/').pop()}
+                            </span>
+                            <a href={clienteForm.comprovante_residencia_url} target="_blank" rel="noopener noreferrer" className="doc-preview">
+                              Ver arquivo
+                            </a>
+                          </div>
+                        ) : null}
+                        <label className="file-upload-label">
+                          <input
+                            type="file"
+                            accept="image/*,.pdf"
+                            onChange={(e) => e.target.files[0] && uploadDocumentoCliente(e.target.files[0], 'comprovante_residencia')}
+                            className="file-upload-input"
+                          />
+                          <span className="file-upload-button">Escolher Arquivo</span>
+                        </label>
+                      </div>
                     </div>
                     <div className="form-group">
                       <label>Comprovante Renda</label>
-                      <input
-                        type="file"
-                        accept="image/*,.pdf"
-                        onChange={(e) => e.target.files[0] && uploadDocumentoCliente(e.target.files[0], 'comprovante_renda')}
-                      />
-                      {clienteForm.comprovante_renda_url && (
-                        <a href={clienteForm.comprovante_renda_url} target="_blank" rel="noopener noreferrer" className="doc-preview">
-                          Ver arquivo
-                        </a>
-                      )}
+                      <div className="file-upload-wrapper">
+                        {clienteForm.comprovante_renda_url ? (
+                          <div className="file-upload-info">
+                            <span className="file-name" title={clienteForm.comprovante_renda_url.split('/').pop()}>
+                              {clienteForm.comprovante_renda_url.split('/').pop()}
+                            </span>
+                            <a href={clienteForm.comprovante_renda_url} target="_blank" rel="noopener noreferrer" className="doc-preview">
+                              Ver arquivo
+                            </a>
+                          </div>
+                        ) : null}
+                        <label className="file-upload-label">
+                          <input
+                            type="file"
+                            accept="image/*,.pdf"
+                            onChange={(e) => e.target.files[0] && uploadDocumentoCliente(e.target.files[0], 'comprovante_renda')}
+                            className="file-upload-input"
+                          />
+                          <span className="file-upload-button">Escolher Arquivo</span>
+                        </label>
+                      </div>
                     </div>
                     <div className="form-group">
                       <label>Certidão Casamento/União</label>
-                      <input
-                        type="file"
-                        accept="image/*,.pdf"
-                        onChange={(e) => e.target.files[0] && uploadDocumentoCliente(e.target.files[0], 'certidao_casamento')}
-                      />
-                      {clienteForm.certidao_casamento_url && (
-                        <a href={clienteForm.certidao_casamento_url} target="_blank" rel="noopener noreferrer" className="doc-preview">
-                          Ver arquivo
-                        </a>
-                      )}
+                      <div className="file-upload-wrapper">
+                        {clienteForm.certidao_casamento_url ? (
+                          <div className="file-upload-info">
+                            <span className="file-name" title={clienteForm.certidao_casamento_url.split('/').pop()}>
+                              {clienteForm.certidao_casamento_url.split('/').pop()}
+                            </span>
+                            <a href={clienteForm.certidao_casamento_url} target="_blank" rel="noopener noreferrer" className="doc-preview">
+                              Ver arquivo
+                            </a>
+                          </div>
+                        ) : null}
+                        <label className="file-upload-label">
+                          <input
+                            type="file"
+                            accept="image/*,.pdf"
+                            onChange={(e) => e.target.files[0] && uploadDocumentoCliente(e.target.files[0], 'certidao_casamento')}
+                            className="file-upload-input"
+                          />
+                          <span className="file-upload-button">Escolher Arquivo</span>
+                        </label>
+                      </div>
                     </div>
                   </div>
 

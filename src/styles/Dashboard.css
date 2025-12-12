@@ -3581,52 +3581,85 @@
   margin: 0;
 }
 
-.docs-upload-grid .form-group input[type="file"] {
+/* File Upload Wrapper */
+.file-upload-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.file-upload-info {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   padding: 10px 12px;
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.2);
+  border-radius: 6px;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.file-name {
+  flex: 1;
+  font-size: 12px;
+  color: #10b981;
+  font-weight: 500;
+  word-break: break-word;
+  overflow-wrap: break-word;
+  min-width: 0;
+  line-height: 1.4;
+}
+
+.file-upload-label {
+  display: block;
+  cursor: pointer;
+}
+
+.file-upload-input {
+  position: absolute;
+  width: 0;
+  height: 0;
+  opacity: 0;
+  overflow: hidden;
+}
+
+.file-upload-button {
+  display: inline-block;
+  padding: 10px 16px;
   background: var(--im-bg-primary, #050a12);
   border: 1px solid var(--im-border, rgba(74, 144, 217, 0.15));
   border-radius: 6px;
   font-size: 13px;
   color: var(--im-text-primary, #e2e8f0);
-  cursor: pointer;
+  text-align: center;
   width: 100%;
-  transition: border-color 0.2s;
-}
-
-.docs-upload-grid .form-group input[type="file"]:hover {
-  border-color: var(--im-accent, #4a90d9);
-}
-
-.docs-upload-grid .form-group input[type="file"]:focus {
-  outline: none;
-  border-color: var(--im-accent, #4a90d9);
-}
-
-.docs-upload-grid .form-group input[type="file"]::file-selector-button {
-  padding: 6px 12px;
-  margin-right: 12px;
-  background: var(--im-bg-secondary, #0a1628);
-  border: 1px solid var(--im-border, rgba(74, 144, 217, 0.15));
-  border-radius: 4px;
-  color: var(--im-text-secondary, #94a3b8);
-  font-size: 12px;
-  cursor: pointer;
   transition: all 0.2s;
+  cursor: pointer;
 }
 
-.docs-upload-grid .form-group input[type="file"]::file-selector-button:hover {
-  background: var(--im-bg-tertiary, #1a2332);
+.file-upload-button:hover {
+  background: var(--im-bg-secondary, #0a1628);
   border-color: var(--im-accent, #4a90d9);
-  color: var(--im-text-primary, #e2e8f0);
+  color: var(--im-accent, #4a90d9);
+}
+
+.file-upload-label:hover .file-upload-button {
+  background: var(--im-bg-secondary, #0a1628);
+  border-color: var(--im-accent, #4a90d9);
+  color: var(--im-accent, #4a90d9);
 }
 
 .doc-preview {
-  display: inline-block;
-  margin-top: 6px;
+  display: inline-flex;
+  align-items: center;
   font-size: 12px;
   color: #10b981;
   text-decoration: none;
   font-weight: 500;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: color 0.2s;
 }
 
 .doc-preview:hover {
@@ -4868,6 +4901,24 @@
   
   .parcela-comissoes {
     grid-template-columns: 1fr;
+  }
+  
+  .docs-upload-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .file-upload-info {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  
+  .file-name {
+    width: 100%;
+  }
+  
+  .doc-preview {
+    align-self: flex-end;
   }
 }
 
