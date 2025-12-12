@@ -2941,13 +2941,15 @@
   background: #3b82f6;
   color: #fff;
   border: none;
-  padding: 6px 10px;
+  padding: 5px 10px;
   border-radius: 4px;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   gap: 4px;
   transition: background 0.2s;
+  font-size: 12px;
+  white-space: nowrap;
 }
 
 .btn-ver-detalhe:hover {
@@ -2958,9 +2960,9 @@
 .parcela-row {
   background: var(--im-bg-primary, #050a12);
   border: 1px solid var(--im-border, rgba(74, 144, 217, 0.15));
-  border-radius: 6px;
-  padding: 16px;
-  margin-bottom: 12px;
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-bottom: 10px;
   transition: all 0.15s;
 }
 
@@ -2974,15 +2976,15 @@
 }
 
 .parcela-main {
-  display: grid;
-  grid-template-columns: 1fr 120px 120px 100px 120px;
-  gap: 16px;
+  display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  margin-bottom: 12px;
+  gap: 12px;
+  margin-bottom: 0;
 }
 
 .parcela-tipo {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
   color: #fff;
   padding: 4px 10px;
@@ -2990,18 +2992,23 @@
   border: 1px solid rgba(79, 121, 66, 0.3);
   border-radius: 4px;
   display: inline-block;
-  width: fit-content;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .parcela-data {
-  font-size: 13px;
+  font-size: 12px;
   color: var(--im-text-secondary, #94a3b8);
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .parcela-valor {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
   color: #fff;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .parcela-status {
@@ -3035,10 +3042,11 @@
   display: flex;
   gap: 8px;
   align-items: center;
+  flex-shrink: 0;
 }
 
 .btn-small-confirm {
-  padding: 6px 12px;
+  padding: 5px 12px;
   background: var(--im-accent, #4a90d9);
   border: none;
   border-radius: 4px;
@@ -3047,6 +3055,7 @@
   font-weight: 500;
   cursor: pointer;
   transition: all 0.15s;
+  white-space: nowrap;
 }
 
 .btn-small-confirm:hover {
@@ -3059,21 +3068,23 @@
 }
 
 .parcela-comissoes {
-  padding-top: 12px;
+  padding-top: 10px;
+  margin-top: 10px;
   border-top: 1px solid var(--im-border, rgba(74, 144, 217, 0.15));
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
   gap: 8px;
 }
 
 .comissao-item {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 8px 12px;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 8px 10px;
   background: var(--im-bg-secondary, #0a1628);
   border-radius: 4px;
-  font-size: 13px;
+  font-size: 12px;
+  gap: 2px;
 }
 
 .comissao-item.comissao-total {
@@ -3085,11 +3096,17 @@
 
 .comissao-nome {
   color: var(--im-text-secondary, #94a3b8);
+  font-size: 11px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 100%;
 }
 
 .comissao-valor {
   color: var(--im-success, #10b981);
   font-weight: 600;
+  font-size: 13px;
 }
 
 .comissao-item.comissao-total .comissao-valor {
@@ -3297,12 +3314,46 @@
     min-width: 80px;
     align-items: flex-start;
   }
+  
+  .parcela-main {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  
+  .parcela-comissoes {
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  }
 }
 
 @media (max-width: 600px) {
   .venda-valores {
     display: grid;
     grid-template-columns: 1fr 1fr;
+  }
+  
+  .parcela-main {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .parcela-tipo,
+  .parcela-data,
+  .parcela-valor,
+  .parcela-status {
+    width: 100%;
+  }
+  
+  .parcela-acao {
+    width: 100%;
+    flex-direction: column;
+  }
+  
+  .parcela-acao button {
+    width: 100%;
+  }
+  
+  .parcela-comissoes {
+    grid-template-columns: 1fr;
   }
   
   .parcelas-table th:nth-child(4),
@@ -4707,22 +4758,29 @@
   
   /* Pagamentos Responsivo */
   .parcela-main {
-    grid-template-columns: 1fr;
-    gap: 12px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
   }
   
-  .parcela-tipo {
+  .parcela-tipo,
+  .parcela-data,
+  .parcela-valor,
+  .parcela-status {
     width: 100%;
-    text-align: center;
   }
   
   .parcela-acao {
-    flex-direction: column;
     width: 100%;
+    justify-content: flex-start;
   }
   
   .parcela-acao button {
-    width: 100%;
+    flex: 1;
+  }
+  
+  .parcela-comissoes {
+    grid-template-columns: 1fr;
   }
 }
 
