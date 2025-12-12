@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { supabase } from '../lib/supabase'
@@ -15,7 +15,7 @@ import HomeDashboard from './HomeDashboard'
 import '../styles/Dashboard.css'
 
 const AdminDashboard = () => {
-  const { userProfile, signOut } = useAuth()
+  const { userProfile, signOut, loading: authLoading } = useAuth()
   const { tab } = useParams()
   const navigate = useNavigate()
   const location = useLocation()
@@ -51,6 +51,7 @@ const AdminDashboard = () => {
   const [empreendimentos, setEmpreendimentos] = useState([])
   const [pagamentos, setPagamentos] = useState([])
   const [loading, setLoading] = useState(true)
+  const dataLoadedRef = useRef(false)
   const [menuOpen, setMenuOpen] = useState(false)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
     const saved = localStorage.getItem('sidebar-collapsed')
@@ -299,9 +300,14 @@ const AdminDashboard = () => {
     return comissoesPorCargo.reduce((acc, c) => acc + c.valor, 0)
   }
 
+  // Carregar dados apenas quando o perfil estiver pronto e for admin
   useEffect(() => {
-    fetchData()
-  }, [])
+    if (!authLoading && userProfile && userProfile.tipo === 'admin' && !dataLoadedRef.current) {
+      dataLoadedRef.current = true // Marca ANTES de chamar para evitar duplicação
+      console.log('✅ Condições atendidas, chamando fetchData...')
+      fetchData()
+    }
+  }, [authLoading, userProfile])
 
   // Redirecionar para dashboard se não houver tab
   useEffect(() => {
@@ -327,110 +333,137 @@ const AdminDashboard = () => {
   const fetchData = async () => {
     setLoading(true)
     
-    // Buscar corretores (sem JOINs complexos)
-    const { data: corretoresData } = await supabase
-      .from('usuarios')
-      .select('*')
-      .eq('tipo', 'corretor')
+    try {
+      // Buscar todos os dados em paralelo
+      const [
+        { data: corretoresData, error: corretoresError },
+        { data: vendasData, error: vendasError },
+        { data: empreendimentosData, error: empreendimentosError }
+      ] = await Promise.all([
+        supabase.from('usuarios').select('*').eq('tipo', 'corretor'),
+        supabase.from('vendas').select('*'),
+        supabase.from('empreendimentos').select('*')
+      ])
 
-    // Buscar vendas (sem JOINs)
-    const { data: vendasData, error: vendasError } = await supabase
-      .from('vendas')
-      .select('*')
-    
-    if (vendasError) console.error('Erro ao buscar vendas:', vendasError)
+      if (corretoresError) console.error('Erro ao buscar corretores:', corretoresError)
+      if (vendasError) console.error('Erro ao buscar vendas:', vendasError)
+      if (empreendimentosError) console.error('Erro ao buscar empreendimentos:', empreendimentosError)
 
-    // Buscar empreendimentos
-    const { data: empreendimentosData } = await supabase
-      .from('empreendimentos')
-      .select('*')
-
-    // Buscar cargos separadamente
-    const { data: cargosData } = await supabase
-      .from('cargos_empreendimento')
-      .select('*')
-
-    // Buscar pagamentos pro-soluto (sem JOINs)
-    const { data: pagamentosData, error: pagamentosError } = await supabase
-      .from('pagamentos_prosoluto')
-      .select('*')
-    
-    if (pagamentosError) console.error('Erro ao buscar pagamentos:', pagamentosError)
-    console.log('Pagamentos do banco:', pagamentosData)
-
-    // Associar cargos aos empreendimentos manualmente
-    const empreendimentosComCargos = (empreendimentosData || []).map(emp => ({
-      ...emp,
-      cargos: (cargosData || []).filter(c => c.empreendimento_id === emp.id)
-    }))
-
-    // Associar dados relacionados às vendas manualmente
-    const vendasComRelacionamentos = (vendasData || []).map(venda => {
-      const corretor = (corretoresData || []).find(c => c.id === venda.corretor_id)
-      const empreendimento = (empreendimentosData || []).find(e => e.id === venda.empreendimento_id)
-      return {
-        ...venda,
-        corretor: corretor ? { nome: corretor.nome, email: corretor.email, tipo_corretor: corretor.tipo_corretor, percentual_corretor: corretor.percentual_corretor } : null,
-        empreendimento: empreendimento ? { nome: empreendimento.nome } : null
-      }
-    })
-
-    // Associar dados relacionados aos pagamentos manualmente
-    const pagamentosComRelacionamentos = (pagamentosData || []).map(pag => {
-      const venda = (vendasData || []).find(v => v.id === pag.venda_id)
-      const corretor = venda ? (corretoresData || []).find(c => c.id === venda.corretor_id) : null
-      const empreendimento = venda ? (empreendimentosData || []).find(e => e.id === venda.empreendimento_id) : null
+      // Buscar cargos separadamente
+      const { data: cargosData, error: cargosError } = await supabase
+        .from('cargos_empreendimento')
+        .select('*')
       
-      return {
-        ...pag,
-        venda: venda ? {
-          id: venda.id,
-          valor_venda: venda.valor_venda,
-          comissao_total: venda.comissao_total,
-          tipo_corretor: venda.tipo_corretor,
-          empreendimento_id: venda.empreendimento_id,
-          descricao: venda.descricao,
-          fator_comissao: venda.fator_comissao,
-          corretor: corretor ? { nome: corretor.nome } : null,
+      if (cargosError) {
+        console.error('Erro ao buscar cargos:', cargosError)
+      }
+
+      // Buscar pagamentos pro-soluto (sem JOINs)
+      const { data: pagamentosData, error: pagamentosError } = await supabase
+        .from('pagamentos_prosoluto')
+        .select('*')
+      
+      if (pagamentosError) {
+        console.error('Erro ao buscar pagamentos:', pagamentosError)
+      }
+      console.log('Pagamentos do banco:', pagamentosData)
+
+      // Associar cargos aos empreendimentos manualmente
+      const empreendimentosComCargos = (empreendimentosData || []).map(emp => ({
+        ...emp,
+        cargos: (cargosData || []).filter(c => c.empreendimento_id === emp.id)
+      }))
+
+      // Associar dados relacionados às vendas manualmente
+      const vendasComRelacionamentos = (vendasData || []).map(venda => {
+        const corretor = (corretoresData || []).find(c => c.id === venda.corretor_id)
+        const empreendimento = (empreendimentosData || []).find(e => e.id === venda.empreendimento_id)
+        return {
+          ...venda,
+          corretor: corretor ? { nome: corretor.nome, email: corretor.email, tipo_corretor: corretor.tipo_corretor, percentual_corretor: corretor.percentual_corretor } : null,
           empreendimento: empreendimento ? { nome: empreendimento.nome } : null
-        } : null
+        }
+      })
+
+      // Associar dados relacionados aos pagamentos manualmente
+      const pagamentosComRelacionamentos = (pagamentosData || []).map(pag => {
+        const venda = (vendasData || []).find(v => v.id === pag.venda_id)
+        const corretor = venda ? (corretoresData || []).find(c => c.id === venda.corretor_id) : null
+        const empreendimento = venda ? (empreendimentosData || []).find(e => e.id === venda.empreendimento_id) : null
+        
+        return {
+          ...pag,
+          venda: venda ? {
+            id: venda.id,
+            valor_venda: venda.valor_venda,
+            comissao_total: venda.comissao_total,
+            tipo_corretor: venda.tipo_corretor,
+            empreendimento_id: venda.empreendimento_id,
+            descricao: venda.descricao,
+            fator_comissao: venda.fator_comissao,
+            corretor: corretor ? { nome: corretor.nome } : null,
+            empreendimento: empreendimento ? { nome: empreendimento.nome } : null
+          } : null
+        }
+      })
+
+      // Associar empreendimento e cargo aos corretores
+      const corretoresComRelacionamentos = (corretoresData || []).map(corretor => {
+        const empreendimento = (empreendimentosData || []).find(e => e.id === corretor.empreendimento_id)
+        const cargo = (cargosData || []).find(c => c.id === corretor.cargo_id)
+        return {
+          ...corretor,
+          empreendimento: empreendimento ? { nome: empreendimento.nome } : null,
+          cargo: cargo ? { nome_cargo: cargo.nome_cargo, percentual: cargo.percentual } : null
+        }
+      })
+
+      // Buscar clientes
+      const { data: clientesData, error: clientesError } = await supabase
+        .from('clientes')
+        .select('*')
+        .eq('ativo', true)
+      
+      if (clientesError) {
+        console.error('Erro ao buscar clientes:', clientesError)
       }
-    })
 
-    // Associar empreendimento e cargo aos corretores
-    const corretoresComRelacionamentos = (corretoresData || []).map(corretor => {
-      const empreendimento = (empreendimentosData || []).find(e => e.id === corretor.empreendimento_id)
-      const cargo = (cargosData || []).find(c => c.id === corretor.cargo_id)
-      return {
-        ...corretor,
-        empreendimento: empreendimento ? { nome: empreendimento.nome } : null,
-        cargo: cargo ? { nome_cargo: cargo.nome_cargo, percentual: cargo.percentual } : null
+      // Buscar complementadores de renda
+      const { data: complementadoresData, error: complementadoresError } = await supabase
+        .from('complementadores_renda')
+        .select('*')
+      
+      if (complementadoresError) {
+        console.error('Erro ao buscar complementadores:', complementadoresError)
       }
-    })
 
-    // Buscar clientes
-    const { data: clientesData } = await supabase
-      .from('clientes')
-      .select('*')
-      .eq('ativo', true)
+      // Associar complementadores aos clientes
+      const clientesComComplementadores = (clientesData || []).map(cliente => ({
+        ...cliente,
+        complementadores: (complementadoresData || []).filter(c => c.cliente_id === cliente.id)
+      }))
 
-    // Buscar complementadores de renda
-    const { data: complementadoresData } = await supabase
-      .from('complementadores_renda')
-      .select('*')
-
-    // Associar complementadores aos clientes
-    const clientesComComplementadores = (clientesData || []).map(cliente => ({
-      ...cliente,
-      complementadores: (complementadoresData || []).filter(c => c.cliente_id === cliente.id)
-    }))
-
-    setCorretores(corretoresComRelacionamentos || [])
-    setVendas(vendasComRelacionamentos || [])
-    setEmpreendimentos(empreendimentosComCargos || [])
-    setPagamentos(pagamentosComRelacionamentos || [])
-    setClientes(clientesComComplementadores || [])
-    setLoading(false)
+      setCorretores(corretoresComRelacionamentos || [])
+      setVendas(vendasComRelacionamentos || [])
+      setEmpreendimentos(empreendimentosComCargos || [])
+      setPagamentos(pagamentosComRelacionamentos || [])
+      setClientes(clientesComComplementadores || [])
+      
+      console.log('✅ Dados carregados com sucesso:', {
+        corretores: corretoresComRelacionamentos?.length || 0,
+        vendas: vendasComRelacionamentos?.length || 0,
+        empreendimentos: empreendimentosComCargos?.length || 0,
+        pagamentos: pagamentosComRelacionamentos?.length || 0,
+        clientes: clientesComComplementadores?.length || 0
+      })
+      
+    } catch (error) {
+      console.error('❌ Erro crítico ao carregar dados:', error)
+      setMessage({ type: 'error', text: `Erro ao carregar dados: ${error.message || 'Erro desconhecido'}. Tente recarregar a página.` })
+    } finally {
+      setLoading(false)
+      console.log('🏁 fetchData finalizado')
+    }
   }
 
   // Função para preview de comissões no modal
