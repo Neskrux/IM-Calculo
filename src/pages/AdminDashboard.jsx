@@ -68,6 +68,8 @@ const AdminDashboard = () => {
   const [uploadingContrato, setUploadingContrato] = useState(false)
   const [pagamentoDetalhe, setPagamentoDetalhe] = useState(null)
   const [vendaExpandida, setVendaExpandida] = useState(null)
+  const [cargoExpandido, setCargoExpandido] = useState(null) // Formato: "empreendimentoId-cargoId"
+  const [cargosExpandidos, setCargosExpandidos] = useState({}) // Formato: { "empreendimentoId-externo": true, "empreendimentoId-interno": false }
   const [clientes, setClientes] = useState([])
   const [uploadingDoc, setUploadingDoc] = useState(false)
   
@@ -214,7 +216,8 @@ const AdminDashboard = () => {
     empresa_trabalho: '',
     valor_complemento: '',
     telefone: '',
-    email: ''
+    email: '',
+    tipo_relacionamento: ''
   }
 
   // Cargos filtrados por empreendimento selecionado
@@ -243,6 +246,66 @@ const AdminDashboard = () => {
     const total = comissoesPorCargo.reduce((acc, c) => acc + c.valor, 0)
     
     return { cargos: comissoesPorCargo, total, percentualTotal }
+  }
+
+  // Calcular valores por setor (cargo) para um empreendimento
+  const calcularValoresPorSetor = (empreendimentoId) => {
+    // Buscar todas as vendas deste empreendimento
+    const vendasEmpreendimento = vendas.filter(v => v.empreendimento_id === empreendimentoId)
+    
+    // Buscar o empreendimento para pegar os cargos
+    const emp = empreendimentos.find(e => e.id === empreendimentoId)
+    if (!emp || !emp.cargos) return []
+    
+    // Agrupar cargos por tipo (externo/interno)
+    const cargosExternos = emp.cargos.filter(c => c.tipo_corretor === 'externo')
+    const cargosInternos = emp.cargos.filter(c => c.tipo_corretor === 'interno')
+    const todosCargos = [...cargosExternos, ...cargosInternos]
+    
+    // Para cada cargo, calcular valores
+    return todosCargos.map(cargo => {
+      let valorTotal = 0
+      let valorPago = 0
+      
+      // Para cada venda do empreendimento
+      vendasEmpreendimento.forEach(venda => {
+        // Verificar se a venda é do tipo correto (externo/interno)
+        const tipoCorretor = venda.tipo_corretor || 'externo'
+        if (cargo.tipo_corretor !== tipoCorretor) return
+        
+        // Buscar todos os pagamentos desta venda
+        const pagamentosVenda = pagamentos.filter(p => p.venda_id === venda.id)
+        
+        // Para cada pagamento, calcular a comissão deste cargo
+        pagamentosVenda.forEach(pag => {
+          const comissoesCargo = calcularComissaoPorCargoPagamento(pag)
+          const cargoEncontrado = comissoesCargo.find(c => c.nome_cargo === cargo.nome_cargo)
+          
+          if (cargoEncontrado) {
+            valorTotal += cargoEncontrado.valor || 0
+            
+            // Se o pagamento está pago, adicionar ao valor pago
+            if (pag.status === 'pago') {
+              valorPago += cargoEncontrado.valor || 0
+            }
+          }
+        })
+      })
+      
+      const valorPendente = valorTotal - valorPago
+      const percentualPago = valorTotal > 0 ? (valorPago / valorTotal) * 100 : 0
+      
+      return {
+        cargo_id: cargo.id,
+        nome_cargo: cargo.nome_cargo,
+        tipo_corretor: cargo.tipo_corretor,
+        percentual: cargo.percentual,
+        valorTotal,
+        valorPago,
+        valorPendente,
+        percentualPago: Math.round(percentualPago * 100) / 100
+      }
+    })
   }
 
   // Calcular comissão detalhada por cargo para um pagamento específico
@@ -1489,7 +1552,8 @@ const AdminDashboard = () => {
           empresa_trabalho: c.empresa_trabalho,
           valor_complemento: c.valor_complemento ? parseFloat(c.valor_complemento.replace(/[^\d,]/g, '').replace(',', '.')) : null,
           telefone: c.telefone,
-          email: c.email
+          email: c.email,
+          tipo_relacionamento: c.tipo_relacionamento || null
         }))
 
         const { error: compError } = await supabase
@@ -2598,35 +2662,157 @@ const AdminDashboard = () => {
                     {/* Cargos Externos */}
                     <div className="empreendimento-cargos">
                       <h4>Cargos Externos</h4>
-                      {emp.cargos?.filter(c => c.tipo_corretor === 'externo').length > 0 ? (
-                        <div className="cargos-list">
-                          {emp.cargos.filter(c => c.tipo_corretor === 'externo').map((cargo, idx) => (
-                            <div key={idx} className="cargo-item">
-                              <span>{cargo.nome_cargo}</span>
-                              <span className="cargo-percent">{cargo.percentual}%</span>
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <p className="no-cargos">Nenhum cargo externo</p>
+                      {emp.cargos?.filter(c => c.tipo_corretor === 'externo').length > 0 && (
+                        <button
+                          className="btn-toggle-cargos"
+                          onClick={() => setCargosExpandidos(prev => ({
+                            ...prev,
+                            [`${emp.id}-externo`]: !prev[`${emp.id}-externo`]
+                          }))}
+                        >
+                          {cargosExpandidos[`${emp.id}-externo`] ? 'Ocultar cargos e taxas' : 'Mostrar cargos e taxas'}
+                          <ChevronDown 
+                            size={16} 
+                            className={cargosExpandidos[`${emp.id}-externo`] ? 'rotated' : ''}
+                          />
+                        </button>
                       )}
+                      {cargosExpandidos[`${emp.id}-externo`] && emp.cargos?.filter(c => c.tipo_corretor === 'externo').length > 0 ? (
+                        <div className="cargos-list">
+                          {emp.cargos.filter(c => c.tipo_corretor === 'externo').map((cargo, idx) => {
+                            const cargoKey = `${emp.id}-${cargo.id}`
+                            const setor = calcularValoresPorSetor(emp.id).find(s => s.cargo_id === cargo.id)
+                            const isExpanded = cargoExpandido === cargoKey
+                            
+                            return (
+                              <div key={idx}>
+                                <div className="cargo-item">
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1 }}>
+                                    <span>{cargo.nome_cargo}</span>
+                                    <span className="cargo-percent">{cargo.percentual}%</span>
+                                  </div>
+                                  <button
+                                    className="btn-cargo-expand"
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      setCargoExpandido(isExpanded ? null : cargoKey)
+                                    }}
+                                    title={isExpanded ? 'Ocultar detalhes' : 'Mostrar detalhes'}
+                                  >
+                                    {isExpanded ? <X size={14} /> : <Plus size={14} />}
+                                  </button>
+                                </div>
+                                {isExpanded && (
+                                  <div className="cargo-detalhes">
+                                    {setor ? (
+                                      <>
+                                        <div className="cargo-detalhe-row">
+                                          <span className="cargo-detalhe-label">Total:</span>
+                                          <span className="cargo-detalhe-valor">{formatCurrency(setor.valorTotal)}</span>
+                                        </div>
+                                        <div className="cargo-detalhe-row">
+                                          <span className="cargo-detalhe-label">Pago:</span>
+                                          <span className="cargo-detalhe-valor pago">
+                                            {formatCurrency(setor.valorPago)} <span className="cargo-detalhe-porcentagem">({setor.percentualPago}%)</span>
+                                          </span>
+                                        </div>
+                                        <div className="cargo-detalhe-row">
+                                          <span className="cargo-detalhe-label">Pendente:</span>
+                                          <span className="cargo-detalhe-valor pendente">{formatCurrency(setor.valorPendente)}</span>
+                                        </div>
+                                      </>
+                                    ) : (
+                                      <div className="cargo-detalhe-row" style={{ color: '#8b949e', fontSize: '11px', fontStyle: 'italic' }}>
+                                        Nenhuma venda registrada para este cargo
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                            )
+                          })}
+                        </div>
+                      ) : emp.cargos?.filter(c => c.tipo_corretor === 'externo').length === 0 ? (
+                        <p className="no-cargos">Nenhum cargo externo</p>
+                      ) : null}
                     </div>
 
                     {/* Cargos Internos */}
                     <div className="empreendimento-cargos">
                       <h4>Cargos Internos</h4>
-                      {emp.cargos?.filter(c => c.tipo_corretor === 'interno').length > 0 ? (
-                        <div className="cargos-list">
-                          {emp.cargos.filter(c => c.tipo_corretor === 'interno').map((cargo, idx) => (
-                            <div key={idx} className="cargo-item interno">
-                              <span>{cargo.nome_cargo}</span>
-                              <span className="cargo-percent">{cargo.percentual}%</span>
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <p className="no-cargos">Nenhum cargo interno</p>
+                      {emp.cargos?.filter(c => c.tipo_corretor === 'interno').length > 0 && (
+                        <button
+                          className="btn-toggle-cargos"
+                          onClick={() => setCargosExpandidos(prev => ({
+                            ...prev,
+                            [`${emp.id}-interno`]: !prev[`${emp.id}-interno`]
+                          }))}
+                        >
+                          {cargosExpandidos[`${emp.id}-interno`] ? 'Ocultar cargos e taxas' : 'Mostrar cargos e taxas'}
+                          <ChevronDown 
+                            size={16} 
+                            className={cargosExpandidos[`${emp.id}-interno`] ? 'rotated' : ''}
+                          />
+                        </button>
                       )}
+                      {cargosExpandidos[`${emp.id}-interno`] && emp.cargos?.filter(c => c.tipo_corretor === 'interno').length > 0 ? (
+                        <div className="cargos-list">
+                          {emp.cargos.filter(c => c.tipo_corretor === 'interno').map((cargo, idx) => {
+                            const cargoKey = `${emp.id}-${cargo.id}`
+                            const setor = calcularValoresPorSetor(emp.id).find(s => s.cargo_id === cargo.id)
+                            const isExpanded = cargoExpandido === cargoKey
+                            
+                            return (
+                              <div key={idx}>
+                                <div className="cargo-item interno">
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1 }}>
+                                    <span>{cargo.nome_cargo}</span>
+                                    <span className="cargo-percent">{cargo.percentual}%</span>
+                                  </div>
+                                  <button
+                                    className="btn-cargo-expand"
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      setCargoExpandido(isExpanded ? null : cargoKey)
+                                    }}
+                                    title={isExpanded ? 'Ocultar detalhes' : 'Mostrar detalhes'}
+                                  >
+                                    {isExpanded ? <X size={14} /> : <Plus size={14} />}
+                                  </button>
+                                </div>
+                                {isExpanded && (
+                                  <div className="cargo-detalhes">
+                                    {setor ? (
+                                      <>
+                                        <div className="cargo-detalhe-row">
+                                          <span className="cargo-detalhe-label">Total:</span>
+                                          <span className="cargo-detalhe-valor">{formatCurrency(setor.valorTotal)}</span>
+                                        </div>
+                                        <div className="cargo-detalhe-row">
+                                          <span className="cargo-detalhe-label">Pago:</span>
+                                          <span className="cargo-detalhe-valor pago">
+                                            {formatCurrency(setor.valorPago)} <span className="cargo-detalhe-porcentagem">({setor.percentualPago}%)</span>
+                                          </span>
+                                        </div>
+                                        <div className="cargo-detalhe-row">
+                                          <span className="cargo-detalhe-label">Pendente:</span>
+                                          <span className="cargo-detalhe-valor pendente">{formatCurrency(setor.valorPendente)}</span>
+                                        </div>
+                                      </>
+                                    ) : (
+                                      <div className="cargo-detalhe-row" style={{ color: '#8b949e', fontSize: '11px', fontStyle: 'italic' }}>
+                                        Nenhuma venda registrada para este cargo
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                            )
+                          })}
+                        </div>
+                      ) : emp.cargos?.filter(c => c.tipo_corretor === 'interno').length === 0 ? (
+                        <p className="no-cargos">Nenhum cargo interno</p>
+                      ) : null}
                     </div>
                   </div>
                 ))}
@@ -4203,59 +4389,149 @@ const AdminDashboard = () => {
                   <div className="section-divider"><span>Documentos</span></div>
 
                   <div className="docs-upload-grid">
-                    <div className="doc-upload-item">
+                    <div className="form-group">
                       <label>RG Frente</label>
-                      <input
-                        type="file"
-                        accept="image/*,.pdf"
-                        onChange={(e) => e.target.files[0] && uploadDocumentoCliente(e.target.files[0], 'rg_frente')}
-                      />
-                      {clienteForm.rg_frente_url && <a href={clienteForm.rg_frente_url} target="_blank" rel="noopener noreferrer" className="doc-preview">Ver arquivo</a>}
+                      <div className="file-upload-wrapper">
+                        {clienteForm.rg_frente_url ? (
+                          <div className="file-upload-info">
+                            <span className="file-name" title={clienteForm.rg_frente_url.split('/').pop()}>
+                              {clienteForm.rg_frente_url.split('/').pop()}
+                            </span>
+                            <a href={clienteForm.rg_frente_url} target="_blank" rel="noopener noreferrer" className="doc-preview">
+                              Ver arquivo
+                            </a>
+                          </div>
+                        ) : null}
+                        <label className="file-upload-label">
+                          <input
+                            type="file"
+                            accept="image/*,.pdf"
+                            onChange={(e) => e.target.files[0] && uploadDocumentoCliente(e.target.files[0], 'rg_frente')}
+                            className="file-upload-input"
+                          />
+                          <span className="file-upload-button">Escolher Arquivo</span>
+                        </label>
+                      </div>
                     </div>
-                    <div className="doc-upload-item">
+                    <div className="form-group">
                       <label>RG Verso</label>
-                      <input
-                        type="file"
-                        accept="image/*,.pdf"
-                        onChange={(e) => e.target.files[0] && uploadDocumentoCliente(e.target.files[0], 'rg_verso')}
-                      />
-                      {clienteForm.rg_verso_url && <a href={clienteForm.rg_verso_url} target="_blank" rel="noopener noreferrer" className="doc-preview">Ver arquivo</a>}
+                      <div className="file-upload-wrapper">
+                        {clienteForm.rg_verso_url ? (
+                          <div className="file-upload-info">
+                            <span className="file-name" title={clienteForm.rg_verso_url.split('/').pop()}>
+                              {clienteForm.rg_verso_url.split('/').pop()}
+                            </span>
+                            <a href={clienteForm.rg_verso_url} target="_blank" rel="noopener noreferrer" className="doc-preview">
+                              Ver arquivo
+                            </a>
+                          </div>
+                        ) : null}
+                        <label className="file-upload-label">
+                          <input
+                            type="file"
+                            accept="image/*,.pdf"
+                            onChange={(e) => e.target.files[0] && uploadDocumentoCliente(e.target.files[0], 'rg_verso')}
+                            className="file-upload-input"
+                          />
+                          <span className="file-upload-button">Escolher Arquivo</span>
+                        </label>
+                      </div>
                     </div>
-                    <div className="doc-upload-item">
+                    <div className="form-group">
                       <label>CPF</label>
-                      <input
-                        type="file"
-                        accept="image/*,.pdf"
-                        onChange={(e) => e.target.files[0] && uploadDocumentoCliente(e.target.files[0], 'cpf')}
-                      />
-                      {clienteForm.cpf_url && <a href={clienteForm.cpf_url} target="_blank" rel="noopener noreferrer" className="doc-preview">Ver arquivo</a>}
+                      <div className="file-upload-wrapper">
+                        {clienteForm.cpf_url ? (
+                          <div className="file-upload-info">
+                            <span className="file-name" title={clienteForm.cpf_url.split('/').pop()}>
+                              {clienteForm.cpf_url.split('/').pop()}
+                            </span>
+                            <a href={clienteForm.cpf_url} target="_blank" rel="noopener noreferrer" className="doc-preview">
+                              Ver arquivo
+                            </a>
+                          </div>
+                        ) : null}
+                        <label className="file-upload-label">
+                          <input
+                            type="file"
+                            accept="image/*,.pdf"
+                            onChange={(e) => e.target.files[0] && uploadDocumentoCliente(e.target.files[0], 'cpf')}
+                            className="file-upload-input"
+                          />
+                          <span className="file-upload-button">Escolher Arquivo</span>
+                        </label>
+                      </div>
                     </div>
-                    <div className="doc-upload-item">
+                    <div className="form-group">
                       <label>Comprovante Residência</label>
-                      <input
-                        type="file"
-                        accept="image/*,.pdf"
-                        onChange={(e) => e.target.files[0] && uploadDocumentoCliente(e.target.files[0], 'comprovante_residencia')}
-                      />
-                      {clienteForm.comprovante_residencia_url && <a href={clienteForm.comprovante_residencia_url} target="_blank" rel="noopener noreferrer" className="doc-preview">Ver arquivo</a>}
+                      <div className="file-upload-wrapper">
+                        {clienteForm.comprovante_residencia_url ? (
+                          <div className="file-upload-info">
+                            <span className="file-name" title={clienteForm.comprovante_residencia_url.split('/').pop()}>
+                              {clienteForm.comprovante_residencia_url.split('/').pop()}
+                            </span>
+                            <a href={clienteForm.comprovante_residencia_url} target="_blank" rel="noopener noreferrer" className="doc-preview">
+                              Ver arquivo
+                            </a>
+                          </div>
+                        ) : null}
+                        <label className="file-upload-label">
+                          <input
+                            type="file"
+                            accept="image/*,.pdf"
+                            onChange={(e) => e.target.files[0] && uploadDocumentoCliente(e.target.files[0], 'comprovante_residencia')}
+                            className="file-upload-input"
+                          />
+                          <span className="file-upload-button">Escolher Arquivo</span>
+                        </label>
+                      </div>
                     </div>
-                    <div className="doc-upload-item">
+                    <div className="form-group">
                       <label>Comprovante Renda</label>
-                      <input
-                        type="file"
-                        accept="image/*,.pdf"
-                        onChange={(e) => e.target.files[0] && uploadDocumentoCliente(e.target.files[0], 'comprovante_renda')}
-                      />
-                      {clienteForm.comprovante_renda_url && <a href={clienteForm.comprovante_renda_url} target="_blank" rel="noopener noreferrer" className="doc-preview">Ver arquivo</a>}
+                      <div className="file-upload-wrapper">
+                        {clienteForm.comprovante_renda_url ? (
+                          <div className="file-upload-info">
+                            <span className="file-name" title={clienteForm.comprovante_renda_url.split('/').pop()}>
+                              {clienteForm.comprovante_renda_url.split('/').pop()}
+                            </span>
+                            <a href={clienteForm.comprovante_renda_url} target="_blank" rel="noopener noreferrer" className="doc-preview">
+                              Ver arquivo
+                            </a>
+                          </div>
+                        ) : null}
+                        <label className="file-upload-label">
+                          <input
+                            type="file"
+                            accept="image/*,.pdf"
+                            onChange={(e) => e.target.files[0] && uploadDocumentoCliente(e.target.files[0], 'comprovante_renda')}
+                            className="file-upload-input"
+                          />
+                          <span className="file-upload-button">Escolher Arquivo</span>
+                        </label>
+                      </div>
                     </div>
-                    <div className="doc-upload-item">
+                    <div className="form-group">
                       <label>Certidão Casamento/União</label>
-                      <input
-                        type="file"
-                        accept="image/*,.pdf"
-                        onChange={(e) => e.target.files[0] && uploadDocumentoCliente(e.target.files[0], 'certidao_casamento')}
-                      />
-                      {clienteForm.certidao_casamento_url && <a href={clienteForm.certidao_casamento_url} target="_blank" rel="noopener noreferrer" className="doc-preview">Ver arquivo</a>}
+                      <div className="file-upload-wrapper">
+                        {clienteForm.certidao_casamento_url ? (
+                          <div className="file-upload-info">
+                            <span className="file-name" title={clienteForm.certidao_casamento_url.split('/').pop()}>
+                              {clienteForm.certidao_casamento_url.split('/').pop()}
+                            </span>
+                            <a href={clienteForm.certidao_casamento_url} target="_blank" rel="noopener noreferrer" className="doc-preview">
+                              Ver arquivo
+                            </a>
+                          </div>
+                        ) : null}
+                        <label className="file-upload-label">
+                          <input
+                            type="file"
+                            accept="image/*,.pdf"
+                            onChange={(e) => e.target.files[0] && uploadDocumentoCliente(e.target.files[0], 'certidao_casamento')}
+                            className="file-upload-input"
+                          />
+                          <span className="file-upload-button">Escolher Arquivo</span>
+                        </label>
+                      </div>
                     </div>
                   </div>
 
@@ -4300,6 +4576,52 @@ const AdminDashboard = () => {
                           </div>
                           <div className="form-row">
                             <div className="form-group">
+                              <label>Tipo de Relacionamento</label>
+                              <select
+                                value={comp.tipo_relacionamento || ''}
+                                onChange={(e) => updateComplementador(index, 'tipo_relacionamento', e.target.value)}
+                              >
+                                <option value="">Selecione...</option>
+                                <option value="Cônjuge">Cônjuge</option>
+                                <option value="Pai">Pai</option>
+                                <option value="Mãe">Mãe</option>
+                                <option value="Irmão">Irmão</option>
+                                <option value="Irmã">Irmã</option>
+                                <option value="Filho">Filho</option>
+                                <option value="Filha">Filha</option>
+                                <option value="Avô">Avô</option>
+                                <option value="Avó">Avó</option>
+                                <option value="Neto">Neto</option>
+                                <option value="Neta">Neta</option>
+                                <option value="Tio">Tio</option>
+                                <option value="Tia">Tia</option>
+                                <option value="Sobrinho">Sobrinho</option>
+                                <option value="Sobrinha">Sobrinha</option>
+                                <option value="Primo">Primo</option>
+                                <option value="Prima">Prima</option>
+                                <option value="Cunhado">Cunhado</option>
+                                <option value="Cunhada">Cunhada</option>
+                                <option value="Genro">Genro</option>
+                                <option value="Nora">Nora</option>
+                                <option value="Sogro">Sogro</option>
+                                <option value="Sogra">Sogra</option>
+                                <option value="Padrasto">Padrasto</option>
+                                <option value="Madrasta">Madrasta</option>
+                                <option value="Enteado">Enteado</option>
+                                <option value="Enteada">Enteada</option>
+                                <option value="Bisavô">Bisavô</option>
+                                <option value="Bisavó">Bisavó</option>
+                                <option value="Bisneto">Bisneto</option>
+                                <option value="Bisneta">Bisneta</option>
+                                <option value="Tio-avô">Tio-avô</option>
+                                <option value="Tia-avó">Tia-avó</option>
+                                <option value="Sobrinho-neto">Sobrinho-neto</option>
+                                <option value="Sobrinha-neta">Sobrinha-neta</option>
+                                <option value="Cunhado(a) do cônjuge">Cunhado(a) do cônjuge</option>
+                                <option value="Outro">Outro</option>
+                              </select>
+                            </div>
+                            <div className="form-group">
                               <label>Nome</label>
                               <input
                                 type="text"
@@ -4308,6 +4630,8 @@ const AdminDashboard = () => {
                                 onChange={(e) => updateComplementador(index, 'nome', e.target.value)}
                               />
                             </div>
+                          </div>
+                          <div className="form-row">
                             <div className="form-group">
                               <label>CPF</label>
                               <input
