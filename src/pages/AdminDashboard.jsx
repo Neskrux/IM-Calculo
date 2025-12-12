@@ -68,6 +68,7 @@ const AdminDashboard = () => {
   const [uploadingContrato, setUploadingContrato] = useState(false)
   const [pagamentoDetalhe, setPagamentoDetalhe] = useState(null)
   const [vendaExpandida, setVendaExpandida] = useState(null)
+  const [cargoExpandido, setCargoExpandido] = useState(null) // Formato: "empreendimentoId-cargoId"
   const [clientes, setClientes] = useState([])
   const [uploadingDoc, setUploadingDoc] = useState(false)
   
@@ -243,6 +244,66 @@ const AdminDashboard = () => {
     const total = comissoesPorCargo.reduce((acc, c) => acc + c.valor, 0)
     
     return { cargos: comissoesPorCargo, total, percentualTotal }
+  }
+
+  // Calcular valores por setor (cargo) para um empreendimento
+  const calcularValoresPorSetor = (empreendimentoId) => {
+    // Buscar todas as vendas deste empreendimento
+    const vendasEmpreendimento = vendas.filter(v => v.empreendimento_id === empreendimentoId)
+    
+    // Buscar o empreendimento para pegar os cargos
+    const emp = empreendimentos.find(e => e.id === empreendimentoId)
+    if (!emp || !emp.cargos) return []
+    
+    // Agrupar cargos por tipo (externo/interno)
+    const cargosExternos = emp.cargos.filter(c => c.tipo_corretor === 'externo')
+    const cargosInternos = emp.cargos.filter(c => c.tipo_corretor === 'interno')
+    const todosCargos = [...cargosExternos, ...cargosInternos]
+    
+    // Para cada cargo, calcular valores
+    return todosCargos.map(cargo => {
+      let valorTotal = 0
+      let valorPago = 0
+      
+      // Para cada venda do empreendimento
+      vendasEmpreendimento.forEach(venda => {
+        // Verificar se a venda é do tipo correto (externo/interno)
+        const tipoCorretor = venda.tipo_corretor || 'externo'
+        if (cargo.tipo_corretor !== tipoCorretor) return
+        
+        // Buscar todos os pagamentos desta venda
+        const pagamentosVenda = pagamentos.filter(p => p.venda_id === venda.id)
+        
+        // Para cada pagamento, calcular a comissão deste cargo
+        pagamentosVenda.forEach(pag => {
+          const comissoesCargo = calcularComissaoPorCargoPagamento(pag)
+          const cargoEncontrado = comissoesCargo.find(c => c.nome_cargo === cargo.nome_cargo)
+          
+          if (cargoEncontrado) {
+            valorTotal += cargoEncontrado.valor || 0
+            
+            // Se o pagamento está pago, adicionar ao valor pago
+            if (pag.status === 'pago') {
+              valorPago += cargoEncontrado.valor || 0
+            }
+          }
+        })
+      })
+      
+      const valorPendente = valorTotal - valorPago
+      const percentualPago = valorTotal > 0 ? (valorPago / valorTotal) * 100 : 0
+      
+      return {
+        cargo_id: cargo.id,
+        nome_cargo: cargo.nome_cargo,
+        tipo_corretor: cargo.tipo_corretor,
+        percentual: cargo.percentual,
+        valorTotal,
+        valorPago,
+        valorPendente,
+        percentualPago: Math.round(percentualPago * 100) / 100
+      }
+    })
   }
 
   // Calcular comissão detalhada por cargo para um pagamento específico
@@ -2600,12 +2661,58 @@ const AdminDashboard = () => {
                       <h4>Cargos Externos</h4>
                       {emp.cargos?.filter(c => c.tipo_corretor === 'externo').length > 0 ? (
                         <div className="cargos-list">
-                          {emp.cargos.filter(c => c.tipo_corretor === 'externo').map((cargo, idx) => (
-                            <div key={idx} className="cargo-item">
-                              <span>{cargo.nome_cargo}</span>
-                              <span className="cargo-percent">{cargo.percentual}%</span>
-                            </div>
-                          ))}
+                          {emp.cargos.filter(c => c.tipo_corretor === 'externo').map((cargo, idx) => {
+                            const cargoKey = `${emp.id}-${cargo.id}`
+                            const setor = calcularValoresPorSetor(emp.id).find(s => s.cargo_id === cargo.id)
+                            const isExpanded = cargoExpandido === cargoKey
+                            
+                            return (
+                              <div key={idx}>
+                                <div className="cargo-item">
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1 }}>
+                                    <span>{cargo.nome_cargo}</span>
+                                    <span className="cargo-percent">{cargo.percentual}%</span>
+                                  </div>
+                                  <button
+                                    className="btn-cargo-expand"
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      setCargoExpandido(isExpanded ? null : cargoKey)
+                                    }}
+                                    title={isExpanded ? 'Ocultar detalhes' : 'Mostrar detalhes'}
+                                  >
+                                    {isExpanded ? <X size={14} /> : <Plus size={14} />}
+                                  </button>
+                                </div>
+                                {isExpanded && (
+                                  <div className="cargo-detalhes">
+                                    {setor ? (
+                                      <>
+                                        <div className="cargo-detalhe-row">
+                                          <span className="cargo-detalhe-label">Total:</span>
+                                          <span className="cargo-detalhe-valor">{formatCurrency(setor.valorTotal)}</span>
+                                        </div>
+                                        <div className="cargo-detalhe-row">
+                                          <span className="cargo-detalhe-label">Pago:</span>
+                                          <span className="cargo-detalhe-valor pago">
+                                            {formatCurrency(setor.valorPago)} <span className="cargo-detalhe-porcentagem">({setor.percentualPago}%)</span>
+                                          </span>
+                                        </div>
+                                        <div className="cargo-detalhe-row">
+                                          <span className="cargo-detalhe-label">Pendente:</span>
+                                          <span className="cargo-detalhe-valor pendente">{formatCurrency(setor.valorPendente)}</span>
+                                        </div>
+                                      </>
+                                    ) : (
+                                      <div className="cargo-detalhe-row" style={{ color: '#8b949e', fontSize: '11px', fontStyle: 'italic' }}>
+                                        Nenhuma venda registrada para este cargo
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                            )
+                          })}
                         </div>
                       ) : (
                         <p className="no-cargos">Nenhum cargo externo</p>
@@ -2617,12 +2724,58 @@ const AdminDashboard = () => {
                       <h4>Cargos Internos</h4>
                       {emp.cargos?.filter(c => c.tipo_corretor === 'interno').length > 0 ? (
                         <div className="cargos-list">
-                          {emp.cargos.filter(c => c.tipo_corretor === 'interno').map((cargo, idx) => (
-                            <div key={idx} className="cargo-item interno">
-                              <span>{cargo.nome_cargo}</span>
-                              <span className="cargo-percent">{cargo.percentual}%</span>
-                            </div>
-                          ))}
+                          {emp.cargos.filter(c => c.tipo_corretor === 'interno').map((cargo, idx) => {
+                            const cargoKey = `${emp.id}-${cargo.id}`
+                            const setor = calcularValoresPorSetor(emp.id).find(s => s.cargo_id === cargo.id)
+                            const isExpanded = cargoExpandido === cargoKey
+                            
+                            return (
+                              <div key={idx}>
+                                <div className="cargo-item interno">
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1 }}>
+                                    <span>{cargo.nome_cargo}</span>
+                                    <span className="cargo-percent">{cargo.percentual}%</span>
+                                  </div>
+                                  <button
+                                    className="btn-cargo-expand"
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      setCargoExpandido(isExpanded ? null : cargoKey)
+                                    }}
+                                    title={isExpanded ? 'Ocultar detalhes' : 'Mostrar detalhes'}
+                                  >
+                                    {isExpanded ? <X size={14} /> : <Plus size={14} />}
+                                  </button>
+                                </div>
+                                {isExpanded && (
+                                  <div className="cargo-detalhes">
+                                    {setor ? (
+                                      <>
+                                        <div className="cargo-detalhe-row">
+                                          <span className="cargo-detalhe-label">Total:</span>
+                                          <span className="cargo-detalhe-valor">{formatCurrency(setor.valorTotal)}</span>
+                                        </div>
+                                        <div className="cargo-detalhe-row">
+                                          <span className="cargo-detalhe-label">Pago:</span>
+                                          <span className="cargo-detalhe-valor pago">
+                                            {formatCurrency(setor.valorPago)} <span className="cargo-detalhe-porcentagem">({setor.percentualPago}%)</span>
+                                          </span>
+                                        </div>
+                                        <div className="cargo-detalhe-row">
+                                          <span className="cargo-detalhe-label">Pendente:</span>
+                                          <span className="cargo-detalhe-valor pendente">{formatCurrency(setor.valorPendente)}</span>
+                                        </div>
+                                      </>
+                                    ) : (
+                                      <div className="cargo-detalhe-row" style={{ color: '#8b949e', fontSize: '11px', fontStyle: 'italic' }}>
+                                        Nenhuma venda registrada para este cargo
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                            )
+                          })}
                         </div>
                       ) : (
                         <p className="no-cargos">Nenhum cargo interno</p>
