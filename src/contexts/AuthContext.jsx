@@ -23,7 +23,7 @@ export const AuthProvider = ({ children }) => {
     setUser(authUser)
 
     try {
-      // Buscar perfil existente
+      // Buscar perfil existente na tabela usuarios
       const { data: profile, error } = await supabase
         .from('usuarios')
         .select('*')
@@ -38,8 +38,46 @@ export const AuthProvider = ({ children }) => {
         return
       }
 
-      // Se não existe, criar como admin
-      console.log('Criando perfil automaticamente...')
+      // Se não existe na tabela usuarios, verificar se é cliente
+      // Buscar na tabela clientes pelo user_id
+      const { data: clienteProfile, error: clienteError } = await supabase
+        .from('clientes')
+        .select('*')
+        .eq('user_id', authUser.id)
+        .maybeSingle()
+
+      console.log('Cliente encontrado:', clienteProfile, 'Erro:', clienteError)
+
+      if (clienteProfile) {
+        // Criar perfil na tabela usuarios com tipo 'cliente'
+        const { data: newProfile, error: createError } = await supabase
+          .from('usuarios')
+          .upsert({
+            id: authUser.id,
+            email: authUser.email,
+            nome: clienteProfile.nome_completo || 'Cliente',
+            tipo: 'cliente'
+          }, { onConflict: 'id' })
+          .select()
+          .single()
+
+        if (newProfile) {
+          setUserProfile(newProfile)
+        } else {
+          // Se não conseguiu criar, usar dados do cliente
+          setUserProfile({ 
+            id: authUser.id, 
+            email: authUser.email, 
+            nome: clienteProfile.nome_completo || 'Cliente', 
+            tipo: 'cliente' 
+          })
+        }
+        setLoading(false)
+        return
+      }
+
+      // Se não é cliente nem tem perfil, criar como admin (comportamento padrão)
+      console.log('Criando perfil automaticamente como admin...')
       const { data: newProfile, error: createError } = await supabase
         .from('usuarios')
         .upsert({
@@ -82,15 +120,17 @@ export const AuthProvider = ({ children }) => {
     })
 
     // Escutar mudanças
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log('Auth event:', event)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('Auth event:', event, 'User:', session?.user?.email)
       
-      if (event === 'SIGNED_IN') {
-        loadProfile(session?.user || null)
+      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+        await loadProfile(session?.user || null)
       } else if (event === 'SIGNED_OUT') {
         setUser(null)
         setUserProfile(null)
         setLoading(false)
+      } else if (event === 'USER_UPDATED') {
+        await loadProfile(session?.user || null)
       }
     })
 
@@ -99,12 +139,37 @@ export const AuthProvider = ({ children }) => {
 
   const signIn = async (email, password) => {
     setLoading(true)
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password })
-    if (error) {
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({ 
+        email, 
+        password 
+      })
+      
+      if (error) {
+        setLoading(false)
+        console.error('Erro no signIn:', error)
+        
+        // Se o erro for "Email not confirmed", tentar fazer login mesmo assim
+        // (útil para sistemas internos onde não queremos confirmação de email)
+        if (error.message && error.message.includes('Email not confirmed')) {
+          // Tentar obter a sessão diretamente (pode funcionar em alguns casos)
+          const { data: sessionData } = await supabase.auth.getSession()
+          if (sessionData?.session) {
+            // Se conseguiu sessão, retornar sucesso
+            return { data: sessionData }
+          }
+        }
+        
+        return { error }
+      }
+      
+      // O perfil será carregado automaticamente pelo onAuthStateChange
+      return { data }
+    } catch (err) {
       setLoading(false)
-      return { error }
+      console.error('Erro inesperado no signIn:', err)
+      return { error: { message: 'Erro inesperado ao fazer login', status: 500 } }
     }
-    return { data }
   }
 
   const signOut = async () => {

@@ -7,7 +7,7 @@ import autoTable from 'jspdf-autotable'
 import { 
   Users, DollarSign, TrendingUp, Plus, Edit2, Trash2, 
   Search, Filter, LogOut, Menu, X, ChevronDown, Save, Eye,
-  Calculator, Calendar, User, Briefcase, CheckCircle, Clock, UserPlus, Mail, Lock, Percent, Building, PlusCircle, CreditCard, Check, Upload, FileText, Trash, UserCircle, Phone, MapPin, Camera, Download, FileDown, LayoutDashboard, ChevronLeft, ChevronRight, PanelLeftClose, PanelLeft
+  Calculator, Calendar, User, Briefcase, CheckCircle, Clock, UserPlus, Mail, Lock, Percent, Building, PlusCircle, CreditCard, Check, Upload, FileText, Trash, UserCircle, Phone, MapPin, Camera, Download, FileDown, LayoutDashboard, ChevronLeft, ChevronRight, PanelLeftClose, PanelLeft, AlertCircle
 } from 'lucide-react'
 import logo from '../imgs/logo.png'
 import Ticker from '../components/Ticker'
@@ -1354,6 +1354,8 @@ const AdminDashboard = () => {
       if (clienteForm.criar_acesso && !selectedItem?.user_id) {
         try {
           // Criar usuário na autenticação
+          // Nota: Para sistemas internos, é recomendado desabilitar a confirmação de email
+          // no painel do Supabase (Authentication > Settings > Email Auth > Confirm email)
           const { data: authData, error: authError } = await supabase.auth.signUp({
             email: clienteForm.email,
             password: clienteForm.senha,
@@ -1361,11 +1363,49 @@ const AdminDashboard = () => {
               data: {
                 nome: clienteForm.nome_completo,
                 role: 'cliente'
-              }
+              },
+              emailRedirectTo: undefined // Não redirecionar para confirmação
             }
           })
           
-          if (authError) throw authError
+          if (authError) {
+            // Se o erro for sobre email já existente, tentar fazer login
+            if (authError.message && authError.message.includes('already registered')) {
+              // Tentar fazer login para obter o user_id
+              const { data: loginData, error: loginError } = await supabase.auth.signInWithPassword({
+                email: clienteForm.email,
+                password: clienteForm.senha
+              })
+              
+              if (!loginError && loginData?.user?.id) {
+                // Usar o user_id do login
+                const userId = loginData.user.id
+                
+                // Atualizar cliente com user_id
+                await supabase
+                  .from('clientes')
+                  .update({ user_id: userId })
+                  .eq('id', clienteId)
+                
+                // Criar/atualizar registro na tabela usuarios
+                await supabase
+                  .from('usuarios')
+                  .upsert({
+                    id: userId,
+                    nome: clienteForm.nome_completo,
+                    email: clienteForm.email,
+                    tipo: 'cliente',
+                    ativo: true
+                  }, { onConflict: 'id' })
+                
+                acessoCriado = true
+              } else {
+                throw new Error('Email já cadastrado, mas não foi possível fazer login. Verifique a senha ou peça ao administrador para redefinir.')
+              }
+            } else {
+              throw authError
+            }
+          }
           
           const userId = authData.user?.id
           
@@ -2013,6 +2053,13 @@ const AdminDashboard = () => {
         </nav>
 
         <div className="sidebar-footer">
+          <button 
+            className="collapse-btn" 
+            onClick={toggleSidebar}
+            title={sidebarCollapsed ? 'Expandir' : 'Recolher'}
+          >
+            {sidebarCollapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
+          </button>
           <div className="user-info">
             <div className="user-avatar">
               <User size={20} />
@@ -2026,15 +2073,6 @@ const AdminDashboard = () => {
             <LogOut size={20} />
           </button>
         </div>
-
-        {/* Collapse Toggle Button */}
-        <button 
-          className="sidebar-collapse-btn" 
-          onClick={toggleSidebar}
-          title={sidebarCollapsed ? 'Expandir menu' : 'Recolher menu'}
-        >
-          {sidebarCollapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
-        </button>
       </aside>
 
       {/* Main Content */}
@@ -3833,37 +3871,66 @@ const AdminDashboard = () => {
                   {/* Acesso ao Sistema */}
                   <div className="section-divider"><span>Acesso ao Sistema</span></div>
                   
-                  <div className="form-group">
-                    <label>Criar acesso para o cliente?</label>
-                    <select
-                      value={clienteForm.criar_acesso ? 'sim' : 'nao'}
-                      onChange={(e) => setClienteForm({...clienteForm, criar_acesso: e.target.value === 'sim'})}
-                      disabled={selectedItem?.user_id}
-                    >
-                      <option value="nao">Não</option>
-                      <option value="sim">Sim</option>
-                    </select>
-                    {selectedItem?.user_id && (
-                      <small className="form-hint success">✓ Cliente já possui acesso ao sistema</small>
-                    )}
-                  </div>
-                  
-                  {clienteForm.criar_acesso && !selectedItem?.user_id && (
-                    <div className="acesso-box">
-                      <div className="acesso-info">
-                        <Lock size={16} />
-                        <span>O cliente usará o e-mail acima para fazer login</span>
+                  {selectedItem?.user_id ? (
+                    <div className="form-group">
+                      <div className="acesso-info success">
+                        <CheckCircle size={16} />
+                        <span>Cliente já possui acesso ao sistema</span>
                       </div>
-                      <div className="form-group">
-                        <label>Senha de acesso *</label>
-                        <input
-                          type="password"
-                          placeholder="Mínimo 6 caracteres"
-                          value={clienteForm.senha}
-                          onChange={(e) => setClienteForm({...clienteForm, senha: e.target.value})}
-                        />
-                      </div>
+                      <small className="form-hint">
+                        Email: {selectedItem.email || clienteForm.email || 'Não informado'}
+                      </small>
                     </div>
+                  ) : (
+                    <>
+                      <div className="form-group">
+                        <label>Criar acesso para o cliente?</label>
+                        <select
+                          value={clienteForm.criar_acesso ? 'sim' : 'nao'}
+                          onChange={(e) => setClienteForm({...clienteForm, criar_acesso: e.target.value === 'sim'})}
+                        >
+                          <option value="nao">Não</option>
+                          <option value="sim">Sim</option>
+                        </select>
+                        {!selectedItem && (
+                          <small className="form-hint">
+                            Você pode criar o acesso agora ou depois, editando o cliente.
+                          </small>
+                        )}
+                        {selectedItem && !selectedItem.user_id && (
+                          <small className="form-hint warning">
+                            ⚠ Este cliente ainda não possui acesso ao sistema. Marque "Sim" e defina uma senha para criar.
+                          </small>
+                        )}
+                      </div>
+                      
+                      {clienteForm.criar_acesso && (
+                        <div className="acesso-box">
+                          <div className="acesso-info">
+                            <Lock size={16} />
+                            <span>O cliente usará o e-mail acima para fazer login</span>
+                          </div>
+                          {!clienteForm.email && (
+                            <div className="acesso-info warning">
+                              <AlertCircle size={16} />
+                              <span>É necessário informar o e-mail do cliente para criar o acesso</span>
+                            </div>
+                          )}
+                          <div className="form-group">
+                            <label>Senha de acesso *</label>
+                            <input
+                              type="password"
+                              placeholder="Mínimo 6 caracteres"
+                              value={clienteForm.senha}
+                              onChange={(e) => setClienteForm({...clienteForm, senha: e.target.value})}
+                            />
+                            <small className="form-hint">
+                              A senha será usada pelo cliente para fazer login no sistema
+                            </small>
+                          </div>
+                        </div>
+                      )}
+                    </>
                   )}
 
                   {/* Dados Profissionais */}

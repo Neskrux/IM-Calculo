@@ -5,6 +5,7 @@ import { supabase } from './lib/supabase'
 import Login from './pages/Login'
 import AdminDashboard from './pages/AdminDashboard'
 import CorretorDashboard from './pages/CorretorDashboard'
+import ClienteDashboard from './pages/ClienteDashboard'
 import HomeDashboard from './pages/HomeDashboard'
 import './App.css'
 
@@ -115,12 +116,15 @@ const ProtectedRoute = ({ children, requiredRole }) => {
     )
   }
 
-  if (requiredRole && userProfile?.tipo !== requiredRole) {
-    if (userProfile?.tipo === 'admin') {
-      return <Navigate to="/admin" replace />
-    }
-    return <Navigate to="/corretor" replace />
-  }
+         if (requiredRole && userProfile?.tipo !== requiredRole) {
+           if (userProfile?.tipo === 'admin') {
+             return <Navigate to="/admin" replace />
+           } else if (userProfile?.tipo === 'corretor') {
+             return <Navigate to="/corretor" replace />
+           } else if (userProfile?.tipo === 'cliente') {
+             return <Navigate to="/cliente" replace />
+           }
+         }
 
   return children
 }
@@ -134,12 +138,15 @@ const PublicRoute = ({ children }) => {
     return <LoadingScreen showLogout={false} />
   }
 
-  if (user && userProfile) {
-    if (userProfile.tipo === 'admin') {
-      return <Navigate to="/admin" replace />
-    }
-    return <Navigate to="/corretor" replace />
-  }
+         if (user && userProfile) {
+           if (userProfile.tipo === 'admin') {
+             return <Navigate to="/admin" replace />
+           } else if (userProfile.tipo === 'corretor') {
+             return <Navigate to="/corretor" replace />
+           } else if (userProfile.tipo === 'cliente') {
+             return <Navigate to="/cliente" replace />
+           }
+         }
 
   return children
 }
@@ -157,25 +164,45 @@ const DashboardRedirect = () => {
     return (
       <div className="loading-screen">
         <div className="loading-content">
-          <p style={{ color: '#ef4444', marginBottom: '10px' }}>Usuário não cadastrado no sistema</p>
-          <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.6)' }}>
-            Peça ao administrador para cadastrar seu perfil
+          <p style={{ color: '#ef4444', marginBottom: '10px', fontSize: '18px' }}>Usuário não cadastrado</p>
+          <p style={{ fontSize: '14px', color: 'rgba(255,255,255,0.7)', marginBottom: '20px' }}>
+            Seu perfil não foi encontrado no sistema. Entre em contato com a administração.
           </p>
+          <button
+            onClick={async () => {
+              await supabase.auth.signOut()
+              localStorage.clear()
+              window.location.href = '/login'
+            }}
+            style={{
+              padding: '10px 20px',
+              background: '#ef4444',
+              border: 'none',
+              color: '#fff',
+              borderRadius: '6px',
+              cursor: 'pointer',
+              fontSize: '13px'
+            }}
+          >
+            Voltar ao Login
+          </button>
         </div>
       </div>
     )
   }
 
-  // Redirecionar baseado no tipo de usuário
-  useEffect(() => {
-    if (userProfile) {
-      if (userProfile.tipo === 'admin') {
-        navigate('/admin/dashboard', { replace: true })
-      } else if (userProfile.tipo === 'corretor') {
-        navigate('/corretor', { replace: true })
-      }
-    }
-  }, [userProfile, navigate])
+        // Redirecionar baseado no tipo de usuário
+        useEffect(() => {
+          if (userProfile) {
+            if (userProfile.tipo === 'admin') {
+              navigate('/admin/dashboard', { replace: true })
+            } else if (userProfile.tipo === 'corretor') {
+              navigate('/corretor', { replace: true })
+            } else if (userProfile.tipo === 'cliente') {
+              navigate('/cliente', { replace: true })
+            }
+          }
+        }, [userProfile, navigate])
 
   // Mostrar HomeDashboard enquanto redireciona
   return <HomeDashboard />
@@ -221,6 +248,46 @@ function AppRoutes() {
         element={
           <ProtectedRoute requiredRole="corretor">
             <CorretorDashboard />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/corretor/dashboard" 
+        element={
+          <ProtectedRoute requiredRole="corretor">
+            <CorretorDashboard />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/corretor/:tab" 
+        element={
+          <ProtectedRoute requiredRole="corretor">
+            <CorretorDashboard />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/cliente" 
+        element={
+          <ProtectedRoute requiredRole="cliente">
+            <ClienteDashboard />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/cliente/dashboard" 
+        element={
+          <ProtectedRoute requiredRole="cliente">
+            <ClienteDashboard />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/cliente/:tab" 
+        element={
+          <ProtectedRoute requiredRole="cliente">
+            <ClienteDashboard />
           </ProtectedRoute>
         } 
       />

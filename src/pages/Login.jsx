@@ -19,15 +19,64 @@ const Login = () => {
     setError('')
     setLoading(true)
 
-    const { data, error } = await signIn(email, password)
-    
-    if (error) {
-      setError('Email ou senha incorretos')
-      setLoading(false)
-      return
-    }
+    try {
+      const { data, error: signInError } = await signIn(email, password)
+      
+      if (signInError) {
+        // Mensagens de erro mais específicas
+        let errorMessage = 'Email ou senha incorretos'
+        
+        console.error('Erro no login:', signInError)
+        
+        if (signInError.message) {
+          const errorMsg = signInError.message.toLowerCase()
+          
+          if (errorMsg.includes('invalid login credentials') || errorMsg.includes('invalid_credentials')) {
+            errorMessage = 'Email ou senha incorretos. Se você é um cliente, verifique se o administrador criou seu acesso ao sistema.'
+          } else if (errorMsg.includes('email not confirmed') || errorMsg.includes('email_not_confirmed')) {
+            errorMessage = 'Seu email ainda não foi confirmado. Entre em contato com o administrador para ativar sua conta. O administrador pode desabilitar a confirmação de email nas configurações do Supabase.'
+          } else if (errorMsg.includes('too many requests') || errorMsg.includes('rate_limit')) {
+            errorMessage = 'Muitas tentativas. Aguarde alguns minutos e tente novamente.'
+          } else if (errorMsg.includes('user not found') || errorMsg.includes('user_not_found')) {
+            errorMessage = 'Usuário não encontrado. Se você é um cliente, peça ao administrador para criar seu acesso.'
+          } else if (errorMsg.includes('bad request') || signInError.status === 400) {
+            errorMessage = 'Dados inválidos. Verifique se o email e senha estão corretos. Se você é um cliente, verifique se o administrador criou seu acesso.'
+          } else {
+            errorMessage = signInError.message || 'Erro ao fazer login. Tente novamente ou entre em contato com o administrador.'
+          }
+        } else if (signInError.status) {
+          if (signInError.status === 400) {
+            errorMessage = 'Dados inválidos. Verifique suas credenciais.'
+          } else if (signInError.status === 401) {
+            errorMessage = 'Email ou senha incorretos.'
+          } else if (signInError.status === 429) {
+            errorMessage = 'Muitas tentativas. Aguarde alguns minutos.'
+          } else {
+            errorMessage = `Erro ${signInError.status}. Tente novamente mais tarde.`
+          }
+        }
+        
+        setError(errorMessage)
+        setLoading(false)
+        return
+      }
 
-    navigate('/dashboard')
+      if (!data) {
+        setError('Erro ao fazer login. Tente novamente.')
+        setLoading(false)
+        return
+      }
+
+      // Aguardar um pouco para o perfil carregar
+      await new Promise(resolve => setTimeout(resolve, 800))
+      
+      // Redirecionar para dashboard (o DashboardRedirect vai direcionar corretamente)
+      navigate('/dashboard', { replace: true })
+    } catch (err) {
+      console.error('Erro inesperado no login:', err)
+      setError('Erro inesperado ao fazer login. Tente novamente ou entre em contato com o suporte.')
+      setLoading(false)
+    }
   }
 
   return (
@@ -97,7 +146,7 @@ const Login = () => {
 
             <form onSubmit={handleSubmit} className="luxury-form">
               {error && (
-                <div className="luxury-error">
+                <div className="luxury-error" role="alert" aria-live="polite">
                   <AlertCircle size={18} />
                   <span>{error}</span>
                 </div>
