@@ -22,12 +22,17 @@ export const AuthProvider = ({ children }) => {
     console.log('Carregando perfil para:', authUser.email)
     setUser(authUser)
 
-    // Timeout de segurança para não travar
+    // Flag para evitar que timeout sobrescreva perfil já carregado
+    let profileLoaded = false
+
+    // Timeout de segurança para não travar (aumentado para 10 segundos)
     const timeoutId = setTimeout(() => {
-      console.log('Timeout ao carregar perfil, usando fallback')
-      setUserProfile({ id: authUser.id, email: authUser.email, nome: 'Admin', tipo: 'admin' })
-      setLoading(false)
-    }, 5000)
+      if (!profileLoaded) {
+        console.log('Timeout ao carregar perfil, usando fallback')
+        setUserProfile({ id: authUser.id, email: authUser.email, nome: 'Admin', tipo: 'admin' })
+        setLoading(false)
+      }
+    }, 10000)
 
     try {
       // Buscar perfil existente na tabela usuarios
@@ -40,6 +45,7 @@ export const AuthProvider = ({ children }) => {
       console.log('Perfil encontrado:', profile, 'Erro:', error)
 
       if (profile) {
+        profileLoaded = true
         clearTimeout(timeoutId)
         setUserProfile(profile)
         setLoading(false)
@@ -69,6 +75,7 @@ export const AuthProvider = ({ children }) => {
           .select()
           .single()
 
+        profileLoaded = true
         clearTimeout(timeoutId)
         if (newProfile) {
           setUserProfile(newProfile)
@@ -100,6 +107,7 @@ export const AuthProvider = ({ children }) => {
 
       console.log('Novo perfil:', newProfile, 'Erro:', createError)
 
+      profileLoaded = true
       clearTimeout(timeoutId)
       if (newProfile) {
         setUserProfile(newProfile)
@@ -116,6 +124,7 @@ export const AuthProvider = ({ children }) => {
       setLoading(false)
     } catch (err) {
       console.error('Erro ao carregar perfil:', err)
+      profileLoaded = true
       clearTimeout(timeoutId)
       // Fallback: criar perfil local para não travar
       setUserProfile({ id: authUser.id, email: authUser.email, nome: 'Admin', tipo: 'admin' })
