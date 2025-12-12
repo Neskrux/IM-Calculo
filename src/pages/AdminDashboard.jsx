@@ -69,6 +69,7 @@ const AdminDashboard = () => {
   const [pagamentoDetalhe, setPagamentoDetalhe] = useState(null)
   const [vendaExpandida, setVendaExpandida] = useState(null)
   const [cargoExpandido, setCargoExpandido] = useState(null) // Formato: "empreendimentoId-cargoId"
+  const [cargosExpandidos, setCargosExpandidos] = useState({}) // Formato: { "empreendimentoId-externo": true, "empreendimentoId-interno": false }
   const [clientes, setClientes] = useState([])
   const [uploadingDoc, setUploadingDoc] = useState(false)
   
@@ -2661,7 +2662,22 @@ const AdminDashboard = () => {
                     {/* Cargos Externos */}
                     <div className="empreendimento-cargos">
                       <h4>Cargos Externos</h4>
-                      {emp.cargos?.filter(c => c.tipo_corretor === 'externo').length > 0 ? (
+                      {emp.cargos?.filter(c => c.tipo_corretor === 'externo').length > 0 && (
+                        <button
+                          className="btn-toggle-cargos"
+                          onClick={() => setCargosExpandidos(prev => ({
+                            ...prev,
+                            [`${emp.id}-externo`]: !prev[`${emp.id}-externo`]
+                          }))}
+                        >
+                          {cargosExpandidos[`${emp.id}-externo`] ? 'Ocultar cargos e taxas' : 'Mostrar cargos e taxas'}
+                          <ChevronDown 
+                            size={16} 
+                            className={cargosExpandidos[`${emp.id}-externo`] ? 'rotated' : ''}
+                          />
+                        </button>
+                      )}
+                      {cargosExpandidos[`${emp.id}-externo`] && emp.cargos?.filter(c => c.tipo_corretor === 'externo').length > 0 ? (
                         <div className="cargos-list">
                           {emp.cargos.filter(c => c.tipo_corretor === 'externo').map((cargo, idx) => {
                             const cargoKey = `${emp.id}-${cargo.id}`
@@ -2716,15 +2732,30 @@ const AdminDashboard = () => {
                             )
                           })}
                         </div>
-                      ) : (
+                      ) : emp.cargos?.filter(c => c.tipo_corretor === 'externo').length === 0 ? (
                         <p className="no-cargos">Nenhum cargo externo</p>
-                      )}
+                      ) : null}
                     </div>
 
                     {/* Cargos Internos */}
                     <div className="empreendimento-cargos">
                       <h4>Cargos Internos</h4>
-                      {emp.cargos?.filter(c => c.tipo_corretor === 'interno').length > 0 ? (
+                      {emp.cargos?.filter(c => c.tipo_corretor === 'interno').length > 0 && (
+                        <button
+                          className="btn-toggle-cargos"
+                          onClick={() => setCargosExpandidos(prev => ({
+                            ...prev,
+                            [`${emp.id}-interno`]: !prev[`${emp.id}-interno`]
+                          }))}
+                        >
+                          {cargosExpandidos[`${emp.id}-interno`] ? 'Ocultar cargos e taxas' : 'Mostrar cargos e taxas'}
+                          <ChevronDown 
+                            size={16} 
+                            className={cargosExpandidos[`${emp.id}-interno`] ? 'rotated' : ''}
+                          />
+                        </button>
+                      )}
+                      {cargosExpandidos[`${emp.id}-interno`] && emp.cargos?.filter(c => c.tipo_corretor === 'interno').length > 0 ? (
                         <div className="cargos-list">
                           {emp.cargos.filter(c => c.tipo_corretor === 'interno').map((cargo, idx) => {
                             const cargoKey = `${emp.id}-${cargo.id}`
@@ -2779,9 +2810,9 @@ const AdminDashboard = () => {
                             )
                           })}
                         </div>
-                      ) : (
+                      ) : emp.cargos?.filter(c => c.tipo_corretor === 'interno').length === 0 ? (
                         <p className="no-cargos">Nenhum cargo interno</p>
-                      )}
+                      ) : null}
                     </div>
                   </div>
                 ))}
