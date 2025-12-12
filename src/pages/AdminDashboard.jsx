@@ -4203,59 +4203,83 @@ const AdminDashboard = () => {
                   <div className="section-divider"><span>Documentos</span></div>
 
                   <div className="docs-upload-grid">
-                    <div className="doc-upload-item">
+                    <div className="form-group">
                       <label>RG Frente</label>
                       <input
                         type="file"
                         accept="image/*,.pdf"
                         onChange={(e) => e.target.files[0] && uploadDocumentoCliente(e.target.files[0], 'rg_frente')}
                       />
-                      {clienteForm.rg_frente_url && <a href={clienteForm.rg_frente_url} target="_blank" rel="noopener noreferrer" className="doc-preview">Ver arquivo</a>}
+                      {clienteForm.rg_frente_url && (
+                        <a href={clienteForm.rg_frente_url} target="_blank" rel="noopener noreferrer" className="doc-preview">
+                          Ver arquivo
+                        </a>
+                      )}
                     </div>
-                    <div className="doc-upload-item">
+                    <div className="form-group">
                       <label>RG Verso</label>
                       <input
                         type="file"
                         accept="image/*,.pdf"
                         onChange={(e) => e.target.files[0] && uploadDocumentoCliente(e.target.files[0], 'rg_verso')}
                       />
-                      {clienteForm.rg_verso_url && <a href={clienteForm.rg_verso_url} target="_blank" rel="noopener noreferrer" className="doc-preview">Ver arquivo</a>}
+                      {clienteForm.rg_verso_url && (
+                        <a href={clienteForm.rg_verso_url} target="_blank" rel="noopener noreferrer" className="doc-preview">
+                          Ver arquivo
+                        </a>
+                      )}
                     </div>
-                    <div className="doc-upload-item">
+                    <div className="form-group">
                       <label>CPF</label>
                       <input
                         type="file"
                         accept="image/*,.pdf"
                         onChange={(e) => e.target.files[0] && uploadDocumentoCliente(e.target.files[0], 'cpf')}
                       />
-                      {clienteForm.cpf_url && <a href={clienteForm.cpf_url} target="_blank" rel="noopener noreferrer" className="doc-preview">Ver arquivo</a>}
+                      {clienteForm.cpf_url && (
+                        <a href={clienteForm.cpf_url} target="_blank" rel="noopener noreferrer" className="doc-preview">
+                          Ver arquivo
+                        </a>
+                      )}
                     </div>
-                    <div className="doc-upload-item">
+                    <div className="form-group">
                       <label>Comprovante Residência</label>
                       <input
                         type="file"
                         accept="image/*,.pdf"
                         onChange={(e) => e.target.files[0] && uploadDocumentoCliente(e.target.files[0], 'comprovante_residencia')}
                       />
-                      {clienteForm.comprovante_residencia_url && <a href={clienteForm.comprovante_residencia_url} target="_blank" rel="noopener noreferrer" className="doc-preview">Ver arquivo</a>}
+                      {clienteForm.comprovante_residencia_url && (
+                        <a href={clienteForm.comprovante_residencia_url} target="_blank" rel="noopener noreferrer" className="doc-preview">
+                          Ver arquivo
+                        </a>
+                      )}
                     </div>
-                    <div className="doc-upload-item">
+                    <div className="form-group">
                       <label>Comprovante Renda</label>
                       <input
                         type="file"
                         accept="image/*,.pdf"
                         onChange={(e) => e.target.files[0] && uploadDocumentoCliente(e.target.files[0], 'comprovante_renda')}
                       />
-                      {clienteForm.comprovante_renda_url && <a href={clienteForm.comprovante_renda_url} target="_blank" rel="noopener noreferrer" className="doc-preview">Ver arquivo</a>}
+                      {clienteForm.comprovante_renda_url && (
+                        <a href={clienteForm.comprovante_renda_url} target="_blank" rel="noopener noreferrer" className="doc-preview">
+                          Ver arquivo
+                        </a>
+                      )}
                     </div>
-                    <div className="doc-upload-item">
+                    <div className="form-group">
                       <label>Certidão Casamento/União</label>
                       <input
                         type="file"
                         accept="image/*,.pdf"
                         onChange={(e) => e.target.files[0] && uploadDocumentoCliente(e.target.files[0], 'certidao_casamento')}
                       />
-                      {clienteForm.certidao_casamento_url && <a href={clienteForm.certidao_casamento_url} target="_blank" rel="noopener noreferrer" className="doc-preview">Ver arquivo</a>}
+                      {clienteForm.certidao_casamento_url && (
+                        <a href={clienteForm.certidao_casamento_url} target="_blank" rel="noopener noreferrer" className="doc-preview">
+                          Ver arquivo
+                        </a>
+                      )}
                     </div>
                   </div>
 

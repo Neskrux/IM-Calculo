@@ -3435,44 +3435,65 @@
 /* Upload de Documentos no Modal */
 .docs-upload-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
 }
 
-.doc-upload-item {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
+.docs-upload-grid .form-group {
+  margin: 0;
 }
 
-.doc-upload-item label {
-  font-size: 12px;
-  color: var(--im-text-secondary, #94a3b8);
-  font-weight: 500;
-}
-
-.doc-upload-item input[type="file"] {
-  font-size: 12px;
-  padding: 8px;
-  background: #2a3142;
-  border: 1px dashed #4b5563;
+.docs-upload-grid .form-group input[type="file"] {
+  padding: 10px 12px;
+  background: var(--im-bg-primary, #050a12);
+  border: 1px solid var(--im-border, rgba(74, 144, 217, 0.15));
   border-radius: 6px;
-  color: var(--im-text-secondary, #94a3b8);
+  font-size: 13px;
+  color: var(--im-text-primary, #e2e8f0);
   cursor: pointer;
+  width: 100%;
+  transition: border-color 0.2s;
 }
 
-.doc-upload-item input[type="file"]:hover {
-  border-color: #d4af37;
+.docs-upload-grid .form-group input[type="file"]:hover {
+  border-color: var(--im-accent, #4a90d9);
+}
+
+.docs-upload-grid .form-group input[type="file"]:focus {
+  outline: none;
+  border-color: var(--im-accent, #4a90d9);
+}
+
+.docs-upload-grid .form-group input[type="file"]::file-selector-button {
+  padding: 6px 12px;
+  margin-right: 12px;
+  background: var(--im-bg-secondary, #0a1628);
+  border: 1px solid var(--im-border, rgba(74, 144, 217, 0.15));
+  border-radius: 4px;
+  color: var(--im-text-secondary, #94a3b8);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.docs-upload-grid .form-group input[type="file"]::file-selector-button:hover {
+  background: var(--im-bg-tertiary, #1a2332);
+  border-color: var(--im-accent, #4a90d9);
+  color: var(--im-text-primary, #e2e8f0);
 }
 
 .doc-preview {
-  font-size: 11px;
+  display: inline-block;
+  margin-top: 6px;
+  font-size: 12px;
   color: #10b981;
   text-decoration: none;
+  font-weight: 500;
 }
 
 .doc-preview:hover {
   text-decoration: underline;
+  color: #059669;
 }
 
 .upload-status {
@@ -4458,7 +4479,8 @@
   }
   
   .docs-upload-grid {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr;
+    gap: 12px;
   }
   
   .parcela-variada-item .form-row {
