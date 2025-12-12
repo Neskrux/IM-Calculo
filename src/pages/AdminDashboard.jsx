@@ -4577,12 +4577,49 @@ const AdminDashboard = () => {
                           <div className="form-row">
                             <div className="form-group">
                               <label>Tipo de Relacionamento</label>
-                              <input
-                                type="text"
-                                placeholder="Ex: Cônjuge, Mãe, Pai, Irmão(ã)"
+                              <select
                                 value={comp.tipo_relacionamento || ''}
                                 onChange={(e) => updateComplementador(index, 'tipo_relacionamento', e.target.value)}
-                              />
+                              >
+                                <option value="">Selecione...</option>
+                                <option value="Cônjuge">Cônjuge</option>
+                                <option value="Pai">Pai</option>
+                                <option value="Mãe">Mãe</option>
+                                <option value="Irmão">Irmão</option>
+                                <option value="Irmã">Irmã</option>
+                                <option value="Filho">Filho</option>
+                                <option value="Filha">Filha</option>
+                                <option value="Avô">Avô</option>
+                                <option value="Avó">Avó</option>
+                                <option value="Neto">Neto</option>
+                                <option value="Neta">Neta</option>
+                                <option value="Tio">Tio</option>
+                                <option value="Tia">Tia</option>
+                                <option value="Sobrinho">Sobrinho</option>
+                                <option value="Sobrinha">Sobrinha</option>
+                                <option value="Primo">Primo</option>
+                                <option value="Prima">Prima</option>
+                                <option value="Cunhado">Cunhado</option>
+                                <option value="Cunhada">Cunhada</option>
+                                <option value="Genro">Genro</option>
+                                <option value="Nora">Nora</option>
+                                <option value="Sogro">Sogro</option>
+                                <option value="Sogra">Sogra</option>
+                                <option value="Padrasto">Padrasto</option>
+                                <option value="Madrasta">Madrasta</option>
+                                <option value="Enteado">Enteado</option>
+                                <option value="Enteada">Enteada</option>
+                                <option value="Bisavô">Bisavô</option>
+                                <option value="Bisavó">Bisavó</option>
+                                <option value="Bisneto">Bisneto</option>
+                                <option value="Bisneta">Bisneta</option>
+                                <option value="Tio-avô">Tio-avô</option>
+                                <option value="Tia-avó">Tia-avó</option>
+                                <option value="Sobrinho-neto">Sobrinho-neto</option>
+                                <option value="Sobrinha-neta">Sobrinha-neta</option>
+                                <option value="Cunhado(a) do cônjuge">Cunhado(a) do cônjuge</option>
+                                <option value="Outro">Outro</option>
+                              </select>
                             </div>
                             <div className="form-group">
                               <label>Nome</label>
