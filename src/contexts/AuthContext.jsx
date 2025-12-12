@@ -22,6 +22,13 @@ export const AuthProvider = ({ children }) => {
     console.log('Carregando perfil para:', authUser.email)
     setUser(authUser)
 
+    // Timeout de segurança para não travar
+    const timeoutId = setTimeout(() => {
+      console.log('Timeout ao carregar perfil, usando fallback')
+      setUserProfile({ id: authUser.id, email: authUser.email, nome: 'Admin', tipo: 'admin' })
+      setLoading(false)
+    }, 5000)
+
     try {
       // Buscar perfil existente na tabela usuarios
       const { data: profile, error } = await supabase
@@ -107,9 +114,10 @@ export const AuthProvider = ({ children }) => {
       console.error('Erro ao carregar perfil:', err)
       // Fallback: criar perfil local para não travar
       setUserProfile({ id: authUser.id, email: authUser.email, nome: 'Admin', tipo: 'admin' })
+    } finally {
+      clearTimeout(timeoutId)
+      setLoading(false)
     }
-
-    setLoading(false)
   }
 
   useEffect(() => {

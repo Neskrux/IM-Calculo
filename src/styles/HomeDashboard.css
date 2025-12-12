@@ -702,16 +702,42 @@
   }
   
   .stats-grid {
-    grid-template-columns: 1fr;
-    gap: 16px;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
   }
   
   .stat-card {
-    padding: 20px;
+    padding: 16px;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 12px;
+  }
+  
+  .stat-icon {
+    width: 48px;
+    height: 48px;
+  }
+  
+  .stat-content {
+    align-items: center;
+    width: 100%;
+  }
+  
+  .stat-label {
+    font-size: 10px;
+    letter-spacing: 1px;
   }
   
   .stat-value {
-    font-size: 24px;
+    font-size: 22px;
+    word-break: break-word;
+  }
+  
+  .stat-change {
+    justify-content: center;
+    flex-wrap: wrap;
+    font-size: 11px;
   }
   
   .chart-card,
@@ -744,13 +770,41 @@
     font-size: 24px;
   }
   
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+  
+  .stat-card {
+    padding: 14px 10px;
+  }
+  
   .stat-icon {
-    width: 48px;
-    height: 48px;
+    width: 44px;
+    height: 44px;
+  }
+  
+  .stat-icon svg {
+    width: 20px;
+    height: 20px;
+  }
+  
+  .stat-label {
+    font-size: 9px;
+    letter-spacing: 0.5px;
   }
   
   .stat-value {
-    font-size: 20px;
+    font-size: 16px;
+    white-space: nowrap;
+  }
+  
+  .stat-change {
+    font-size: 10px;
+  }
+  
+  .stat-change span {
+    white-space: nowrap;
   }
   
   .bar-chart {
@@ -764,5 +818,31 @@
   
   .bar-label {
     font-size: 10px;
+  }
+}
+
+/* Telas muito pequenas - 1 coluna */
+@media (max-width: 380px) {
+  .stats-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  
+  .stat-card {
+    flex-direction: row;
+    text-align: left;
+    padding: 16px;
+  }
+  
+  .stat-content {
+    align-items: flex-start;
+  }
+  
+  .stat-value {
+    font-size: 22px;
+  }
+  
+  .stat-change {
+    justify-content: flex-start;
   }
 }

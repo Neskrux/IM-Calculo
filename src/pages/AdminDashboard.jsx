@@ -158,7 +158,8 @@ const AdminDashboard = () => {
     cargo_id: '',
     cnpj: '',
     imobiliaria: '',
-    creci: ''
+    creci: '',
+    is_autonomo: false // Novo campo para identificar corretor autônomo
   })
 
   // Formulário de cliente
@@ -422,9 +423,34 @@ const AdminDashboard = () => {
 
   // Função para preview de comissões no modal
   const getPreviewComissoes = () => {
-    if (!vendaForm.empreendimento_id || !vendaForm.valor_venda) {
-      return { cargos: [], total: 0 }
+    if (!vendaForm.valor_venda || !vendaForm.corretor_id) {
+      return { cargos: [], total: 0, percentualTotal: 0 }
     }
+
+    const corretor = corretores.find(c => c.id === vendaForm.corretor_id)
+    const isAutonomo = corretor && !corretor.empreendimento_id && corretor.percentual_corretor
+
+    if (isAutonomo) {
+      // Corretor autônomo
+      const percentualCorretor = parseFloat(corretor.percentual_corretor) || 0
+      const valorVenda = parseFloat(vendaForm.valor_venda || 0)
+      const comissaoCorretor = (valorVenda * percentualCorretor) / 100
+      return {
+        cargos: [{
+          cargo_id: null,
+          nome_cargo: 'Corretor Autônomo',
+          percentual: percentualCorretor,
+          valor: comissaoCorretor
+        }],
+        total: comissaoCorretor,
+        percentualTotal: percentualCorretor
+      }
+    }
+
+    if (!vendaForm.empreendimento_id) {
+      return { cargos: [], total: 0, percentualTotal: 0 }
+    }
+
     return calcularComissoesDinamicas(
       parseFloat(vendaForm.valor_venda || 0),
       vendaForm.empreendimento_id,
@@ -441,8 +467,18 @@ const AdminDashboard = () => {
   }
 
   const handleSaveVenda = async () => {
-    if (!vendaForm.corretor_id || !vendaForm.valor_venda || !vendaForm.empreendimento_id) {
-      setMessage({ type: 'error', text: 'Preencha todos os campos obrigatórios (Corretor, Empreendimento e Valor)' })
+    if (!vendaForm.corretor_id || !vendaForm.valor_venda) {
+      setMessage({ type: 'error', text: 'Preencha todos os campos obrigatórios (Corretor e Valor)' })
+      return
+    }
+
+    // Verificar se o corretor é autônomo
+    const corretor = corretores.find(c => c.id === vendaForm.corretor_id)
+    const isCorretorAutonomo = corretor && !corretor.empreendimento_id && corretor.percentual_corretor
+
+    // Se não for autônomo, exige empreendimento
+    if (!isCorretorAutonomo && !vendaForm.empreendimento_id) {
+      setMessage({ type: 'error', text: 'Selecione o empreendimento ou use um corretor autônomo' })
       return
     }
 
@@ -450,12 +486,30 @@ const AdminDashboard = () => {
     
     const valorVenda = parseFloat(vendaForm.valor_venda)
     
-    // Calcular comissões dinâmicas baseadas no empreendimento
-    const comissoesDinamicas = calcularComissoesDinamicas(
-      valorVenda,
-      vendaForm.empreendimento_id,
-      vendaForm.tipo_corretor
-    )
+    // Calcular comissões: se autônomo, usa percentual personalizado; senão, usa cargos do empreendimento
+    let comissoesDinamicas
+    if (isCorretorAutonomo) {
+      // Corretor autônomo: usa apenas o percentual do corretor
+      const percentualCorretor = parseFloat(corretor.percentual_corretor) || 0
+      const comissaoCorretor = (valorVenda * percentualCorretor) / 100
+      comissoesDinamicas = {
+        cargos: [{
+          cargo_id: null,
+          nome_cargo: 'Corretor Autônomo',
+          percentual: percentualCorretor,
+          valor: comissaoCorretor
+        }],
+        total: comissaoCorretor,
+        percentualTotal: percentualCorretor
+      }
+    } else {
+      // Corretor vinculado: usa cargos do empreendimento
+      comissoesDinamicas = calcularComissoesDinamicas(
+        valorVenda,
+        vendaForm.empreendimento_id,
+        vendaForm.tipo_corretor
+      )
+    }
 
     // Calcular valor pro-soluto e fator de comissão
     const valorSinal = vendaForm.teve_sinal ? (parseFloat(vendaForm.valor_sinal) || 0) : 0
@@ -498,7 +552,7 @@ const AdminDashboard = () => {
 
     const vendaData = {
       corretor_id: vendaForm.corretor_id,
-      empreendimento_id: vendaForm.empreendimento_id,
+      empreendimento_id: isCorretorAutonomo ? null : (vendaForm.empreendimento_id || null),
       cliente_id: vendaForm.cliente_id || null,
       unidade: vendaForm.unidade || null,
       bloco: vendaForm.bloco?.toUpperCase() || null,
@@ -667,9 +721,17 @@ const AdminDashboard = () => {
       return
     }
 
-    if (!corretorForm.empreendimento_id || !corretorForm.cargo_id) {
-      setMessage({ type: 'error', text: 'Selecione o empreendimento e cargo' })
-      return
+    // Validação diferente para autônomo
+    if (corretorForm.is_autonomo) {
+      if (!corretorForm.percentual_corretor || parseFloat(corretorForm.percentual_corretor) <= 0) {
+        setMessage({ type: 'error', text: 'Informe a comissão do corretor autônomo' })
+        return
+      }
+    } else {
+      if (!corretorForm.empreendimento_id || !corretorForm.cargo_id) {
+        setMessage({ type: 'error', text: 'Selecione o empreendimento e cargo' })
+        return
+      }
     }
 
     // Se é edição, não precisa de senha
@@ -695,9 +757,9 @@ const AdminDashboard = () => {
             nome: corretorForm.nome,
             tipo_corretor: corretorForm.tipo_corretor,
             telefone: corretorForm.telefone || null,
-            percentual_corretor: parseFloat(corretorForm.percentual_corretor) || null,
-            empreendimento_id: corretorForm.empreendimento_id || null,
-            cargo_id: corretorForm.cargo_id || null,
+            percentual_corretor: corretorForm.is_autonomo ? parseFloat(corretorForm.percentual_corretor) : (parseFloat(corretorForm.percentual_corretor) || null),
+            empreendimento_id: corretorForm.is_autonomo ? null : (corretorForm.empreendimento_id || null),
+            cargo_id: corretorForm.is_autonomo ? null : (corretorForm.cargo_id || null),
             cnpj: corretorForm.cnpj || null,
             imobiliaria: corretorForm.imobiliaria || null,
             creci: corretorForm.creci || null
@@ -738,9 +800,9 @@ const AdminDashboard = () => {
             tipo: 'corretor',
             tipo_corretor: corretorForm.tipo_corretor,
             telefone: corretorForm.telefone || null,
-            percentual_corretor: parseFloat(corretorForm.percentual_corretor) || null,
-            empreendimento_id: corretorForm.empreendimento_id || null,
-            cargo_id: corretorForm.cargo_id || null,
+            percentual_corretor: corretorForm.is_autonomo ? parseFloat(corretorForm.percentual_corretor) : (parseFloat(corretorForm.percentual_corretor) || null),
+            empreendimento_id: corretorForm.is_autonomo ? null : (corretorForm.empreendimento_id || null),
+            cargo_id: corretorForm.is_autonomo ? null : (corretorForm.cargo_id || null),
             cnpj: corretorForm.cnpj || null,
             imobiliaria: corretorForm.imobiliaria || null,
             creci: corretorForm.creci || null
@@ -945,11 +1007,34 @@ const AdminDashboard = () => {
     
     // Calcular fator de comissão
     const valorVenda = parseFloat(venda.valor_venda) || 0
-    const comissoesDinamicas = calcularComissoesDinamicas(
-      valorVenda,
-      venda.empreendimento_id,
-      venda.tipo_corretor
-    )
+    
+    // Verificar se o corretor é autônomo
+    const corretor = corretores.find(c => c.id === venda.corretor_id)
+    const isCorretorAutonomo = corretor && !corretor.empreendimento_id && corretor.percentual_corretor
+    
+    let comissoesDinamicas
+    if (isCorretorAutonomo) {
+      // Corretor autônomo: usa apenas o percentual do corretor
+      const percentualCorretor = parseFloat(corretor.percentual_corretor) || 0
+      const comissaoCorretor = (valorVenda * percentualCorretor) / 100
+      comissoesDinamicas = {
+        cargos: [{
+          cargo_id: null,
+          nome_cargo: 'Corretor Autônomo',
+          percentual: percentualCorretor,
+          valor: comissaoCorretor
+        }],
+        total: comissaoCorretor,
+        percentualTotal: percentualCorretor
+      }
+    } else {
+      // Corretor vinculado: usa cargos do empreendimento
+      comissoesDinamicas = calcularComissoesDinamicas(
+        valorVenda,
+        venda.empreendimento_id,
+        venda.tipo_corretor
+      )
+    }
     
     const valorSinal = venda.teve_sinal ? (parseFloat(venda.valor_sinal) || 0) : 0
     
@@ -1092,16 +1177,30 @@ const AdminDashboard = () => {
 
   // Quando seleciona empreendimento no formulário de corretor
   const handleEmpreendimentoChange = (empId) => {
-    const emp = empreendimentos.find(e => e.id === empId)
-    // Filtra cargos pelo tipo de corretor selecionado
-    const cargosFiltrados = emp?.cargos?.filter(c => c.tipo_corretor === corretorForm.tipo_corretor) || []
-    setCargosDisponiveis(cargosFiltrados)
-    setCorretorForm({ 
-      ...corretorForm, 
-      empreendimento_id: empId, 
-      cargo_id: '',
-      percentual_corretor: ''
-    })
+    if (empId === 'autonomo') {
+      // Corretor autônomo
+      setCargosDisponiveis([])
+      setCorretorForm({ 
+        ...corretorForm, 
+        empreendimento_id: '',
+        cargo_id: '',
+        is_autonomo: true,
+        percentual_corretor: ''
+      })
+    } else {
+      // Corretor vinculado a empreendimento
+      const emp = empreendimentos.find(e => e.id === empId)
+      // Filtra cargos pelo tipo de corretor selecionado
+      const cargosFiltrados = emp?.cargos?.filter(c => c.tipo_corretor === corretorForm.tipo_corretor) || []
+      setCargosDisponiveis(cargosFiltrados)
+      setCorretorForm({ 
+        ...corretorForm, 
+        empreendimento_id: empId, 
+        cargo_id: '',
+        is_autonomo: false,
+        percentual_corretor: ''
+      })
+    }
   }
 
   // Quando muda o tipo de corretor, atualiza os cargos disponíveis
@@ -1130,6 +1229,9 @@ const AdminDashboard = () => {
   const openEditCorretor = (corretor) => {
     setSelectedItem(corretor)
     
+    // Detectar se é autônomo (não tem empreendimento mas tem percentual)
+    const isAutonomo = !corretor.empreendimento_id && corretor.percentual_corretor
+    
     // Carregar cargos do empreendimento se existir
     if (corretor.empreendimento_id) {
       const emp = empreendimentos.find(e => e.id === corretor.empreendimento_id)
@@ -1147,6 +1249,7 @@ const AdminDashboard = () => {
       percentual_corretor: corretor.percentual_corretor?.toString() || '',
       empreendimento_id: corretor.empreendimento_id || '',
       cargo_id: corretor.cargo_id || '',
+      is_autonomo: isAutonomo,
       cnpj: corretor.cnpj || '',
       imobiliaria: corretor.imobiliaria || '',
       creci: corretor.creci || ''
@@ -1197,6 +1300,7 @@ const AdminDashboard = () => {
       percentual_corretor: '',
       empreendimento_id: '',
       cargo_id: '',
+      is_autonomo: false,
       cnpj: '',
       imobiliaria: '',
       creci: ''
@@ -1944,11 +2048,13 @@ const AdminDashboard = () => {
   // Quando seleciona um corretor na venda, atualiza o tipo automaticamente
   const handleCorretorChange = (corretorId) => {
     const corretor = corretores.find(c => c.id === corretorId)
+    const isAutonomo = corretor && !corretor.empreendimento_id && corretor.percentual_corretor
+    
     setVendaForm({
       ...vendaForm, 
       corretor_id: corretorId,
       tipo_corretor: corretor?.tipo_corretor || 'externo',
-      empreendimento_id: corretor?.empreendimento_id || vendaForm.empreendimento_id
+      empreendimento_id: isAutonomo ? '' : (corretor?.empreendimento_id || vendaForm.empreendimento_id)
     })
   }
 
@@ -1973,13 +2079,10 @@ const AdminDashboard = () => {
       )}
 
       {/* Sidebar Overlay for Mobile */}
-      {menuOpen && (
-        <div 
-          className="sidebar-overlay" 
-          onClick={() => setMenuOpen(false)}
-          style={{ display: 'block' }}
-        />
-      )}
+      <div 
+        className={`sidebar-overlay ${menuOpen ? 'active' : ''}`}
+        onClick={() => setMenuOpen(false)}
+      />
 
       {/* Sidebar */}
       <aside className={`sidebar ${menuOpen ? 'open' : ''} ${sidebarCollapsed ? 'collapsed' : ''}`}>
@@ -3068,11 +3171,15 @@ const AdminDashboard = () => {
                       onChange={(e) => handleCorretorChange(e.target.value)}
                     >
                       <option value="">Selecione</option>
-                      {corretores.map((c) => (
-                        <option key={c.id} value={c.id}>
-                          {c.nome} - {c.tipo_corretor === 'interno' ? 'Interno' : 'Externo'} ({c.percentual_corretor || (c.tipo_corretor === 'interno' ? 2.5 : 4)}%)
-                        </option>
-                      ))}
+                      {corretores.map((c) => {
+                        const isAutonomo = !c.empreendimento_id && c.percentual_corretor
+                        const percentual = c.percentual_corretor || (c.tipo_corretor === 'interno' ? 2.5 : 4)
+                        return (
+                          <option key={c.id} value={c.id}>
+                            {c.nome} - {isAutonomo ? 'Autônomo' : (c.tipo_corretor === 'interno' ? 'Interno' : 'Externo')} ({percentual}%)
+                          </option>
+                        )
+                      })}
                     </select>
                   </div>
 
@@ -3101,10 +3208,20 @@ const AdminDashboard = () => {
 
                   <div className="form-row">
                     <div className="form-group">
-                      <label>Empreendimento *</label>
+                      <label>
+                        Empreendimento {(() => {
+                          const corretor = corretores.find(c => c.id === vendaForm.corretor_id)
+                          const isAutonomo = corretor && !corretor.empreendimento_id && corretor.percentual_corretor
+                          return isAutonomo ? '(opcional - corretor autônomo)' : '*'
+                        })()}
+                      </label>
                       <select
                         value={vendaForm.empreendimento_id || ''}
                         onChange={(e) => setVendaForm({...vendaForm, empreendimento_id: e.target.value})}
+                        disabled={(() => {
+                          const corretor = corretores.find(c => c.id === vendaForm.corretor_id)
+                          return corretor && !corretor.empreendimento_id && corretor.percentual_corretor
+                        })()}
                       >
                         <option value="">Selecione o empreendimento</option>
                         {empreendimentos.map((emp) => (
@@ -3113,6 +3230,15 @@ const AdminDashboard = () => {
                           </option>
                         ))}
                       </select>
+                      {(() => {
+                        const corretor = corretores.find(c => c.id === vendaForm.corretor_id)
+                        const isAutonomo = corretor && !corretor.empreendimento_id && corretor.percentual_corretor
+                        return isAutonomo && (
+                          <small className="form-hint">
+                            Corretor autônomo - comissão de {corretor.percentual_corretor}% será aplicada
+                          </small>
+                        )
+                      })()}
                     </div>
                     <div className="form-group">
                       <label>Cliente (opcional)</label>
@@ -3549,10 +3675,11 @@ const AdminDashboard = () => {
                     <div className="form-group">
                       <label>Empreendimento *</label>
                       <select
-                        value={corretorForm.empreendimento_id}
+                        value={corretorForm.is_autonomo ? 'autonomo' : corretorForm.empreendimento_id}
                         onChange={(e) => handleEmpreendimentoChange(e.target.value)}
                       >
                         <option value="">Selecione um empreendimento</option>
+                        <option value="autonomo">Autônomo</option>
                         {empreendimentos.map((emp) => (
                           <option key={emp.id} value={emp.id}>{emp.nome}</option>
                         ))}
@@ -3560,7 +3687,26 @@ const AdminDashboard = () => {
                     </div>
                   </div>
 
-                  {corretorForm.empreendimento_id && (
+                  {corretorForm.is_autonomo ? (
+                    <div className="form-group">
+                      <label>Comissão Personalizada (%) *</label>
+                      <div className="input-with-icon">
+                        <Percent size={18} />
+                        <input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          max="100"
+                          placeholder="Ex: 5.5"
+                          value={corretorForm.percentual_corretor}
+                          onChange={(e) => setCorretorForm({...corretorForm, percentual_corretor: e.target.value})}
+                        />
+                      </div>
+                      <small className="form-hint">
+                        Esta será a comissão aplicada em todas as vendas deste corretor autônomo
+                      </small>
+                    </div>
+                  ) : corretorForm.empreendimento_id && (
                     <div className="form-group">
                       <label>Cargo *</label>
                       <select

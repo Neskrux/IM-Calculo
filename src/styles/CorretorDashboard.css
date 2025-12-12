@@ -2849,27 +2849,30 @@
 }
 
 @media (max-width: 992px) {
-  .sidebar { width: var(--sidebar-collapsed); }
-  .sidebar-header span, .nav-item span, .nav-badge, .btn-logout span { display: none; }
-  .main-content { margin-left: var(--sidebar-collapsed); }
-  .dashboard-row { flex-direction: column; }
-  .kanban-board { flex-direction: column; }
-  .kanban-column { flex: 0 0 auto; max-height: none; }
+  .corretor-dashboard-v2 .sidebar { width: var(--sidebar-collapsed); }
+  .corretor-dashboard-v2 .sidebar-header span, 
+  .corretor-dashboard-v2 .nav-item span, 
+  .corretor-dashboard-v2 .nav-badge, 
+  .corretor-dashboard-v2 .btn-logout span { display: none; }
+  .corretor-dashboard-v2 .main-content { margin-left: var(--sidebar-collapsed); }
+  .corretor-dashboard-v2 .dashboard-row { flex-direction: column; }
+  .corretor-dashboard-v2 .kanban-board { flex-direction: column; }
+  .corretor-dashboard-v2 .kanban-column { flex: 0 0 auto; max-height: none; }
 }
 
 @media (max-width: 768px) {
-  .sidebar { display: none; }
-  .main-content { margin-left: 0; }
-  .content-area { padding: 16px; }
-  .stats-grid { grid-template-columns: 1fr; }
-  .section-actions { flex-direction: column; align-items: stretch; }
-  .search-box { min-width: auto; }
-  .clientes-grid { grid-template-columns: 1fr; }
-  .form-grid { grid-template-columns: 1fr; }
-  .form-group.full { grid-column: auto; }
-  .modal-content { max-width: 100%; margin: 10px; }
-  .perfil-card { flex-direction: column; text-align: center; }
-  .perfil-stats { grid-template-columns: repeat(2, 1fr); }
+  .corretor-dashboard-v2 .sidebar { display: none; }
+  .corretor-dashboard-v2 .main-content { margin-left: 0; }
+  .corretor-dashboard-v2 .content-area { padding: 16px; }
+  .corretor-dashboard-v2 .stats-grid { grid-template-columns: 1fr; }
+  .corretor-dashboard-v2 .section-actions { flex-direction: column; align-items: stretch; }
+  .corretor-dashboard-v2 .search-box { min-width: auto; }
+  .corretor-dashboard-v2 .clientes-grid { grid-template-columns: 1fr; }
+  .corretor-dashboard-v2 .form-grid { grid-template-columns: 1fr; }
+  .corretor-dashboard-v2 .form-group.full { grid-column: auto; }
+  .corretor-dashboard-v2 .modal-content { max-width: 100%; margin: 10px; }
+  .corretor-dashboard-v2 .perfil-card { flex-direction: column; text-align: center; }
+  .corretor-dashboard-v2 .perfil-stats { grid-template-columns: repeat(2, 1fr); }
 }
 
 @media (max-width: 480px) {

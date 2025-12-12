@@ -139,13 +139,10 @@ const CorretorDashboard = () => {
   return (
     <div className="dashboard-container">
       {/* Sidebar Overlay for Mobile */}
-      {menuOpen && (
-        <div 
-          className="sidebar-overlay" 
-          onClick={() => setMenuOpen(false)}
-          style={{ display: 'block' }}
-        />
-      )}
+      <div 
+        className={`sidebar-overlay ${menuOpen ? 'active' : ''}`}
+        onClick={() => setMenuOpen(false)}
+      />
 
       {/* Sidebar */}
       <aside className={`sidebar ${menuOpen ? 'open' : ''} ${sidebarCollapsed ? 'collapsed' : ''}`}>
