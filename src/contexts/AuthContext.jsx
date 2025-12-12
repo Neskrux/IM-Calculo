@@ -181,10 +181,21 @@ export const AuthProvider = ({ children }) => {
   }
 
   const signOut = async () => {
-    await supabase.auth.signOut()
-    localStorage.clear()
-    setUser(null)
-    setUserProfile(null)
+    try {
+      await supabase.auth.signOut()
+      localStorage.clear()
+      setUser(null)
+      setUserProfile(null)
+      // Redirecionar para login
+      window.location.href = '/login'
+    } catch (error) {
+      console.error('Erro ao fazer logout:', error)
+      // Mesmo com erro, limpa o estado local e redireciona
+      localStorage.clear()
+      setUser(null)
+      setUserProfile(null)
+      window.location.href = '/login'
+    }
   }
 
   return (

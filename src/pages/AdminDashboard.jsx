@@ -20,6 +20,18 @@ const AdminDashboard = () => {
   const navigate = useNavigate()
   const location = useLocation()
   
+  // Função de logout local para garantir funcionamento
+  const handleLogout = async () => {
+    try {
+      await signOut()
+    } catch (error) {
+      console.error('Erro no logout:', error)
+      // Fallback: forçar redirecionamento
+      localStorage.clear()
+      window.location.href = '/login'
+    }
+  }
+  
   // Detectar activeTab baseado na URL
   // Se a URL é /admin/dashboard, activeTab é 'dashboard'
   // Se a URL é /admin/:tab, activeTab é o valor de tab
@@ -2172,7 +2184,19 @@ const AdminDashboard = () => {
               <span className="user-role">Administrador</span>
             </div>
           </div>
-          <button className="logout-btn" onClick={signOut} title="Sair">
+          <button 
+            className="logout-btn" 
+            onClick={() => {
+              // Limpar dados locais primeiro
+              localStorage.clear()
+              // Fazer signOut do Supabase
+              supabase.auth.signOut().finally(() => {
+                // Redirecionar para login (usando replace para não manter histórico)
+                window.location.replace('/login')
+              })
+            }} 
+            title="Sair"
+          >
             <LogOut size={20} />
           </button>
         </div>
