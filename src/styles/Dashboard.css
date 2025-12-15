@@ -3250,7 +3250,7 @@
 .comissao-valor {
   color: var(--im-success, #10b981);
   font-weight: 600;
-  font-size: 1qpx;
+  font-size: 11px;
   display: flex;
   align-items: baseline;
   gap: 6px;
