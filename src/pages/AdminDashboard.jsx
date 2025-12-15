@@ -3254,15 +3254,20 @@ const AdminDashboard = () => {
                                 </div>
                               </div>
                               <div className="parcela-comissoes">
-                                {calcularComissaoPorCargoPagamento(pag).map((cargo, idx) => (
-                                  <div key={idx} className="comissao-item">
-                                    <span className="comissao-nome">{cargo.nome_cargo}</span>
-                                    <span className="comissao-valor">
-                                      {formatCurrency(cargo.valor)}
-                                      <span className="comissao-percentual">{cargo.percentual.toFixed(2)}%</span>
-                                    </span>
-                                  </div>
-                                ))}
+                                {calcularComissaoPorCargoPagamento(pag).map((cargo, idx) => {
+                                  const valorParcela = parseFloat(pag.valor) || 0
+                                  const percentualFator = valorParcela > 0 ? ((cargo.valor / valorParcela) * 100) : 0
+                                  
+                                  return (
+                                    <div key={idx} className="comissao-item">
+                                      <span className="comissao-nome">{cargo.nome_cargo}</span>
+                                      <span className="comissao-valor">
+                                        {formatCurrency(cargo.valor)}
+                                        <span className="comissao-percentual">{percentualFator.toFixed(2)}%</span>
+                                      </span>
+                                    </div>
+                                  )
+                                })}
                                 <div className="comissao-item comissao-total">
                                   <span className="comissao-nome">Total</span>
                                   <span className="comissao-valor">{formatCurrency(calcularComissaoTotalPagamento(pag))}</span>
@@ -3328,13 +3333,18 @@ const AdminDashboard = () => {
                               </tr>
                             </thead>
                             <tbody>
-                              {calcularComissaoPorCargoPagamento(pagamentoDetalhe).map((cargo, idx) => (
-                                <tr key={idx}>
-                                  <td>{cargo.nome_cargo}</td>
-                                  <td>{cargo.percentual.toFixed(2)}%</td>
-                                  <td className="valor-comissao">{formatCurrency(cargo.valor)}</td>
-                                </tr>
-                              ))}
+                              {calcularComissaoPorCargoPagamento(pagamentoDetalhe).map((cargo, idx) => {
+                                const valorParcela = parseFloat(pagamentoDetalhe.valor) || 0
+                                const percentualFator = valorParcela > 0 ? ((cargo.valor / valorParcela) * 100) : 0
+                                
+                                return (
+                                  <tr key={idx}>
+                                    <td>{cargo.nome_cargo}</td>
+                                    <td>{percentualFator.toFixed(2)}%</td>
+                                    <td className="valor-comissao">{formatCurrency(cargo.valor)}</td>
+                                  </tr>
+                                )
+                              })}
                               {calcularComissaoPorCargoPagamento(pagamentoDetalhe).length === 0 && (
                                 <tr>
                                   <td colSpan="3" style={{ textAlign: 'center', color: '#999' }}>
