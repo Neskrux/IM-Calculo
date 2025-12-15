@@ -148,15 +148,9 @@ const AdminDashboard = () => {
     teve_entrada: false,
     valor_entrada: '',
     parcelou_entrada: false,
-    qtd_parcelas_entrada: '',
-    valor_parcela_entrada: '',
-    tipo_valores_entrada: 'fixos', // 'fixos' ou 'diversos'
-    valores_parcelas_entrada: [], // Array de valores quando tipo_valores_entrada === 'diversos'
+    grupos_parcelas_entrada: [{ qtd: '', valor: '' }], // Array de grupos: [{ qtd: '4', valor: '500' }, { qtd: '5', valor: '1000' }]
     teve_balao: 'nao', // 'nao', 'sim', 'pendente'
-    qtd_balao: '',
-    valor_balao: '',
-    tipo_valores_balao: 'fixos', // 'fixos' ou 'diversos'
-    valores_balao: [], // Array de valores quando tipo_valores_balao === 'diversos'
+    grupos_balao: [{ qtd: '', valor: '' }], // Array de grupos: [{ qtd: '2', valor: '10000' }, { qtd: '1', valor: '5000' }]
     teve_permuta: false,
     tipo_permuta: '',
     valor_permuta: '',
@@ -596,65 +590,77 @@ const AdminDashboard = () => {
 
     setSaving(true)
     
-    const valorVenda = parseFloat(vendaForm.valor_venda)
-    
-    // Calcular comissões: se autônomo, usa percentual personalizado; senão, usa cargos do empreendimento
-    let comissoesDinamicas
-    if (isCorretorAutonomo) {
-      // Corretor autônomo: usa apenas o percentual do corretor
-      const percentualCorretor = parseFloat(corretor.percentual_corretor) || 0
-      const comissaoCorretor = (valorVenda * percentualCorretor) / 100
-      comissoesDinamicas = {
-        cargos: [{
-          cargo_id: null,
-          nome_cargo: 'Corretor Autônomo',
-          percentual: percentualCorretor,
-          valor: comissaoCorretor
-        }],
-        total: comissaoCorretor,
-        percentualTotal: percentualCorretor
-      }
-    } else {
-      // Corretor vinculado: usa cargos do empreendimento
-      comissoesDinamicas = calcularComissoesDinamicas(
-        valorVenda,
-        vendaForm.empreendimento_id,
-        vendaForm.tipo_corretor
-      )
-    }
-
-    // Calcular valor pro-soluto e fator de comissão
-    const valorSinal = vendaForm.teve_sinal ? (parseFloat(vendaForm.valor_sinal) || 0) : 0
-    
-    // Entrada: se parcelou, usa qtd × valor_parcela. Se não parcelou, usa valor_entrada
-    let valorEntradaTotal = 0
-    if (vendaForm.teve_entrada) {
-      if (vendaForm.parcelou_entrada) {
-        if (vendaForm.tipo_valores_entrada === 'diversos') {
-          // Soma todos os valores individuais
-          valorEntradaTotal = (vendaForm.valores_parcelas_entrada || []).reduce((sum, val) => {
-            return sum + (parseFloat(val) || 0)
-          }, 0)
-        } else {
-          valorEntradaTotal = (parseFloat(vendaForm.qtd_parcelas_entrada) || 0) * (parseFloat(vendaForm.valor_parcela_entrada) || 0)
+    try {
+      const valorVenda = parseFloat(vendaForm.valor_venda)
+      
+      // Validar e garantir que grupos_parcelas_entrada seja um array válido de objetos válidos
+      const gruposParcelasEntrada = Array.isArray(vendaForm.grupos_parcelas_entrada) 
+        ? vendaForm.grupos_parcelas_entrada.filter(grupo => 
+            grupo && typeof grupo === 'object' && grupo !== null && 
+            (grupo.qtd !== undefined || grupo.valor !== undefined)
+          )
+        : []
+      
+      // Validar e garantir que grupos_balao seja um array válido de objetos válidos
+      const gruposBalao = Array.isArray(vendaForm.grupos_balao) 
+        ? vendaForm.grupos_balao.filter(grupo => 
+            grupo && typeof grupo === 'object' && grupo !== null && 
+            (grupo.qtd !== undefined || grupo.valor !== undefined)
+          )
+        : []
+      
+      // Calcular comissões: se autônomo, usa percentual personalizado; senão, usa cargos do empreendimento
+      let comissoesDinamicas
+      if (isCorretorAutonomo) {
+        // Corretor autônomo: usa apenas o percentual do corretor
+        const percentualCorretor = parseFloat(corretor.percentual_corretor) || 0
+        const comissaoCorretor = (valorVenda * percentualCorretor) / 100
+        comissoesDinamicas = {
+          cargos: [{
+            cargo_id: null,
+            nome_cargo: 'Corretor Autônomo',
+            percentual: percentualCorretor,
+            valor: comissaoCorretor
+          }],
+          total: comissaoCorretor,
+          percentualTotal: percentualCorretor
         }
       } else {
-        valorEntradaTotal = parseFloat(vendaForm.valor_entrada) || 0
+        // Corretor vinculado: usa cargos do empreendimento
+        comissoesDinamicas = calcularComissoesDinamicas(
+          valorVenda,
+          vendaForm.empreendimento_id,
+          vendaForm.tipo_corretor
+        )
       }
-    }
-    
-    // Balões
-    let valorTotalBalao = 0
-    if (vendaForm.teve_balao === 'sim') {
-      if (vendaForm.tipo_valores_balao === 'diversos') {
-        // Soma todos os valores individuais
-        valorTotalBalao = (vendaForm.valores_balao || []).reduce((sum, val) => {
-          return sum + (parseFloat(val) || 0)
+
+      // Calcular valor pro-soluto e fator de comissão
+      const valorSinal = vendaForm.teve_sinal ? (parseFloat(vendaForm.valor_sinal) || 0) : 0
+      
+      // Entrada: se parcelou, soma todos os grupos. Se não parcelou, usa valor_entrada
+      let valorEntradaTotal = 0
+      if (vendaForm.teve_entrada) {
+        if (vendaForm.parcelou_entrada) {
+          // Soma todos os grupos: cada grupo = qtd × valor (apenas grupos válidos)
+          valorEntradaTotal = gruposParcelasEntrada.reduce((sum, grupo) => {
+            // Garantir que grupo é um objeto válido
+            if (!grupo || typeof grupo !== 'object' || grupo === null) return sum
+            return sum + ((parseFloat(grupo.qtd) || 0) * (parseFloat(grupo.valor) || 0))
+          }, 0)
+        } else {
+          valorEntradaTotal = parseFloat(vendaForm.valor_entrada) || 0
+        }
+      }
+      
+      // Balões: soma todos os grupos (apenas grupos válidos)
+      let valorTotalBalao = 0
+      if (vendaForm.teve_balao === 'sim') {
+        valorTotalBalao = gruposBalao.reduce((sum, grupo) => {
+          // Garantir que grupo é um objeto válido
+          if (!grupo || typeof grupo !== 'object' || grupo === null) return sum
+          return sum + ((parseFloat(grupo.qtd) || 0) * (parseFloat(grupo.valor) || 0))
         }, 0)
-      } else {
-        valorTotalBalao = (parseFloat(vendaForm.qtd_balao) || 0) * (parseFloat(vendaForm.valor_balao) || 0)
       }
-    }
     
     // Pro-soluto = sinal + entrada + balões
     const valorProSoluto = valorSinal + valorEntradaTotal + valorTotalBalao
@@ -737,9 +743,7 @@ const AdminDashboard = () => {
     }
 
     if (error) {
-      setSaving(false)
-      setMessage({ type: 'error', text: 'Erro ao salvar venda: ' + error.message })
-      return
+      throw new Error(error.message || 'Erro ao salvar venda no banco de dados')
     }
 
     // Se é edição, recriar pagamentos
@@ -780,52 +784,66 @@ const AdminDashboard = () => {
       
       // Parcelas da entrada - só se teve entrada E parcelou
       if (vendaForm.teve_entrada && vendaForm.parcelou_entrada) {
-        const qtdParcelas = parseInt(vendaForm.qtd_parcelas_entrada) || 0
-        
-        for (let i = 1; i <= qtdParcelas; i++) {
-          const dataParcela = new Date(vendaForm.data_venda)
-          dataParcela.setMonth(dataParcela.getMonth() + i)
-          
-          // Usar valor individual se for diversos, senão usar valor fixo
-          let valorParcelaEnt = 0
-          if (vendaForm.tipo_valores_entrada === 'diversos') {
-            valorParcelaEnt = parseFloat(vendaForm.valores_parcelas_entrada[i - 1] || 0) || 0
-          } else {
-            valorParcelaEnt = parseFloat(vendaForm.valor_parcela_entrada) || 0
+        let numeroParcela = 1
+        // Iterar por cada grupo de parcelas (apenas grupos válidos)
+        gruposParcelasEntrada.forEach((grupo) => {
+          // Validar que grupo é um objeto válido antes de processar
+          if (!grupo || typeof grupo !== 'object' || grupo === null) {
+            console.warn('Grupo de parcela inválido ignorado:', grupo)
+            return
           }
           
-          pagamentos.push({
-            venda_id: vendaId,
-            tipo: 'parcela_entrada',
-            numero_parcela: i,
-            valor: valorParcelaEnt,
-            data_prevista: dataParcela.toISOString().split('T')[0],
-            comissao_gerada: valorParcelaEnt * fatorComissao
-          })
-        }
+          const qtd = parseInt(grupo.qtd) || 0
+          const valor = parseFloat(grupo.valor) || 0
+          
+          // Só processar se quantidade e valor forem válidos
+          if (qtd > 0 && valor > 0) {
+            for (let i = 0; i < qtd; i++) {
+              const dataParcela = new Date(vendaForm.data_venda)
+              dataParcela.setMonth(dataParcela.getMonth() + numeroParcela)
+              
+              pagamentos.push({
+                venda_id: vendaId,
+                tipo: 'parcela_entrada',
+                numero_parcela: numeroParcela,
+                valor: valor,
+                data_prevista: dataParcela.toISOString().split('T')[0],
+                comissao_gerada: valor * fatorComissao
+              })
+              numeroParcela++
+            }
+          }
+        })
       }
       
       // Balões
       if (vendaForm.teve_balao === 'sim') {
-        const qtdBalao = parseInt(vendaForm.qtd_balao) || 0
-        
-        for (let i = 1; i <= qtdBalao; i++) {
-          // Usar valor individual se for diversos, senão usar valor fixo
-          let valorBalaoUnit = 0
-          if (vendaForm.tipo_valores_balao === 'diversos') {
-            valorBalaoUnit = parseFloat(vendaForm.valores_balao[i - 1] || 0) || 0
-          } else {
-            valorBalaoUnit = parseFloat(vendaForm.valor_balao) || 0
+        let numeroBalao = 1
+        // Iterar por cada grupo de balões (apenas grupos válidos)
+        gruposBalao.forEach((grupo) => {
+          // Validar que grupo é um objeto válido antes de processar
+          if (!grupo || typeof grupo !== 'object' || grupo === null) {
+            console.warn('Grupo de balão inválido ignorado:', grupo)
+            return
           }
           
-          pagamentos.push({
-            venda_id: vendaId,
-            tipo: 'balao',
-            numero_parcela: i,
-            valor: valorBalaoUnit,
-            comissao_gerada: valorBalaoUnit * fatorComissao
-          })
-        }
+          const qtd = parseInt(grupo.qtd) || 0
+          const valor = parseFloat(grupo.valor) || 0
+          
+          // Só processar se quantidade e valor forem válidos
+          if (qtd > 0 && valor > 0) {
+            for (let i = 0; i < qtd; i++) {
+              pagamentos.push({
+                venda_id: vendaId,
+                tipo: 'balao',
+                numero_parcela: numeroBalao,
+                valor: valor,
+                comissao_gerada: valor * fatorComissao
+              })
+              numeroBalao++
+            }
+          }
+        })
       }
 
       if (pagamentos.length > 0) {
@@ -881,52 +899,66 @@ const AdminDashboard = () => {
       
       // Parcelas da entrada - só se teve entrada E parcelou
       if (vendaForm.teve_entrada && vendaForm.parcelou_entrada) {
-        const qtdParcelas = parseInt(vendaForm.qtd_parcelas_entrada) || 0
-        
-        for (let i = 1; i <= qtdParcelas; i++) {
-          const dataParcela = new Date(vendaForm.data_venda)
-          dataParcela.setMonth(dataParcela.getMonth() + i)
-          
-          // Usar valor individual se for diversos, senão usar valor fixo
-          let valorParcelaEnt = 0
-          if (vendaForm.tipo_valores_entrada === 'diversos') {
-            valorParcelaEnt = parseFloat(vendaForm.valores_parcelas_entrada[i - 1] || 0) || 0
-          } else {
-            valorParcelaEnt = parseFloat(vendaForm.valor_parcela_entrada) || 0
+        let numeroParcela = 1
+        // Iterar por cada grupo de parcelas (apenas grupos válidos)
+        gruposParcelasEntrada.forEach((grupo) => {
+          // Validar que grupo é um objeto válido antes de processar
+          if (!grupo || typeof grupo !== 'object' || grupo === null) {
+            console.warn('Grupo de parcela inválido ignorado:', grupo)
+            return
           }
           
-          pagamentos.push({
-            venda_id: vendaId,
-            tipo: 'parcela_entrada',
-            numero_parcela: i,
-            valor: valorParcelaEnt,
-            data_prevista: dataParcela.toISOString().split('T')[0],
-            comissao_gerada: valorParcelaEnt * fatorComissao
-          })
-        }
+          const qtd = parseInt(grupo.qtd) || 0
+          const valor = parseFloat(grupo.valor) || 0
+          
+          // Só processar se quantidade e valor forem válidos
+          if (qtd > 0 && valor > 0) {
+            for (let i = 0; i < qtd; i++) {
+              const dataParcela = new Date(vendaForm.data_venda)
+              dataParcela.setMonth(dataParcela.getMonth() + numeroParcela)
+              
+              pagamentos.push({
+                venda_id: vendaId,
+                tipo: 'parcela_entrada',
+                numero_parcela: numeroParcela,
+                valor: valor,
+                data_prevista: dataParcela.toISOString().split('T')[0],
+                comissao_gerada: valor * fatorComissao
+              })
+              numeroParcela++
+            }
+          }
+        })
       }
       
       // Balões
       if (vendaForm.teve_balao === 'sim') {
-        const qtdBalao = parseInt(vendaForm.qtd_balao) || 0
-        
-        for (let i = 1; i <= qtdBalao; i++) {
-          // Usar valor individual se for diversos, senão usar valor fixo
-          let valorBalaoUnit = 0
-          if (vendaForm.tipo_valores_balao === 'diversos') {
-            valorBalaoUnit = parseFloat(vendaForm.valores_balao[i - 1] || 0) || 0
-          } else {
-            valorBalaoUnit = parseFloat(vendaForm.valor_balao) || 0
+        let numeroBalao = 1
+        // Iterar por cada grupo de balões (apenas grupos válidos)
+        gruposBalao.forEach((grupo) => {
+          // Validar que grupo é um objeto válido antes de processar
+          if (!grupo || typeof grupo !== 'object' || grupo === null) {
+            console.warn('Grupo de balão inválido ignorado:', grupo)
+            return
           }
           
-          pagamentos.push({
-            venda_id: vendaId,
-            tipo: 'balao',
-            numero_parcela: i,
-            valor: valorBalaoUnit,
-            comissao_gerada: valorBalaoUnit * fatorComissao
-          })
-        }
+          const qtd = parseInt(grupo.qtd) || 0
+          const valor = parseFloat(grupo.valor) || 0
+          
+          // Só processar se quantidade e valor forem válidos
+          if (qtd > 0 && valor > 0) {
+            for (let i = 0; i < qtd; i++) {
+              pagamentos.push({
+                venda_id: vendaId,
+                tipo: 'balao',
+                numero_parcela: numeroBalao,
+                valor: valor,
+                comissao_gerada: valor * fatorComissao
+              })
+              numeroBalao++
+            }
+          }
+        })
       }
 
       if (pagamentos.length > 0) {
@@ -941,14 +973,22 @@ const AdminDashboard = () => {
       }
     }
 
-    setSaving(false)
-
-    setShowModal(false)
-    setSelectedItem(null)
-    resetVendaForm()
-    fetchData()
+    // Se chegou até aqui, tudo deu certo
     setMessage({ type: 'success', text: 'Venda salva com sucesso!' })
     setTimeout(() => setMessage({ type: '', text: '' }), 3000)
+
+    } catch (error) {
+      console.error('Erro ao salvar venda:', error)
+      setMessage({ type: 'error', text: 'Erro ao salvar venda: ' + (error.message || 'Erro desconhecido') })
+      setTimeout(() => setMessage({ type: '', text: '' }), 5000)
+    } finally {
+      // Sempre fechar modal e resetar estado, mesmo em caso de erro
+      setSaving(false)
+      setShowModal(false)
+      setSelectedItem(null)
+      resetVendaForm()
+      fetchData()
+    }
   }
 
   const handleSaveCorretor = async () => {
@@ -1511,15 +1551,9 @@ const AdminDashboard = () => {
       teve_entrada: false,
       valor_entrada: '',
       parcelou_entrada: false,
-      qtd_parcelas_entrada: '',
-      valor_parcela_entrada: '',
-      tipo_valores_entrada: 'fixos',
-      valores_parcelas_entrada: [],
+      grupos_parcelas_entrada: [{ qtd: '', valor: '' }],
       teve_balao: 'nao',
-      qtd_balao: '',
-      valor_balao: '',
-      tipo_valores_balao: 'fixos',
-      valores_balao: [],
+      grupos_balao: [{ qtd: '', valor: '' }],
       teve_permuta: false,
       tipo_permuta: '',
       valor_permuta: '',
@@ -1845,53 +1879,75 @@ const AdminDashboard = () => {
   const openEditModal = async (venda) => {
     setSelectedItem(venda)
     
-    // Buscar pagamentos da venda para detectar valores diversos
+    // Buscar pagamentos da venda para detectar grupos
     const { data: pagamentosVenda } = await supabase
       .from('pagamentos_prosoluto')
       .select('*')
       .eq('venda_id', venda.id)
       .order('numero_parcela', { ascending: true })
     
-    // Detectar valores diversos para parcelas de entrada
-    let tipoValoresEntrada = 'fixos'
-    let valoresParcelasEntrada = []
+    // Agrupar parcelas de entrada por valor
+    let gruposParcelasEntrada = [{ qtd: '', valor: '' }]
     if (venda.parcelou_entrada && pagamentosVenda) {
       const parcelasEntrada = pagamentosVenda
         .filter(p => p.tipo === 'parcela_entrada')
         .sort((a, b) => (a.numero_parcela || 0) - (b.numero_parcela || 0))
       
       if (parcelasEntrada.length > 0) {
-        const primeiroValor = parseFloat(parcelasEntrada[0].valor) || 0
-        const valoresDiferentes = parcelasEntrada.some(p => Math.abs(parseFloat(p.valor) - primeiroValor) > 0.01)
+        // Agrupar por valor
+        const grupos = {}
+        parcelasEntrada.forEach(p => {
+          const valor = parseFloat(p.valor) || 0
+          const key = valor.toFixed(2)
+          if (!grupos[key]) {
+            grupos[key] = { valor: valor.toString(), qtd: 0 }
+          }
+          grupos[key].qtd++
+        })
         
-        if (valoresDiferentes) {
-          tipoValoresEntrada = 'diversos'
-          valoresParcelasEntrada = parcelasEntrada.map(p => parseFloat(p.valor).toString())
-        } else {
-          valoresParcelasEntrada = []
-        }
+        gruposParcelasEntrada = Object.values(grupos).map(g => ({
+          qtd: g.qtd.toString(),
+          valor: g.valor
+        }))
       }
+    } else if (venda.parcelou_entrada) {
+      // Se não tem pagamentos mas parcelou, usar valores do banco
+      gruposParcelasEntrada = [{
+        qtd: venda.qtd_parcelas_entrada?.toString() || '',
+        valor: venda.valor_parcela_entrada?.toString() || ''
+      }]
     }
     
-    // Detectar valores diversos para balões
-    let tipoValoresBalao = 'fixos'
-    let valoresBalao = []
+    // Agrupar balões por valor
+    let gruposBalao = [{ qtd: '', valor: '' }]
     if (venda.teve_balao === 'sim' && pagamentosVenda) {
       const baloes = pagamentosVenda
         .filter(p => p.tipo === 'balao')
         .sort((a, b) => (a.numero_parcela || 0) - (b.numero_parcela || 0))
       
       if (baloes.length > 0) {
-        const primeiroValor = parseFloat(baloes[0].valor) || 0
-        const valoresDiferentes = baloes.some(p => Math.abs(parseFloat(p.valor) - primeiroValor) > 0.01)
+        // Agrupar por valor
+        const grupos = {}
+        baloes.forEach(p => {
+          const valor = parseFloat(p.valor) || 0
+          const key = valor.toFixed(2)
+          if (!grupos[key]) {
+            grupos[key] = { valor: valor.toString(), qtd: 0 }
+          }
+          grupos[key].qtd++
+        })
         
-        if (valoresDiferentes) {
-          tipoValoresBalao = 'diversos'
-          valoresBalao = baloes.map(p => parseFloat(p.valor).toString())
-        } else {
-          valoresBalao = []
-        }
+        gruposBalao = Object.values(grupos).map(g => ({
+          qtd: g.qtd.toString(),
+          valor: g.valor
+        }))
       }
+    } else if (venda.teve_balao === 'sim') {
+      // Se não tem pagamentos mas tem balão, usar valores do banco
+      gruposBalao = [{
+        qtd: venda.qtd_balao?.toString() || '',
+        valor: venda.valor_balao?.toString() || ''
+      }]
     }
     
     setVendaForm({
@@ -1910,15 +1966,9 @@ const AdminDashboard = () => {
       teve_entrada: venda.teve_entrada || false,
       valor_entrada: venda.valor_entrada?.toString() || '',
       parcelou_entrada: venda.parcelou_entrada || false,
-      qtd_parcelas_entrada: venda.qtd_parcelas_entrada?.toString() || '',
-      valor_parcela_entrada: venda.valor_parcela_entrada?.toString() || '',
-      tipo_valores_entrada: tipoValoresEntrada,
-      valores_parcelas_entrada: valoresParcelasEntrada,
+      grupos_parcelas_entrada: gruposParcelasEntrada,
       teve_balao: venda.teve_balao || 'nao',
-      qtd_balao: venda.qtd_balao?.toString() || '',
-      valor_balao: venda.valor_balao?.toString() || '',
-      tipo_valores_balao: tipoValoresBalao,
-      valores_balao: valoresBalao,
+      grupos_balao: gruposBalao,
       teve_permuta: venda.teve_permuta || false,
       tipo_permuta: venda.tipo_permuta || '',
       valor_permuta: venda.valor_permuta?.toString() || '',
@@ -3807,98 +3857,93 @@ const AdminDashboard = () => {
 
                   {/* Parcelas da entrada */}
                   {vendaForm.teve_entrada && vendaForm.parcelou_entrada && (
-                    <>
-                      <div className="form-row">
-                        <div className="form-group">
-                          <label>Qtd. Parcelas</label>
-                          <input
-                            type="number"
-                            placeholder="Ex: 12"
-                            min="1"
-                            value={vendaForm.qtd_parcelas_entrada}
-                            onChange={(e) => {
-                              const qtd = parseInt(e.target.value) || 0
-                              const newValores = Array(qtd).fill('').map((_, i) => 
-                                vendaForm.valores_parcelas_entrada[i] || ''
-                              )
-                              setVendaForm({
-                                ...vendaForm, 
-                                qtd_parcelas_entrada: e.target.value,
-                                valores_parcelas_entrada: newValores
-                              })
-                            }}
-                          />
-                        </div>
-                        <div className="form-group">
-                          <label>Tipo de Valores</label>
-                          <select
-                            value={vendaForm.tipo_valores_entrada}
-                            onChange={(e) => {
-                              const tipo = e.target.value
-                              setVendaForm({
-                                ...vendaForm,
-                                tipo_valores_entrada: tipo,
-                                valor_parcela_entrada: tipo === 'fixos' ? vendaForm.valor_parcela_entrada : '',
-                                valores_parcelas_entrada: tipo === 'diversos' 
-                                  ? Array(parseInt(vendaForm.qtd_parcelas_entrada) || 0).fill('')
-                                  : []
-                              })
-                            }}
-                          >
-                            <option value="fixos">Valores Fixos</option>
-                            <option value="diversos">Valores Diversos</option>
-                          </select>
-                        </div>
-                      </div>
-
-                      {vendaForm.tipo_valores_entrada === 'fixos' && (
-                        <div className="form-group">
-                          <label>Valor Parcela</label>
-                          <div className="input-currency">
-                            <span className="currency-prefix">R$</span>
-                            <input
-                              type="text"
-                              placeholder="0,00"
-                              value={formatCurrencyInput(vendaForm.valor_parcela_entrada)}
-                              onChange={(e) => handleCurrencyChange('valor_parcela_entrada', e.target.value)}
-                            />
-                          </div>
-                        </div>
-                      )}
-
-                      {vendaForm.tipo_valores_entrada === 'diversos' && vendaForm.qtd_parcelas_entrada && (
-                        <div className="form-group">
-                          <label>Valores das Parcelas</label>
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '8px' }}>
-                            {Array.from({ length: parseInt(vendaForm.qtd_parcelas_entrada) || 0 }, (_, i) => (
-                              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                <label style={{ minWidth: '100px', fontSize: '14px', color: '#e5e7eb' }}>
-                                  {i + 1}ª Parcela:
-                                </label>
-                                <div className="input-currency" style={{ flex: 1 }}>
-                                  <span className="currency-prefix">R$</span>
-                                  <input
-                                    type="text"
-                                    placeholder="0,00"
-                                    value={formatCurrencyInput(vendaForm.valores_parcelas_entrada[i] || '')}
-                                    onChange={(e) => {
-                                      const newValores = [...(vendaForm.valores_parcelas_entrada || [])]
-                                      const cleanValue = e.target.value.replace(/[^\d]/g, '')
-                                      const numValue = cleanValue ? (parseInt(cleanValue) / 100).toString() : ''
-                                      newValores[i] = numValue
-                                      setVendaForm({
-                                        ...vendaForm,
-                                        valores_parcelas_entrada: newValores
-                                      })
-                                    }}
-                                  />
-                                </div>
+                    <div className="form-group">
+                      <label>Grupos de Parcelas</label>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '8px' }}>
+                        {(vendaForm.grupos_parcelas_entrada || []).map((grupo, idx) => (
+                          <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px', background: '#1e2433', borderRadius: '8px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1 }}>
+                              <div className="form-group" style={{ flex: '0 0 120px', margin: 0 }}>
+                                <input
+                                  type="number"
+                                  placeholder="Qtd"
+                                  min="1"
+                                  value={grupo.qtd}
+                                  onChange={(e) => {
+                                    const novosGrupos = [...(vendaForm.grupos_parcelas_entrada || [])]
+                                    novosGrupos[idx].qtd = e.target.value
+                                    setVendaForm({ ...vendaForm, grupos_parcelas_entrada: novosGrupos })
+                                  }}
+                                  style={{ width: '100%' }}
+                                />
                               </div>
-                            ))}
+                              <span style={{ color: '#94a3b8', fontSize: '14px' }}>parcelas de</span>
+                              <div className="input-currency" style={{ flex: 1 }}>
+                                <span className="currency-prefix">R$</span>
+                                <input
+                                  type="text"
+                                  placeholder="0,00"
+                                  value={formatCurrencyInput(grupo.valor)}
+                                  onChange={(e) => {
+                                    const novosGrupos = [...(vendaForm.grupos_parcelas_entrada || [])]
+                                    const cleanValue = e.target.value.replace(/[^\d]/g, '')
+                                    const numValue = cleanValue ? (parseInt(cleanValue) / 100).toString() : ''
+                                    novosGrupos[idx].valor = numValue
+                                    setVendaForm({ ...vendaForm, grupos_parcelas_entrada: novosGrupos })
+                                  }}
+                                />
+                              </div>
+                              {(vendaForm.grupos_parcelas_entrada || []).length > 1 && (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const novosGrupos = (vendaForm.grupos_parcelas_entrada || []).filter((_, i) => i !== idx)
+                                    setVendaForm({ ...vendaForm, grupos_parcelas_entrada: novosGrupos.length > 0 ? novosGrupos : [{ qtd: '', valor: '' }] })
+                                  }}
+                                  style={{ 
+                                    background: '#ef4444', 
+                                    color: 'white', 
+                                    border: 'none', 
+                                    borderRadius: '4px', 
+                                    padding: '8px 12px', 
+                                    cursor: 'pointer',
+                                    fontSize: '14px'
+                                  }}
+                                >
+                                  <Trash2 size={16} />
+                                </button>
+                              )}
+                            </div>
                           </div>
-                        </div>
-                      )}
-                    </>
+                        ))}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setVendaForm({
+                              ...vendaForm,
+                              grupos_parcelas_entrada: [...(vendaForm.grupos_parcelas_entrada || []), { qtd: '', valor: '' }]
+                            })
+                          }}
+                          style={{
+                            background: '#4a90d9',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '8px',
+                            padding: '10px 16px',
+                            cursor: 'pointer',
+                            fontSize: '14px',
+                            fontWeight: '600',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            justifyContent: 'center'
+                          }}
+                        >
+                          <Plus size={18} />
+                          Adicionar Grupo
+                        </button>
+                      </div>
+                    </div>
                   )}
 
                   {/* BALÃO */}
@@ -3922,98 +3967,93 @@ const AdminDashboard = () => {
                   </div>
 
                   {(vendaForm.teve_balao === 'sim' || vendaForm.teve_balao === 'pendente') && (
-                    <>
-                      <div className="form-row">
-                        <div className="form-group">
-                          <label>Quantos Balões?</label>
-                          <input
-                            type="number"
-                            placeholder="Ex: 2"
-                            min="1"
-                            value={vendaForm.qtd_balao}
-                            onChange={(e) => {
-                              const qtd = parseInt(e.target.value) || 0
-                              const newValores = Array(qtd).fill('').map((_, i) => 
-                                vendaForm.valores_balao[i] || ''
-                              )
-                              setVendaForm({
-                                ...vendaForm, 
-                                qtd_balao: e.target.value,
-                                valores_balao: newValores
-                              })
-                            }}
-                          />
-                        </div>
-                        <div className="form-group">
-                          <label>Tipo de Valores</label>
-                          <select
-                            value={vendaForm.tipo_valores_balao}
-                            onChange={(e) => {
-                              const tipo = e.target.value
-                              setVendaForm({
-                                ...vendaForm,
-                                tipo_valores_balao: tipo,
-                                valor_balao: tipo === 'fixos' ? vendaForm.valor_balao : '',
-                                valores_balao: tipo === 'diversos' 
-                                  ? Array(parseInt(vendaForm.qtd_balao) || 0).fill('')
-                                  : []
-                              })
-                            }}
-                          >
-                            <option value="fixos">Valores Fixos</option>
-                            <option value="diversos">Valores Diversos</option>
-                          </select>
-                        </div>
-                      </div>
-
-                      {vendaForm.tipo_valores_balao === 'fixos' && (
-                        <div className="form-group">
-                          <label>Valor de Cada Balão</label>
-                          <div className="input-currency">
-                            <span className="currency-prefix">R$</span>
-                            <input
-                              type="text"
-                              placeholder="0,00"
-                              value={formatCurrencyInput(vendaForm.valor_balao)}
-                              onChange={(e) => handleCurrencyChange('valor_balao', e.target.value)}
-                            />
-                          </div>
-                        </div>
-                      )}
-
-                      {vendaForm.tipo_valores_balao === 'diversos' && vendaForm.qtd_balao && (
-                        <div className="form-group">
-                          <label>Valores dos Balões</label>
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '8px' }}>
-                            {Array.from({ length: parseInt(vendaForm.qtd_balao) || 0 }, (_, i) => (
-                              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                <label style={{ minWidth: '100px', fontSize: '14px', color: '#e5e7eb' }}>
-                                  {i + 1}º Balão:
-                                </label>
-                                <div className="input-currency" style={{ flex: 1 }}>
-                                  <span className="currency-prefix">R$</span>
-                                  <input
-                                    type="text"
-                                    placeholder="0,00"
-                                    value={formatCurrencyInput(vendaForm.valores_balao[i] || '')}
-                                    onChange={(e) => {
-                                      const newValores = [...(vendaForm.valores_balao || [])]
-                                      const cleanValue = e.target.value.replace(/[^\d]/g, '')
-                                      const numValue = cleanValue ? (parseInt(cleanValue) / 100).toString() : ''
-                                      newValores[i] = numValue
-                                      setVendaForm({
-                                        ...vendaForm,
-                                        valores_balao: newValores
-                                      })
-                                    }}
-                                  />
-                                </div>
+                    <div className="form-group">
+                      <label>Grupos de Balões</label>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '8px' }}>
+                        {(vendaForm.grupos_balao || []).map((grupo, idx) => (
+                          <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px', background: '#1e2433', borderRadius: '8px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1 }}>
+                              <div className="form-group" style={{ flex: '0 0 120px', margin: 0 }}>
+                                <input
+                                  type="number"
+                                  placeholder="Qtd"
+                                  min="1"
+                                  value={grupo.qtd}
+                                  onChange={(e) => {
+                                    const novosGrupos = [...(vendaForm.grupos_balao || [])]
+                                    novosGrupos[idx].qtd = e.target.value
+                                    setVendaForm({ ...vendaForm, grupos_balao: novosGrupos })
+                                  }}
+                                  style={{ width: '100%' }}
+                                />
                               </div>
-                            ))}
+                              <span style={{ color: '#94a3b8', fontSize: '14px' }}>balões de</span>
+                              <div className="input-currency" style={{ flex: 1 }}>
+                                <span className="currency-prefix">R$</span>
+                                <input
+                                  type="text"
+                                  placeholder="0,00"
+                                  value={formatCurrencyInput(grupo.valor)}
+                                  onChange={(e) => {
+                                    const novosGrupos = [...(vendaForm.grupos_balao || [])]
+                                    const cleanValue = e.target.value.replace(/[^\d]/g, '')
+                                    const numValue = cleanValue ? (parseInt(cleanValue) / 100).toString() : ''
+                                    novosGrupos[idx].valor = numValue
+                                    setVendaForm({ ...vendaForm, grupos_balao: novosGrupos })
+                                  }}
+                                />
+                              </div>
+                              {(vendaForm.grupos_balao || []).length > 1 && (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const novosGrupos = (vendaForm.grupos_balao || []).filter((_, i) => i !== idx)
+                                    setVendaForm({ ...vendaForm, grupos_balao: novosGrupos.length > 0 ? novosGrupos : [{ qtd: '', valor: '' }] })
+                                  }}
+                                  style={{ 
+                                    background: '#ef4444', 
+                                    color: 'white', 
+                                    border: 'none', 
+                                    borderRadius: '4px', 
+                                    padding: '8px 12px', 
+                                    cursor: 'pointer',
+                                    fontSize: '14px'
+                                  }}
+                                >
+                                  <Trash2 size={16} />
+                                </button>
+                              )}
+                            </div>
                           </div>
-                        </div>
-                      )}
-                    </>
+                        ))}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setVendaForm({
+                              ...vendaForm,
+                              grupos_balao: [...(vendaForm.grupos_balao || []), { qtd: '', valor: '' }]
+                            })
+                          }}
+                          style={{
+                            background: '#4a90d9',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '8px',
+                            padding: '10px 16px',
+                            cursor: 'pointer',
+                            fontSize: '14px',
+                            fontWeight: '600',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            justifyContent: 'center'
+                          }}
+                        >
+                          <Plus size={18} />
+                          Adicionar Grupo
+                        </button>
+                      </div>
+                    </div>
                   )}
 
                   {/* PERMUTA */}
@@ -4151,15 +4191,11 @@ const AdminDashboard = () => {
                             (parseFloat(vendaForm.valor_sinal) || 0) +
                             (vendaForm.teve_entrada
                               ? (vendaForm.parcelou_entrada 
-                                  ? (vendaForm.tipo_valores_entrada === 'diversos'
-                                      ? (vendaForm.valores_parcelas_entrada || []).reduce((sum, val) => sum + (parseFloat(val) || 0), 0)
-                                      : ((parseFloat(vendaForm.qtd_parcelas_entrada) || 0) * (parseFloat(vendaForm.valor_parcela_entrada) || 0)))
+                                  ? (vendaForm.grupos_parcelas_entrada || []).reduce((sum, grupo) => sum + ((parseFloat(grupo.qtd) || 0) * (parseFloat(grupo.valor) || 0)), 0)
                                   : (parseFloat(vendaForm.valor_entrada) || 0))
                               : 0) +
                             (vendaForm.teve_balao === 'sim'
-                              ? (vendaForm.tipo_valores_balao === 'diversos'
-                                  ? (vendaForm.valores_balao || []).reduce((sum, val) => sum + (parseFloat(val) || 0), 0)
-                                  : ((parseFloat(vendaForm.qtd_balao) || 0) * (parseFloat(vendaForm.valor_balao) || 0)))
+                              ? (vendaForm.grupos_balao || []).reduce((sum, grupo) => sum + ((parseFloat(grupo.qtd) || 0) * (parseFloat(grupo.valor) || 0)), 0)
                               : 0)
                           )}</span>
                         </div>
