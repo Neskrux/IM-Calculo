@@ -3021,7 +3021,10 @@ const AdminDashboard = () => {
                                 {calcularComissaoPorCargoPagamento(pag).map((cargo, idx) => (
                                   <div key={idx} className="comissao-item">
                                     <span className="comissao-nome">{cargo.nome_cargo}</span>
-                                    <span className="comissao-valor">{formatCurrency(cargo.valor)}</span>
+                                    <span className="comissao-valor">
+                                      {formatCurrency(cargo.valor)}
+                                      <span className="comissao-percentual">{cargo.percentual.toFixed(2)}%</span>
+                                    </span>
                                   </div>
                                 ))}
                                 <div className="comissao-item comissao-total">
