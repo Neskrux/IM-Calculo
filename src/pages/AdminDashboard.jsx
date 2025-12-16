@@ -572,6 +572,31 @@ const AdminDashboard = () => {
     return corretor?.tipo_corretor === 'interno' ? 2.5 : 4
   }
 
+  // Função auxiliar para calcular a comissão do corretor
+  const calcularComissaoCorretor = (comissoesDinamicas, corretorId, valorVenda) => {
+    if (!comissoesDinamicas || !comissoesDinamicas.cargos || comissoesDinamicas.cargos.length === 0) {
+      // Fallback: calcular baseado no percentual padrão
+      const percentualCorretor = getCorretorPercentual(corretorId)
+      return (valorVenda * percentualCorretor) / 100
+    }
+
+    // Procurar pelo cargo do corretor nos cargos calculados
+    const cargoCorretor = comissoesDinamicas.cargos.find(c => 
+      c.nome_cargo.toLowerCase().includes('corretor') || 
+      c.nome_cargo.toLowerCase().includes('autônomo') ||
+      c.nome_cargo.toLowerCase().includes('corretor interno') ||
+      c.nome_cargo.toLowerCase().includes('corretor externo')
+    )
+    
+    if (cargoCorretor) {
+      return cargoCorretor.valor
+    }
+
+    // Se não encontrar, calcular baseado no percentual do corretor
+    const percentualCorretor = getCorretorPercentual(corretorId)
+    return (valorVenda * percentualCorretor) / 100
+  }
+
   const handleSaveVenda = async () => {
     if (!vendaForm.corretor_id || !vendaForm.valor_venda) {
       setMessage({ type: 'error', text: 'Preencha todos os campos obrigatórios (Corretor e Valor)' })
@@ -669,6 +694,9 @@ const AdminDashboard = () => {
     // Ex: 7% -> 0.07, então parcela de R$ 1.000 x 0.07 = R$ 70 de comissão
     const fatorComissao = comissoesDinamicas.percentualTotal / 100
     
+    // Calcular comissão do corretor
+    const comissaoCorretor = calcularComissaoCorretor(comissoesDinamicas, vendaForm.corretor_id, valorVenda)
+    
     console.log('Cálculo venda:', {
       valorVenda,
       valorSinal,
@@ -676,6 +704,7 @@ const AdminDashboard = () => {
       valorTotalBalao,
       valorProSoluto,
       comissaoTotal: comissoesDinamicas.total,
+      comissaoCorretor,
       fatorComissao,
       teveSinal: vendaForm.teve_sinal,
       teveEntrada: vendaForm.teve_entrada,
@@ -710,6 +739,7 @@ const AdminDashboard = () => {
       valor_pro_soluto: valorProSoluto || null,
       fator_comissao: fatorComissao || null,
       comissao_total: comissoesDinamicas.total,
+      comissao_corretor: comissaoCorretor,
       contrato_url: vendaForm.contrato_url || null,
       contrato_nome: vendaForm.contrato_nome || null
     }
@@ -1330,6 +1360,19 @@ const AdminDashboard = () => {
     const valorProSoluto = valorSinal + valorEntradaTotal + valorTotalBalao
     // Fator de comissão = Percentual total / 100
     const fatorComissao = comissoesDinamicas.percentualTotal / 100
+    
+    // Calcular e atualizar comissão do corretor na venda se não estiver preenchida
+    const comissaoCorretor = calcularComissaoCorretor(comissoesDinamicas, venda.corretor_id, valorVenda)
+    if (!venda.comissao_corretor || venda.comissao_corretor === 0) {
+      await supabase
+        .from('vendas')
+        .update({ 
+          comissao_corretor: comissaoCorretor,
+          comissao_total: comissoesDinamicas.total,
+          fator_comissao: fatorComissao
+        })
+        .eq('id', venda.id)
+    }
     
     const novosPagamentos = []
     
@@ -2413,6 +2456,175 @@ const AdminDashboard = () => {
     })
   }
 
+  // TESTE ÚNICO - Validar tudo de uma vez
+  const testarSistemaComissoes = async () => {
+    console.log('🧪 ==========================================')
+    console.log('🧪 TESTE COMPLETO DO SISTEMA DE COMISSÕES')
+    console.log('🧪 ==========================================')
+    
+    try {
+      // Recarregar dados do estado primeiro
+      await fetchData()
+      
+      // 1. Buscar última venda atualizada (não criada)
+      const { data: vendas, error: vendasError } = await supabase
+        .from('vendas')
+        .select('*')
+        .order('updated_at', { ascending: false })
+        .limit(1)
+      
+      if (vendasError || !vendas || vendas.length === 0) {
+        console.error('❌ Nenhuma venda encontrada. Crie uma venda primeiro!')
+        setMessage({ type: 'error', text: 'Nenhuma venda encontrada. Crie uma venda primeiro!' })
+        return { sucesso: false, erro: 'Nenhuma venda encontrada' }
+      }
+      
+      const venda = vendas[0]
+      console.log('✅ Venda encontrada (última atualizada):', {
+        id: venda.id,
+        valor_venda: venda.valor_venda,
+        comissao_total: venda.comissao_total,
+        comissao_corretor: venda.comissao_corretor,
+        updated_at: venda.updated_at
+      })
+      
+      // 2. Buscar comissões em comissoes_venda (forçar busca fresca)
+      const { data: comissoes, error: comissoesError } = await supabase
+        .from('comissoes_venda')
+        .select('*')
+        .eq('venda_id', venda.id)
+      
+      if (comissoesError) {
+        console.error('❌ Erro ao buscar comissões:', comissoesError)
+        setMessage({ type: 'error', text: `Erro ao buscar comissões: ${comissoesError.message}` })
+        return { sucesso: false, erro: comissoesError }
+      }
+      
+      console.log('✅ Comissões encontradas:', comissoes?.length || 0)
+      
+      // 3. Calcular soma das comissões
+      const somaComissoes = comissoes?.reduce((acc, c) => 
+        acc + parseFloat(c.valor_comissao || 0), 0
+      ) || 0
+      
+      const comissaoTotalVenda = parseFloat(venda.comissao_total || 0)
+      const diferenca = Math.abs(somaComissoes - comissaoTotalVenda)
+      const match = diferenca < 0.01
+      
+      console.log('📊 Validação de totais:')
+      console.log('   Soma comissoes_venda:', somaComissoes)
+      console.log('   comissao_total na venda:', comissaoTotalVenda)
+      console.log('   Diferença:', diferenca)
+      console.log(match ? '   ✅ MATCH!' : '   ❌ NÃO MATCH!')
+      
+      // 4. Verificar colunas fixas (dados atualizados)
+      const colunasFixas = {
+        comissao_diretor: venda.comissao_diretor,
+        comissao_nohros_imobiliaria: venda.comissao_nohros_imobiliaria,
+        comissao_nohros_gestao: venda.comissao_nohros_gestao,
+        comissao_wsc: venda.comissao_wsc,
+        comissao_corretor: venda.comissao_corretor,
+        comissao_coordenadora: venda.comissao_coordenadora
+      }
+      
+      console.log('📋 Colunas fixas na tabela vendas (APÓS ATUALIZAÇÃO):')
+      Object.entries(colunasFixas).forEach(([coluna, valor]) => {
+        const status = valor !== null && valor !== undefined ? '✅' : '⚠️'
+        const valorFormatado = valor !== null && valor !== undefined 
+          ? `R$ ${parseFloat(valor).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+          : 'NULL'
+        console.log(`   ${status} ${coluna}: ${valorFormatado}`)
+      })
+      
+      // 5. Verificar cargos únicos
+      const cargosUnicos = [...new Set(comissoes?.map(c => c.nome_cargo) || [])]
+      console.log('👥 Cargos encontrados:', cargosUnicos.length)
+      cargosUnicos.forEach(cargo => {
+        const totalCargo = comissoes
+          ?.filter(c => c.nome_cargo === cargo)
+          .reduce((acc, c) => acc + parseFloat(c.valor_comissao || 0), 0) || 0
+        console.log(`   - ${cargo}: R$ ${totalCargo.toFixed(2)}`)
+      })
+      
+      // 6. Verificar se há cargos não mapeados
+      const mapeamento = {
+        diretor: ['diretor'],
+        nohros_imobiliaria: ['nohros imobiliária', 'nohros'],
+        nohros_gestao: ['gestão', 'ferreti'],
+        wsc: ['wsc', 'beton'],
+        corretor: ['corretor', 'autônomo'],
+        coordenadora: ['coordenadora', 'coordenador']
+      }
+      
+      const cargosNaoMapeados = cargosUnicos.filter(cargo => {
+        const cargoLower = cargo.toLowerCase()
+        return !Object.values(mapeamento).some(palavras => 
+          palavras.some(p => cargoLower.includes(p))
+        )
+      })
+      
+      if (cargosNaoMapeados.length > 0) {
+        console.log('⚠️ Cargos não mapeados (novos cargos):', cargosNaoMapeados)
+        console.log('   ✅ Esses cargos estão salvos em comissoes_venda (correto!)')
+      } else {
+        console.log('✅ Todos os cargos estão mapeados')
+      }
+      
+      // 7. Comparar com estado local (se disponível)
+      const vendaLocal = vendas.find(v => v.id === venda.id)
+      if (vendaLocal) {
+        console.log('🔄 Comparação com estado local:')
+        console.log('   Estado local - comissao_diretor:', vendaLocal.comissao_diretor)
+        console.log('   Banco de dados - comissao_diretor:', venda.comissao_diretor)
+        if (vendaLocal.comissao_diretor !== venda.comissao_diretor) {
+          console.log('   ⚠️ Diferença detectada! Recarregue os dados.')
+        }
+      }
+      
+      // 8. Resultado final
+      const resultado = {
+        sucesso: match && comissoes && comissoes.length > 0,
+        venda_id: venda.id,
+        valor_venda: venda.valor_venda,
+        comissao_total: comissaoTotalVenda,
+        soma_comissoes_venda: somaComissoes,
+        diferenca: diferenca,
+        match: match,
+        total_cargos: comissoes?.length || 0,
+        cargos_unicos: cargosUnicos.length,
+        cargos_nao_mapeados: cargosNaoMapeados,
+        colunas_fixas_preenchidas: Object.values(colunasFixas).filter(v => v !== null && v !== undefined).length,
+        colunas_fixas: colunasFixas
+      }
+      
+      console.log('🎯 ==========================================')
+      console.log('🎯 RESULTADO FINAL:')
+      console.log('🎯 ==========================================')
+      console.log(resultado.sucesso ? '✅ SISTEMA FUNCIONANDO CORRETAMENTE!' : '❌ PROBLEMAS ENCONTRADOS!')
+      console.log('📊 Detalhes:', resultado)
+      console.log('🎯 ==========================================')
+      
+      if (resultado.sucesso) {
+        setMessage({ 
+          type: 'success', 
+          text: `✅ Teste passou! ${resultado.total_cargos} cargos encontrados. ${resultado.colunas_fixas_preenchidas} colunas fixas preenchidas. Verifique o console para detalhes.` 
+        })
+      } else {
+        setMessage({ 
+          type: 'error', 
+          text: `❌ Teste falhou! Verifique o console para detalhes.` 
+        })
+      }
+      
+      return resultado
+      
+    } catch (error) {
+      console.error('❌ Erro no teste:', error)
+      setMessage({ type: 'error', text: `Erro no teste: ${error.message}` })
+      return { sucesso: false, erro: error.message }
+    }
+  }
+
   return (
     <div className="dashboard-container">
       {/* Message Toast */}
@@ -2754,9 +2966,10 @@ const AdminDashboard = () => {
               <div className="corretores-grid">
                 {corretores.map((corretor) => {
                   const vendasCorretor = vendas.filter(v => v.corretor_id === corretor.id)
-                  const totalComissao = vendasCorretor.reduce((acc, v) => acc + v.comissao_corretor, 0)
-                  const totalVendas = vendasCorretor.reduce((acc, v) => acc + v.valor_venda, 0)
+                  const totalComissao = vendasCorretor.reduce((acc, v) => acc + (parseFloat(v.comissao_corretor) || 0), 0)
+                  const totalVendas = vendasCorretor.reduce((acc, v) => acc + (parseFloat(v.valor_venda) || 0), 0)
                   const percentual = corretor.percentual_corretor || (corretor.tipo_corretor === 'interno' ? 2.5 : 4)
+                  const isAutonomo = !corretor.empreendimento_id && corretor.percentual_corretor
                   
                   return (
                     <div key={corretor.id} className="corretor-card">
@@ -2770,6 +2983,11 @@ const AdminDashboard = () => {
                             <span className={`badge ${corretor.tipo_corretor}`}>
                               {corretor.tipo_corretor === 'interno' ? 'Interno' : 'Externo'}
                             </span>
+                            {isAutonomo && (
+                              <span className="badge autonomo">
+                                Autônomo
+                              </span>
+                            )}
                             <span className="badge percent">
                               <Percent size={12} />
                               {percentual}%
@@ -2786,8 +3004,16 @@ const AdminDashboard = () => {
                               {corretor.cargo?.nome_cargo && (
                                 <span className="vinculo-item cargo">
                                   {corretor.cargo.nome_cargo}
+                                  {corretor.cargo.percentual && ` (${corretor.cargo.percentual}%)`}
                                 </span>
                               )}
+                            </div>
+                          )}
+                          {isAutonomo && (
+                            <div className="corretor-vinculo">
+                              <span className="vinculo-item">
+                                Comissão Personalizada: {percentual}%
+                              </span>
                             </div>
                           )}
                         </div>
@@ -2811,6 +3037,12 @@ const AdminDashboard = () => {
                       <div className="corretor-email">
                         <Mail size={14} />
                         <span>{corretor.email}</span>
+                        {corretor.telefone && (
+                          <>
+                            <span style={{ margin: '0 8px' }}>•</span>
+                            <span>{corretor.telefone}</span>
+                          </>
+                        )}
                       </div>
                       <div className="corretor-stats">
                         <div className="corretor-stat">
@@ -5112,6 +5344,78 @@ const AdminDashboard = () => {
           </div>
         </div>
       )}
+
+      {/* BOTÕES DE TESTE TEMPORÁRIOS - REMOVER DEPOIS */}
+      <div style={{
+        position: 'fixed',
+        bottom: '20px',
+        right: '20px',
+        zIndex: 99999,
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '10px',
+        pointerEvents: 'auto'
+      }}>
+        <button 
+          onClick={testarSistemaComissoes}
+          style={{
+            padding: '12px 24px',
+            backgroundColor: '#4a90d9',
+            color: 'white',
+            border: 'none',
+            borderRadius: '8px',
+            cursor: 'pointer',
+            fontSize: '14px',
+            fontWeight: 'bold',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            transition: 'all 0.3s ease'
+          }}
+          onMouseEnter={(e) => {
+            e.target.style.backgroundColor = '#357abd'
+            e.target.style.transform = 'scale(1.05)'
+          }}
+          onMouseLeave={(e) => {
+            e.target.style.backgroundColor = '#4a90d9'
+            e.target.style.transform = 'scale(1)'
+          }}
+        >
+          <Calculator size={18} />
+          🧪 Testar Comissões
+        </button>
+        
+        <button 
+          onClick={atualizarComissoesVendasAntigas}
+          style={{
+            padding: '12px 24px',
+            backgroundColor: '#10b981',
+            color: 'white',
+            border: 'none',
+            borderRadius: '8px',
+            cursor: 'pointer',
+            fontSize: '14px',
+            fontWeight: 'bold',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            transition: 'all 0.3s ease'
+          }}
+          onMouseEnter={(e) => {
+            e.target.style.backgroundColor = '#059669'
+            e.target.style.transform = 'scale(1.05)'
+          }}
+          onMouseLeave={(e) => {
+            e.target.style.backgroundColor = '#10b981'
+            e.target.style.transform = 'scale(1)'
+          }}
+        >
+          <TrendingUp size={18} />
+          🔄 Atualizar Vendas Antigas
+        </button>
+      </div>
     </div>
   )
 }
