@@ -5,7 +5,9 @@ import { supabase } from '../lib/supabase'
 import { 
   Home, ShoppingBag, FileText, User as UserIcon, LogOut,
   Menu, X, ChevronLeft, ChevronRight, Calendar, MapPin,
-  Building, DollarSign, CheckCircle, Clock, Download
+  Building, DollarSign, CheckCircle, Clock, Download,
+  CreditCard, FileCheck, AlertCircle, Eye, Upload,
+  IdCard, Copy, Heart, Image as ImageIcon
 } from 'lucide-react'
 import logo from '../imgs/logo.png'
 import Ticker from '../components/Ticker'
@@ -32,6 +34,8 @@ const ClienteDashboard = () => {
   const [compras, setCompras] = useState([])
   const [loading, setLoading] = useState(true)
   const [menuOpen, setMenuOpen] = useState(false)
+  const [uploadingDoc, setUploadingDoc] = useState(false)
+  const [uploadingDocType, setUploadingDocType] = useState(null)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
     const saved = localStorage.getItem('cliente-sidebar-collapsed')
     return saved === 'true'
@@ -157,6 +161,123 @@ const ClienteDashboard = () => {
     return new Date(date).toLocaleDateString('pt-BR')
   }
 
+  // Formatação para Ticker (valor completo)
+  const formatTicker = (value) => {
+    if (value === null || value === undefined || isNaN(value)) {
+      return 'R$ 0,00'
+    }
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }).format(value)
+  }
+
+  // Dados dinâmicos para o Ticker
+  const getTickerData = () => {
+    const totalCompras = compras.reduce((acc, c) => acc + (parseFloat(c.valor_venda) || 0), 0)
+    const comprasHoje = compras.filter(c => {
+      const dataVenda = new Date(c.data_venda)
+      const hoje = new Date()
+      return dataVenda.toDateString() === hoje.toDateString()
+    })
+    const totalComprasHoje = comprasHoje.reduce((acc, c) => acc + (parseFloat(c.valor_venda) || 0), 0)
+    const comprasMes = compras.filter(c => {
+      const dataVenda = new Date(c.data_venda)
+      const hoje = new Date()
+      return dataVenda.getMonth() === hoje.getMonth() && dataVenda.getFullYear() === hoje.getFullYear()
+    })
+    const totalComprasMes = comprasMes.reduce((acc, c) => acc + (parseFloat(c.valor_venda) || 0), 0)
+    const mediaPorCompra = compras.length > 0 ? totalCompras / compras.length : 0
+    const documentosEnviados = [
+      cliente?.rg_frente_url,
+      cliente?.rg_verso_url,
+      cliente?.cpf_url,
+      cliente?.comprovante_residencia_url,
+      cliente?.comprovante_renda_url,
+      cliente?.certidao_casamento_url
+    ].filter(Boolean).length
+
+    return [
+      {
+        name: 'COMPRAS HOJE',
+        value: formatTicker(totalComprasHoje),
+        change: comprasHoje.length > 0 ? `+${comprasHoje.length}` : '0',
+        type: comprasHoje.length > 0 ? 'positive' : 'neutral'
+      },
+      {
+        name: 'TOTAL EM COMPRAS',
+        value: formatTicker(totalCompras),
+        change: compras.length > 0 ? `${compras.length} compras` : '0',
+        type: 'positive'
+      },
+      {
+        name: 'COMPRAS ESTE MÊS',
+        value: formatTicker(totalComprasMes),
+        change: comprasMes.length > 0 ? `${comprasMes.length} compras` : '0',
+        type: 'positive'
+      },
+      {
+        name: 'MÉDIA POR COMPRA',
+        value: formatTicker(mediaPorCompra),
+        change: '0%',
+        type: 'neutral'
+      },
+      {
+        name: 'DOCUMENTOS ENVIADOS',
+        value: `${documentosEnviados}/6`,
+        change: documentosEnviados === 6 ? '100%' : `${Math.round((documentosEnviados / 6) * 100)}%`,
+        type: documentosEnviados === 6 ? 'positive' : documentosEnviados > 0 ? 'neutral' : 'negative'
+      }
+    ]
+  }
+
+  // Upload de documento do cliente
+  const uploadDocumentoCliente = async (file, tipo) => {
+    if (!file || !cliente) return
+    
+    setUploadingDoc(true)
+    setUploadingDocType(tipo)
+    
+    try {
+      const fileExt = file.name.split('.').pop()
+      const fileName = `${tipo}_${cliente.id}_${Date.now()}.${fileExt}`
+      const filePath = `clientes/${fileName}`
+
+      const { error: uploadError } = await supabase.storage
+        .from('documentos')
+        .upload(filePath, file)
+
+      if (uploadError) throw uploadError
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('documentos')
+        .getPublicUrl(filePath)
+
+      // Atualizar cliente no banco
+      const { error: updateError } = await supabase
+        .from('clientes')
+        .update({ [`${tipo}_url`]: publicUrl })
+        .eq('id', cliente.id)
+
+      if (updateError) throw updateError
+
+      // Atualizar estado local
+      setCliente(prev => ({ ...prev, [`${tipo}_url`]: publicUrl }))
+      
+      // Recarregar dados
+      await fetchClienteData()
+      
+    } catch (error) {
+      console.error('Erro no upload:', error)
+      alert('Erro ao fazer upload do documento. Tente novamente.')
+    } finally {
+      setUploadingDoc(false)
+      setUploadingDocType(null)
+    }
+  }
+
   // Toggle sidebar collapsed state
   const toggleSidebar = () => {
     setSidebarCollapsed(prev => {
@@ -271,7 +392,7 @@ const ClienteDashboard = () => {
       {/* Main Content */}
       <main className={`main-content ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
         {/* Ticker */}
-        <Ticker />
+        <Ticker data={getTickerData()} />
         
         {/* Header */}
         <header className="main-header">
@@ -500,136 +621,300 @@ const ClienteDashboard = () => {
                 </h2>
               </div>
 
-              <div className="documentos-grid">
-                <div className="documento-card">
-                  <div className="documento-header">
-                    <FileText size={24} />
-                    <h3>RG - Frente</h3>
+              <div className="docs-upload-grid-cliente">
+                {/* RG Frente */}
+                <div className="form-group-doc">
+                  <label className="doc-label">
+                    RG Frente
+                    {cliente.rg_frente_url ? (
+                      <span className="doc-status-badge success">
+                        <CheckCircle size={14} />
+                        Enviado
+                      </span>
+                    ) : (
+                      <span className="doc-status-badge warning">
+                        <Clock size={14} />
+                        Pendente
+                      </span>
+                    )}
+                  </label>
+                  <div className="file-upload-wrapper">
+                    {cliente.rg_frente_url ? (
+                      <div className="file-upload-info">
+                        <span className="file-name" title={cliente.rg_frente_url.split('/').pop()}>
+                          {cliente.rg_frente_url.split('/').pop()}
+                        </span>
+                        <a href={cliente.rg_frente_url} target="_blank" rel="noopener noreferrer" className="doc-preview">
+                          Ver arquivo
+                        </a>
+                      </div>
+                    ) : null}
+                    <label className="file-upload-label">
+                      <input
+                        type="file"
+                        accept="image/*,.pdf"
+                        onChange={(e) => e.target.files[0] && uploadDocumentoCliente(e.target.files[0], 'rg_frente')}
+                        className="file-upload-input"
+                        disabled={uploadingDoc && uploadingDocType === 'rg_frente'}
+                      />
+                      <span className="file-upload-button">
+                        {uploadingDoc && uploadingDocType === 'rg_frente' ? (
+                          <>
+                            <div className="loading-spinner-small"></div>
+                            Enviando...
+                          </>
+                        ) : (
+                          'Escolher Arquivo'
+                        )}
+                      </span>
+                    </label>
                   </div>
-                  {cliente.rg_frente_url ? (
-                    <div className="documento-status success">
-                      <CheckCircle size={20} />
-                      <span>Enviado</span>
-                      <a 
-                        href={cliente.rg_frente_url} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="btn-download"
-                      >
-                        <Download size={16} />
-                        Baixar
-                      </a>
-                    </div>
-                  ) : (
-                    <div className="documento-status pendente">
-                      <Clock size={20} />
-                      <span>Pendente</span>
-                    </div>
-                  )}
                 </div>
 
-                <div className="documento-card">
-                  <div className="documento-header">
-                    <FileText size={24} />
-                    <h3>CPF</h3>
+                {/* RG Verso */}
+                <div className="form-group-doc">
+                  <label className="doc-label">
+                    RG Verso
+                    {cliente.rg_verso_url ? (
+                      <span className="doc-status-badge success">
+                        <CheckCircle size={14} />
+                        Enviado
+                      </span>
+                    ) : (
+                      <span className="doc-status-badge warning">
+                        <Clock size={14} />
+                        Pendente
+                      </span>
+                    )}
+                  </label>
+                  <div className="file-upload-wrapper">
+                    {cliente.rg_verso_url ? (
+                      <div className="file-upload-info">
+                        <span className="file-name" title={cliente.rg_verso_url.split('/').pop()}>
+                          {cliente.rg_verso_url.split('/').pop()}
+                        </span>
+                        <a href={cliente.rg_verso_url} target="_blank" rel="noopener noreferrer" className="doc-preview">
+                          Ver arquivo
+                        </a>
+                      </div>
+                    ) : null}
+                    <label className="file-upload-label">
+                      <input
+                        type="file"
+                        accept="image/*,.pdf"
+                        onChange={(e) => e.target.files[0] && uploadDocumentoCliente(e.target.files[0], 'rg_verso')}
+                        className="file-upload-input"
+                        disabled={uploadingDoc && uploadingDocType === 'rg_verso'}
+                      />
+                      <span className="file-upload-button">
+                        {uploadingDoc && uploadingDocType === 'rg_verso' ? (
+                          <>
+                            <div className="loading-spinner-small"></div>
+                            Enviando...
+                          </>
+                        ) : (
+                          'Escolher Arquivo'
+                        )}
+                      </span>
+                    </label>
                   </div>
-                  {cliente.cpf_url ? (
-                    <div className="documento-status success">
-                      <CheckCircle size={20} />
-                      <span>Enviado</span>
-                      <a 
-                        href={cliente.cpf_url} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="btn-download"
-                      >
-                        <Download size={16} />
-                        Baixar
-                      </a>
-                    </div>
-                  ) : (
-                    <div className="documento-status pendente">
-                      <Clock size={20} />
-                      <span>Pendente</span>
-                    </div>
-                  )}
                 </div>
 
-                <div className="documento-card">
-                  <div className="documento-header">
-                    <FileText size={24} />
-                    <h3>Comprovante de Residência</h3>
+                {/* CPF */}
+                <div className="form-group-doc">
+                  <label className="doc-label">
+                    CPF
+                    {cliente.cpf_url ? (
+                      <span className="doc-status-badge success">
+                        <CheckCircle size={14} />
+                        Enviado
+                      </span>
+                    ) : (
+                      <span className="doc-status-badge warning">
+                        <Clock size={14} />
+                        Pendente
+                      </span>
+                    )}
+                  </label>
+                  <div className="file-upload-wrapper">
+                    {cliente.cpf_url ? (
+                      <div className="file-upload-info">
+                        <span className="file-name" title={cliente.cpf_url.split('/').pop()}>
+                          {cliente.cpf_url.split('/').pop()}
+                        </span>
+                        <a href={cliente.cpf_url} target="_blank" rel="noopener noreferrer" className="doc-preview">
+                          Ver arquivo
+                        </a>
+                      </div>
+                    ) : null}
+                    <label className="file-upload-label">
+                      <input
+                        type="file"
+                        accept="image/*,.pdf"
+                        onChange={(e) => e.target.files[0] && uploadDocumentoCliente(e.target.files[0], 'cpf')}
+                        className="file-upload-input"
+                        disabled={uploadingDoc && uploadingDocType === 'cpf'}
+                      />
+                      <span className="file-upload-button">
+                        {uploadingDoc && uploadingDocType === 'cpf' ? (
+                          <>
+                            <div className="loading-spinner-small"></div>
+                            Enviando...
+                          </>
+                        ) : (
+                          'Escolher Arquivo'
+                        )}
+                      </span>
+                    </label>
                   </div>
-                  {cliente.comprovante_residencia_url ? (
-                    <div className="documento-status success">
-                      <CheckCircle size={20} />
-                      <span>Enviado</span>
-                      <a 
-                        href={cliente.comprovante_residencia_url} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="btn-download"
-                      >
-                        <Download size={16} />
-                        Baixar
-                      </a>
-                    </div>
-                  ) : (
-                    <div className="documento-status pendente">
-                      <Clock size={20} />
-                      <span>Pendente</span>
-                    </div>
-                  )}
                 </div>
 
-                <div className="documento-card">
-                  <div className="documento-header">
-                    <FileText size={24} />
-                    <h3>Comprovante de Renda</h3>
+                {/* Comprovante de Residência */}
+                <div className="form-group-doc">
+                  <label className="doc-label">
+                    Comprovante de Residência
+                    {cliente.comprovante_residencia_url ? (
+                      <span className="doc-status-badge success">
+                        <CheckCircle size={14} />
+                        Enviado
+                      </span>
+                    ) : (
+                      <span className="doc-status-badge warning">
+                        <Clock size={14} />
+                        Pendente
+                      </span>
+                    )}
+                  </label>
+                  <div className="file-upload-wrapper">
+                    {cliente.comprovante_residencia_url ? (
+                      <div className="file-upload-info">
+                        <span className="file-name" title={cliente.comprovante_residencia_url.split('/').pop()}>
+                          {cliente.comprovante_residencia_url.split('/').pop()}
+                        </span>
+                        <a href={cliente.comprovante_residencia_url} target="_blank" rel="noopener noreferrer" className="doc-preview">
+                          Ver arquivo
+                        </a>
+                      </div>
+                    ) : null}
+                    <label className="file-upload-label">
+                      <input
+                        type="file"
+                        accept="image/*,.pdf"
+                        onChange={(e) => e.target.files[0] && uploadDocumentoCliente(e.target.files[0], 'comprovante_residencia')}
+                        className="file-upload-input"
+                        disabled={uploadingDoc && uploadingDocType === 'comprovante_residencia'}
+                      />
+                      <span className="file-upload-button">
+                        {uploadingDoc && uploadingDocType === 'comprovante_residencia' ? (
+                          <>
+                            <div className="loading-spinner-small"></div>
+                            Enviando...
+                          </>
+                        ) : (
+                          'Escolher Arquivo'
+                        )}
+                      </span>
+                    </label>
                   </div>
-                  {cliente.comprovante_renda_url ? (
-                    <div className="documento-status success">
-                      <CheckCircle size={20} />
-                      <span>Enviado</span>
-                      <a 
-                        href={cliente.comprovante_renda_url} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="btn-download"
-                      >
-                        <Download size={16} />
-                        Baixar
-                      </a>
-                    </div>
-                  ) : (
-                    <div className="documento-status pendente">
-                      <Clock size={20} />
-                      <span>Pendente</span>
-                    </div>
-                  )}
                 </div>
 
-                {cliente.certidao_casamento_url && (
-                  <div className="documento-card">
-                    <div className="documento-header">
-                      <FileText size={24} />
-                      <h3>Certidão de Casamento</h3>
-                    </div>
-                    <div className="documento-status success">
-                      <CheckCircle size={20} />
-                      <span>Enviado</span>
-                      <a 
-                        href={cliente.certidao_casamento_url} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="btn-download"
-                      >
-                        <Download size={16} />
-                        Baixar
-                      </a>
-                    </div>
+                {/* Comprovante de Renda */}
+                <div className="form-group-doc">
+                  <label className="doc-label">
+                    Comprovante de Renda
+                    {cliente.comprovante_renda_url ? (
+                      <span className="doc-status-badge success">
+                        <CheckCircle size={14} />
+                        Enviado
+                      </span>
+                    ) : (
+                      <span className="doc-status-badge warning">
+                        <Clock size={14} />
+                        Pendente
+                      </span>
+                    )}
+                  </label>
+                  <div className="file-upload-wrapper">
+                    {cliente.comprovante_renda_url ? (
+                      <div className="file-upload-info">
+                        <span className="file-name" title={cliente.comprovante_renda_url.split('/').pop()}>
+                          {cliente.comprovante_renda_url.split('/').pop()}
+                        </span>
+                        <a href={cliente.comprovante_renda_url} target="_blank" rel="noopener noreferrer" className="doc-preview">
+                          Ver arquivo
+                        </a>
+                      </div>
+                    ) : null}
+                    <label className="file-upload-label">
+                      <input
+                        type="file"
+                        accept="image/*,.pdf"
+                        onChange={(e) => e.target.files[0] && uploadDocumentoCliente(e.target.files[0], 'comprovante_renda')}
+                        className="file-upload-input"
+                        disabled={uploadingDoc && uploadingDocType === 'comprovante_renda'}
+                      />
+                      <span className="file-upload-button">
+                        {uploadingDoc && uploadingDocType === 'comprovante_renda' ? (
+                          <>
+                            <div className="loading-spinner-small"></div>
+                            Enviando...
+                          </>
+                        ) : (
+                          'Escolher Arquivo'
+                        )}
+                      </span>
+                    </label>
                   </div>
-                )}
+                </div>
+
+                {/* Certidão de Casamento */}
+                <div className="form-group-doc">
+                  <label className="doc-label">
+                    Certidão de Casamento/União
+                    {cliente.certidao_casamento_url ? (
+                      <span className="doc-status-badge success">
+                        <CheckCircle size={14} />
+                        Enviado
+                      </span>
+                    ) : (
+                      <span className="doc-status-badge warning">
+                        <Clock size={14} />
+                        Pendente
+                      </span>
+                    )}
+                  </label>
+                  <div className="file-upload-wrapper">
+                    {cliente.certidao_casamento_url ? (
+                      <div className="file-upload-info">
+                        <span className="file-name" title={cliente.certidao_casamento_url.split('/').pop()}>
+                          {cliente.certidao_casamento_url.split('/').pop()}
+                        </span>
+                        <a href={cliente.certidao_casamento_url} target="_blank" rel="noopener noreferrer" className="doc-preview">
+                          Ver arquivo
+                        </a>
+                      </div>
+                    ) : null}
+                    <label className="file-upload-label">
+                      <input
+                        type="file"
+                        accept="image/*,.pdf"
+                        onChange={(e) => e.target.files[0] && uploadDocumentoCliente(e.target.files[0], 'certidao_casamento')}
+                        className="file-upload-input"
+                        disabled={uploadingDoc && uploadingDocType === 'certidao_casamento'}
+                      />
+                      <span className="file-upload-button">
+                        {uploadingDoc && uploadingDocType === 'certidao_casamento' ? (
+                          <>
+                            <div className="loading-spinner-small"></div>
+                            Enviando...
+                          </>
+                        ) : (
+                          'Escolher Arquivo'
+                        )}
+                      </span>
+                    </label>
+                  </div>
+                </div>
               </div>
             </section>
           )}
