@@ -37,12 +37,62 @@ const CorretorDashboard = () => {
     const saved = localStorage.getItem('corretor-sidebar-collapsed')
     return saved === 'true'
   })
+  const [cargoInfo, setCargoInfo] = useState(null)
+  const [empreendimentoInfo, setEmpreendimentoInfo] = useState(null)
 
   useEffect(() => {
     if (user) {
       fetchVendas()
     }
   }, [user])
+
+  useEffect(() => {
+    if (userProfile) {
+      fetchCargoAndEmpreendimento()
+    }
+  }, [userProfile])
+
+  const fetchCargoAndEmpreendimento = async () => {
+    if (!userProfile?.cargo_id && !userProfile?.empreendimento_id) {
+      return
+    }
+
+    try {
+      const promises = []
+      
+      if (userProfile?.cargo_id) {
+        promises.push(
+          supabase
+            .from('cargos_empreendimento')
+            .select('nome_cargo, percentual')
+            .eq('id', userProfile.cargo_id)
+            .single()
+            .then(({ data }) => data)
+        )
+      } else {
+        promises.push(Promise.resolve(null))
+      }
+
+      if (userProfile?.empreendimento_id) {
+        promises.push(
+          supabase
+            .from('empreendimentos')
+            .select('nome')
+            .eq('id', userProfile.empreendimento_id)
+            .single()
+            .then(({ data }) => data)
+        )
+      } else {
+        promises.push(Promise.resolve(null))
+      }
+
+      const [cargo, empreendimento] = await Promise.all(promises)
+      setCargoInfo(cargo)
+      setEmpreendimentoInfo(empreendimento)
+    } catch (error) {
+      console.error('Erro ao buscar cargo e empreendimento:', error)
+    }
+  }
 
   const fetchVendas = async () => {
     setLoading(true)
@@ -60,21 +110,6 @@ const CorretorDashboard = () => {
         return
       }
 
-      // Debug: Ver dados brutos do banco
-      console.log('🔍 [DEBUG] Dados brutos do banco:', data)
-      if (data && data.length > 0) {
-        data.forEach((venda, index) => {
-          console.log(`📦 [DEBUG] Venda ${index + 1} (ID: ${venda.id}):`, {
-            valor_venda: venda.valor_venda,
-            comissao_corretor: venda.comissao_corretor,
-            tipo_comissao: typeof venda.comissao_corretor,
-            is_null: venda.comissao_corretor === null,
-            status: venda.status,
-            tipo_corretor: venda.tipo_corretor
-          })
-        })
-      }
-
       // Validar e normalizar os dados
       const vendasValidadas = (data || []).map(venda => {
         const valorVenda = parseFloat(venda.valor_venda) || 0
@@ -85,11 +120,6 @@ const CorretorDashboard = () => {
           const percentual = userProfile?.percentual_corretor || 
             (userProfile?.tipo_corretor === 'interno' ? 2.5 : 3.5)
           comissaoCorretor = (valorVenda * percentual) / 100
-          console.log(`⚠️ [DEBUG] Comissão NULL para venda ${venda.id}, calculando:`, {
-            valor_venda: valorVenda,
-            percentual: percentual,
-            comissao_calculada: comissaoCorretor
-          })
         } else {
           // Converter para número se for string
           comissaoCorretor = parseFloat(comissaoCorretor) || 0
@@ -102,17 +132,6 @@ const CorretorDashboard = () => {
           status: venda.status || 'pendente'
         }
       })
-
-      console.log('✅ Vendas carregadas e validadas:', vendasValidadas)
-      console.log('📊 Total de vendas:', vendasValidadas.length)
-      console.log('💰 Total valor vendas:', vendasValidadas.reduce((acc, v) => acc + v.valor_venda, 0))
-      console.log('💵 Total comissões:', vendasValidadas.reduce((acc, v) => acc + v.comissao_corretor, 0))
-      console.log('🔍 [DEBUG] Verificando comissões normalizadas:', vendasValidadas.map(v => ({
-        id: v.id,
-        comissao_original: data?.find(d => d.id === v.id)?.comissao_corretor,
-        comissao_normalizada: v.comissao_corretor,
-        tipo: typeof v.comissao_corretor
-      })))
       
       setVendas(vendasValidadas)
     } catch (error) {
@@ -125,76 +144,12 @@ const CorretorDashboard = () => {
 
   const formatCurrency = (value) => {
     if (value === null || value === undefined || isNaN(value)) {
-      console.warn('⚠️ [FORMAT] Valor inválido para formatar:', value)
       return 'R$ 0,00'
     }
-    const formatted = new Intl.NumberFormat('pt-BR', {
+    return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
       currency: 'BRL'
     }).format(value)
-    console.log('💰 [FORMAT] Formatando:', { value, formatted })
-    return formatted
-  }
-
-  const getTotalVendas = () => {
-    const total = vendas.reduce((acc, v) => acc + (parseFloat(v.valor_venda) || 0), 0)
-    console.log('📊 [CALC] getTotalVendas:', { total, vendas_count: vendas.length })
-    return total
-  }
-
-  const getTotalComissao = () => {
-    const total = vendas.reduce((acc, v) => {
-      const comissao = v.comissao_corretor === null || v.comissao_corretor === undefined 
-        ? 0 
-        : (parseFloat(v.comissao_corretor) || 0)
-      return acc + comissao
-    }, 0)
-    console.log('💵 [CALC] getTotalComissao:', { 
-      total, 
-      vendas_count: vendas.length,
-      detalhes: vendas.map(v => ({ 
-        id: v.id, 
-        comissao: v.comissao_corretor,
-        comissao_parsed: parseFloat(v.comissao_corretor) || 0,
-        tipo: typeof v.comissao_corretor,
-        is_null: v.comissao_corretor === null
-      }))
-    })
-    return total
-  }
-
-  const getComissaoPendente = () => {
-    const pendentes = vendas.filter(v => v.status === 'pendente')
-    const total = pendentes.reduce((acc, v) => {
-      const comissao = v.comissao_corretor === null || v.comissao_corretor === undefined 
-        ? 0 
-        : (parseFloat(v.comissao_corretor) || 0)
-      return acc + comissao
-    }, 0)
-    console.log('⏳ [CALC] getComissaoPendente:', { 
-      total, 
-      pendentes_count: pendentes.length,
-      detalhes: pendentes.map(v => ({ 
-        id: v.id, 
-        comissao: v.comissao_corretor,
-        comissao_parsed: parseFloat(v.comissao_corretor) || 0,
-        tipo: typeof v.comissao_corretor,
-        is_null: v.comissao_corretor === null,
-        status: v.status 
-      }))
-    })
-    return total
-  }
-
-  const getComissaoPaga = () => {
-    const pagas = vendas.filter(v => v.status === 'pago')
-    const total = pagas.reduce((acc, v) => acc + (parseFloat(v.comissao_corretor) || 0), 0)
-    console.log('✅ [CALC] getComissaoPaga:', { 
-      total, 
-      pagas_count: pagas.length,
-      detalhes: pagas.map(v => ({ id: v.id, comissao: v.comissao_corretor, status: v.status }))
-    })
-    return total
   }
 
   const filteredVendas = vendas.filter(venda => {
@@ -204,17 +159,73 @@ const CorretorDashboard = () => {
     const hoje = new Date()
     
     if (periodo === 'mes') {
-      return dataVenda.getMonth() === hoje.getMonth() && 
-             dataVenda.getFullYear() === hoje.getFullYear()
+      const mesmoMes = dataVenda.getMonth() === hoje.getMonth() && 
+                       dataVenda.getFullYear() === hoje.getFullYear()
+      return mesmoMes
     }
     if (periodo === 'ano') {
-      return dataVenda.getFullYear() === hoje.getFullYear()
+      const mesmoAno = dataVenda.getFullYear() === hoje.getFullYear()
+      return mesmoAno
     }
     return true
   })
+  
+  // Log resumido do filtro
+  useEffect(() => {
+    console.log(`🔍 [FILTRO RESUMO] Período: ${periodo.toUpperCase()} | Total vendas: ${vendas.length} | Vendas filtradas: ${filteredVendas.length}`)
+    if (periodo !== 'todos' && filteredVendas.length > 0) {
+      console.log(`📋 Vendas incluídas no filtro "${periodo}":`)
+      filteredVendas.forEach((v, i) => {
+        console.log(`  ${i + 1}. ${new Date(v.data_venda).toLocaleDateString('pt-BR')} - ${formatCurrency(v.valor_venda)}`)
+      })
+    } else if (periodo !== 'todos' && filteredVendas.length === 0) {
+      console.log(`⚠️ Nenhuma venda encontrada para o período "${periodo}"`)
+      console.log(`📅 Vendas disponíveis:`)
+      vendas.forEach((v, i) => {
+        console.log(`  ${i + 1}. ${new Date(v.data_venda).toLocaleDateString('pt-BR')} - ${formatCurrency(v.valor_venda)}`)
+      })
+    }
+  }, [periodo, vendas.length, filteredVendas.length])
+
+  const getTotalVendas = () => {
+    return filteredVendas.reduce((acc, v) => acc + (parseFloat(v.valor_venda) || 0), 0)
+  }
+
+  const getTotalComissao = () => {
+    return filteredVendas.reduce((acc, v) => {
+      const comissao = v.comissao_corretor === null || v.comissao_corretor === undefined 
+        ? 0 
+        : (parseFloat(v.comissao_corretor) || 0)
+      return acc + comissao
+    }, 0)
+  }
+
+  const getComissaoPendente = () => {
+    const pendentes = filteredVendas.filter(v => v.status === 'pendente')
+    return pendentes.reduce((acc, v) => {
+      const comissao = v.comissao_corretor === null || v.comissao_corretor === undefined 
+        ? 0 
+        : (parseFloat(v.comissao_corretor) || 0)
+      return acc + comissao
+    }, 0)
+  }
+
+  const getComissaoPaga = () => {
+    const pagas = filteredVendas.filter(v => v.status === 'pago')
+    return pagas.reduce((acc, v) => acc + (parseFloat(v.comissao_corretor) || 0), 0)
+  }
 
   const percentualCorretor = userProfile?.percentual_corretor || 
     (userProfile?.tipo_corretor === 'interno' ? 2.5 : 4)
+
+  // Função para gerar título dinâmico do dashboard
+  const getDashboardTitle = () => {
+    if (cargoInfo?.nome_cargo) {
+      return `Dashboard ${cargoInfo.nome_cargo}`
+    } else {
+      return 'Dashboard do Corretor'
+    }
+  }
 
   // Toggle sidebar collapsed state
   const toggleSidebar = () => {
@@ -247,40 +258,6 @@ const CorretorDashboard = () => {
     }
   }, [tab, navigate, location.pathname])
 
-  // Debug: Verificar DOM após renderização
-  useEffect(() => {
-    if (activeTab === 'dashboard' && !loading && vendas.length > 0) {
-      setTimeout(() => {
-        console.log('🔍 [DOM CHECK] Verificando elementos no DOM...')
-        const statValues = document.querySelectorAll('.stat-card-value')
-        console.log('📊 [DOM CHECK] Total de elementos encontrados:', statValues.length)
-        
-        statValues.forEach((el, index) => {
-          const parent = el.closest('.stat-card-corretor')
-          const cardType = parent?.classList.contains('primary') ? 'primary' :
-                          parent?.classList.contains('success') ? 'success' :
-                          parent?.classList.contains('warning') ? 'warning' :
-                          parent?.classList.contains('info') ? 'info' : 'unknown'
-          
-          const styles = window.getComputedStyle(el)
-          console.log(`🎨 [DOM CHECK] Card ${index + 1} (${cardType}):`, {
-            textContent: el.textContent,
-            innerHTML: el.innerHTML,
-            display: styles.display,
-            visibility: styles.visibility,
-            opacity: styles.opacity,
-            color: styles.color,
-            backgroundColor: styles.backgroundColor,
-            fontSize: styles.fontSize,
-            fontWeight: styles.fontWeight,
-            height: styles.height,
-            width: styles.width,
-            overflow: styles.overflow
-          })
-        })
-      }, 500)
-    }
-  }, [activeTab, loading, vendas])
 
   return (
     <div className="dashboard-container">
@@ -344,7 +321,7 @@ const CorretorDashboard = () => {
             <div className="user-details">
               <span className="user-name">{userProfile?.nome || 'Corretor'}</span>
               <span className="user-role">
-                {userProfile?.tipo_corretor === 'interno' ? 'Corretor Interno' : 'Corretor Externo'}
+                {userProfile?.tipo_corretor === 'interno' ? 'Interno' : 'Externo'}
               </span>
             </div>
           </div>
@@ -366,7 +343,7 @@ const CorretorDashboard = () => {
             <Menu size={24} />
           </button>
           <h1>
-            {activeTab === 'dashboard' && 'Dashboard do Corretor'}
+            {activeTab === 'dashboard' && getDashboardTitle()}
             {activeTab === 'vendas' && 'Minhas Vendas'}
             {activeTab === 'relatorios' && 'Relatórios'}
           </h1>
@@ -385,7 +362,7 @@ const CorretorDashboard = () => {
                 </div>
                 <div className="tipo-badge">
                   <span className={`badge-large ${userProfile?.tipo_corretor || 'externo'}`}>
-                    {userProfile?.tipo_corretor === 'interno' ? 'Corretor Interno' : 'Corretor Externo'}
+                    {userProfile?.tipo_corretor === 'interno' ? 'Interno' : 'Externo'}
                   </span>
                 </div>
               </section>
@@ -399,12 +376,7 @@ const CorretorDashboard = () => {
           <div className="stat-card-content">
             <span className="stat-card-label">Total a Receber</span>
             <span className="stat-card-value">
-              {(() => {
-                const valor = getTotalComissao()
-                const formatado = formatCurrency(valor)
-                console.log('🎯 [RENDER] Total a Receber:', { valor, formatado, elemento: 'stat-card-value primary' })
-                return formatado
-              })()}
+              {formatCurrency(getTotalComissao())}
             </span>
           </div>
           <div className="stat-card-decoration"></div>
@@ -417,12 +389,7 @@ const CorretorDashboard = () => {
           <div className="stat-card-content">
             <span className="stat-card-label">Comissão Paga</span>
             <span className="stat-card-value">
-              {(() => {
-                const valor = getComissaoPaga()
-                const formatado = formatCurrency(valor)
-                console.log('🎯 [RENDER] Comissão Paga:', { valor, formatado, elemento: 'stat-card-value success' })
-                return formatado
-              })()}
+              {formatCurrency(getComissaoPaga())}
             </span>
           </div>
           <div className="stat-card-decoration"></div>
@@ -435,12 +402,7 @@ const CorretorDashboard = () => {
           <div className="stat-card-content">
             <span className="stat-card-label">Pendente</span>
             <span className="stat-card-value">
-              {(() => {
-                const valor = getComissaoPendente()
-                const formatado = formatCurrency(valor)
-                console.log('🎯 [RENDER] Comissão Pendente:', { valor, formatado, elemento: 'stat-card-value warning' })
-                return formatado
-              })()}
+              {formatCurrency(getComissaoPendente())}
             </span>
           </div>
           <div className="stat-card-decoration"></div>
@@ -453,12 +415,7 @@ const CorretorDashboard = () => {
           <div className="stat-card-content">
             <span className="stat-card-label">Total em Vendas</span>
             <span className="stat-card-value">
-              {(() => {
-                const valor = getTotalVendas()
-                const formatado = formatCurrency(valor)
-                console.log('🎯 [RENDER] Total em Vendas:', { valor, formatado, elemento: 'stat-card-value info' })
-                return formatado
-              })()}
+              {formatCurrency(getTotalVendas())}
             </span>
           </div>
           <div className="stat-card-decoration"></div>
