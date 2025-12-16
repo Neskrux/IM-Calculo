@@ -3028,6 +3028,9 @@
   font-weight: 600;
   color: var(--text-primary, #f0f4f8);
   font-family: 'Montserrat', sans-serif;
+  white-space: nowrap;
+  overflow: visible;
+  text-overflow: clip;
 }
 
 .stat-card-decoration {
@@ -3219,6 +3222,24 @@
   gap: 6px;
   font-size: 13px;
   color: var(--text-secondary, #94a3b8);
+}
+
+.venda-empreendimento {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--accent-primary, #4a90d9);
+  font-weight: 500;
+}
+
+.venda-unidade {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--text-secondary, #94a3b8);
+  font-weight: 500;
 }
 
 .status-tag {

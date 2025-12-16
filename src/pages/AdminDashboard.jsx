@@ -2456,173 +2456,124 @@ const AdminDashboard = () => {
     })
   }
 
-  // TESTE ÚNICO - Validar tudo de uma vez
-  const testarSistemaComissoes = async () => {
-    console.log('🧪 ==========================================')
-    console.log('🧪 TESTE COMPLETO DO SISTEMA DE COMISSÕES')
-    console.log('🧪 ==========================================')
+
+  // Função para gerar dados do Ticker (métricas globais do admin)
+  const getTickerData = () => {
+    const hoje = new Date()
+    const inicioHoje = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate(), 0, 0, 0, 0)
+    const fimHoje = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate(), 23, 59, 59, 999)
     
-    try {
-      // Recarregar dados do estado primeiro
-      await fetchData()
-      
-      // 1. Buscar última venda atualizada (não criada)
-      const { data: vendas, error: vendasError } = await supabase
-        .from('vendas')
-        .select('*')
-        .order('updated_at', { ascending: false })
-        .limit(1)
-      
-      if (vendasError || !vendas || vendas.length === 0) {
-        console.error('❌ Nenhuma venda encontrada. Crie uma venda primeiro!')
-        setMessage({ type: 'error', text: 'Nenhuma venda encontrada. Crie uma venda primeiro!' })
-        return { sucesso: false, erro: 'Nenhuma venda encontrada' }
+    // Vendas hoje
+    const vendasHoje = vendas.filter(v => {
+      const dataVenda = new Date(v.data_venda)
+      return dataVenda >= inicioHoje && dataVenda <= fimHoje
+    })
+    const totalVendasHoje = vendasHoje.reduce((acc, v) => acc + (parseFloat(v.valor_venda) || 0), 0)
+    
+    // Vendas este mês
+    const vendasMes = vendas.filter(v => {
+      const dataVenda = new Date(v.data_venda)
+      return dataVenda.getMonth() === hoje.getMonth() && 
+             dataVenda.getFullYear() === hoje.getFullYear()
+    })
+    const totalVendasMes = vendasMes.reduce((acc, v) => acc + (parseFloat(v.valor_venda) || 0), 0)
+    
+    // Total em vendas
+    const totalVendas = vendas.reduce((acc, v) => acc + (parseFloat(v.valor_venda) || 0), 0)
+    
+    // Comissões pendentes (todas as vendas com status pendente)
+    const comissoesPendentes = vendas
+      .filter(v => v.status === 'pendente')
+      .reduce((acc, v) => acc + (parseFloat(v.comissao_total) || 0), 0)
+    
+    // Corretores ativos
+    const corretoresAtivos = corretores.filter(c => c.ativo !== false).length
+    
+    // Média por venda
+    const mediaPorVenda = vendas.length > 0 ? totalVendas / vendas.length : 0
+    
+    // Pagamentos hoje (pro-soluto)
+    const pagamentosHoje = pagamentos.filter(p => {
+      if (!p.data_pagamento) return false
+      const dataPagamento = new Date(p.data_pagamento)
+      return dataPagamento >= inicioHoje && dataPagamento <= fimHoje
+    })
+    const totalPagamentosHoje = pagamentosHoje.reduce((acc, p) => acc + (parseFloat(p.valor) || 0), 0)
+    
+    // Formatar valores
+    const formatTicker = (value) => {
+      if (value >= 1000000) {
+        return `R$ ${(value / 1000000).toFixed(1)}M`
+      } else if (value >= 1000) {
+        return `R$ ${(value / 1000).toFixed(0)}k`
       }
-      
-      const venda = vendas[0]
-      console.log('✅ Venda encontrada (última atualizada):', {
-        id: venda.id,
-        valor_venda: venda.valor_venda,
-        comissao_total: venda.comissao_total,
-        comissao_corretor: venda.comissao_corretor,
-        updated_at: venda.updated_at
-      })
-      
-      // 2. Buscar comissões em comissoes_venda (forçar busca fresca)
-      const { data: comissoes, error: comissoesError } = await supabase
-        .from('comissoes_venda')
-        .select('*')
-        .eq('venda_id', venda.id)
-      
-      if (comissoesError) {
-        console.error('❌ Erro ao buscar comissões:', comissoesError)
-        setMessage({ type: 'error', text: `Erro ao buscar comissões: ${comissoesError.message}` })
-        return { sucesso: false, erro: comissoesError }
-      }
-      
-      console.log('✅ Comissões encontradas:', comissoes?.length || 0)
-      
-      // 3. Calcular soma das comissões
-      const somaComissoes = comissoes?.reduce((acc, c) => 
-        acc + parseFloat(c.valor_comissao || 0), 0
-      ) || 0
-      
-      const comissaoTotalVenda = parseFloat(venda.comissao_total || 0)
-      const diferenca = Math.abs(somaComissoes - comissaoTotalVenda)
-      const match = diferenca < 0.01
-      
-      console.log('📊 Validação de totais:')
-      console.log('   Soma comissoes_venda:', somaComissoes)
-      console.log('   comissao_total na venda:', comissaoTotalVenda)
-      console.log('   Diferença:', diferenca)
-      console.log(match ? '   ✅ MATCH!' : '   ❌ NÃO MATCH!')
-      
-      // 4. Verificar colunas fixas (dados atualizados)
-      const colunasFixas = {
-        comissao_diretor: venda.comissao_diretor,
-        comissao_nohros_imobiliaria: venda.comissao_nohros_imobiliaria,
-        comissao_nohros_gestao: venda.comissao_nohros_gestao,
-        comissao_wsc: venda.comissao_wsc,
-        comissao_corretor: venda.comissao_corretor,
-        comissao_coordenadora: venda.comissao_coordenadora
-      }
-      
-      console.log('📋 Colunas fixas na tabela vendas (APÓS ATUALIZAÇÃO):')
-      Object.entries(colunasFixas).forEach(([coluna, valor]) => {
-        const status = valor !== null && valor !== undefined ? '✅' : '⚠️'
-        const valorFormatado = valor !== null && valor !== undefined 
-          ? `R$ ${parseFloat(valor).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-          : 'NULL'
-        console.log(`   ${status} ${coluna}: ${valorFormatado}`)
-      })
-      
-      // 5. Verificar cargos únicos
-      const cargosUnicos = [...new Set(comissoes?.map(c => c.nome_cargo) || [])]
-      console.log('👥 Cargos encontrados:', cargosUnicos.length)
-      cargosUnicos.forEach(cargo => {
-        const totalCargo = comissoes
-          ?.filter(c => c.nome_cargo === cargo)
-          .reduce((acc, c) => acc + parseFloat(c.valor_comissao || 0), 0) || 0
-        console.log(`   - ${cargo}: R$ ${totalCargo.toFixed(2)}`)
-      })
-      
-      // 6. Verificar se há cargos não mapeados
-      const mapeamento = {
-        diretor: ['diretor'],
-        nohros_imobiliaria: ['nohros imobiliária', 'nohros'],
-        nohros_gestao: ['gestão', 'ferreti'],
-        wsc: ['wsc', 'beton'],
-        corretor: ['corretor', 'autônomo'],
-        coordenadora: ['coordenadora', 'coordenador']
-      }
-      
-      const cargosNaoMapeados = cargosUnicos.filter(cargo => {
-        const cargoLower = cargo.toLowerCase()
-        return !Object.values(mapeamento).some(palavras => 
-          palavras.some(p => cargoLower.includes(p))
-        )
-      })
-      
-      if (cargosNaoMapeados.length > 0) {
-        console.log('⚠️ Cargos não mapeados (novos cargos):', cargosNaoMapeados)
-        console.log('   ✅ Esses cargos estão salvos em comissoes_venda (correto!)')
-      } else {
-        console.log('✅ Todos os cargos estão mapeados')
-      }
-      
-      // 7. Comparar com estado local (se disponível)
-      const vendaLocal = vendas.find(v => v.id === venda.id)
-      if (vendaLocal) {
-        console.log('🔄 Comparação com estado local:')
-        console.log('   Estado local - comissao_diretor:', vendaLocal.comissao_diretor)
-        console.log('   Banco de dados - comissao_diretor:', venda.comissao_diretor)
-        if (vendaLocal.comissao_diretor !== venda.comissao_diretor) {
-          console.log('   ⚠️ Diferença detectada! Recarregue os dados.')
-        }
-      }
-      
-      // 8. Resultado final
-      const resultado = {
-        sucesso: match && comissoes && comissoes.length > 0,
-        venda_id: venda.id,
-        valor_venda: venda.valor_venda,
-        comissao_total: comissaoTotalVenda,
-        soma_comissoes_venda: somaComissoes,
-        diferenca: diferenca,
-        match: match,
-        total_cargos: comissoes?.length || 0,
-        cargos_unicos: cargosUnicos.length,
-        cargos_nao_mapeados: cargosNaoMapeados,
-        colunas_fixas_preenchidas: Object.values(colunasFixas).filter(v => v !== null && v !== undefined).length,
-        colunas_fixas: colunasFixas
-      }
-      
-      console.log('🎯 ==========================================')
-      console.log('🎯 RESULTADO FINAL:')
-      console.log('🎯 ==========================================')
-      console.log(resultado.sucesso ? '✅ SISTEMA FUNCIONANDO CORRETAMENTE!' : '❌ PROBLEMAS ENCONTRADOS!')
-      console.log('📊 Detalhes:', resultado)
-      console.log('🎯 ==========================================')
-      
-      if (resultado.sucesso) {
-        setMessage({ 
-          type: 'success', 
-          text: `✅ Teste passou! ${resultado.total_cargos} cargos encontrados. ${resultado.colunas_fixas_preenchidas} colunas fixas preenchidas. Verifique o console para detalhes.` 
-        })
-      } else {
-        setMessage({ 
-          type: 'error', 
-          text: `❌ Teste falhou! Verifique o console para detalhes.` 
-        })
-      }
-      
-      return resultado
-      
-    } catch (error) {
-      console.error('❌ Erro no teste:', error)
-      setMessage({ type: 'error', text: `Erro no teste: ${error.message}` })
-      return { sucesso: false, erro: error.message }
+      return new Intl.NumberFormat('pt-BR', {
+        style: 'currency',
+        currency: 'BRL',
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0
+      }).format(value)
     }
+
+    const tickerData = [
+      {
+        name: 'VENDAS HOJE',
+        value: formatTicker(totalVendasHoje),
+        change: vendasHoje.length > 0 ? `+${vendasHoje.length}` : '0',
+        type: vendasHoje.length > 0 ? 'positive' : 'neutral'
+      },
+      {
+        name: 'COMISSÕES PENDENTES',
+        value: formatTicker(comissoesPendentes),
+        change: '0%',
+        type: comissoesPendentes > 0 ? 'negative' : 'neutral'
+      },
+      {
+        name: 'TOTAL EM VENDAS',
+        value: formatTicker(totalVendas),
+        change: vendas.length > 0 ? `${vendas.length} vendas` : '0',
+        type: 'positive'
+      },
+      {
+        name: 'CORRETORES ATIVOS',
+        value: corretoresAtivos.toString(),
+        change: corretoresAtivos > 0 ? `+${corretoresAtivos}` : '0',
+        type: 'positive'
+      },
+      {
+        name: 'MÉDIA POR VENDA',
+        value: formatTicker(mediaPorVenda),
+        change: '0%',
+        type: 'positive'
+      },
+      {
+        name: 'PAGAMENTOS HOJE',
+        value: formatTicker(totalPagamentosHoje),
+        change: pagamentosHoje.length > 0 ? `+${pagamentosHoje.length}` : '0',
+        type: pagamentosHoje.length > 0 ? 'positive' : 'neutral'
+      }
+    ]
+
+    // Adicionar métricas opcionais se houver dados futuros
+    // Exemplo: Meta mensal, Leads novos (comentado para uso futuro)
+    // if (metaMensal) {
+    //   tickerData.push({
+    //     name: 'META MENSAL',
+    //     value: `${metaMensal}%`,
+    //     change: '+4%',
+    //     type: 'positive'
+    //   })
+    // }
+    // if (leadsNovos) {
+    //   tickerData.push({
+    //     name: 'LEADS NOVOS',
+    //     value: leadsNovos.toString(),
+    //     change: `+${leadsNovos}`,
+    //     type: 'positive'
+    //   })
+    // }
+
+    return tickerData
   }
 
   return (
@@ -2750,7 +2701,7 @@ const AdminDashboard = () => {
       {/* Main Content */}
       <main className={`main-content ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
         {/* Ticker */}
-        <Ticker />
+        <Ticker data={getTickerData()} />
         
         {/* Header */}
         <header className="main-header">
@@ -5345,77 +5296,6 @@ const AdminDashboard = () => {
         </div>
       )}
 
-      {/* BOTÕES DE TESTE TEMPORÁRIOS - REMOVER DEPOIS */}
-      <div style={{
-        position: 'fixed',
-        bottom: '20px',
-        right: '20px',
-        zIndex: 99999,
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '10px',
-        pointerEvents: 'auto'
-      }}>
-        <button 
-          onClick={testarSistemaComissoes}
-          style={{
-            padding: '12px 24px',
-            backgroundColor: '#4a90d9',
-            color: 'white',
-            border: 'none',
-            borderRadius: '8px',
-            cursor: 'pointer',
-            fontSize: '14px',
-            fontWeight: 'bold',
-            boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            transition: 'all 0.3s ease'
-          }}
-          onMouseEnter={(e) => {
-            e.target.style.backgroundColor = '#357abd'
-            e.target.style.transform = 'scale(1.05)'
-          }}
-          onMouseLeave={(e) => {
-            e.target.style.backgroundColor = '#4a90d9'
-            e.target.style.transform = 'scale(1)'
-          }}
-        >
-          <Calculator size={18} />
-          🧪 Testar Comissões
-        </button>
-        
-        <button 
-          onClick={atualizarComissoesVendasAntigas}
-          style={{
-            padding: '12px 24px',
-            backgroundColor: '#10b981',
-            color: 'white',
-            border: 'none',
-            borderRadius: '8px',
-            cursor: 'pointer',
-            fontSize: '14px',
-            fontWeight: 'bold',
-            boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            transition: 'all 0.3s ease'
-          }}
-          onMouseEnter={(e) => {
-            e.target.style.backgroundColor = '#059669'
-            e.target.style.transform = 'scale(1.05)'
-          }}
-          onMouseLeave={(e) => {
-            e.target.style.backgroundColor = '#10b981'
-            e.target.style.transform = 'scale(1)'
-          }}
-        >
-          <TrendingUp size={18} />
-          🔄 Atualizar Vendas Antigas
-        </button>
-      </div>
     </div>
   )
 }

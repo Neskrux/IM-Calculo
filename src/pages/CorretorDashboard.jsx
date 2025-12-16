@@ -6,7 +6,8 @@ import {
   DollarSign, TrendingUp, LogOut, 
   Calendar, User, CheckCircle, Clock, 
   Wallet, Target, Award, BarChart3,
-  LayoutDashboard, Menu, X, ChevronLeft, ChevronRight
+  LayoutDashboard, Menu, X, ChevronLeft, ChevronRight,
+  Building, MapPin
 } from 'lucide-react'
 import logo from '../imgs/logo.png'
 import Ticker from '../components/Ticker'
@@ -110,6 +111,29 @@ const CorretorDashboard = () => {
         return
       }
 
+      // Buscar empreendimentos e clientes para associar
+      const empreendimentoIds = [...new Set((data || []).map(v => v.empreendimento_id).filter(Boolean))]
+      const clienteIds = [...new Set((data || []).map(v => v.cliente_id).filter(Boolean))]
+
+      const [empreendimentosResult, clientesResult] = await Promise.all([
+        empreendimentoIds.length > 0 
+          ? supabase.from('empreendimentos').select('id, nome').in('id', empreendimentoIds)
+          : Promise.resolve({ data: [], error: null }),
+        clienteIds.length > 0
+          ? supabase.from('clientes').select('id, nome_completo').in('id', clienteIds)
+          : Promise.resolve({ data: [], error: null })
+      ])
+
+      const empreendimentosMap = (empreendimentosResult.data || []).reduce((acc, emp) => {
+        acc[emp.id] = emp.nome
+        return acc
+      }, {})
+
+      const clientesMap = (clientesResult.data || []).reduce((acc, cliente) => {
+        acc[cliente.id] = cliente.nome_completo
+        return acc
+      }, {})
+
       // Validar e normalizar os dados
       const vendasValidadas = (data || []).map(venda => {
         const valorVenda = parseFloat(venda.valor_venda) || 0
@@ -129,7 +153,9 @@ const CorretorDashboard = () => {
           ...venda,
           valor_venda: valorVenda,
           comissao_corretor: comissaoCorretor,
-          status: venda.status || 'pendente'
+          status: venda.status || 'pendente',
+          empreendimento_nome: venda.empreendimento_id ? empreendimentosMap[venda.empreendimento_id] : null,
+          cliente_nome: venda.cliente_id ? clientesMap[venda.cliente_id] : null
         }
       })
       
@@ -146,10 +172,23 @@ const CorretorDashboard = () => {
     if (value === null || value === undefined || isNaN(value)) {
       return 'R$ 0,00'
     }
+    // Sempre mostrar valor completo, nunca formato compacto (1M, 1k, etc)
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
-      currency: 'BRL'
+      currency: 'BRL',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
     }).format(value)
+  }
+
+  // Função para capitalizar nomes (primeira letra de cada palavra em maiúscula)
+  const capitalizeName = (name) => {
+    if (!name || typeof name !== 'string') return name
+    return name
+      .toLowerCase()
+      .split(' ')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ')
   }
 
   const filteredVendas = vendas.filter(venda => {
@@ -225,6 +264,99 @@ const CorretorDashboard = () => {
     } else {
       return 'Dashboard do Corretor'
     }
+  }
+
+  // Função para gerar dados do Ticker (métricas pessoais do corretor)
+  const getTickerData = () => {
+    const hoje = new Date()
+    const inicioHoje = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate(), 0, 0, 0, 0)
+    const fimHoje = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate(), 23, 59, 59, 999)
+    
+    // Vendas hoje
+    const vendasHoje = vendas.filter(v => {
+      const dataVenda = new Date(v.data_venda)
+      return dataVenda >= inicioHoje && dataVenda <= fimHoje
+    })
+    const totalVendasHoje = vendasHoje.reduce((acc, v) => acc + (parseFloat(v.valor_venda) || 0), 0)
+    
+    // Vendas este mês
+    const vendasMes = vendas.filter(v => {
+      const dataVenda = new Date(v.data_venda)
+      return dataVenda.getMonth() === hoje.getMonth() && 
+             dataVenda.getFullYear() === hoje.getFullYear()
+    })
+    const totalVendasMes = vendasMes.reduce((acc, v) => acc + (parseFloat(v.valor_venda) || 0), 0)
+    
+    // Média por venda
+    const mediaPorVenda = vendas.length > 0 
+      ? getTotalVendas() / vendas.length 
+      : 0
+    
+    // Formatar valores
+    const formatTicker = (value) => {
+      // Sempre mostrar valor completo, nunca formato compacto (1M, 1k, etc)
+      if (value === null || value === undefined || isNaN(value)) {
+        return 'R$ 0,00'
+      }
+      return new Intl.NumberFormat('pt-BR', {
+        style: 'currency',
+        currency: 'BRL',
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      }).format(value)
+    }
+
+    const tickerData = [
+      {
+        name: 'MINHAS VENDAS HOJE',
+        value: formatTicker(totalVendasHoje),
+        change: vendasHoje.length > 0 ? `+${vendasHoje.length}` : '0',
+        type: vendasHoje.length > 0 ? 'positive' : 'neutral'
+      },
+      {
+        name: 'MINHA COMISSÃO PENDENTE',
+        value: formatTicker(getComissaoPendente()),
+        change: '0%',
+        type: getComissaoPendente() > 0 ? 'positive' : 'neutral'
+      },
+      {
+        name: 'TOTAL EM VENDAS',
+        value: formatTicker(getTotalVendas()),
+        change: vendas.length > 0 ? `${vendas.length} vendas` : '0',
+        type: 'positive'
+      },
+      {
+        name: 'COMISSÃO PAGA',
+        value: formatTicker(getComissaoPaga()),
+        change: '0%',
+        type: getComissaoPaga() > 0 ? 'positive' : 'neutral'
+      },
+      {
+        name: 'VENDAS ESTE MÊS',
+        value: formatTicker(totalVendasMes),
+        change: vendasMes.length > 0 ? `${vendasMes.length} vendas` : '0',
+        type: 'positive'
+      },
+      {
+        name: 'MÉDIA POR VENDA',
+        value: formatTicker(mediaPorVenda),
+        change: '0%',
+        type: 'positive'
+      }
+    ]
+
+    // Adicionar métricas opcionais se houver dados futuros
+    // Exemplo: Meta mensal, Leads novos (comentado para uso futuro)
+    // if (metaMensal) {
+    //   tickerData.push({
+    //     name: 'META MENSAL',
+    //     value: `${metaMensal}%`,
+    //     change: '+4%',
+    //     type: 'positive'
+    //   })
+    // }
+
+    return tickerData
   }
 
   // Toggle sidebar collapsed state
@@ -319,7 +451,7 @@ const CorretorDashboard = () => {
               <User size={20} />
             </div>
             <div className="user-details">
-              <span className="user-name">{userProfile?.nome || 'Corretor'}</span>
+              <span className="user-name">{capitalizeName(userProfile?.nome || 'Corretor')}</span>
               <span className="user-role">
                 {userProfile?.tipo_corretor === 'interno' ? 'Interno' : 'Externo'}
               </span>
@@ -335,7 +467,7 @@ const CorretorDashboard = () => {
       {/* Main Content */}
       <main className={`main-content ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
         {/* Ticker */}
-        <Ticker />
+        <Ticker data={getTickerData()} />
         
         {/* Header */}
         <header className="main-header">
@@ -357,7 +489,7 @@ const CorretorDashboard = () => {
               {/* Welcome Section */}
               <section className="welcome-section">
                 <div className="welcome-content">
-                  <h1>Bem-vindo, {userProfile?.nome?.split(' ')[0] || 'Corretor'}</h1>
+                  <h1>Bem-vindo, {capitalizeName(userProfile?.nome?.split(' ')[0] || 'Corretor')}</h1>
                   <p>Acompanhe suas vendas e comissões</p>
                 </div>
                 <div className="tipo-badge">
@@ -544,8 +676,49 @@ const CorretorDashboard = () => {
                         <div key={venda.id} className="venda-card">
                           <div className="venda-main">
                             <div className="venda-info">
-                              <h4>{venda.descricao || 'Venda de Imóvel'}</h4>
+                              <h4>
+                                {(() => {
+                                  // Montar título: Unidade Bloco Nome Cliente
+                                  const partes = []
+                                  
+                                  // Unidade
+                                  if (venda.unidade) {
+                                    partes.push(`Unidade ${venda.unidade}`)
+                                  }
+                                  
+                                  // Bloco
+                                  if (venda.bloco) {
+                                    partes.push(`Bloco ${venda.bloco}`)
+                                  }
+                                  
+                                  // Cliente (se houver)
+                                  if (venda.cliente_nome) {
+                                    partes.push(capitalizeName(venda.cliente_nome))
+                                  }
+                                  
+                                  // Se não tiver nenhuma informação, usar descrição ou padrão
+                                  if (partes.length === 0) {
+                                    return venda.descricao || 'Venda de Imóvel'
+                                  }
+                                  
+                                  return partes.join(' • ')
+                                })()}
+                              </h4>
                               <div className="venda-meta">
+                                {venda.empreendimento_nome && (
+                                  <span className="venda-empreendimento">
+                                    <Building size={12} />
+                                    {capitalizeName(venda.empreendimento_nome)}
+                                  </span>
+                                )}
+                                {(venda.unidade || venda.bloco) && (
+                                  <span className="venda-unidade">
+                                    <MapPin size={12} />
+                                    {venda.bloco && `Bloco ${venda.bloco}`}
+                                    {venda.bloco && venda.unidade && ' • '}
+                                    {venda.unidade && `Unidade ${venda.unidade}`}
+                                  </span>
+                                )}
                                 <span className="venda-date">
                                   <Calendar size={14} />
                                   {new Date(venda.data_venda).toLocaleDateString('pt-BR')}
