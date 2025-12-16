@@ -320,14 +320,6 @@ const CorretorDashboard = () => {
             <span>Minhas Vendas</span>
           </button>
           <button 
-            className={`nav-item ${activeTab === 'comissoes' ? 'active' : ''}`}
-            onClick={() => navigate('/corretor/comissoes')}
-            title="Comissões"
-          >
-            <Wallet size={20} />
-            <span>Comissões</span>
-          </button>
-          <button 
             className={`nav-item ${activeTab === 'relatorios' ? 'active' : ''}`}
             onClick={() => navigate('/corretor/relatorios')}
             title="Relatórios"
@@ -376,7 +368,6 @@ const CorretorDashboard = () => {
           <h1>
             {activeTab === 'dashboard' && 'Dashboard do Corretor'}
             {activeTab === 'vendas' && 'Minhas Vendas'}
-            {activeTab === 'comissoes' && 'Minhas Comissões'}
             {activeTab === 'relatorios' && 'Relatórios'}
           </h1>
         </header>
@@ -534,72 +525,6 @@ const CorretorDashboard = () => {
                   <div className="loading-spinner-large"></div>
                   <p>Carregando suas vendas...</p>
                 </div>
-              ) : filteredVendas.length === 0 ? (
-                <div className="empty-state">
-                  <DollarSign size={48} />
-                  <h3>Nenhuma venda encontrada</h3>
-                  <p>Suas vendas aparecerão aqui quando forem registradas</p>
-                </div>
-              ) : (
-                <div className="vendas-list">
-                  {filteredVendas.map((venda) => (
-                    <div key={venda.id} className="venda-card">
-                      <div className="venda-main">
-                        <div className="venda-info">
-                          <h4>{venda.descricao || 'Venda de Imóvel'}</h4>
-                          <div className="venda-meta">
-                            <span className="venda-date">
-                              <Calendar size={14} />
-                              {new Date(venda.data_venda).toLocaleDateString('pt-BR')}
-                            </span>
-                            <span className={`status-tag ${venda.status}`}>
-                              {venda.status === 'pago' ? (
-                                <>
-                                  <CheckCircle size={12} />
-                                  Pago
-                                </>
-                              ) : (
-                                <>
-                                  <Clock size={12} />
-                                  Pendente
-                                </>
-                              )}
-                            </span>
-                          </div>
-                        </div>
-                        <div className="venda-values">
-                          <div className="venda-valor">
-                            <span className="label">Valor da Venda</span>
-                            <span className="value">{formatCurrency(venda.valor_venda)}</span>
-                          </div>
-                          <div className="venda-comissao">
-                            <span className="label">Sua Comissão</span>
-                            <span className="value highlight">{formatCurrency(venda.comissao_corretor)}</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </section>
-          )}
-
-          {/* Comissões Tab */}
-          {activeTab === 'comissoes' && (
-            <section className="comissoes-section">
-              <div className="section-header-corretor">
-                <h2>
-                  <Wallet size={24} />
-                  Minhas Comissões
-                </h2>
-              </div>
-
-              {loading ? (
-                <div className="loading-container">
-                  <div className="loading-spinner-large"></div>
-                  <p>Carregando suas comissões...</p>
-                </div>
               ) : (
                 <>
                   {/* Resumo de Comissões */}
@@ -636,59 +561,68 @@ const CorretorDashboard = () => {
                       </div>
                       <div className="stat-card-decoration"></div>
                     </div>
+
+                    <div className="stat-card-corretor info">
+                      <div className="stat-card-icon">
+                        <Target size={28} />
+                      </div>
+                      <div className="stat-card-content">
+                        <span className="stat-card-label">Total em Vendas</span>
+                        <span className="stat-card-value">{formatCurrency(getTotalVendas())}</span>
+                      </div>
+                      <div className="stat-card-decoration"></div>
+                    </div>
                   </div>
 
-                  {/* Lista de Comissões */}
-                  <div className="comissoes-list">
-                    {vendas.length === 0 ? (
-                      <div className="empty-state">
-                        <Wallet size={48} />
-                        <h3>Nenhuma comissão encontrada</h3>
-                        <p>Suas comissões aparecerão aqui quando houver vendas registradas</p>
-                      </div>
-                    ) : (
-                      <div className="vendas-list">
-                        {vendas.map((venda) => (
-                          <div key={venda.id} className="venda-card">
-                            <div className="venda-main">
-                              <div className="venda-info">
-                                <h4>{venda.descricao || 'Venda de Imóvel'}</h4>
-                                <div className="venda-meta">
-                                  <span className="venda-date">
-                                    <Calendar size={14} />
-                                    {new Date(venda.data_venda).toLocaleDateString('pt-BR')}
-                                  </span>
-                                  <span className={`status-tag ${venda.status}`}>
-                                    {venda.status === 'pago' ? (
-                                      <>
-                                        <CheckCircle size={12} />
-                                        Pago
-                                      </>
-                                    ) : (
-                                      <>
-                                        <Clock size={12} />
-                                        Pendente
-                                      </>
-                                    )}
-                                  </span>
-                                </div>
+                  {/* Lista de Vendas */}
+                  {filteredVendas.length === 0 ? (
+                    <div className="empty-state">
+                      <DollarSign size={48} />
+                      <h3>Nenhuma venda encontrada</h3>
+                      <p>Suas vendas aparecerão aqui quando forem registradas</p>
+                    </div>
+                  ) : (
+                    <div className="vendas-list">
+                      {filteredVendas.map((venda) => (
+                        <div key={venda.id} className="venda-card">
+                          <div className="venda-main">
+                            <div className="venda-info">
+                              <h4>{venda.descricao || 'Venda de Imóvel'}</h4>
+                              <div className="venda-meta">
+                                <span className="venda-date">
+                                  <Calendar size={14} />
+                                  {new Date(venda.data_venda).toLocaleDateString('pt-BR')}
+                                </span>
+                                <span className={`status-tag ${venda.status}`}>
+                                  {venda.status === 'pago' ? (
+                                    <>
+                                      <CheckCircle size={12} />
+                                      Pago
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Clock size={12} />
+                                      Pendente
+                                    </>
+                                  )}
+                                </span>
                               </div>
-                              <div className="venda-values">
-                                <div className="venda-valor">
-                                  <span className="label">Valor da Venda</span>
-                                  <span className="value">{formatCurrency(venda.valor_venda)}</span>
-                                </div>
-                                <div className="venda-comissao">
-                                  <span className="label">Sua Comissão ({percentualCorretor}%)</span>
-                                  <span className="value highlight">{formatCurrency(venda.comissao_corretor)}</span>
-                                </div>
+                            </div>
+                            <div className="venda-values">
+                              <div className="venda-valor">
+                                <span className="label">Valor da Venda</span>
+                                <span className="value">{formatCurrency(venda.valor_venda)}</span>
+                              </div>
+                              <div className="venda-comissao">
+                                <span className="label">Sua Comissão ({percentualCorretor}%)</span>
+                                <span className="value highlight">{formatCurrency(venda.comissao_corretor)}</span>
                               </div>
                             </div>
                           </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </>
               )}
             </section>
