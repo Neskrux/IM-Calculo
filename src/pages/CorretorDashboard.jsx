@@ -6,7 +6,7 @@ import {
   DollarSign, TrendingUp, LogOut, 
   Calendar, User, CheckCircle, Clock, 
   Wallet, Target, Award, BarChart3,
-  LayoutDashboard, Menu, X, ChevronLeft, ChevronRight,
+  LayoutDashboard, Menu, X, ChevronLeft, ChevronRight, ChevronDown,
   Building, MapPin
 } from 'lucide-react'
 import logo from '../imgs/logo.png'
@@ -40,6 +40,9 @@ const CorretorDashboard = () => {
   })
   const [cargoInfo, setCargoInfo] = useState(null)
   const [empreendimentoInfo, setEmpreendimentoInfo] = useState(null)
+  const [vendaExpandida, setVendaExpandida] = useState(null)
+  const [pagamentosVenda, setPagamentosVenda] = useState({}) // Cache de pagamentos por venda
+  const [gruposExpandidos, setGruposExpandidos] = useState({}) // Controla quais grupos estão expandidos: { "vendaId-tipo": true }
 
   useEffect(() => {
     if (user) {
@@ -257,6 +260,109 @@ const CorretorDashboard = () => {
   const percentualCorretor = userProfile?.percentual_corretor || 
     (userProfile?.tipo_corretor === 'interno' ? 2.5 : 4)
 
+  // Buscar pagamentos de uma venda específica
+  const fetchPagamentosVenda = async (vendaId) => {
+    if (pagamentosVenda[vendaId]) {
+      return pagamentosVenda[vendaId] // Retornar do cache se já foi buscado
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('pagamentos_prosoluto')
+        .select('*')
+        .eq('venda_id', vendaId)
+        .order('data_prevista', { ascending: true })
+
+      if (error) {
+        console.error('Erro ao buscar pagamentos:', error)
+        return []
+      }
+
+      // Salvar no cache
+      setPagamentosVenda(prev => ({
+        ...prev,
+        [vendaId]: data || []
+      }))
+
+      return data || []
+    } catch (error) {
+      console.error('Erro ao buscar pagamentos:', error)
+      return []
+    }
+  }
+
+  // Calcular comissão proporcional do corretor para uma parcela
+  const calcularComissaoProporcional = (pagamento, venda) => {
+    const valorTotalVenda = parseFloat(venda.valor_venda) || 0
+    const valorParcela = parseFloat(pagamento.valor) || 0
+    const comissaoTotalCorretor = parseFloat(venda.comissao_corretor) || 0
+
+    if (valorTotalVenda === 0) return 0
+    return (comissaoTotalCorretor * valorParcela) / valorTotalVenda
+  }
+
+  // Agrupar pagamentos por tipo
+  const agruparPagamentosPorTipo = (pagamentos) => {
+    const grupos = {
+      sinal: [],
+      entrada: [],
+      parcela_entrada: [],
+      balao: []
+    }
+
+    pagamentos.forEach(pagamento => {
+      const tipo = pagamento.tipo
+      if (grupos[tipo]) {
+        grupos[tipo].push(pagamento)
+      }
+    })
+
+    // Ordenar cada grupo por número de parcela
+    grupos.parcela_entrada.sort((a, b) => (a.numero_parcela || 0) - (b.numero_parcela || 0))
+    grupos.balao.sort((a, b) => (a.numero_parcela || 0) - (b.numero_parcela || 0))
+
+    return grupos
+  }
+
+  // Obter label do grupo
+  const getGrupoLabel = (tipo) => {
+    const labels = {
+      sinal: 'Sinal',
+      entrada: 'Entrada',
+      parcela_entrada: 'Parcelas de Entrada',
+      balao: 'Balões'
+    }
+    return labels[tipo] || tipo
+  }
+
+  // Toggle expansão de grupo (quando tem mais de 10 itens)
+  const toggleGrupoExpandido = (vendaId, tipo) => {
+    const key = `${vendaId}-${tipo}`
+    setGruposExpandidos(prev => ({
+      ...prev,
+      [key]: !prev[key]
+    }))
+  }
+
+  // Verificar se grupo está expandido
+  const isGrupoExpandido = (vendaId, tipo) => {
+    const key = `${vendaId}-${tipo}`
+    return gruposExpandidos[key] || false
+  }
+
+  // Handler para expandir/colapsar venda
+  const toggleVendaExpandida = async (vendaId) => {
+    if (vendaExpandida === vendaId) {
+      setVendaExpandida(null)
+    } else {
+      setVendaExpandida(vendaId)
+      // Buscar pagamentos se ainda não foram buscados
+      if (!pagamentosVenda[vendaId]) {
+        await fetchPagamentosVenda(vendaId)
+      }
+    }
+  }
+
   // Função para gerar título dinâmico do dashboard
   const getDashboardTitle = () => {
     if (cargoInfo?.nome_cargo) {
@@ -310,37 +416,37 @@ const CorretorDashboard = () => {
       {
         name: 'MINHAS VENDAS HOJE',
         value: formatTicker(totalVendasHoje),
-        change: vendasHoje.length > 0 ? `+${vendasHoje.length}` : '0',
+        change: vendasHoje.length > 0 ? `+${vendasHoje.length}` : '',
         type: vendasHoje.length > 0 ? 'positive' : 'neutral'
       },
       {
         name: 'MINHA COMISSÃO PENDENTE',
         value: formatTicker(getComissaoPendente()),
-        change: '0%',
+        change: getComissaoPendente() > 0 ? `${Math.round((getComissaoPendente() / getTotalVendas()) * 100)}%` : '',
         type: getComissaoPendente() > 0 ? 'positive' : 'neutral'
       },
       {
         name: 'TOTAL EM VENDAS',
         value: formatTicker(getTotalVendas()),
-        change: vendas.length > 0 ? `${vendas.length} vendas` : '0',
+        change: vendas.length > 0 ? `${vendas.length} vendas` : '',
         type: 'positive'
       },
       {
         name: 'COMISSÃO PAGA',
         value: formatTicker(getComissaoPaga()),
-        change: '0%',
+        change: getComissaoPaga() > 0 ? `${Math.round((getComissaoPaga() / getTotalVendas()) * 100)}%` : '',
         type: getComissaoPaga() > 0 ? 'positive' : 'neutral'
       },
       {
         name: 'VENDAS ESTE MÊS',
         value: formatTicker(totalVendasMes),
-        change: vendasMes.length > 0 ? `${vendasMes.length} vendas` : '0',
+        change: vendasMes.length > 0 ? `${vendasMes.length} vendas` : '',
         type: 'positive'
       },
       {
         name: 'MÉDIA POR VENDA',
         value: formatTicker(mediaPorVenda),
-        change: '0%',
+        change: '',
         type: 'positive'
       }
     ]
@@ -583,10 +689,6 @@ const CorretorDashboard = () => {
           {activeTab === 'vendas' && (
             <section className="vendas-section">
               <div className="section-header-corretor">
-                <h2>
-                  <BarChart3 size={24} />
-                  Minhas Vendas
-                </h2>
                 <div className="period-filter">
                   <button 
                     className={periodo === 'todos' ? 'active' : ''} 
@@ -738,6 +840,21 @@ const CorretorDashboard = () => {
                                 </span>
                               </div>
                             </div>
+                            
+                            {/* Botão Ver mais */}
+                            <div className="venda-expand-btn-wrapper">
+                              <button 
+                                className="venda-expand-btn"
+                                onClick={() => toggleVendaExpandida(venda.id)}
+                              >
+                                <ChevronDown 
+                                  size={18} 
+                                  className={vendaExpandida === venda.id ? 'rotated' : ''} 
+                                />
+                                <span>Ver mais</span>
+                              </button>
+                            </div>
+
                             <div className="venda-values">
                               <div className="venda-valor">
                                 <span className="label">Valor da Venda</span>
@@ -749,6 +866,117 @@ const CorretorDashboard = () => {
                               </div>
                             </div>
                           </div>
+
+                          {/* Seção expandida com detalhes dos pagamentos */}
+                          {vendaExpandida === venda.id && (
+                            <div className="venda-pagamentos-detalhes">
+                              {pagamentosVenda[venda.id] && pagamentosVenda[venda.id].length > 0 ? (
+                                <>
+                                  <div className="parcelas-header">
+                                    <h5>Detalhamento de Pagamentos</h5>
+                                  </div>
+                                  
+                                  {(() => {
+                                    const grupos = agruparPagamentosPorTipo(pagamentosVenda[venda.id])
+                                    const tiposOrdem = ['sinal', 'entrada', 'parcela_entrada', 'balao']
+                                    
+                                    return tiposOrdem.map(tipo => {
+                                      const pagamentosGrupo = grupos[tipo]
+                                      if (!pagamentosGrupo || pagamentosGrupo.length === 0) return null
+                                      
+                                      // Calcular totais do grupo
+                                      const totalValor = pagamentosGrupo.reduce((acc, p) => acc + (parseFloat(p.valor) || 0), 0)
+                                      const totalComissao = pagamentosGrupo.reduce((acc, p) => acc + calcularComissaoProporcional(p, venda), 0)
+                                      const pagos = pagamentosGrupo.filter(p => p.status === 'pago').length
+                                      const pendentes = pagamentosGrupo.filter(p => p.status === 'pendente').length
+                                      
+                                      // Verificar se tem mais de 10 itens e se está expandido
+                                      const temMaisDe10 = pagamentosGrupo.length > 10
+                                      const estaExpandido = isGrupoExpandido(venda.id, tipo)
+                                      const itensParaMostrar = temMaisDe10 && !estaExpandido ? 10 : pagamentosGrupo.length
+                                      const pagamentosExibidos = pagamentosGrupo.slice(0, itensParaMostrar)
+                                      
+                                      return (
+                                        <div key={tipo} className="pagamento-grupo">
+                                          <div className="grupo-header">
+                                            <h6 className="grupo-titulo">{getGrupoLabel(tipo)}</h6>
+                                            <div className="grupo-resumo">
+                                              <span className="grupo-total-valor">{formatCurrency(totalValor)}</span>
+                                              <span className="grupo-total-comissao">{formatCurrency(totalComissao)}</span>
+                                              <span className="grupo-contador">
+                                                {pagamentosGrupo.length} {pagamentosGrupo.length === 1 ? 'item' : 'itens'}
+                                                {pagos > 0 && ` • ${pagos} pago${pagos > 1 ? 's' : ''}`}
+                                                {pendentes > 0 && ` • ${pendentes} pendente${pendentes > 1 ? 's' : ''}`}
+                                              </span>
+                                            </div>
+                                          </div>
+                                          <div className="parcelas-list">
+                                            {pagamentosExibidos.map((pagamento) => {
+                                              const comissaoParcela = calcularComissaoProporcional(pagamento, venda)
+                                              return (
+                                                <div 
+                                                  key={pagamento.id} 
+                                                  className={`corretor-parcela-row ${pagamento.status === 'pago' ? 'pago' : ''}`}
+                                                >
+                                                  <div className="corretor-parcela-tipo">
+                                                    {pagamento.tipo === 'sinal' && 'Sinal'}
+                                                    {pagamento.tipo === 'entrada' && 'Entrada'}
+                                                    {pagamento.tipo === 'parcela_entrada' && `Parcela ${pagamento.numero_parcela || ''}`}
+                                                    {pagamento.tipo === 'balao' && `Balão ${pagamento.numero_parcela || ''}`}
+                                                  </div>
+                                                  <div className="corretor-parcela-data">
+                                                    {pagamento.data_prevista 
+                                                      ? new Date(pagamento.data_prevista).toLocaleDateString('pt-BR')
+                                                      : '-'
+                                                    }
+                                                  </div>
+                                                  <div className="corretor-parcela-valor">
+                                                    {formatCurrency(pagamento.valor)}
+                                                  </div>
+                                                  <div className="corretor-parcela-comissao">
+                                                    {formatCurrency(comissaoParcela)}
+                                                  </div>
+                                                  <div className="corretor-parcela-status">
+                                                    <span className={`status-pill ${pagamento.status}`}>
+                                                      {pagamento.status === 'pago' ? 'Pago' : 'Pendente'}
+                                                    </span>
+                                                  </div>
+                                                </div>
+                                              )
+                                            })}
+                                          </div>
+                                          {temMaisDe10 && (
+                                            <div className="grupo-expand-btn-wrapper">
+                                              <button 
+                                                className="grupo-expand-btn"
+                                                onClick={() => toggleGrupoExpandido(venda.id, tipo)}
+                                              >
+                                                {estaExpandido ? (
+                                                  <>
+                                                    <ChevronDown size={16} className="rotated" />
+                                                    <span>Ver menos ({pagamentosGrupo.length - 10} itens ocultos)</span>
+                                                  </>
+                                                ) : (
+                                                  <>
+                                                    <ChevronDown size={16} />
+                                                    <span>Ver mais ({pagamentosGrupo.length - 10} itens restantes)</span>
+                                                  </>
+                                                )}
+                                              </button>
+                                            </div>
+                                          )}
+                                        </div>
+                                      )
+                                    })
+                                  })()}
+                                </>
+                              ) : (
+                                <div className="parcelas-empty">
+                                  <p>Nenhum pagamento cadastrado para esta venda</p>
+                                </div>
+                              )}
+                            </div>
+                          )}
                         </div>
                       ))}
                     </div>
@@ -761,12 +989,6 @@ const CorretorDashboard = () => {
           {/* Relatórios Tab */}
           {activeTab === 'relatorios' && (
             <section className="relatorios-section">
-              <div className="section-header-corretor">
-                <h2>
-                  <TrendingUp size={24} />
-                  Relatórios
-                </h2>
-              </div>
               <div className="empty-state">
                 <TrendingUp size={48} />
                 <h3>Relatórios em desenvolvimento</h3>

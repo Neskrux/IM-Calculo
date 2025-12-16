@@ -20,7 +20,12 @@ const Ticker = ({ data = null }) => {
   const duplicatedData = [...tickerData, ...tickerData]
 
   const formatChange = (change, type) => {
-    if (type === 'neutral' || change === '0%') {
+    // Se não houver change ou for vazio, não mostrar nada
+    if (!change || change === '' || change === '0%' || change === '0') {
+      return null
+    }
+    
+    if (type === 'neutral') {
       return (
         <span className="ticker-change neutral">
           <Minus size={10} />
