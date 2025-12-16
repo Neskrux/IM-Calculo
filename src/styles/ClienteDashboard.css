@@ -16,12 +16,12 @@
 }
 
 .welcome-content h1 {
-  font-family: 'Cormorant Garamond', serif;
+  font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   font-size: 32px;
-  font-weight: 500;
+  font-weight: 600;
   color: var(--text-primary, #f0f4f8);
   margin: 0 0 8px 0;
-  letter-spacing: 1px;
+  letter-spacing: -0.3px;
 }
 
 .welcome-content p {
@@ -132,15 +132,15 @@
 }
 
 .section-header-cliente h2 {
-  font-family: 'Cormorant Garamond', serif;
+  font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   font-size: 28px;
-  font-weight: 500;
+  font-weight: 600;
   color: var(--text-primary, #f0f4f8);
   margin: 0;
   display: flex;
   align-items: center;
   gap: 12px;
-  letter-spacing: 1px;
+  letter-spacing: -0.3px;
 }
 
 .section-header-cliente h2 svg {
@@ -153,15 +153,15 @@
 }
 
 .ultimas-compras-section h2 {
-  font-family: 'Cormorant Garamond', serif;
+  font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   font-size: 24px;
-  font-weight: 500;
+  font-weight: 600;
   color: var(--text-primary, #f0f4f8);
   margin: 0 0 20px 0;
   display: flex;
   align-items: center;
   gap: 12px;
-  letter-spacing: 1px;
+  letter-spacing: -0.3px;
 }
 
 .compras-list-mini {
@@ -472,12 +472,12 @@
 }
 
 .perfil-info-header h3 {
-  font-family: 'Cormorant Garamond', serif;
+  font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   font-size: 28px;
-  font-weight: 500;
+  font-weight: 600;
   color: var(--text-primary, #f0f4f8);
   margin: 0 0 4px 0;
-  letter-spacing: 1px;
+  letter-spacing: -0.3px;
 }
 
 .perfil-info-header p {

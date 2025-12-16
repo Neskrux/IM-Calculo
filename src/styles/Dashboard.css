@@ -7,6 +7,29 @@
   max-width: 100vw;
   box-sizing: border-box;
   position: relative;
+  font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Padronização de fontes - Títulos principais */
+.dashboard-container h1,
+.dashboard-container h2,
+.dashboard-container h3 {
+  font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  letter-spacing: -0.3px;
+}
+
+.dashboard-container h1 {
+  font-weight: 600;
+}
+
+.dashboard-container h2 {
+  font-weight: 600;
+}
+
+.dashboard-container h3 {
+  font-weight: 600;
 }
 
 /* Mobile: permitir que sidebar e overlay apareçam */
@@ -823,9 +846,11 @@
 /* Menu toggle já definido acima */
 
 .main-header h1 {
+  font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   font-size: 20px;
   font-weight: 600;
   color: #fff;
+  letter-spacing: -0.3px;
 }
 
 .header-actions {
