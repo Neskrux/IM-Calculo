@@ -12,6 +12,7 @@ import {
 import logo from '../imgs/logo.png'
 import Ticker from '../components/Ticker'
 import HomeDashboard from './HomeDashboard'
+import ImportarVendas from '../components/ImportarVendas'
 import '../styles/Dashboard.css'
 
 const AdminDashboard = () => {
@@ -137,11 +138,14 @@ const AdminDashboard = () => {
     cliente_id: '',
     unidade: '',
     bloco: '',
+    andar: '',
     valor_venda: '',
     tipo_corretor: 'externo',
     data_venda: new Date().toISOString().split('T')[0],
     descricao: '',
     status: 'pendente',
+    condicao: 'FINANCIAMENTO',
+    primeiro_vencimento: '',
     // Campos pro-soluto
     teve_sinal: false,
     valor_sinal: '',
@@ -151,6 +155,8 @@ const AdminDashboard = () => {
     grupos_parcelas_entrada: [{ qtd: '', valor: '' }], // Array de grupos: [{ qtd: '4', valor: '500' }, { qtd: '5', valor: '1000' }]
     teve_balao: 'nao', // 'nao', 'sim', 'pendente'
     grupos_balao: [{ qtd: '', valor: '' }], // Array de grupos: [{ qtd: '2', valor: '10000' }, { qtd: '1', valor: '5000' }]
+    valor_balao_unitario: '',
+    vencimento_balao: '',
     teve_permuta: false,
     tipo_permuta: '',
     valor_permuta: '',
@@ -182,6 +188,7 @@ const AdminDashboard = () => {
     cpf: '',
     rg: '',
     endereco: '',
+    cep: '',
     telefone: '',
     email: '',
     profissao: '',
@@ -197,6 +204,7 @@ const AdminDashboard = () => {
     // FGTS
     possui_3_anos_fgts: false,
     beneficiado_subsidio_fgts: false,
+    valor_fgts: '',
     // Complemento
     tem_complemento_renda: false,
     complementadores: [],
@@ -718,11 +726,14 @@ const AdminDashboard = () => {
       cliente_id: vendaForm.cliente_id || null,
       unidade: vendaForm.unidade || null,
       bloco: vendaForm.bloco?.toUpperCase() || null,
+      andar: vendaForm.andar || null,
       valor_venda: valorVenda,
       tipo_corretor: vendaForm.tipo_corretor,
       data_venda: vendaForm.data_venda,
       descricao: vendaForm.descricao,
       status: vendaForm.status,
+      condicao: vendaForm.condicao || 'FINANCIAMENTO',
+      primeiro_vencimento: vendaForm.primeiro_vencimento || null,
       teve_sinal: vendaForm.teve_sinal,
       valor_sinal: valorSinal || null,
       teve_entrada: vendaForm.teve_entrada,
@@ -733,6 +744,8 @@ const AdminDashboard = () => {
       teve_balao: vendaForm.teve_balao,
       qtd_balao: parseInt(vendaForm.qtd_balao) || null,
       valor_balao: parseFloat(vendaForm.valor_balao) || null,
+      valor_balao_unitario: parseFloat(vendaForm.valor_balao_unitario) || null,
+      vencimento_balao: vendaForm.vencimento_balao || null,
       teve_permuta: vendaForm.teve_permuta,
       tipo_permuta: vendaForm.tipo_permuta || null,
       valor_permuta: parseFloat(vendaForm.valor_permuta) || null,
@@ -1632,6 +1645,7 @@ const AdminDashboard = () => {
       cpf: '',
       rg: '',
       endereco: '',
+      cep: '',
       telefone: '',
       email: '',
       profissao: '',
@@ -1645,8 +1659,11 @@ const AdminDashboard = () => {
       certidao_casamento_url: '',
       possui_3_anos_fgts: false,
       beneficiado_subsidio_fgts: false,
+      valor_fgts: '',
       tem_complemento_renda: false,
-      complementadores: []
+      complementadores: [],
+      criar_acesso: false,
+      senha: ''
     })
   }
 
@@ -1707,6 +1724,7 @@ const AdminDashboard = () => {
         cpf: clienteForm.cpf,
         rg: clienteForm.rg,
         endereco: clienteForm.endereco,
+        cep: clienteForm.cep || null,
         telefone: clienteForm.telefone,
         email: clienteForm.email,
         profissao: clienteForm.profissao,
@@ -1720,6 +1738,7 @@ const AdminDashboard = () => {
         certidao_casamento_url: clienteForm.certidao_casamento_url,
         possui_3_anos_fgts: clienteForm.possui_3_anos_fgts,
         beneficiado_subsidio_fgts: clienteForm.beneficiado_subsidio_fgts,
+        valor_fgts: clienteForm.valor_fgts ? parseFloat(clienteForm.valor_fgts.replace(/[^\d,]/g, '').replace(',', '.')) : null,
         tem_complemento_renda: clienteForm.tem_complemento_renda
       }
 
@@ -1999,11 +2018,14 @@ const AdminDashboard = () => {
       cliente_id: venda.cliente_id || '',
       unidade: venda.unidade || '',
       bloco: venda.bloco || '',
+      andar: venda.andar || '',
       valor_venda: venda.valor_venda.toString(),
       tipo_corretor: venda.tipo_corretor,
       data_venda: venda.data_venda,
       descricao: venda.descricao || '',
       status: venda.status,
+      condicao: venda.condicao || 'FINANCIAMENTO',
+      primeiro_vencimento: venda.primeiro_vencimento || '',
       teve_sinal: venda.teve_sinal || false,
       valor_sinal: venda.valor_sinal?.toString() || '',
       teve_entrada: venda.teve_entrada || false,
@@ -2012,6 +2034,8 @@ const AdminDashboard = () => {
       grupos_parcelas_entrada: gruposParcelasEntrada,
       teve_balao: venda.teve_balao || 'nao',
       grupos_balao: gruposBalao,
+      valor_balao_unitario: venda.valor_balao_unitario?.toString() || '',
+      vencimento_balao: venda.vencimento_balao || '',
       teve_permuta: venda.teve_permuta || false,
       tipo_permuta: venda.tipo_permuta || '',
       valor_permuta: venda.valor_permuta?.toString() || '',
@@ -2661,6 +2685,14 @@ const AdminDashboard = () => {
             <TrendingUp size={20} />
             <span>Relatórios</span>
           </button>
+          <button 
+            className={`nav-item ${activeTab === 'importar' ? 'active' : ''}`}
+            onClick={() => navigate('/admin/importar')}
+            title="Importar Vendas"
+          >
+            <Upload size={20} />
+            <span>Importar</span>
+          </button>
         </nav>
 
         <div className="sidebar-footer">
@@ -2716,6 +2748,7 @@ const AdminDashboard = () => {
             {activeTab === 'pagamentos' && 'Acompanhamento de Pagamentos'}
             {activeTab === 'clientes' && 'Cadastro de Clientes'}
             {activeTab === 'relatorios' && 'Relatórios'}
+            {activeTab === 'importar' && 'Importar Vendas'}
           </h1>
           <div className="header-actions">
             {activeTab === 'vendas' && (
@@ -2856,8 +2889,14 @@ const AdminDashboard = () => {
                         </td>
                         <td>
                           <span className="unidade-bloco">
-                            {venda.unidade || venda.bloco ? (
-                              <>{venda.bloco && `Bloco ${venda.bloco}`}{venda.bloco && venda.unidade && ' - '}{venda.unidade && `Un. ${venda.unidade}`}</>
+                            {venda.unidade || venda.bloco || venda.andar ? (
+                              <>
+                                {venda.bloco && `Bloco ${venda.bloco}`}
+                                {venda.bloco && (venda.unidade || venda.andar) && ' - '}
+                                {venda.unidade && `Un. ${venda.unidade}`}
+                                {venda.unidade && venda.andar && ' - '}
+                                {venda.andar && venda.andar}
+                              </>
                             ) : '-'}
                           </span>
                         </td>
@@ -3640,6 +3679,20 @@ const AdminDashboard = () => {
           </div>
         )}
 
+        {activeTab === 'importar' && (
+          <div className="content-section">
+            <ImportarVendas
+              corretores={corretores}
+              empreendimentos={empreendimentos}
+              clientes={clientes}
+              onImportComplete={() => {
+                fetchData()
+                setMessage({ type: 'success', text: 'Importação concluída! Dados atualizados.' })
+                setTimeout(() => setMessage({ type: '', text: '' }), 5000)
+              }}
+            />
+          </div>
+        )}
         {activeTab === 'relatorios' && (
           <div className="content-section">
             {/* Gerador de Relatórios */}
@@ -3959,6 +4012,37 @@ const AdminDashboard = () => {
                       />
                     </div>
                     <div className="form-group">
+                      <label>Andar</label>
+                      <input
+                        type="text"
+                        placeholder="Ex: 4ºPav"
+                        value={vendaForm.andar}
+                        onChange={(e) => setVendaForm({...vendaForm, andar: e.target.value})}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label>Condição</label>
+                      <select
+                        value={vendaForm.condicao}
+                        onChange={(e) => setVendaForm({...vendaForm, condicao: e.target.value})}
+                      >
+                        <option value="FINANCIAMENTO">Financiamento</option>
+                        <option value="À VISTA">À Vista</option>
+                        <option value="ENTRADA + FINANCIAMENTO">Entrada + Financiamento</option>
+                      </select>
+                    </div>
+                    <div className="form-group">
+                      <label>1° Vencimento</label>
+                      <input
+                        type="date"
+                        value={vendaForm.primeiro_vencimento}
+                        onChange={(e) => setVendaForm({...vendaForm, primeiro_vencimento: e.target.value})}
+                      />
+                    </div>
+                    <div className="form-group">
                       <label>Descrição (opcional)</label>
                       <input
                         type="text"
@@ -4245,6 +4329,31 @@ const AdminDashboard = () => {
                           <Plus size={18} />
                           Adicionar Grupo
                         </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {(vendaForm.teve_balao === 'sim' || vendaForm.teve_balao === 'pendente') && (
+                    <div className="form-row">
+                      <div className="form-group">
+                        <label>Valor Unitário do Balão (opcional)</label>
+                        <div className="input-currency">
+                          <span className="currency-prefix">R$</span>
+                          <input
+                            type="text"
+                            placeholder="0,00"
+                            value={formatCurrencyInput(vendaForm.valor_balao_unitario)}
+                            onChange={(e) => handleCurrencyChange('valor_balao_unitario', e.target.value)}
+                          />
+                        </div>
+                      </div>
+                      <div className="form-group">
+                        <label>Vencimento do Balão (opcional)</label>
+                        <input
+                          type="date"
+                          value={vendaForm.vencimento_balao}
+                          onChange={(e) => setVendaForm({...vendaForm, vencimento_balao: e.target.value})}
+                        />
                       </div>
                     </div>
                   )}
@@ -4789,14 +4898,30 @@ const AdminDashboard = () => {
                     </div>
                   </div>
 
-                  <div className="form-group">
-                    <label>Endereço</label>
-                    <input
-                      type="text"
-                      placeholder="Endereço completo"
-                      value={clienteForm.endereco}
-                      onChange={(e) => setClienteForm({...clienteForm, endereco: e.target.value})}
-                    />
+                  <div className="form-row">
+                    <div className="form-group" style={{ flex: 2 }}>
+                      <label>Endereço</label>
+                      <input
+                        type="text"
+                        placeholder="Endereço completo"
+                        value={clienteForm.endereco}
+                        onChange={(e) => setClienteForm({...clienteForm, endereco: e.target.value})}
+                      />
+                    </div>
+                    <div className="form-group" style={{ flex: 1 }}>
+                      <label>CEP</label>
+                      <input
+                        type="text"
+                        placeholder="00000-000"
+                        maxLength={9}
+                        value={clienteForm.cep}
+                        onChange={(e) => {
+                          const val = e.target.value.replace(/\D/g, '').slice(0, 8)
+                          const formatted = val.length > 5 ? `${val.slice(0, 5)}-${val.slice(5)}` : val
+                          setClienteForm({...clienteForm, cep: formatted})
+                        }}
+                      />
+                    </div>
                   </div>
 
                   <div className="form-row">
@@ -4945,6 +5070,22 @@ const AdminDashboard = () => {
                         <option value="nao">Não</option>
                         <option value="sim">Sim</option>
                       </select>
+                    </div>
+                    <div className="form-group">
+                      <label>Valor do FGTS</label>
+                      <div className="input-currency">
+                        <span className="currency-prefix">R$</span>
+                        <input
+                          type="text"
+                          placeholder="0,00"
+                          value={formatCurrencyInput(clienteForm.valor_fgts)}
+                          onChange={(e) => {
+                            const cleanValue = e.target.value.replace(/[^\d]/g, '')
+                            const numValue = cleanValue ? (parseInt(cleanValue) / 100).toString() : ''
+                            setClienteForm({...clienteForm, valor_fgts: numValue})
+                          }}
+                        />
+                      </div>
                     </div>
                   </div>
 
