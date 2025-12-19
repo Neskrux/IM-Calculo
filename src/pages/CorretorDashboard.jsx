@@ -813,12 +813,14 @@ const CorretorDashboard = () => {
                                     {capitalizeName(venda.empreendimento_nome)}
                                   </span>
                                 )}
-                                {(venda.unidade || venda.bloco) && (
+                                {(venda.unidade || venda.bloco || venda.andar) && (
                                   <span className="venda-unidade">
                                     <MapPin size={12} />
                                     {venda.bloco && `Bloco ${venda.bloco}`}
-                                    {venda.bloco && venda.unidade && ' • '}
+                                    {venda.bloco && (venda.unidade || venda.andar) && ' • '}
                                     {venda.unidade && `Unidade ${venda.unidade}`}
+                                    {venda.unidade && venda.andar && ' • '}
+                                    {venda.andar && venda.andar}
                                   </span>
                                 )}
                                 <span className="venda-date">

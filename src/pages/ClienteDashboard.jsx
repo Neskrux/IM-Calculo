@@ -971,6 +971,13 @@ const ClienteDashboard = () => {
                     <span className="detail-value">{cliente.endereco || '-'}</span>
                   </div>
                   
+                  {cliente.cep && (
+                    <div className="detail-row">
+                      <span className="detail-label">CEP</span>
+                      <span className="detail-value">{cliente.cep}</span>
+                    </div>
+                  )}
+                  
                   <div className="detail-row">
                     <span className="detail-label">Profissão</span>
                     <span className="detail-value">{cliente.profissao || '-'}</span>
