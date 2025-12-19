@@ -210,6 +210,7 @@ const AdminDashboard = () => {
     cliente_id: '',
     unidade: '',
     bloco: '',
+    andar: '',
     valor_venda: '',
     tipo_corretor: 'externo',
     data_venda: new Date().toISOString().split('T')[0],
@@ -462,6 +463,45 @@ const AdminDashboard = () => {
     
     return () => window.removeEventListener('resize', checkScreenSize)
   }, [])
+
+  // Atualizar descrição automaticamente baseado em unidade, bloco e andar
+  useEffect(() => {
+    if (modalType === 'venda') {
+      const partes = []
+      
+      if (vendaForm.unidade) {
+        partes.push(`Unidade: ${vendaForm.unidade}`)
+      }
+      
+      if (vendaForm.bloco) {
+        partes.push(`Torre: ${vendaForm.bloco}`)
+      }
+      
+      if (vendaForm.andar) {
+        partes.push(`Andar: ${vendaForm.andar}`)
+      }
+      
+      // Só atualiza se houver pelo menos um campo preenchido
+      // e se a descrição atual estiver vazia ou seguir o padrão automático
+      if (partes.length > 0) {
+        const descricaoAutomatica = partes.join(' | ')
+        const descricaoAtual = vendaForm.descricao || ''
+        
+        // Verifica se a descrição atual está vazia ou segue o padrão automático
+        const seguePadrao = !descricaoAtual || 
+          descricaoAtual.includes('Unidade:') || 
+          descricaoAtual.includes('Torre:') || 
+          descricaoAtual.includes('Andar:')
+        
+        if (seguePadrao && descricaoAutomatica !== descricaoAtual) {
+          setVendaForm(prev => ({ ...prev, descricao: descricaoAutomatica }))
+        }
+      } else if (!vendaForm.descricao) {
+        // Se não há campos preenchidos e descrição está vazia, limpa
+        setVendaForm(prev => ({ ...prev, descricao: '' }))
+      }
+    }
+  }, [vendaForm.unidade, vendaForm.bloco, vendaForm.andar, modalType])
 
   const fetchData = async () => {
     setLoading(true)
@@ -840,6 +880,7 @@ const AdminDashboard = () => {
       cliente_id: vendaForm.cliente_id || null,
       unidade: vendaForm.unidade || null,
       bloco: vendaForm.bloco?.toUpperCase() || null,
+      andar: vendaForm.andar || null,
       valor_venda: valorVenda,
       tipo_corretor: vendaForm.tipo_corretor,
       data_venda: vendaForm.data_venda,
@@ -1775,6 +1816,7 @@ const AdminDashboard = () => {
       cliente_id: '',
       unidade: '',
       bloco: '',
+      andar: '',
       valor_venda: '',
       tipo_corretor: 'externo',
       data_venda: new Date().toISOString().split('T')[0],
@@ -2190,6 +2232,7 @@ const AdminDashboard = () => {
       cliente_id: venda.cliente_id || '',
       unidade: venda.unidade || '',
       bloco: venda.bloco || '',
+      andar: venda.andar || '',
       valor_venda: venda.valor_venda.toString(),
       tipo_corretor: venda.tipo_corretor,
       data_venda: venda.data_venda,
@@ -4584,7 +4627,11 @@ const AdminDashboard = () => {
                       onChange={(e) => handleCorretorChange(e.target.value)}
                     >
                       <option value="">Selecione</option>
-                      {corretores.map((c) => {
+                      {[...corretores].sort((a, b) => {
+                        const nomeA = (a.nome || '').toLowerCase()
+                        const nomeB = (b.nome || '').toLowerCase()
+                        return nomeA.localeCompare(nomeB, 'pt-BR')
+                      }).map((c) => {
                         const isAutonomo = !c.empreendimento_id && c.percentual_corretor
                         const percentual = c.percentual_corretor || (c.tipo_corretor === 'interno' ? 2.5 : 4)
                         return (
@@ -4696,6 +4743,27 @@ const AdminDashboard = () => {
                         }}
                       />
                     </div>
+                    <div className="form-group">
+                      <label>Andar</label>
+                      <input
+                        type="text"
+                        placeholder="Ex: 7 ou 7°Pav"
+                        value={vendaForm.andar}
+                        onChange={(e) => {
+                          setVendaForm({...vendaForm, andar: e.target.value})
+                        }}
+                        onBlur={(e) => {
+                          // Ao sair do campo, se digitar apenas números, formatar automaticamente
+                          let val = e.target.value.trim()
+                          if (val && /^\d+$/.test(val)) {
+                            val = `${val}°Pav`
+                            setVendaForm({...vendaForm, andar: val})
+                          }
+                        }}
+                      />
+                    </div>
+                  </div>
+                  <div className="form-row">
                     <div className="form-group">
                       <label>Descrição (opcional)</label>
                       <input
