@@ -64,12 +64,49 @@ const AdminDashboard = () => {
   const [modalType, setModalType] = useState('')
   const [selectedItem, setSelectedItem] = useState(null)
   const [filterTipo, setFilterTipo] = useState('todos')
+  
+  // Filtros para Vendas
+  const [filtrosVendas, setFiltrosVendas] = useState({
+    corretor: '',
+    empreendimento: '',
+    status: 'todos',
+    bloco: '',
+    dataInicio: '',
+    dataFim: '',
+    valorMin: '',
+    valorMax: ''
+  })
+  
+  // Filtros para Pagamentos
+  const [filtrosPagamentos, setFiltrosPagamentos] = useState({
+    status: 'todos',
+    corretor: '',
+    empreendimento: '',
+    tipo: 'todos',
+    dataInicio: '',
+    dataFim: '',
+    buscaVenda: ''
+  })
+  
+  // Filtros para Corretores
+  const [filtrosCorretores, setFiltrosCorretores] = useState({
+    busca: '',
+    tipo: 'todos',
+    empreendimento: '',
+    autonomo: 'todos' // todos, sim, nao
+  })
+  
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState({ type: '', text: '' })
   const [contratoFile, setContratoFile] = useState(null)
   const [uploadingContrato, setUploadingContrato] = useState(false)
   const [pagamentoDetalhe, setPagamentoDetalhe] = useState(null)
   const [vendaExpandida, setVendaExpandida] = useState(null)
+  const [showModalConfirmarPagamento, setShowModalConfirmarPagamento] = useState(false)
+  const [pagamentoParaConfirmar, setPagamentoParaConfirmar] = useState(null)
+  const [formConfirmarPagamento, setFormConfirmarPagamento] = useState({
+    valorPersonalizado: ''
+  })
   // const [mostrarCadastroMassa, setMostrarCadastroMassa] = useState(false)
   // const [mostrarImportarVendas, setMostrarImportarVendas] = useState(false)
   const [cargoExpandido, setCargoExpandido] = useState(null) // Formato: "empreendimentoId-cargoId"
@@ -128,9 +165,17 @@ const AdminDashboard = () => {
     acc[vendaIdStr].totalValor += parseFloat(pag.valor) || 0
     acc[vendaIdStr].totalComissao += parseFloat(pag.comissao_gerada) || 0
     if (pag.status === 'pago') {
-      acc[vendaIdStr].totalPago += parseFloat(pag.valor) || 0
+      // Considerar valor da comissão paga (pode ser personalizado) ou comissão gerada
+      const comissaoPaga = parseFloat(pag.valor_comissao_pago) || parseFloat(pag.comissao_gerada) || 0
+      acc[vendaIdStr].totalPago += comissaoPaga
+      // Subtrair valor já pago se houver
+      const valorJaPago = parseFloat(pag.valor_ja_pago) || 0
+      acc[vendaIdStr].totalPendente -= valorJaPago
     } else {
-      acc[vendaIdStr].totalPendente += parseFloat(pag.valor) || 0
+      acc[vendaIdStr].totalPendente += parseFloat(pag.comissao_gerada) || 0
+      // Subtrair valor já pago se houver (mesmo em pendente)
+      const valorJaPago = parseFloat(pag.valor_ja_pago) || 0
+      acc[vendaIdStr].totalPendente -= valorJaPago
     }
     return acc
   }, {})
@@ -1358,24 +1403,63 @@ const AdminDashboard = () => {
     }
   }
 
-  // Confirmar pagamento pro-soluto
-  const confirmarPagamento = async (pagamentoId) => {
-    const { error } = await supabase
-      .from('pagamentos_prosoluto')
-      .update({ 
+  // Abrir modal de confirmação de pagamento
+  const confirmarPagamento = (pagamento) => {
+    setPagamentoParaConfirmar(pagamento)
+    setFormConfirmarPagamento({
+      valorPersonalizado: ''
+    })
+    setShowModalConfirmarPagamento(true)
+  }
+
+  // Confirmar pagamento pro-soluto com valores personalizados
+  const processarConfirmarPagamento = async () => {
+    if (!pagamentoParaConfirmar) return
+
+    try {
+      // Atualizar pagamento - apenas status e data
+      // O valor personalizado será usado apenas para cálculo, não será salvo no banco
+      const updateData = {
         status: 'pago',
         data_pagamento: new Date().toISOString().split('T')[0]
-      })
-      .eq('id', pagamentoId)
-    
-    if (error) {
-      setMessage({ type: 'error', text: 'Erro ao confirmar: ' + error.message })
-      return
+      }
+
+      // Se houver valor personalizado, podemos salvar em um campo de observação ou comentário
+      // Por enquanto, apenas confirmamos o pagamento
+      const { error } = await supabase
+        .from('pagamentos_prosoluto')
+        .update(updateData)
+        .eq('id', pagamentoParaConfirmar.id)
+      
+      if (error) {
+        setMessage({ type: 'error', text: 'Erro ao confirmar: ' + error.message })
+        return
+      }
+      
+      // Se houver valor personalizado diferente do padrão, podemos criar um registro separado
+      // ou apenas usar na lógica de cálculo sem salvar
+      const valorComissao = formConfirmarPagamento.valorPersonalizado
+        ? parseFloat(formConfirmarPagamento.valorPersonalizado) || 0
+        : parseFloat(pagamentoParaConfirmar.comissao_gerada) || 0
+      
+      // Se o valor personalizado for diferente, podemos atualizar a comissão_gerada
+      if (formConfirmarPagamento.valorPersonalizado && 
+          Math.abs(valorComissao - (parseFloat(pagamentoParaConfirmar.comissao_gerada) || 0)) > 0.01) {
+        await supabase
+          .from('pagamentos_prosoluto')
+          .update({ comissao_gerada: valorComissao })
+          .eq('id', pagamentoParaConfirmar.id)
+      }
+      
+      setShowModalConfirmarPagamento(false)
+      setPagamentoParaConfirmar(null)
+      fetchData()
+      setMessage({ type: 'success', text: 'Pagamento confirmado!' })
+      setTimeout(() => setMessage({ type: '', text: '' }), 3000)
+    } catch (error) {
+      console.error('Erro ao processar confirmação:', error)
+      setMessage({ type: 'error', text: 'Erro ao confirmar pagamento' })
     }
-    
-    fetchData()
-    setMessage({ type: 'success', text: 'Pagamento confirmado!' })
-    setTimeout(() => setMessage({ type: '', text: '' }), 3000)
   }
 
   // Identificar vendas sem pagamentos (APENAS as que têm valor_pro_soluto > 0)
@@ -2534,10 +2618,92 @@ const AdminDashboard = () => {
   }
 
   const filteredVendas = vendas.filter(venda => {
-    const matchSearch = venda.corretor?.nome?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                       venda.descricao?.toLowerCase().includes(searchTerm.toLowerCase())
+    // Busca por texto
+    const matchSearch = !searchTerm || 
+      venda.corretor?.nome?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      venda.descricao?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      venda.nome_cliente?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      venda.unidade?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      venda.bloco?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      venda.empreendimento?.nome?.toLowerCase().includes(searchTerm.toLowerCase())
+    
+    // Filtro por tipo de corretor
     const matchTipo = filterTipo === 'todos' || venda.tipo_corretor === filterTipo
-    return matchSearch && matchTipo
+    
+    // Filtro por corretor
+    const matchCorretor = !filtrosVendas.corretor || venda.corretor_id === filtrosVendas.corretor
+    
+    // Filtro por empreendimento
+    const matchEmpreendimento = !filtrosVendas.empreendimento || venda.empreendimento_id === filtrosVendas.empreendimento
+    
+    // Filtro por status
+    const matchStatus = filtrosVendas.status === 'todos' || venda.status === filtrosVendas.status
+    
+    // Filtro por bloco
+    const matchBloco = !filtrosVendas.bloco || (venda.bloco && venda.bloco.toUpperCase() === filtrosVendas.bloco.toUpperCase())
+    
+    // Filtro por data
+    const matchData = (() => {
+      if (!filtrosVendas.dataInicio && !filtrosVendas.dataFim) return true
+      const dataVenda = new Date(venda.data_venda)
+      if (filtrosVendas.dataInicio && dataVenda < new Date(filtrosVendas.dataInicio)) return false
+      if (filtrosVendas.dataFim) {
+        const dataFim = new Date(filtrosVendas.dataFim)
+        dataFim.setHours(23, 59, 59, 999)
+        if (dataVenda > dataFim) return false
+      }
+      return true
+    })()
+    
+    // Filtro por valor
+    const matchValor = (() => {
+      const valorVenda = parseFloat(venda.valor_venda) || 0
+      if (filtrosVendas.valorMin && valorVenda < parseFloat(filtrosVendas.valorMin)) return false
+      if (filtrosVendas.valorMax && valorVenda > parseFloat(filtrosVendas.valorMax)) return false
+      return true
+    })()
+    
+    return matchSearch && matchTipo && matchCorretor && matchEmpreendimento && matchStatus && matchBloco && matchData && matchValor
+  })
+  
+  // Filtrar pagamentos
+  const filteredPagamentos = listaVendasComPagamentos.filter(grupo => {
+    // Filtro por corretor
+    const matchCorretor = !filtrosPagamentos.corretor || grupo.venda?.corretor_id === filtrosPagamentos.corretor
+    
+    // Filtro por empreendimento
+    const matchEmpreendimento = !filtrosPagamentos.empreendimento || grupo.venda?.empreendimento_id === filtrosPagamentos.empreendimento
+    
+    // Filtro por status (verifica se tem pagamentos com o status)
+    const matchStatus = filtrosPagamentos.status === 'todos' || 
+      grupo.pagamentos.some(p => p.status === filtrosPagamentos.status)
+    
+    // Filtro por tipo de pagamento
+    const matchTipo = filtrosPagamentos.tipo === 'todos' || 
+      grupo.pagamentos.some(p => p.tipo === filtrosPagamentos.tipo)
+    
+    // Filtro por data
+    const matchData = (() => {
+      if (!filtrosPagamentos.dataInicio && !filtrosPagamentos.dataFim) return true
+      return grupo.pagamentos.some(pag => {
+        const dataPag = new Date(pag.data_prevista)
+        if (filtrosPagamentos.dataInicio && dataPag < new Date(filtrosPagamentos.dataInicio)) return false
+        if (filtrosPagamentos.dataFim) {
+          const dataFim = new Date(filtrosPagamentos.dataFim)
+          dataFim.setHours(23, 59, 59, 999)
+          if (dataPag > dataFim) return false
+        }
+        return true
+      })
+    })()
+    
+    // Busca por venda
+    const matchBusca = !filtrosPagamentos.buscaVenda ||
+      grupo.venda?.corretor?.nome?.toLowerCase().includes(filtrosPagamentos.buscaVenda.toLowerCase()) ||
+      grupo.venda?.empreendimento?.nome?.toLowerCase().includes(filtrosPagamentos.buscaVenda.toLowerCase()) ||
+      grupo.venda?.nome_cliente?.toLowerCase().includes(filtrosPagamentos.buscaVenda.toLowerCase())
+    
+    return matchCorretor && matchEmpreendimento && matchStatus && matchTipo && matchData && matchBusca
   })
 
   // Quando seleciona um corretor na venda, atualiza o tipo automaticamente
@@ -2685,6 +2851,19 @@ const AdminDashboard = () => {
 
   return (
     <div className="dashboard-container">
+      {/* Barra de Carregamento Global */}
+      {(loading || authLoading) && (
+        <div className="global-loading-overlay">
+          <div className="global-loading-content">
+            <div className="loading-spinner-large"></div>
+            <p className="loading-text">Carregando dados...</p>
+            <div className="loading-progress-bar">
+              <div className="loading-progress-fill"></div>
+            </div>
+          </div>
+        </div>
+      )}
+      
       {/* Message Toast */}
       {message.text && (
         <div className={`toast-message ${message.type}`}>
@@ -2894,33 +3073,154 @@ const AdminDashboard = () => {
         {/* Content */}
         {activeTab === 'dashboard' && (
           <div style={{ padding: '0', flex: 1, overflow: 'auto' }}>
-            <HomeDashboard showTicker={false} showHeader={false} />
+            <HomeDashboard 
+              showTicker={false} 
+              showHeader={false}
+              vendas={vendas}
+              corretores={corretores}
+              pagamentos={pagamentos}
+              empreendimentos={empreendimentos}
+            />
           </div>
         )}
         {activeTab === 'vendas' && (
           <div className="content-section">
-            <div className="section-header">
-                  <div className="search-box">
-                    <Search size={20} />
-                    <input 
-                      type="text" 
-                      placeholder="Buscar vendas..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                    />
-                  </div>
-                  <div className="filter-group">
-                    <Filter size={18} />
-                    <select 
-                      value={filterTipo} 
-                      onChange={(e) => setFilterTipo(e.target.value)}
-                    >
-                      <option value="todos">Todos</option>
-                      <option value="interno">Interno</option>
-                      <option value="externo">Externo</option>
-                    </select>
-                  </div>
+            {/* Busca */}
+            <div className="filters-section">
+              <div className="search-box">
+                <Search size={20} />
+                <input 
+                  type="text" 
+                  placeholder="Buscar por corretor, cliente, unidade, empreendimento..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+              </div>
+              
+              {/* Filtros em Grid */}
+              <div className="filters-grid">
+                <div className="filter-item">
+                  <label className="filter-label">
+                    <Filter size={16} />
+                    Tipo de Corretor
+                  </label>
+                  <select 
+                    value={filterTipo} 
+                    onChange={(e) => setFilterTipo(e.target.value)}
+                    className="filter-select"
+                  >
+                    <option value="todos">Todos</option>
+                    <option value="interno">Interno</option>
+                    <option value="externo">Externo</option>
+                  </select>
                 </div>
+                
+                <div className="filter-item">
+                  <label className="filter-label">Corretor</label>
+                  <select 
+                    value={filtrosVendas.corretor} 
+                    onChange={(e) => setFiltrosVendas({...filtrosVendas, corretor: e.target.value})}
+                    className="filter-select"
+                  >
+                    <option value="">Todos</option>
+                    {corretores.map(c => (
+                      <option key={c.id} value={c.id}>{c.nome}</option>
+                    ))}
+                  </select>
+                </div>
+                
+                <div className="filter-item">
+                  <label className="filter-label">Empreendimento</label>
+                  <select 
+                    value={filtrosVendas.empreendimento} 
+                    onChange={(e) => setFiltrosVendas({...filtrosVendas, empreendimento: e.target.value})}
+                    className="filter-select"
+                  >
+                    <option value="">Todos</option>
+                    {empreendimentos.map(e => (
+                      <option key={e.id} value={e.id}>{e.nome}</option>
+                    ))}
+                  </select>
+                </div>
+                
+                <div className="filter-item">
+                  <label className="filter-label">Status</label>
+                  <select 
+                    value={filtrosVendas.status} 
+                    onChange={(e) => setFiltrosVendas({...filtrosVendas, status: e.target.value})}
+                    className="filter-select"
+                  >
+                    <option value="todos">Todos</option>
+                    <option value="pendente">Pendente</option>
+                    <option value="pago">Pago</option>
+                    <option value="em_andamento">Em Andamento</option>
+                  </select>
+                </div>
+                
+                <div className="filter-item">
+                  <label className="filter-label">Bloco</label>
+                  <select 
+                    value={filtrosVendas.bloco} 
+                    onChange={(e) => setFiltrosVendas({...filtrosVendas, bloco: e.target.value})}
+                    className="filter-select"
+                  >
+                    <option value="">Todos</option>
+                    {(() => {
+                      // Coletar blocos únicos das vendas
+                      const blocosUnicos = [...new Set(vendas
+                        .filter(v => v.bloco && v.bloco.trim() !== '')
+                        .map(v => v.bloco.toUpperCase())
+                        .sort()
+                      )]
+                      return blocosUnicos.map(bloco => (
+                        <option key={bloco} value={bloco}>{bloco}</option>
+                      ))
+                    })()}
+                  </select>
+                </div>
+                
+                <div className="filter-item">
+                  <label className="filter-label">Data Início</label>
+                  <input 
+                    type="date"
+                    value={filtrosVendas.dataInicio}
+                    onChange={(e) => setFiltrosVendas({...filtrosVendas, dataInicio: e.target.value})}
+                    className="filter-input-date"
+                  />
+                </div>
+                
+                <div className="filter-item">
+                  <label className="filter-label">Data Fim</label>
+                  <input 
+                    type="date"
+                    value={filtrosVendas.dataFim}
+                    onChange={(e) => setFiltrosVendas({...filtrosVendas, dataFim: e.target.value})}
+                    className="filter-input-date"
+                  />
+                </div>
+              </div>
+              
+              <button
+                className="btn-clear-filters"
+                onClick={() => {
+                  setFiltrosVendas({
+                    corretor: '',
+                    empreendimento: '',
+                    status: 'todos',
+                    bloco: '',
+                    dataInicio: '',
+                    dataFim: '',
+                    valorMin: '',
+                    valorMax: ''
+                  })
+                  setSearchTerm('')
+                  setFilterTipo('todos')
+                }}
+              >
+                <X size={16} />
+                Limpar Filtros
+              </button>
+            </div>
 
                 <div className="table-container">
               <table className="data-table">
@@ -3014,113 +3314,229 @@ const AdminDashboard = () => {
 
         {activeTab === 'corretores' && (
           <div className="content-section">
+            {/* Filtros de Corretores */}
+            <div className="filters-section">
+              <div className="search-box">
+                <Search size={20} />
+                <input 
+                  type="text" 
+                  placeholder="Buscar por nome, email, telefone..."
+                  value={filtrosCorretores.busca}
+                  onChange={(e) => setFiltrosCorretores({...filtrosCorretores, busca: e.target.value})}
+                />
+              </div>
+              
+              {/* Filtros em Grid */}
+              <div className="filters-grid">
+                <div className="filter-item">
+                  <label className="filter-label">
+                    <Filter size={16} />
+                    Tipo de Corretor
+                  </label>
+                  <select 
+                    value={filtrosCorretores.tipo} 
+                    onChange={(e) => setFiltrosCorretores({...filtrosCorretores, tipo: e.target.value})}
+                    className="filter-select"
+                  >
+                    <option value="todos">Todos</option>
+                    <option value="interno">Interno</option>
+                    <option value="externo">Externo</option>
+                  </select>
+                </div>
+                
+                <div className="filter-item">
+                  <label className="filter-label">Empreendimento</label>
+                  <select 
+                    value={filtrosCorretores.empreendimento} 
+                    onChange={(e) => setFiltrosCorretores({...filtrosCorretores, empreendimento: e.target.value})}
+                    className="filter-select"
+                  >
+                    <option value="">Todos</option>
+                    <option value="sem_vinculo">Sem Vínculo</option>
+                    {empreendimentos.map(e => (
+                      <option key={e.id} value={e.id}>{e.nome}</option>
+                    ))}
+                  </select>
+                </div>
+                
+                <div className="filter-item">
+                  <label className="filter-label">Tipo de Vínculo</label>
+                  <select 
+                    value={filtrosCorretores.autonomo} 
+                    onChange={(e) => setFiltrosCorretores({...filtrosCorretores, autonomo: e.target.value})}
+                    className="filter-select"
+                  >
+                    <option value="todos">Todos</option>
+                    <option value="sim">Autônomo</option>
+                    <option value="nao">Vinculado</option>
+                  </select>
+                </div>
+              </div>
+              
+              <button
+                className="btn-clear-filters"
+                onClick={() => {
+                  setFiltrosCorretores({
+                    busca: '',
+                    tipo: 'todos',
+                    empreendimento: '',
+                    autonomo: 'todos'
+                  })
+                }}
+              >
+                <X size={16} />
+                Limpar Filtros
+              </button>
+            </div>
+            
+            {/* Lista de Corretores */}
             {corretores.length === 0 ? (
               <div className="empty-state-box">
                 <Users size={48} />
                 <h3>Nenhum corretor cadastrado</h3>
                 <p>Clique em "Novo Corretor" para adicionar</p>
               </div>
-            ) : (
-              <div className="corretores-grid">
-                {corretores.map((corretor) => {
-                  const vendasCorretor = vendas.filter(v => v.corretor_id === corretor.id)
-                  const totalComissao = vendasCorretor.reduce((acc, v) => acc + (parseFloat(v.comissao_corretor) || 0), 0)
-                  const totalVendas = vendasCorretor.reduce((acc, v) => acc + (parseFloat(v.valor_venda) || 0), 0)
-                  const percentual = corretor.percentual_corretor || (corretor.tipo_corretor === 'interno' ? 2.5 : 4)
+            ) : (() => {
+              // Filtrar corretores
+              const filteredCorretores = corretores.filter(corretor => {
+                // Busca por texto
+                const matchBusca = !filtrosCorretores.busca ||
+                  corretor.nome?.toLowerCase().includes(filtrosCorretores.busca.toLowerCase()) ||
+                  corretor.email?.toLowerCase().includes(filtrosCorretores.busca.toLowerCase()) ||
+                  corretor.telefone?.toLowerCase().includes(filtrosCorretores.busca.toLowerCase())
+                
+                // Filtro por tipo
+                const matchTipo = filtrosCorretores.tipo === 'todos' || corretor.tipo_corretor === filtrosCorretores.tipo
+                
+                // Filtro por empreendimento
+                const matchEmpreendimento = (() => {
+                  if (!filtrosCorretores.empreendimento) return true
+                  if (filtrosCorretores.empreendimento === 'sem_vinculo') {
+                    return !corretor.empreendimento_id
+                  }
+                  return corretor.empreendimento_id === filtrosCorretores.empreendimento
+                })()
+                
+                // Filtro por autônomo
+                const matchAutonomo = (() => {
+                  if (filtrosCorretores.autonomo === 'todos') return true
                   const isAutonomo = !corretor.empreendimento_id && corretor.percentual_corretor
-                  
-                  return (
-                    <div key={corretor.id} className="corretor-card">
-                      <div className="corretor-header">
-                        <div className="corretor-avatar large">
-                          {corretor.nome?.charAt(0)}
-                        </div>
-                        <div className="corretor-info">
-                          <h3>{corretor.nome}</h3>
-                          <div className="corretor-badges">
-                            <span className={`badge ${corretor.tipo_corretor}`}>
-                              {corretor.tipo_corretor === 'interno' ? 'Interno' : 'Externo'}
-                            </span>
-                            {isAutonomo && (
-                              <span className="badge autonomo">
-                                Autônomo
-                              </span>
-                            )}
-                            <span className="badge percent">
-                              <Percent size={12} />
-                              {percentual}%
-                            </span>
+                  if (filtrosCorretores.autonomo === 'sim') return isAutonomo
+                  if (filtrosCorretores.autonomo === 'nao') return !isAutonomo
+                  return true
+                })()
+                
+                return matchBusca && matchTipo && matchEmpreendimento && matchAutonomo
+              })
+              
+              return filteredCorretores.length === 0 ? (
+                <div className="empty-state-box">
+                  <Users size={48} />
+                  <h3>Nenhum corretor encontrado</h3>
+                  <p>Não há corretores que correspondam aos filtros selecionados</p>
+                </div>
+              ) : (
+                <div className="corretores-grid">
+                  {filteredCorretores.map((corretor) => {
+                    const vendasCorretor = vendas.filter(v => v.corretor_id === corretor.id)
+                    const totalComissao = vendasCorretor.reduce((acc, v) => acc + (parseFloat(v.comissao_corretor) || 0), 0)
+                    const totalVendas = vendasCorretor.reduce((acc, v) => acc + (parseFloat(v.valor_venda) || 0), 0)
+                    const percentual = corretor.percentual_corretor || (corretor.tipo_corretor === 'interno' ? 2.5 : 4)
+                    const isAutonomo = !corretor.empreendimento_id && corretor.percentual_corretor
+                    
+                    return (
+                      <div key={corretor.id} className="corretor-card">
+                        <div className="corretor-header">
+                          <div className="corretor-avatar large">
+                            {corretor.nome?.charAt(0)}
                           </div>
-                          {(corretor.empreendimento?.nome || corretor.cargo?.nome_cargo) && (
-                            <div className="corretor-vinculo">
-                              {corretor.empreendimento?.nome && (
-                                <span className="vinculo-item">
-                                  <Building size={12} />
-                                  {corretor.empreendimento.nome}
+                          <div className="corretor-info">
+                            <h3>{corretor.nome}</h3>
+                            <div className="corretor-badges">
+                              <span className={`badge ${corretor.tipo_corretor}`}>
+                                {corretor.tipo_corretor === 'interno' ? 'Interno' : 'Externo'}
+                              </span>
+                              {isAutonomo && (
+                                <span className="badge autonomo">
+                                  Autônomo
                                 </span>
                               )}
-                              {corretor.cargo?.nome_cargo && (
-                                <span className="vinculo-item cargo">
-                                  {corretor.cargo.nome_cargo}
-                                  {corretor.cargo.percentual && ` (${corretor.cargo.percentual}%)`}
-                                </span>
-                              )}
-                            </div>
-                          )}
-                          {isAutonomo && (
-                            <div className="corretor-vinculo">
-                              <span className="vinculo-item">
-                                Comissão Personalizada: {percentual}%
+                              <span className="badge percent">
+                                <Percent size={12} />
+                                {percentual}%
                               </span>
                             </div>
+                            {(corretor.empreendimento?.nome || corretor.cargo?.nome_cargo) && (
+                              <div className="corretor-vinculo">
+                                {corretor.empreendimento?.nome && (
+                                  <span className="vinculo-item">
+                                    <Building size={12} />
+                                    {corretor.empreendimento.nome}
+                                  </span>
+                                )}
+                                {corretor.cargo?.nome_cargo && (
+                                  <span className="vinculo-item cargo">
+                                    {corretor.cargo.nome_cargo}
+                                    {corretor.cargo.percentual && ` (${corretor.cargo.percentual}%)`}
+                                  </span>
+                                )}
+                              </div>
+                            )}
+                            {isAutonomo && (
+                              <div className="corretor-vinculo">
+                                <span className="vinculo-item">
+                                  Comissão Personalizada: {percentual}%
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                          <div className="corretor-actions">
+                            <button 
+                              className="action-btn edit small"
+                              onClick={() => openEditCorretor(corretor)}
+                              title="Editar corretor"
+                            >
+                              <Edit2 size={14} />
+                            </button>
+                            <button 
+                              className="action-btn delete small"
+                              onClick={() => handleDeleteCorretor(corretor)}
+                              title="Excluir corretor"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
+                        </div>
+                        <div className="corretor-email">
+                          <Mail size={14} />
+                          <span>{corretor.email}</span>
+                          {corretor.telefone && (
+                            <>
+                              <span style={{ margin: '0 8px' }}>•</span>
+                              <span>{corretor.telefone}</span>
+                            </>
                           )}
                         </div>
-                        <div className="corretor-actions">
-                          <button 
-                            className="action-btn edit small"
-                            onClick={() => openEditCorretor(corretor)}
-                            title="Editar corretor"
-                          >
-                            <Edit2 size={14} />
-                          </button>
-                          <button 
-                            className="action-btn delete small"
-                            onClick={() => handleDeleteCorretor(corretor)}
-                            title="Excluir corretor"
-                          >
-                            <Trash2 size={14} />
-                          </button>
+                        <div className="corretor-stats">
+                          <div className="corretor-stat">
+                            <span className="label">Total em Vendas</span>
+                            <span className="value">{formatCurrency(totalVendas)}</span>
+                          </div>
+                          <div className="corretor-stat">
+                            <span className="label">Comissão a Receber</span>
+                            <span className="value gold">{formatCurrency(totalComissao)}</span>
+                          </div>
+                          <div className="corretor-stat">
+                            <span className="label">Nº de Vendas</span>
+                            <span className="value">{vendasCorretor.length}</span>
+                          </div>
                         </div>
                       </div>
-                      <div className="corretor-email">
-                        <Mail size={14} />
-                        <span>{corretor.email}</span>
-                        {corretor.telefone && (
-                          <>
-                            <span style={{ margin: '0 8px' }}>•</span>
-                            <span>{corretor.telefone}</span>
-                          </>
-                        )}
-                      </div>
-                      <div className="corretor-stats">
-                        <div className="corretor-stat">
-                          <span className="label">Total em Vendas</span>
-                          <span className="value">{formatCurrency(totalVendas)}</span>
-                        </div>
-                        <div className="corretor-stat">
-                          <span className="label">Comissão a Receber</span>
-                          <span className="value gold">{formatCurrency(totalComissao)}</span>
-                        </div>
-                        <div className="corretor-stat">
-                          <span className="label">Nº de Vendas</span>
-                          <span className="value">{vendasCorretor.length}</span>
-                        </div>
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            )}
+                    )
+                  })}
+                </div>
+              )
+            })()}
           </div>
         )}
 
@@ -3349,6 +3765,116 @@ const AdminDashboard = () => {
 
         {activeTab === 'pagamentos' && (
           <div className="content-section">
+            {/* Filtros de Pagamentos */}
+            <div className="filters-section">
+              <div className="search-box">
+                <Search size={20} />
+                <input 
+                  type="text" 
+                  placeholder="Buscar por corretor, empreendimento, cliente..."
+                  value={filtrosPagamentos.buscaVenda}
+                  onChange={(e) => setFiltrosPagamentos({...filtrosPagamentos, buscaVenda: e.target.value})}
+                />
+              </div>
+              
+              {/* Filtros em Grid */}
+              <div className="filters-grid">
+                <div className="filter-item">
+                  <label className="filter-label">Status</label>
+                  <select 
+                    value={filtrosPagamentos.status} 
+                    onChange={(e) => setFiltrosPagamentos({...filtrosPagamentos, status: e.target.value})}
+                    className="filter-select"
+                  >
+                    <option value="todos">Todos</option>
+                    <option value="pendente">Pendente</option>
+                    <option value="pago">Pago</option>
+                  </select>
+                </div>
+                
+                <div className="filter-item">
+                  <label className="filter-label">Tipo de Pagamento</label>
+                  <select 
+                    value={filtrosPagamentos.tipo} 
+                    onChange={(e) => setFiltrosPagamentos({...filtrosPagamentos, tipo: e.target.value})}
+                    className="filter-select"
+                  >
+                    <option value="todos">Todos</option>
+                    <option value="sinal">Sinal</option>
+                    <option value="entrada">Entrada</option>
+                    <option value="parcela_entrada">Parcela Entrada</option>
+                    <option value="balao">Balão</option>
+                  </select>
+                </div>
+                
+                <div className="filter-item">
+                  <label className="filter-label">Corretor</label>
+                  <select 
+                    value={filtrosPagamentos.corretor} 
+                    onChange={(e) => setFiltrosPagamentos({...filtrosPagamentos, corretor: e.target.value})}
+                    className="filter-select"
+                  >
+                    <option value="">Todos</option>
+                    {corretores.map(c => (
+                      <option key={c.id} value={c.id}>{c.nome}</option>
+                    ))}
+                  </select>
+                </div>
+                
+                <div className="filter-item">
+                  <label className="filter-label">Empreendimento</label>
+                  <select 
+                    value={filtrosPagamentos.empreendimento} 
+                    onChange={(e) => setFiltrosPagamentos({...filtrosPagamentos, empreendimento: e.target.value})}
+                    className="filter-select"
+                  >
+                    <option value="">Todos</option>
+                    {empreendimentos.map(e => (
+                      <option key={e.id} value={e.id}>{e.nome}</option>
+                    ))}
+                  </select>
+                </div>
+                
+                <div className="filter-item">
+                  <label className="filter-label">Data Início</label>
+                  <input 
+                    type="date"
+                    value={filtrosPagamentos.dataInicio}
+                    onChange={(e) => setFiltrosPagamentos({...filtrosPagamentos, dataInicio: e.target.value})}
+                    className="filter-input-date"
+                  />
+                </div>
+                
+                <div className="filter-item">
+                  <label className="filter-label">Data Fim</label>
+                  <input 
+                    type="date"
+                    value={filtrosPagamentos.dataFim}
+                    onChange={(e) => setFiltrosPagamentos({...filtrosPagamentos, dataFim: e.target.value})}
+                    className="filter-input-date"
+                  />
+                </div>
+              </div>
+              
+              <button
+                className="btn-clear-filters"
+                onClick={() => {
+                  setFiltrosPagamentos({
+                    status: 'todos',
+                    corretor: '',
+                    empreendimento: '',
+                    tipo: 'todos',
+                    dataInicio: '',
+                    dataFim: '',
+                    buscaVenda: ''
+                  })
+                }}
+              >
+                <X size={16} />
+                Limpar Filtros
+              </button>
+            </div>
+            
             {/* Aviso de vendas sem pagamentos */}
             {vendasSemPagamentos.length > 0 && (
               <div className="alert-box warning" style={{
@@ -3413,10 +3939,15 @@ const AdminDashboard = () => {
                     <span className="resumo-label">Comissão Pendente</span>
                     <span className="resumo-valor pendente">
                       {formatCurrency(listaVendasComPagamentos.reduce((acc, grupo) => {
-                        const comissaoTotal = parseFloat(grupo.venda?.comissao_total) || 0
-                        const totalParcelas = grupo.totalValor
-                        const parcelasPendentes = grupo.pagamentos.filter(p => p.status === 'pendente').reduce((a, p) => a + (parseFloat(p.valor) || 0), 0)
-                        return totalParcelas > 0 ? acc + (comissaoTotal * parcelasPendentes / totalParcelas) : acc
+                        // Calcular comissão pendente considerando valores já pagos
+                        return acc + grupo.pagamentos.reduce((sum, pag) => {
+                          if (pag.status === 'pendente') {
+                            const comissaoParcela = parseFloat(pag.comissao_gerada) || 0
+                            const valorJaPago = parseFloat(pag.valor_ja_pago) || 0
+                            return sum + (comissaoParcela - valorJaPago)
+                          }
+                          return sum
+                        }, 0)
                       }, 0))}
                     </span>
                   </div>
@@ -3443,7 +3974,14 @@ const AdminDashboard = () => {
 
                 {/* Vendas Agrupadas */}
                 <div className="vendas-pagamentos-lista">
-                  {listaVendasComPagamentos.map((grupo) => (
+                  {filteredPagamentos.length === 0 ? (
+                    <div className="empty-state-box">
+                      <CreditCard size={48} />
+                      <h3>Nenhum pagamento encontrado</h3>
+                      <p>Não há pagamentos que correspondam aos filtros selecionados</p>
+                    </div>
+                  ) : (
+                    filteredPagamentos.map((grupo) => (
                     <div key={grupo.venda_id} className="venda-pagamento-card">
                       {/* Header da Venda - Clicável */}
                       <div 
@@ -3486,10 +4024,15 @@ const AdminDashboard = () => {
                             <span className="valor-label">Comissão Pendente</span>
                             <span className="valor-number pendente">{formatCurrency(
                               (() => {
-                                const comissaoTotal = parseFloat(grupo.venda?.comissao_total) || 0
-                                const totalParcelas = grupo.totalValor
-                                const parcelasPendentes = grupo.pagamentos.filter(p => p.status === 'pendente').reduce((a, p) => a + (parseFloat(p.valor) || 0), 0)
-                                return totalParcelas > 0 ? (comissaoTotal * parcelasPendentes / totalParcelas) : 0
+                                // Calcular comissão pendente considerando valores já pagos
+                                return grupo.pagamentos.reduce((sum, pag) => {
+                                  if (pag.status === 'pendente') {
+                                    const comissaoParcela = parseFloat(pag.comissao_gerada) || 0
+                                    const valorJaPago = parseFloat(pag.valor_ja_pago) || 0
+                                    return sum + (comissaoParcela - valorJaPago)
+                                  }
+                                  return sum
+                                }, 0)
                               })()
                             )}</span>
                           </div>
@@ -3536,7 +4079,7 @@ const AdminDashboard = () => {
                                   {pag.status !== 'pago' && (
                                     <button 
                                       className="btn-small-confirm"
-                                      onClick={(e) => { e.stopPropagation(); confirmarPagamento(pag.id); }}
+                                      onClick={(e) => { e.stopPropagation(); confirmarPagamento(pag); }}
                                     >
                                       Confirmar
                                     </button>
@@ -3568,7 +4111,8 @@ const AdminDashboard = () => {
                         </div>
                       )}
                     </div>
-                  ))}
+                    ))
+                  )}
                 </div>
 
                 {/* Modal de Detalhes do Pagamento */}
@@ -3651,6 +4195,93 @@ const AdminDashboard = () => {
                               </tr>
                             </tfoot>
                           </table>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Modal de Confirmação de Pagamento */}
+                {showModalConfirmarPagamento && pagamentoParaConfirmar && (
+                  <div className="modal-overlay" onClick={() => setShowModalConfirmarPagamento(false)}>
+                    <div className="modal" onClick={e => e.stopPropagation()}>
+                      <div className="modal-header">
+                        <h2>Confirmar Pagamento</h2>
+                        <button className="close-btn" onClick={() => setShowModalConfirmarPagamento(false)}>
+                          <X size={24} />
+                        </button>
+                      </div>
+                      <div className="modal-body">
+                        {/* Informações do Pagamento */}
+                        <div className="form-section">
+                          <h3>Informações da Parcela</h3>
+                          <div className="info-row">
+                            <span className="label">Tipo:</span>
+                            <span className="value">
+                              {pagamentoParaConfirmar.tipo === 'sinal' && 'Sinal'}
+                              {pagamentoParaConfirmar.tipo === 'entrada' && 'Entrada'}
+                              {pagamentoParaConfirmar.tipo === 'parcela_entrada' && `Parcela de Entrada ${pagamentoParaConfirmar.numero_parcela}`}
+                              {pagamentoParaConfirmar.tipo === 'balao' && (pagamentoParaConfirmar.numero_parcela ? `Balão ${pagamentoParaConfirmar.numero_parcela}` : 'Balão')}
+                            </span>
+                          </div>
+                          <div className="info-row">
+                            <span className="label">Valor da Parcela:</span>
+                            <span className="value">{formatCurrency(pagamentoParaConfirmar.valor)}</span>
+                          </div>
+                        </div>
+
+                        {/* Comissão que tem que ser paga */}
+                        <div className="form-section">
+                          <div className="info-row highlight">
+                            <span className="label">Comissão que tem que ser paga:</span>
+                            <span className="value highlight">{formatCurrency(pagamentoParaConfirmar.comissao_gerada || 0)}</span>
+                          </div>
+                        </div>
+
+                        {/* Valor a Personalizar */}
+                        <div className="form-section">
+                          <label>
+                            <span>Valor a Personalizar (opcional)</span>
+                            <input
+                              type="number"
+                              step="0.01"
+                              min="0"
+                              placeholder="Deixe vazio para usar o valor padrão"
+                              value={formConfirmarPagamento.valorPersonalizado}
+                              onChange={(e) => setFormConfirmarPagamento({...formConfirmarPagamento, valorPersonalizado: e.target.value})}
+                            />
+                            <small>Se preenchido, este valor será usado ao invés do valor padrão da comissão</small>
+                          </label>
+                        </div>
+
+                        {/* Resumo */}
+                        <div className="form-section summary">
+                          <h3>Resumo</h3>
+                          <div className="info-row">
+                            <span className="label">Valor da Comissão a Confirmar:</span>
+                            <span className="value highlight">
+                              {formatCurrency(
+                                formConfirmarPagamento.valorPersonalizado
+                                  ? parseFloat(formConfirmarPagamento.valorPersonalizado) || 0
+                                  : (pagamentoParaConfirmar.comissao_gerada || 0)
+                              )}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="modal-actions">
+                          <button
+                            className="btn-secondary"
+                            onClick={() => setShowModalConfirmarPagamento(false)}
+                          >
+                            Cancelar
+                          </button>
+                          <button
+                            className="btn-primary"
+                            onClick={processarConfirmarPagamento}
+                          >
+                            Confirmar Pagamento
+                          </button>
                         </div>
                       </div>
                     </div>
