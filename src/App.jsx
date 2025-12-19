@@ -66,6 +66,9 @@ const ProtectedRoute = ({ children, requiredRole }) => {
 
   // Se não tem perfil cadastrado
   if (!userProfile) {
+    // Detectar tipo de usuário baseado no email ou contexto
+    const userTipo = 'corretor' // ou detectar dinamicamente
+    
     return (
       <div className="loading-screen">
         <div className="loading-content">
@@ -84,12 +87,13 @@ const ProtectedRoute = ({ children, requiredRole }) => {
             maxWidth: '500px',
             wordBreak: 'break-all'
           }}>
-            INSERT INTO usuarios (id, email, nome, tipo)<br/>
+            INSERT INTO usuarios (id, email, nome, tipo, tipo_corretor)<br/>
             VALUES (<br/>
             &nbsp;&nbsp;'{user.id}',<br/>
             &nbsp;&nbsp;'{user.email}',<br/>
-            &nbsp;&nbsp;'Administrador',<br/>
-            &nbsp;&nbsp;'admin'<br/>
+            &nbsp;&nbsp;'{user.email?.split('@')[0] || 'Corretor'}',<br/>
+            &nbsp;&nbsp;'corretor',<br/>
+            &nbsp;&nbsp;'externo'<br/>
             );
           </div>
           <button 

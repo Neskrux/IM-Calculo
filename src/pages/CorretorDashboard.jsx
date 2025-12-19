@@ -6,7 +6,8 @@ import {
   DollarSign, TrendingUp, LogOut, 
   Calendar, User, CheckCircle, Clock, 
   Wallet, Target, Award, BarChart3,
-  LayoutDashboard, Menu, X, ChevronLeft, ChevronRight
+  LayoutDashboard, Menu, X, ChevronLeft, ChevronRight, ChevronDown,
+  Building, MapPin
 } from 'lucide-react'
 import logo from '../imgs/logo.png'
 import Ticker from '../components/Ticker'
@@ -37,6 +38,11 @@ const CorretorDashboard = () => {
     const saved = localStorage.getItem('corretor-sidebar-collapsed')
     return saved === 'true'
   })
+  const [cargoInfo, setCargoInfo] = useState(null)
+  const [empreendimentoInfo, setEmpreendimentoInfo] = useState(null)
+  const [vendaExpandida, setVendaExpandida] = useState(null)
+  const [pagamentosVenda, setPagamentosVenda] = useState({}) // Cache de pagamentos por venda
+  const [gruposExpandidos, setGruposExpandidos] = useState({}) // Controla quais grupos estão expandidos: { "vendaId-tipo": true }
 
   useEffect(() => {
     if (user) {
@@ -44,46 +50,148 @@ const CorretorDashboard = () => {
     }
   }, [user])
 
+  useEffect(() => {
+    if (userProfile) {
+      fetchCargoAndEmpreendimento()
+    }
+  }, [userProfile])
+
+  const fetchCargoAndEmpreendimento = async () => {
+    if (!userProfile?.cargo_id && !userProfile?.empreendimento_id) {
+      return
+    }
+
+    try {
+      const promises = []
+      
+      if (userProfile?.cargo_id) {
+        promises.push(
+          supabase
+            .from('cargos_empreendimento')
+            .select('nome_cargo, percentual')
+            .eq('id', userProfile.cargo_id)
+            .single()
+            .then(({ data }) => data)
+        )
+      } else {
+        promises.push(Promise.resolve(null))
+      }
+
+      if (userProfile?.empreendimento_id) {
+        promises.push(
+          supabase
+            .from('empreendimentos')
+            .select('nome')
+            .eq('id', userProfile.empreendimento_id)
+            .single()
+            .then(({ data }) => data)
+        )
+      } else {
+        promises.push(Promise.resolve(null))
+      }
+
+      const [cargo, empreendimento] = await Promise.all(promises)
+      setCargoInfo(cargo)
+      setEmpreendimentoInfo(empreendimento)
+    } catch (error) {
+      console.error('Erro ao buscar cargo e empreendimento:', error)
+    }
+  }
+
   const fetchVendas = async () => {
     setLoading(true)
     
-    const { data, error } = await supabase
-      .from('vendas')
-      .select('*')
-      .eq('corretor_id', user.id)
-      .order('data_venda', { ascending: false })
+    try {
+      const { data, error } = await supabase
+        .from('vendas')
+        .select('*')
+        .eq('corretor_id', user.id)
+        .order('data_venda', { ascending: false })
 
-    if (!error) {
-      setVendas(data || [])
+      if (error) {
+        console.error('❌ Erro ao buscar vendas:', error)
+        setVendas([])
+        return
+      }
+
+      // Buscar empreendimentos e clientes para associar
+      const empreendimentoIds = [...new Set((data || []).map(v => v.empreendimento_id).filter(Boolean))]
+      const clienteIds = [...new Set((data || []).map(v => v.cliente_id).filter(Boolean))]
+
+      const [empreendimentosResult, clientesResult] = await Promise.all([
+        empreendimentoIds.length > 0 
+          ? supabase.from('empreendimentos').select('id, nome').in('id', empreendimentoIds)
+          : Promise.resolve({ data: [], error: null }),
+        clienteIds.length > 0
+          ? supabase.from('clientes').select('id, nome_completo').in('id', clienteIds)
+          : Promise.resolve({ data: [], error: null })
+      ])
+
+      const empreendimentosMap = (empreendimentosResult.data || []).reduce((acc, emp) => {
+        acc[emp.id] = emp.nome
+        return acc
+      }, {})
+
+      const clientesMap = (clientesResult.data || []).reduce((acc, cliente) => {
+        acc[cliente.id] = cliente.nome_completo
+        return acc
+      }, {})
+
+      // Validar e normalizar os dados
+      const vendasValidadas = (data || []).map(venda => {
+        const valorVenda = parseFloat(venda.valor_venda) || 0
+        let comissaoCorretor = venda.comissao_corretor
+        
+        // Se comissao_corretor for null, undefined ou string vazia, calcular
+        if (comissaoCorretor === null || comissaoCorretor === undefined || comissaoCorretor === '') {
+          const percentual = userProfile?.percentual_corretor || 
+            (userProfile?.tipo_corretor === 'interno' ? 2.5 : 3.5)
+          comissaoCorretor = (valorVenda * percentual) / 100
+        } else {
+          // Converter para número se for string
+          comissaoCorretor = parseFloat(comissaoCorretor) || 0
+        }
+
+        return {
+          ...venda,
+          valor_venda: valorVenda,
+          comissao_corretor: comissaoCorretor,
+          status: venda.status || 'pendente',
+          empreendimento_nome: venda.empreendimento_id ? empreendimentosMap[venda.empreendimento_id] : null,
+          cliente_nome: venda.cliente_id ? clientesMap[venda.cliente_id] : null
+        }
+      })
+      
+      setVendas(vendasValidadas)
+    } catch (error) {
+      console.error('❌ Erro crítico ao buscar vendas:', error)
+      setVendas([])
+    } finally {
+      setLoading(false)
     }
-    setLoading(false)
   }
 
   const formatCurrency = (value) => {
+    if (value === null || value === undefined || isNaN(value)) {
+      return 'R$ 0,00'
+    }
+    // Sempre mostrar valor completo, nunca formato compacto (1M, 1k, etc)
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
-      currency: 'BRL'
+      currency: 'BRL',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
     }).format(value)
   }
 
-  const getTotalVendas = () => {
-    return vendas.reduce((acc, v) => acc + v.valor_venda, 0)
-  }
-
-  const getTotalComissao = () => {
-    return vendas.reduce((acc, v) => acc + v.comissao_corretor, 0)
-  }
-
-  const getComissaoPendente = () => {
-    return vendas
-      .filter(v => v.status === 'pendente')
-      .reduce((acc, v) => acc + v.comissao_corretor, 0)
-  }
-
-  const getComissaoPaga = () => {
-    return vendas
-      .filter(v => v.status === 'pago')
-      .reduce((acc, v) => acc + v.comissao_corretor, 0)
+  // Função para capitalizar nomes (primeira letra de cada palavra em maiúscula)
+  const capitalizeName = (name) => {
+    if (!name || typeof name !== 'string') return name
+    return name
+      .toLowerCase()
+      .split(' ')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ')
   }
 
   const filteredVendas = vendas.filter(venda => {
@@ -93,17 +201,269 @@ const CorretorDashboard = () => {
     const hoje = new Date()
     
     if (periodo === 'mes') {
-      return dataVenda.getMonth() === hoje.getMonth() && 
-             dataVenda.getFullYear() === hoje.getFullYear()
+      const mesmoMes = dataVenda.getMonth() === hoje.getMonth() && 
+                       dataVenda.getFullYear() === hoje.getFullYear()
+      return mesmoMes
     }
     if (periodo === 'ano') {
-      return dataVenda.getFullYear() === hoje.getFullYear()
+      const mesmoAno = dataVenda.getFullYear() === hoje.getFullYear()
+      return mesmoAno
     }
     return true
   })
+  
+  // Log resumido do filtro
+  useEffect(() => {
+    console.log(`🔍 [FILTRO RESUMO] Período: ${periodo.toUpperCase()} | Total vendas: ${vendas.length} | Vendas filtradas: ${filteredVendas.length}`)
+    if (periodo !== 'todos' && filteredVendas.length > 0) {
+      console.log(`📋 Vendas incluídas no filtro "${periodo}":`)
+      filteredVendas.forEach((v, i) => {
+        console.log(`  ${i + 1}. ${new Date(v.data_venda).toLocaleDateString('pt-BR')} - ${formatCurrency(v.valor_venda)}`)
+      })
+    } else if (periodo !== 'todos' && filteredVendas.length === 0) {
+      console.log(`⚠️ Nenhuma venda encontrada para o período "${periodo}"`)
+      console.log(`📅 Vendas disponíveis:`)
+      vendas.forEach((v, i) => {
+        console.log(`  ${i + 1}. ${new Date(v.data_venda).toLocaleDateString('pt-BR')} - ${formatCurrency(v.valor_venda)}`)
+      })
+    }
+  }, [periodo, vendas.length, filteredVendas.length])
+
+  const getTotalVendas = () => {
+    return filteredVendas.reduce((acc, v) => acc + (parseFloat(v.valor_venda) || 0), 0)
+  }
+
+  const getTotalComissao = () => {
+    return filteredVendas.reduce((acc, v) => {
+      const comissao = v.comissao_corretor === null || v.comissao_corretor === undefined 
+        ? 0 
+        : (parseFloat(v.comissao_corretor) || 0)
+      return acc + comissao
+    }, 0)
+  }
+
+  const getComissaoPendente = () => {
+    const pendentes = filteredVendas.filter(v => v.status === 'pendente')
+    return pendentes.reduce((acc, v) => {
+      const comissao = v.comissao_corretor === null || v.comissao_corretor === undefined 
+        ? 0 
+        : (parseFloat(v.comissao_corretor) || 0)
+      return acc + comissao
+    }, 0)
+  }
+
+  const getComissaoPaga = () => {
+    const pagas = filteredVendas.filter(v => v.status === 'pago')
+    return pagas.reduce((acc, v) => acc + (parseFloat(v.comissao_corretor) || 0), 0)
+  }
 
   const percentualCorretor = userProfile?.percentual_corretor || 
     (userProfile?.tipo_corretor === 'interno' ? 2.5 : 4)
+
+  // Buscar pagamentos de uma venda específica
+  const fetchPagamentosVenda = async (vendaId) => {
+    if (pagamentosVenda[vendaId]) {
+      return pagamentosVenda[vendaId] // Retornar do cache se já foi buscado
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('pagamentos_prosoluto')
+        .select('*')
+        .eq('venda_id', vendaId)
+        .order('data_prevista', { ascending: true })
+
+      if (error) {
+        console.error('Erro ao buscar pagamentos:', error)
+        return []
+      }
+
+      // Salvar no cache
+      setPagamentosVenda(prev => ({
+        ...prev,
+        [vendaId]: data || []
+      }))
+
+      return data || []
+    } catch (error) {
+      console.error('Erro ao buscar pagamentos:', error)
+      return []
+    }
+  }
+
+  // Calcular comissão proporcional do corretor para uma parcela
+  const calcularComissaoProporcional = (pagamento, venda) => {
+    const valorTotalVenda = parseFloat(venda.valor_venda) || 0
+    const valorParcela = parseFloat(pagamento.valor) || 0
+    const comissaoTotalCorretor = parseFloat(venda.comissao_corretor) || 0
+
+    if (valorTotalVenda === 0) return 0
+    return (comissaoTotalCorretor * valorParcela) / valorTotalVenda
+  }
+
+  // Agrupar pagamentos por tipo
+  const agruparPagamentosPorTipo = (pagamentos) => {
+    const grupos = {
+      sinal: [],
+      entrada: [],
+      parcela_entrada: [],
+      balao: []
+    }
+
+    pagamentos.forEach(pagamento => {
+      const tipo = pagamento.tipo
+      if (grupos[tipo]) {
+        grupos[tipo].push(pagamento)
+      }
+    })
+
+    // Ordenar cada grupo por número de parcela
+    grupos.parcela_entrada.sort((a, b) => (a.numero_parcela || 0) - (b.numero_parcela || 0))
+    grupos.balao.sort((a, b) => (a.numero_parcela || 0) - (b.numero_parcela || 0))
+
+    return grupos
+  }
+
+  // Obter label do grupo
+  const getGrupoLabel = (tipo) => {
+    const labels = {
+      sinal: 'Sinal',
+      entrada: 'Entrada',
+      parcela_entrada: 'Parcelas de Entrada',
+      balao: 'Balões'
+    }
+    return labels[tipo] || tipo
+  }
+
+  // Toggle expansão de grupo (quando tem mais de 10 itens)
+  const toggleGrupoExpandido = (vendaId, tipo) => {
+    const key = `${vendaId}-${tipo}`
+    setGruposExpandidos(prev => ({
+      ...prev,
+      [key]: !prev[key]
+    }))
+  }
+
+  // Verificar se grupo está expandido
+  const isGrupoExpandido = (vendaId, tipo) => {
+    const key = `${vendaId}-${tipo}`
+    return gruposExpandidos[key] || false
+  }
+
+  // Handler para expandir/colapsar venda
+  const toggleVendaExpandida = async (vendaId) => {
+    if (vendaExpandida === vendaId) {
+      setVendaExpandida(null)
+    } else {
+      setVendaExpandida(vendaId)
+      // Buscar pagamentos se ainda não foram buscados
+      if (!pagamentosVenda[vendaId]) {
+        await fetchPagamentosVenda(vendaId)
+      }
+    }
+  }
+
+  // Função para gerar título dinâmico do dashboard
+  const getDashboardTitle = () => {
+    if (cargoInfo?.nome_cargo) {
+      return `Dashboard ${cargoInfo.nome_cargo}`
+    } else {
+      return 'Dashboard do Corretor'
+    }
+  }
+
+  // Função para gerar dados do Ticker (métricas pessoais do corretor)
+  const getTickerData = () => {
+    const hoje = new Date()
+    const inicioHoje = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate(), 0, 0, 0, 0)
+    const fimHoje = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate(), 23, 59, 59, 999)
+    
+    // Vendas hoje
+    const vendasHoje = vendas.filter(v => {
+      const dataVenda = new Date(v.data_venda)
+      return dataVenda >= inicioHoje && dataVenda <= fimHoje
+    })
+    const totalVendasHoje = vendasHoje.reduce((acc, v) => acc + (parseFloat(v.valor_venda) || 0), 0)
+    
+    // Vendas este mês
+    const vendasMes = vendas.filter(v => {
+      const dataVenda = new Date(v.data_venda)
+      return dataVenda.getMonth() === hoje.getMonth() && 
+             dataVenda.getFullYear() === hoje.getFullYear()
+    })
+    const totalVendasMes = vendasMes.reduce((acc, v) => acc + (parseFloat(v.valor_venda) || 0), 0)
+    
+    // Média por venda
+    const mediaPorVenda = vendas.length > 0 
+      ? getTotalVendas() / vendas.length 
+      : 0
+    
+    // Formatar valores
+    const formatTicker = (value) => {
+      // Sempre mostrar valor completo, nunca formato compacto (1M, 1k, etc)
+      if (value === null || value === undefined || isNaN(value)) {
+        return 'R$ 0,00'
+      }
+      return new Intl.NumberFormat('pt-BR', {
+        style: 'currency',
+        currency: 'BRL',
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      }).format(value)
+    }
+
+    const tickerData = [
+      {
+        name: 'MINHAS VENDAS HOJE',
+        value: formatTicker(totalVendasHoje),
+        change: vendasHoje.length > 0 ? `+${vendasHoje.length}` : '',
+        type: vendasHoje.length > 0 ? 'positive' : 'neutral'
+      },
+      {
+        name: 'MINHA COMISSÃO PENDENTE',
+        value: formatTicker(getComissaoPendente()),
+        change: getComissaoPendente() > 0 ? `${Math.round((getComissaoPendente() / getTotalVendas()) * 100)}%` : '',
+        type: getComissaoPendente() > 0 ? 'positive' : 'neutral'
+      },
+      {
+        name: 'TOTAL EM VENDAS',
+        value: formatTicker(getTotalVendas()),
+        change: vendas.length > 0 ? `${vendas.length} vendas` : '',
+        type: 'positive'
+      },
+      {
+        name: 'COMISSÃO PAGA',
+        value: formatTicker(getComissaoPaga()),
+        change: getComissaoPaga() > 0 ? `${Math.round((getComissaoPaga() / getTotalVendas()) * 100)}%` : '',
+        type: getComissaoPaga() > 0 ? 'positive' : 'neutral'
+      },
+      {
+        name: 'VENDAS ESTE MÊS',
+        value: formatTicker(totalVendasMes),
+        change: vendasMes.length > 0 ? `${vendasMes.length} vendas` : '',
+        type: 'positive'
+      },
+      {
+        name: 'MÉDIA POR VENDA',
+        value: formatTicker(mediaPorVenda),
+        change: '',
+        type: 'positive'
+      }
+    ]
+
+    // Adicionar métricas opcionais se houver dados futuros
+    // Exemplo: Meta mensal, Leads novos (comentado para uso futuro)
+    // if (metaMensal) {
+    //   tickerData.push({
+    //     name: 'META MENSAL',
+    //     value: `${metaMensal}%`,
+    //     change: '+4%',
+    //     type: 'positive'
+    //   })
+    // }
+
+    return tickerData
+  }
 
   // Toggle sidebar collapsed state
   const toggleSidebar = () => {
@@ -135,6 +495,7 @@ const CorretorDashboard = () => {
       navigate('/corretor/dashboard', { replace: true })
     }
   }, [tab, navigate, location.pathname])
+
 
   return (
     <div className="dashboard-container">
@@ -174,14 +535,6 @@ const CorretorDashboard = () => {
             <span>Minhas Vendas</span>
           </button>
           <button 
-            className={`nav-item ${activeTab === 'comissoes' ? 'active' : ''}`}
-            onClick={() => navigate('/corretor/comissoes')}
-            title="Comissões"
-          >
-            <Wallet size={20} />
-            <span>Comissões</span>
-          </button>
-          <button 
             className={`nav-item ${activeTab === 'relatorios' ? 'active' : ''}`}
             onClick={() => navigate('/corretor/relatorios')}
             title="Relatórios"
@@ -204,9 +557,9 @@ const CorretorDashboard = () => {
               <User size={20} />
             </div>
             <div className="user-details">
-              <span className="user-name">{userProfile?.nome || 'Corretor'}</span>
+              <span className="user-name">{capitalizeName(userProfile?.nome || 'Corretor')}</span>
               <span className="user-role">
-                {userProfile?.tipo_corretor === 'interno' ? 'Corretor Interno' : 'Corretor Externo'}
+                {userProfile?.tipo_corretor === 'interno' ? 'Interno' : 'Externo'}
               </span>
             </div>
           </div>
@@ -220,7 +573,7 @@ const CorretorDashboard = () => {
       {/* Main Content */}
       <main className={`main-content ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
         {/* Ticker */}
-        <Ticker />
+        <Ticker data={getTickerData()} />
         
         {/* Header */}
         <header className="main-header">
@@ -228,9 +581,8 @@ const CorretorDashboard = () => {
             <Menu size={24} />
           </button>
           <h1>
-            {activeTab === 'dashboard' && 'Dashboard do Corretor'}
+            {activeTab === 'dashboard' && getDashboardTitle()}
             {activeTab === 'vendas' && 'Minhas Vendas'}
-            {activeTab === 'comissoes' && 'Minhas Comissões'}
             {activeTab === 'relatorios' && 'Relatórios'}
           </h1>
         </header>
@@ -243,12 +595,12 @@ const CorretorDashboard = () => {
               {/* Welcome Section */}
               <section className="welcome-section">
                 <div className="welcome-content">
-                  <h1>Bem-vindo, {userProfile?.nome?.split(' ')[0] || 'Corretor'}</h1>
+                  <h1>Bem-vindo, {capitalizeName(userProfile?.nome?.split(' ')[0] || 'Corretor')}</h1>
                   <p>Acompanhe suas vendas e comissões</p>
                 </div>
                 <div className="tipo-badge">
                   <span className={`badge-large ${userProfile?.tipo_corretor || 'externo'}`}>
-                    {userProfile?.tipo_corretor === 'interno' ? 'Corretor Interno' : 'Corretor Externo'}
+                    {userProfile?.tipo_corretor === 'interno' ? 'Interno' : 'Externo'}
                   </span>
                 </div>
               </section>
@@ -261,7 +613,9 @@ const CorretorDashboard = () => {
           </div>
           <div className="stat-card-content">
             <span className="stat-card-label">Total a Receber</span>
-            <span className="stat-card-value">{formatCurrency(getTotalComissao())}</span>
+            <span className="stat-card-value">
+              {formatCurrency(getTotalComissao())}
+            </span>
           </div>
           <div className="stat-card-decoration"></div>
         </div>
@@ -272,7 +626,9 @@ const CorretorDashboard = () => {
           </div>
           <div className="stat-card-content">
             <span className="stat-card-label">Comissão Paga</span>
-            <span className="stat-card-value">{formatCurrency(getComissaoPaga())}</span>
+            <span className="stat-card-value">
+              {formatCurrency(getComissaoPaga())}
+            </span>
           </div>
           <div className="stat-card-decoration"></div>
         </div>
@@ -283,7 +639,9 @@ const CorretorDashboard = () => {
           </div>
           <div className="stat-card-content">
             <span className="stat-card-label">Pendente</span>
-            <span className="stat-card-value">{formatCurrency(getComissaoPendente())}</span>
+            <span className="stat-card-value">
+              {formatCurrency(getComissaoPendente())}
+            </span>
           </div>
           <div className="stat-card-decoration"></div>
         </div>
@@ -294,7 +652,9 @@ const CorretorDashboard = () => {
           </div>
           <div className="stat-card-content">
             <span className="stat-card-label">Total em Vendas</span>
-            <span className="stat-card-value">{formatCurrency(getTotalVendas())}</span>
+            <span className="stat-card-value">
+              {formatCurrency(getTotalVendas())}
+            </span>
           </div>
           <div className="stat-card-decoration"></div>
         </div>
@@ -329,10 +689,6 @@ const CorretorDashboard = () => {
           {activeTab === 'vendas' && (
             <section className="vendas-section">
               <div className="section-header-corretor">
-                <h2>
-                  <BarChart3 size={24} />
-                  Minhas Vendas
-                </h2>
                 <div className="period-filter">
                   <button 
                     className={periodo === 'todos' ? 'active' : ''} 
@@ -359,72 +715,6 @@ const CorretorDashboard = () => {
                 <div className="loading-container">
                   <div className="loading-spinner-large"></div>
                   <p>Carregando suas vendas...</p>
-                </div>
-              ) : filteredVendas.length === 0 ? (
-                <div className="empty-state">
-                  <DollarSign size={48} />
-                  <h3>Nenhuma venda encontrada</h3>
-                  <p>Suas vendas aparecerão aqui quando forem registradas</p>
-                </div>
-              ) : (
-                <div className="vendas-list">
-                  {filteredVendas.map((venda) => (
-                    <div key={venda.id} className="venda-card">
-                      <div className="venda-main">
-                        <div className="venda-info">
-                          <h4>{venda.descricao || 'Venda de Imóvel'}</h4>
-                          <div className="venda-meta">
-                            <span className="venda-date">
-                              <Calendar size={14} />
-                              {new Date(venda.data_venda).toLocaleDateString('pt-BR')}
-                            </span>
-                            <span className={`status-tag ${venda.status}`}>
-                              {venda.status === 'pago' ? (
-                                <>
-                                  <CheckCircle size={12} />
-                                  Pago
-                                </>
-                              ) : (
-                                <>
-                                  <Clock size={12} />
-                                  Pendente
-                                </>
-                              )}
-                            </span>
-                          </div>
-                        </div>
-                        <div className="venda-values">
-                          <div className="venda-valor">
-                            <span className="label">Valor da Venda</span>
-                            <span className="value">{formatCurrency(venda.valor_venda)}</span>
-                          </div>
-                          <div className="venda-comissao">
-                            <span className="label">Sua Comissão</span>
-                            <span className="value highlight">{formatCurrency(venda.comissao_corretor)}</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </section>
-          )}
-
-          {/* Comissões Tab */}
-          {activeTab === 'comissoes' && (
-            <section className="comissoes-section">
-              <div className="section-header-corretor">
-                <h2>
-                  <Wallet size={24} />
-                  Minhas Comissões
-                </h2>
-              </div>
-
-              {loading ? (
-                <div className="loading-container">
-                  <div className="loading-spinner-large"></div>
-                  <p>Carregando suas comissões...</p>
                 </div>
               ) : (
                 <>
@@ -462,59 +752,237 @@ const CorretorDashboard = () => {
                       </div>
                       <div className="stat-card-decoration"></div>
                     </div>
+
+                    <div className="stat-card-corretor info">
+                      <div className="stat-card-icon">
+                        <Target size={28} />
+                      </div>
+                      <div className="stat-card-content">
+                        <span className="stat-card-label">Total em Vendas</span>
+                        <span className="stat-card-value">{formatCurrency(getTotalVendas())}</span>
+                      </div>
+                      <div className="stat-card-decoration"></div>
+                    </div>
                   </div>
 
-                  {/* Lista de Comissões */}
-                  <div className="comissoes-list">
-                    {vendas.length === 0 ? (
-                      <div className="empty-state">
-                        <Wallet size={48} />
-                        <h3>Nenhuma comissão encontrada</h3>
-                        <p>Suas comissões aparecerão aqui quando houver vendas registradas</p>
-                      </div>
-                    ) : (
-                      <div className="vendas-list">
-                        {vendas.map((venda) => (
-                          <div key={venda.id} className="venda-card">
-                            <div className="venda-main">
-                              <div className="venda-info">
-                                <h4>{venda.descricao || 'Venda de Imóvel'}</h4>
-                                <div className="venda-meta">
-                                  <span className="venda-date">
-                                    <Calendar size={14} />
-                                    {new Date(venda.data_venda).toLocaleDateString('pt-BR')}
+                  {/* Lista de Vendas */}
+                  {filteredVendas.length === 0 ? (
+                    <div className="empty-state">
+                      <DollarSign size={48} />
+                      <h3>Nenhuma venda encontrada</h3>
+                      <p>Suas vendas aparecerão aqui quando forem registradas</p>
+                    </div>
+                  ) : (
+                    <div className="vendas-list">
+                      {filteredVendas.map((venda) => (
+                        <div key={venda.id} className="venda-card">
+                          <div className="venda-main">
+                            <div className="venda-info">
+                              <h4>
+                                {(() => {
+                                  // Montar título: Unidade Bloco Nome Cliente
+                                  const partes = []
+                                  
+                                  // Unidade
+                                  if (venda.unidade) {
+                                    partes.push(`Unidade ${venda.unidade}`)
+                                  }
+                                  
+                                  // Bloco
+                                  if (venda.bloco) {
+                                    partes.push(`Bloco ${venda.bloco}`)
+                                  }
+                                  
+                                  // Cliente (se houver)
+                                  if (venda.cliente_nome) {
+                                    partes.push(capitalizeName(venda.cliente_nome))
+                                  }
+                                  
+                                  // Se não tiver nenhuma informação, usar descrição ou padrão
+                                  if (partes.length === 0) {
+                                    return venda.descricao || 'Venda de Imóvel'
+                                  }
+                                  
+                                  return partes.join(' • ')
+                                })()}
+                              </h4>
+                              <div className="venda-meta">
+                                {venda.empreendimento_nome && (
+                                  <span className="venda-empreendimento">
+                                    <Building size={12} />
+                                    {capitalizeName(venda.empreendimento_nome)}
                                   </span>
-                                  <span className={`status-tag ${venda.status}`}>
-                                    {venda.status === 'pago' ? (
-                                      <>
-                                        <CheckCircle size={12} />
-                                        Pago
-                                      </>
-                                    ) : (
-                                      <>
-                                        <Clock size={12} />
-                                        Pendente
-                                      </>
-                                    )}
+                                )}
+                                {(venda.unidade || venda.bloco || venda.andar) && (
+                                  <span className="venda-unidade">
+                                    <MapPin size={12} />
+                                    {venda.bloco && `Bloco ${venda.bloco}`}
+                                    {venda.bloco && (venda.unidade || venda.andar) && ' • '}
+                                    {venda.unidade && `Unidade ${venda.unidade}`}
+                                    {venda.unidade && venda.andar && ' • '}
+                                    {venda.andar && venda.andar}
                                   </span>
-                                </div>
+                                )}
+                                <span className="venda-date">
+                                  <Calendar size={14} />
+                                  {new Date(venda.data_venda).toLocaleDateString('pt-BR')}
+                                </span>
+                                <span className={`status-tag ${venda.status}`}>
+                                  {venda.status === 'pago' ? (
+                                    <>
+                                      <CheckCircle size={12} />
+                                      Pago
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Clock size={12} />
+                                      Pendente
+                                    </>
+                                  )}
+                                </span>
                               </div>
-                              <div className="venda-values">
-                                <div className="venda-valor">
-                                  <span className="label">Valor da Venda</span>
-                                  <span className="value">{formatCurrency(venda.valor_venda)}</span>
-                                </div>
-                                <div className="venda-comissao">
-                                  <span className="label">Sua Comissão ({percentualCorretor}%)</span>
-                                  <span className="value highlight">{formatCurrency(venda.comissao_corretor)}</span>
-                                </div>
+                            </div>
+                            
+                            {/* Botão Ver mais */}
+                            <div className="venda-expand-btn-wrapper">
+                              <button 
+                                className="venda-expand-btn"
+                                onClick={() => toggleVendaExpandida(venda.id)}
+                              >
+                                <ChevronDown 
+                                  size={18} 
+                                  className={vendaExpandida === venda.id ? 'rotated' : ''} 
+                                />
+                                <span>Ver mais</span>
+                              </button>
+                            </div>
+
+                            <div className="venda-values">
+                              <div className="venda-valor">
+                                <span className="label">Valor da Venda</span>
+                                <span className="value">{formatCurrency(venda.valor_venda)}</span>
+                              </div>
+                              <div className="venda-comissao">
+                                <span className="label">Sua Comissão ({percentualCorretor}%)</span>
+                                <span className="value highlight">{formatCurrency(venda.comissao_corretor)}</span>
                               </div>
                             </div>
                           </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
+
+                          {/* Seção expandida com detalhes dos pagamentos */}
+                          {vendaExpandida === venda.id && (
+                            <div className="venda-pagamentos-detalhes">
+                              {pagamentosVenda[venda.id] && pagamentosVenda[venda.id].length > 0 ? (
+                                <>
+                                  <div className="parcelas-header">
+                                    <h5>Detalhamento de Pagamentos</h5>
+                                  </div>
+                                  
+                                  {(() => {
+                                    const grupos = agruparPagamentosPorTipo(pagamentosVenda[venda.id])
+                                    const tiposOrdem = ['sinal', 'entrada', 'parcela_entrada', 'balao']
+                                    
+                                    return tiposOrdem.map(tipo => {
+                                      const pagamentosGrupo = grupos[tipo]
+                                      if (!pagamentosGrupo || pagamentosGrupo.length === 0) return null
+                                      
+                                      // Calcular totais do grupo
+                                      const totalValor = pagamentosGrupo.reduce((acc, p) => acc + (parseFloat(p.valor) || 0), 0)
+                                      const totalComissao = pagamentosGrupo.reduce((acc, p) => acc + calcularComissaoProporcional(p, venda), 0)
+                                      const pagos = pagamentosGrupo.filter(p => p.status === 'pago').length
+                                      const pendentes = pagamentosGrupo.filter(p => p.status === 'pendente').length
+                                      
+                                      // Verificar se tem mais de 10 itens e se está expandido
+                                      const temMaisDe10 = pagamentosGrupo.length > 10
+                                      const estaExpandido = isGrupoExpandido(venda.id, tipo)
+                                      const itensParaMostrar = temMaisDe10 && !estaExpandido ? 10 : pagamentosGrupo.length
+                                      const pagamentosExibidos = pagamentosGrupo.slice(0, itensParaMostrar)
+                                      
+                                      return (
+                                        <div key={tipo} className="pagamento-grupo">
+                                          <div className="grupo-header">
+                                            <h6 className="grupo-titulo">{getGrupoLabel(tipo)}</h6>
+                                            <div className="grupo-resumo">
+                                              <span className="grupo-total-valor">{formatCurrency(totalValor)}</span>
+                                              <span className="grupo-total-comissao">{formatCurrency(totalComissao)}</span>
+                                              <span className="grupo-contador">
+                                                {pagamentosGrupo.length} {pagamentosGrupo.length === 1 ? 'item' : 'itens'}
+                                                {pagos > 0 && ` • ${pagos} pago${pagos > 1 ? 's' : ''}`}
+                                                {pendentes > 0 && ` • ${pendentes} pendente${pendentes > 1 ? 's' : ''}`}
+                                              </span>
+                                            </div>
+                                          </div>
+                                          <div className="parcelas-list">
+                                            {pagamentosExibidos.map((pagamento) => {
+                                              const comissaoParcela = calcularComissaoProporcional(pagamento, venda)
+                                              return (
+                                                <div 
+                                                  key={pagamento.id} 
+                                                  className={`corretor-parcela-row ${pagamento.status === 'pago' ? 'pago' : ''}`}
+                                                >
+                                                  <div className="corretor-parcela-tipo">
+                                                    {pagamento.tipo === 'sinal' && 'Sinal'}
+                                                    {pagamento.tipo === 'entrada' && 'Entrada'}
+                                                    {pagamento.tipo === 'parcela_entrada' && `Parcela ${pagamento.numero_parcela || ''}`}
+                                                    {pagamento.tipo === 'balao' && `Balão ${pagamento.numero_parcela || ''}`}
+                                                  </div>
+                                                  <div className="corretor-parcela-data">
+                                                    {pagamento.data_prevista 
+                                                      ? new Date(pagamento.data_prevista).toLocaleDateString('pt-BR')
+                                                      : '-'
+                                                    }
+                                                  </div>
+                                                  <div className="corretor-parcela-valor">
+                                                    {formatCurrency(pagamento.valor)}
+                                                  </div>
+                                                  <div className="corretor-parcela-comissao">
+                                                    {formatCurrency(comissaoParcela)}
+                                                  </div>
+                                                  <div className="corretor-parcela-status">
+                                                    <span className={`status-pill ${pagamento.status}`}>
+                                                      {pagamento.status === 'pago' ? 'Pago' : 'Pendente'}
+                                                    </span>
+                                                  </div>
+                                                </div>
+                                              )
+                                            })}
+                                          </div>
+                                          {temMaisDe10 && (
+                                            <div className="grupo-expand-btn-wrapper">
+                                              <button 
+                                                className="grupo-expand-btn"
+                                                onClick={() => toggleGrupoExpandido(venda.id, tipo)}
+                                              >
+                                                {estaExpandido ? (
+                                                  <>
+                                                    <ChevronDown size={16} className="rotated" />
+                                                    <span>Ver menos ({pagamentosGrupo.length - 10} itens ocultos)</span>
+                                                  </>
+                                                ) : (
+                                                  <>
+                                                    <ChevronDown size={16} />
+                                                    <span>Ver mais ({pagamentosGrupo.length - 10} itens restantes)</span>
+                                                  </>
+                                                )}
+                                              </button>
+                                            </div>
+                                          )}
+                                        </div>
+                                      )
+                                    })
+                                  })()}
+                                </>
+                              ) : (
+                                <div className="parcelas-empty">
+                                  <p>Nenhum pagamento cadastrado para esta venda</p>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </>
               )}
             </section>
@@ -523,12 +991,6 @@ const CorretorDashboard = () => {
           {/* Relatórios Tab */}
           {activeTab === 'relatorios' && (
             <section className="relatorios-section">
-              <div className="section-header-corretor">
-                <h2>
-                  <TrendingUp size={24} />
-                  Relatórios
-                </h2>
-              </div>
               <div className="empty-state">
                 <TrendingUp size={48} />
                 <h3>Relatórios em desenvolvimento</h3>

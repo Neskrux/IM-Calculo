@@ -4,8 +4,10 @@ import { useAuth } from '../contexts/AuthContext'
 import { supabase } from '../lib/supabase'
 import { 
   Home, ShoppingBag, FileText, User as UserIcon, LogOut,
-  Menu, X, ChevronLeft, ChevronRight, Calendar, MapPin,
-  Building, DollarSign, CheckCircle, Clock, Download
+  Menu, X, ChevronLeft, ChevronRight, ChevronDown, Calendar, MapPin,
+  Building, DollarSign, CheckCircle, Clock, Download,
+  CreditCard, FileCheck, AlertCircle, Eye, Upload,
+  IdCard, Copy, Heart, Image as ImageIcon
 } from 'lucide-react'
 import logo from '../imgs/logo.png'
 import Ticker from '../components/Ticker'
@@ -30,8 +32,13 @@ const ClienteDashboard = () => {
   
   const [cliente, setCliente] = useState(null)
   const [compras, setCompras] = useState([])
+  const [pagamentos, setPagamentos] = useState([])
   const [loading, setLoading] = useState(true)
   const [menuOpen, setMenuOpen] = useState(false)
+  const [uploadingDoc, setUploadingDoc] = useState(false)
+  const [uploadingDocType, setUploadingDocType] = useState(null)
+  const [compraExpandida, setCompraExpandida] = useState(null)
+  const [gruposExpandidos, setGruposExpandidos] = useState({})
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
     const saved = localStorage.getItem('cliente-sidebar-collapsed')
     return saved === 'true'
@@ -90,6 +97,21 @@ const ClienteDashboard = () => {
           .eq('cliente_id', clienteData.id)
           .order('data_venda', { ascending: false })
         
+        // Buscar pagamentos das compras
+        let pagamentosData = []
+        if (comprasData && comprasData.length > 0) {
+          const compraIds = comprasData.map(c => c.id)
+          const { data: pagData } = await supabase
+            .from('pagamentos_prosoluto')
+            .select('*')
+            .in('venda_id', compraIds)
+          
+          if (pagData) {
+            pagamentosData = pagData
+          }
+        }
+        setPagamentos(pagamentosData)
+        
         // Buscar dados relacionados separadamente se necessário
         if (comprasData && comprasData.length > 0) {
           const empreendimentoIds = [...new Set(comprasData.map(c => c.empreendimento_id).filter(Boolean))]
@@ -99,10 +121,15 @@ const ClienteDashboard = () => {
           let corretoresMap = {}
           
           if (empreendimentoIds.length > 0) {
-            const { data: empData } = await supabase
+            const { data: empData, error: empError } = await supabase
               .from('empreendimentos')
-              .select('id, nome, endereco')
+              .select('id, nome')
               .in('id', empreendimentoIds)
+            
+            if (empError) {
+              console.error('Erro ao buscar empreendimentos:', empError)
+            }
+            
             if (empData) {
               empreendimentosMap = empData.reduce((acc, emp) => {
                 acc[emp.id] = emp
@@ -125,11 +152,22 @@ const ClienteDashboard = () => {
           }
           
           // Adicionar dados relacionados às compras
-          const comprasComRelacoes = comprasData.map(compra => ({
-            ...compra,
-            empreendimentos: empreendimentosMap[compra.empreendimento_id] || null,
-            corretores: corretoresMap[compra.corretor_id] || null
-          }))
+          const comprasComRelacoes = comprasData.map(compra => {
+            // Buscar empreendimento - tentar com ID como string e como UUID
+            const empreendimentoId = compra.empreendimento_id
+            const empreendimento = empreendimentoId 
+              ? (empreendimentosMap[empreendimentoId] || 
+                 empreendimentosMap[String(empreendimentoId)] ||
+                 null)
+              : null
+            
+            return {
+              ...compra,
+              empreendimentos: empreendimento,
+              empreendimento: empreendimento, // Também adicionar no singular para compatibilidade
+              corretores: corretoresMap[compra.corretor_id] || null
+            }
+          })
           
           setCompras(comprasComRelacoes)
         } else {
@@ -154,7 +192,318 @@ const ClienteDashboard = () => {
 
   const formatDate = (date) => {
     if (!date) return '-'
-    return new Date(date).toLocaleDateString('pt-BR')
+    
+    // Se for uma string no formato YYYY-MM-DD, formatar diretamente sem timezone
+    if (typeof date === 'string' && /^\d{4}-\d{2}-\d{2}/.test(date)) {
+      const [year, month, day] = date.split('T')[0].split('-')
+      return `${day}/${month}/${year}`
+    }
+    
+    // Para outros formatos, usar Date mas forçar interpretação local
+    const dateObj = new Date(date)
+    // Se a data for inválida, retornar '-'
+    if (isNaN(dateObj.getTime())) return '-'
+    
+    // Usar métodos locais para evitar problemas de timezone
+    const day = String(dateObj.getDate()).padStart(2, '0')
+    const month = String(dateObj.getMonth() + 1).padStart(2, '0')
+    const year = dateObj.getFullYear()
+    
+    return `${day}/${month}/${year}`
+  }
+
+  // Agrupar pagamentos por tipo
+  const agruparPagamentosPorTipo = (pagamentos) => {
+    const grupos = {
+      sinal: [],
+      entrada: [],
+      parcela_entrada: [],
+      balao: []
+    }
+
+    pagamentos.forEach(pagamento => {
+      const tipo = pagamento.tipo
+      if (grupos[tipo]) {
+        grupos[tipo].push(pagamento)
+      }
+    })
+
+    // Ordenar cada grupo por número de parcela
+    grupos.parcela_entrada.sort((a, b) => (a.numero_parcela || 0) - (b.numero_parcela || 0))
+    grupos.balao.sort((a, b) => (a.numero_parcela || 0) - (b.numero_parcela || 0))
+
+    return grupos
+  }
+
+  // Obter label do grupo
+  const getGrupoLabel = (tipo) => {
+    const labels = {
+      sinal: 'Sinal',
+      entrada: 'Entrada',
+      parcela_entrada: 'Parcelas de Entrada',
+      balao: 'Balões'
+    }
+    return labels[tipo] || tipo
+  }
+
+  // Toggle expansão de grupo (quando tem mais de 10 itens)
+  const toggleGrupoExpandido = (compraId, tipo) => {
+    const key = `${compraId}-${tipo}`
+    setGruposExpandidos(prev => ({
+      ...prev,
+      [key]: !prev[key]
+    }))
+  }
+
+  // Verificar se grupo está expandido
+  const isGrupoExpandido = (compraId, tipo) => {
+    const key = `${compraId}-${tipo}`
+    return gruposExpandidos[key] || false
+  }
+
+  // Formatação para Ticker (valor completo)
+  const formatTicker = (value) => {
+    if (value === null || value === undefined || isNaN(value)) {
+      return 'R$ 0,00'
+    }
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }).format(value)
+  }
+
+  // Dados dinâmicos para o Ticker
+  const getTickerData = () => {
+    const totalCompras = compras.reduce((acc, c) => acc + (parseFloat(c.valor_venda) || 0), 0)
+    const comprasPagas = compras.filter(c => c.status === 'pago')
+    const totalJaPago = comprasPagas.reduce((acc, c) => acc + (parseFloat(c.valor_venda) || 0), 0)
+    const comprasMes = compras.filter(c => {
+      const dataVenda = new Date(c.data_venda)
+      const hoje = new Date()
+      return dataVenda.getMonth() === hoje.getMonth() && dataVenda.getFullYear() === hoje.getFullYear()
+    })
+    const totalComprasMes = comprasMes.reduce((acc, c) => acc + (parseFloat(c.valor_venda) || 0), 0)
+    const mediaPorCompra = compras.length > 0 ? totalCompras / compras.length : 0
+    const documentosEnviados = [
+      cliente?.rg_frente_url,
+      cliente?.rg_verso_url,
+      cliente?.cpf_url,
+      cliente?.comprovante_residencia_url,
+      cliente?.comprovante_renda_url,
+      cliente?.certidao_casamento_url
+    ].filter(Boolean).length
+
+    return [
+      {
+        name: 'TOTAL JÁ PAGO',
+        value: formatTicker(totalJaPago),
+        change: comprasPagas.length > 0 ? `${comprasPagas.length} compras` : '0',
+        type: comprasPagas.length > 0 ? 'positive' : 'neutral'
+      },
+      {
+        name: 'TOTAL EM COMPRAS',
+        value: formatTicker(totalCompras),
+        change: compras.length > 0 ? `${compras.length} compras` : '0',
+        type: 'positive'
+      },
+      {
+        name: 'COMPRAS ESTE MÊS',
+        value: formatTicker(totalComprasMes),
+        change: comprasMes.length > 0 ? `${comprasMes.length} compras` : '0',
+        type: 'positive'
+      },
+      {
+        name: 'MÉDIA POR COMPRA',
+        value: formatTicker(mediaPorCompra),
+        change: '0%',
+        type: 'neutral'
+      },
+      {
+        name: 'DOCUMENTOS ENVIADOS',
+        value: `${documentosEnviados}/6`,
+        change: documentosEnviados === 6 ? '100%' : `${Math.round((documentosEnviados / 6) * 100)}%`,
+        type: documentosEnviados === 6 ? 'positive' : documentosEnviados > 0 ? 'neutral' : 'negative'
+      }
+    ]
+  }
+
+  // Helper para adicionar cache busting na URL
+  const getUrlComCacheBust = (url) => {
+    if (!url) return url
+    const separator = url.includes('?') ? '&' : '?'
+    return `${url}${separator}t=${Date.now()}`
+  }
+
+  // Upload de documento do cliente
+  const uploadDocumentoCliente = async (file, tipo) => {
+    if (!file || !cliente || !user) {
+      alert('Você precisa estar autenticado para fazer upload de documentos.')
+      return
+    }
+
+    // Verificar se o usuário está autenticado
+    if (!user || !user.id) {
+      alert('Você precisa estar autenticado para fazer upload de documentos.')
+      return
+    }
+    
+    setUploadingDoc(true)
+    setUploadingDocType(tipo)
+    
+    try {
+      // Verificar se a sessão está ativa
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+      
+      if (sessionError || !session) {
+        throw new Error('Sessão não encontrada. Por favor, faça login novamente.')
+      }
+
+      // ========== VALIDAÇÕES DE SEGURANÇA ==========
+      
+      // 1. Validar tipo de documento permitido
+      const tiposPermitidos = [
+        'rg_frente',
+        'rg_verso',
+        'cpf',
+        'comprovante_residencia',
+        'comprovante_renda',
+        'certidao_casamento'
+      ]
+      
+      if (!tiposPermitidos.includes(tipo)) {
+        throw new Error('Tipo de documento inválido.')
+      }
+
+      // 2. Validar extensão do arquivo
+      const extensoesPermitidas = ['pdf', 'jpg', 'jpeg', 'png', 'gif', 'webp']
+      const fileExt = file.name.split('.').pop()?.toLowerCase()
+      
+      if (!fileExt || !extensoesPermitidas.includes(fileExt)) {
+        throw new Error(`Tipo de arquivo não permitido. Use: ${extensoesPermitidas.join(', ').toUpperCase()}`)
+      }
+
+      // 2.1. Validar tipo MIME do arquivo (segurança adicional)
+      const mimeTypesPermitidos = [
+        'application/pdf',
+        'image/jpeg',
+        'image/jpg',
+        'image/png',
+        'image/gif',
+        'image/webp'
+      ]
+      
+      if (!mimeTypesPermitidos.includes(file.type)) {
+        throw new Error('Tipo de arquivo inválido. Apenas PDF e imagens são permitidos.')
+      }
+
+      // 3. Validar tamanho do arquivo (máximo 10MB)
+      const maxSize = 10 * 1024 * 1024 // 10MB em bytes
+      if (file.size > maxSize) {
+        throw new Error('Arquivo muito grande. Tamanho máximo: 10MB')
+      }
+
+      if (file.size === 0) {
+        throw new Error('Arquivo vazio não é permitido.')
+      }
+
+      // 4. Garantir que user.id existe
+      if (!user || !user.id) {
+        throw new Error('Erro de autenticação. Faça login novamente.')
+      }
+
+      // 5. Construir caminho igual ao AdminDashboard
+      // Se já existe documento, usar o mesmo nome para substituir, senão criar novo
+      let fileName, filePath
+      const documentoExistente = cliente[`${tipo}_url`]
+      
+      if (documentoExistente) {
+        // Se já existe, extrair o nome do arquivo da URL existente
+        try {
+          const urlParts = documentoExistente.split('/')
+          let nomeExistente = urlParts[urlParts.length - 1]
+          // Remover query parameters se existirem (ex: ?token=xyz)
+          nomeExistente = nomeExistente.split('?')[0]
+          // Validar se o nome extraído é válido
+          if (nomeExistente && nomeExistente.length > 0) {
+            fileName = nomeExistente
+            filePath = `clientes/${fileName}`
+          } else {
+            // Se não conseguir extrair, criar novo arquivo
+            fileName = `${tipo}_${Date.now()}.${fileExt}`
+            filePath = `clientes/${fileName}`
+          }
+        } catch (error) {
+          // Se houver erro na extração, criar novo arquivo
+          console.warn('Erro ao extrair nome do arquivo existente, criando novo:', error)
+          fileName = `${tipo}_${Date.now()}.${fileExt}`
+          filePath = `clientes/${fileName}`
+        }
+      } else {
+        // Se não existe, criar novo arquivo
+        fileName = `${tipo}_${Date.now()}.${fileExt}`
+        filePath = `clientes/${fileName}`
+      }
+
+      // 6. Validação final do caminho (prevenir path traversal)
+      if (filePath.includes('..') || filePath.includes('//') || !filePath.startsWith('clientes/')) {
+        throw new Error('Caminho de arquivo inválido.')
+      }
+
+      // Fazer upload - se já existe, vai substituir automaticamente
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('documentos')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: true // Permite substituir se já existir
+        })
+
+      if (uploadError) {
+        throw uploadError
+      }
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('documentos')
+        .getPublicUrl(uploadData?.path || filePath)
+
+      // Atualizar cliente no banco - usar user.id para garantir segurança
+      const { error: updateError } = await supabase
+        .from('clientes')
+        .update({ [`${tipo}_url`]: publicUrl })
+        .eq('id', cliente.id)
+        .eq('user_id', user.id) // Garantir que só atualiza usando o user.id logado
+
+      if (updateError) {
+        console.error('Erro ao atualizar cliente:', updateError)
+        throw new Error('Erro ao salvar o documento. Verifique suas permissões.')
+      }
+
+      // Atualizar estado local com URL atualizada
+      setCliente(prev => ({ ...prev, [`${tipo}_url`]: publicUrl }))
+      
+      // Pequeno delay para garantir que o arquivo foi processado no storage
+      await new Promise(resolve => setTimeout(resolve, 500))
+      
+      // Recarregar dados para garantir sincronização
+      await fetchClienteData()
+      
+    } catch (error) {
+      console.error('Erro no upload:', error)
+      
+      let errorMessage = 'Erro ao fazer upload do documento.'
+      
+      if (error.message?.includes('row-level security') || error.message?.includes('RLS')) {
+        errorMessage = 'Você não tem permissão para fazer upload de documentos. Entre em contato com o administrador.'
+      } else if (error.message) {
+        errorMessage = error.message
+      }
+      
+      alert(errorMessage)
+    } finally {
+      setUploadingDoc(false)
+      setUploadingDocType(null)
+    }
   }
 
   // Toggle sidebar collapsed state
@@ -271,7 +620,7 @@ const ClienteDashboard = () => {
       {/* Main Content */}
       <main className={`main-content ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
         {/* Ticker */}
-        <Ticker />
+        <Ticker data={getTickerData()} />
         
         {/* Header */}
         <header className="main-header">
@@ -398,13 +747,6 @@ const ClienteDashboard = () => {
           {/* Compras Tab */}
           {activeTab === 'compras' && (
             <section className="compras-section">
-              <div className="section-header-cliente">
-                <h2>
-                  <ShoppingBag size={24} />
-                  Minhas Compras
-                </h2>
-              </div>
-
               {loading ? (
                 <div className="loading-container">
                   <div className="loading-spinner-large"></div>
@@ -437,35 +779,40 @@ const ClienteDashboard = () => {
                             )}
                           </span>
                         </div>
-                        <div className="compra-valor-principal">
-                          {formatCurrency(compra.valor_venda)}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                          <div className="compra-valor-principal">
+                            {formatCurrency(compra.valor_venda)}
+                          </div>
+                          {/* Botão Ver mais */}
+                          <div className="venda-expand-btn-wrapper">
+                            <button 
+                              className="venda-expand-btn"
+                              onClick={() => setCompraExpandida(compraExpandida === compra.id ? null : compra.id)}
+                            >
+                              <ChevronDown 
+                                size={18} 
+                                className={compraExpandida === compra.id ? 'rotated' : ''} 
+                              />
+                              <span>Ver mais</span>
+                            </button>
+                          </div>
                         </div>
                       </div>
                       
                       <div className="compra-details">
                         <div className="detail-item">
-                          <Calendar size={16} />
+                          <Calendar size={18} />
                           <div>
-                            <span className="detail-label">Data da Compra</span>
+                            <span className="detail-label">DATA DA COMPRA</span>
                             <span className="detail-value">{formatDate(compra.data_venda)}</span>
                           </div>
                         </div>
                         
-                        {compra.empreendimentos && (
-                          <div className="detail-item">
-                            <Building size={16} />
-                            <div>
-                              <span className="detail-label">Empreendimento</span>
-                              <span className="detail-value">{compra.empreendimentos.nome}</span>
-                            </div>
-                          </div>
-                        )}
-                        
                         {compra.corretores && (
                           <div className="detail-item">
-                            <UserIcon size={16} />
+                            <UserIcon size={18} />
                             <div>
-                              <span className="detail-label">Corretor</span>
+                              <span className="detail-label">CORRETOR</span>
                               <span className="detail-value">{compra.corretores.nome}</span>
                             </div>
                           </div>
@@ -473,16 +820,137 @@ const ClienteDashboard = () => {
                         
                         {compra.unidade && (
                           <div className="detail-item">
-                            <MapPin size={16} />
+                            <MapPin size={18} />
                             <div>
-                              <span className="detail-label">Unidade</span>
+                              <span className="detail-label">UNIDADE</span>
                               <span className="detail-value">
-                                {compra.bloco ? `${compra.bloco} - ` : ''}{compra.unidade}
+                                {compra.bloco ? `${compra.bloco} - ` : ''}{compra.unidade}{compra.andar ? ` | ${compra.andar}` : ''}
+                              </span>
+                            </div>
+                          </div>
+                        )}
+                        
+                        {(compra.empreendimentos || compra.empreendimento) && (
+                          <div className="detail-item">
+                            <Building size={18} />
+                            <div>
+                              <span className="detail-label">EMPREENDIMENTO</span>
+                              <span className="detail-value">
+                                {compra.empreendimentos?.nome || compra.empreendimento?.nome || '-'}
                               </span>
                             </div>
                           </div>
                         )}
                       </div>
+
+                      {/* Seção expandida com detalhes dos pagamentos */}
+                      {compraExpandida === compra.id && (
+                        <div className="compra-pagamentos-detalhes">
+                          {(() => {
+                            const pagamentosCompra = pagamentos.filter(p => String(p.venda_id) === String(compra.id))
+                            
+                            if (pagamentosCompra.length === 0) {
+                              return (
+                                <div className="parcelas-empty">
+                                  <p>Nenhum pagamento cadastrado para esta compra</p>
+                                </div>
+                              )
+                            }
+                            
+                            const grupos = agruparPagamentosPorTipo(pagamentosCompra)
+                            const tiposOrdem = ['sinal', 'entrada', 'parcela_entrada', 'balao']
+                            
+                            return (
+                              <>
+                                <div className="parcelas-header">
+                                  <h5>Detalhamento de Pagamentos</h5>
+                                </div>
+                                
+                                {tiposOrdem.map(tipo => {
+                                  const pagamentosGrupo = grupos[tipo]
+                                  if (!pagamentosGrupo || pagamentosGrupo.length === 0) return null
+                                  
+                                  // Calcular totais do grupo
+                                  const totalValor = pagamentosGrupo.reduce((acc, p) => acc + (parseFloat(p.valor) || 0), 0)
+                                  const pagos = pagamentosGrupo.filter(p => p.status === 'pago').length
+                                  const pendentes = pagamentosGrupo.filter(p => p.status === 'pendente').length
+                                  
+                                  // Verificar se tem mais de 10 itens e se está expandido
+                                  const temMaisDe10 = pagamentosGrupo.length > 10
+                                  const estaExpandido = isGrupoExpandido(compra.id, tipo)
+                                  const itensParaMostrar = temMaisDe10 && !estaExpandido ? 10 : pagamentosGrupo.length
+                                  const pagamentosExibidos = pagamentosGrupo.slice(0, itensParaMostrar)
+                                  
+                                  return (
+                                    <div key={tipo} className="pagamento-grupo">
+                                      <div className="grupo-header">
+                                        <h6 className="grupo-titulo">{getGrupoLabel(tipo)}</h6>
+                                        <div className="grupo-resumo">
+                                          <span className="grupo-total-valor">{formatCurrency(totalValor)}</span>
+                                          <span className="grupo-contador">
+                                            {pagamentosGrupo.length} {pagamentosGrupo.length === 1 ? 'item' : 'itens'}
+                                            {pagos > 0 && ` • ${pagos} pago${pagos > 1 ? 's' : ''}`}
+                                            {pendentes > 0 && ` • ${pendentes} pendente${pendentes > 1 ? 's' : ''}`}
+                                          </span>
+                                        </div>
+                                      </div>
+                                      <div className="parcelas-list">
+                                        {pagamentosExibidos.map((pagamento) => (
+                                          <div 
+                                            key={pagamento.id} 
+                                            className={`cliente-parcela-row ${pagamento.status === 'pago' ? 'pago' : ''}`}
+                                          >
+                                            <div className="cliente-parcela-tipo">
+                                              {pagamento.tipo === 'sinal' && 'Sinal'}
+                                              {pagamento.tipo === 'entrada' && 'Entrada'}
+                                              {pagamento.tipo === 'parcela_entrada' && `Parcela ${pagamento.numero_parcela || ''}`}
+                                              {pagamento.tipo === 'balao' && `Balão ${pagamento.numero_parcela || ''}`}
+                                            </div>
+                                            <div className="cliente-parcela-data">
+                                              {pagamento.data_prevista 
+                                                ? new Date(pagamento.data_prevista).toLocaleDateString('pt-BR')
+                                                : '-'
+                                              }
+                                            </div>
+                                            <div className="cliente-parcela-valor">
+                                              {formatCurrency(pagamento.valor)}
+                                            </div>
+                                            <div className="cliente-parcela-status">
+                                              <span className={`status-pill ${pagamento.status}`}>
+                                                {pagamento.status === 'pago' ? 'Pago' : 'Pendente'}
+                                              </span>
+                                            </div>
+                                          </div>
+                                        ))}
+                                      </div>
+                                      {temMaisDe10 && (
+                                        <div className="grupo-expand-btn-wrapper">
+                                          <button 
+                                            className="grupo-expand-btn"
+                                            onClick={() => toggleGrupoExpandido(compra.id, tipo)}
+                                          >
+                                            {estaExpandido ? (
+                                              <>
+                                                <ChevronDown size={16} className="rotated" />
+                                                <span>Ver menos ({pagamentosGrupo.length - 10} itens ocultos)</span>
+                                              </>
+                                            ) : (
+                                              <>
+                                                <ChevronDown size={16} />
+                                                <span>Ver mais ({pagamentosGrupo.length - 10} itens restantes)</span>
+                                              </>
+                                            )}
+                                          </button>
+                                        </div>
+                                      )}
+                                    </div>
+                                  )
+                                })}
+                              </>
+                            )
+                          })()}
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -493,143 +961,300 @@ const ClienteDashboard = () => {
           {/* Documentos Tab */}
           {activeTab === 'documentos' && (
             <section className="documentos-section">
-              <div className="section-header-cliente">
-                <h2>
-                  <FileText size={24} />
-                  Meus Documentos
-                </h2>
-              </div>
-
-              <div className="documentos-grid">
-                <div className="documento-card">
-                  <div className="documento-header">
-                    <FileText size={24} />
-                    <h3>RG - Frente</h3>
+              <div className="docs-upload-grid-cliente">
+                {/* RG Frente */}
+                <div className="form-group-doc">
+                  <label className="doc-label">
+                    RG Frente
+                    {cliente.rg_frente_url ? (
+                      <span className="doc-status-badge success">
+                        <CheckCircle size={14} />
+                        Enviado
+                      </span>
+                    ) : (
+                      <span className="doc-status-badge warning">
+                        <Clock size={14} />
+                        Pendente
+                      </span>
+                    )}
+                  </label>
+                  <div className="file-upload-wrapper">
+                    {cliente.rg_frente_url ? (
+                      <div className="file-upload-info">
+                        <span className="file-name" title={cliente.rg_frente_url.split('/').pop()?.split('?')[0]}>
+                          {cliente.rg_frente_url.split('/').pop()?.split('?')[0]}
+                        </span>
+                        <a href={getUrlComCacheBust(cliente.rg_frente_url)} target="_blank" rel="noopener noreferrer" className="doc-preview">
+                          Ver arquivo
+                        </a>
+                      </div>
+                    ) : null}
+                    <label className="file-upload-label">
+                      <input
+                        type="file"
+                        accept="image/*,.pdf"
+                        onChange={(e) => e.target.files[0] && uploadDocumentoCliente(e.target.files[0], 'rg_frente')}
+                        className="file-upload-input"
+                        disabled={uploadingDoc && uploadingDocType === 'rg_frente'}
+                      />
+                      <span className="file-upload-button">
+                        {uploadingDoc && uploadingDocType === 'rg_frente' ? (
+                          <>
+                            <div className="loading-spinner-small"></div>
+                            Enviando...
+                          </>
+                        ) : (
+                          'Escolher Arquivo'
+                        )}
+                      </span>
+                    </label>
                   </div>
-                  {cliente.rg_frente_url ? (
-                    <div className="documento-status success">
-                      <CheckCircle size={20} />
-                      <span>Enviado</span>
-                      <a 
-                        href={cliente.rg_frente_url} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="btn-download"
-                      >
-                        <Download size={16} />
-                        Baixar
-                      </a>
-                    </div>
-                  ) : (
-                    <div className="documento-status pendente">
-                      <Clock size={20} />
-                      <span>Pendente</span>
-                    </div>
-                  )}
                 </div>
 
-                <div className="documento-card">
-                  <div className="documento-header">
-                    <FileText size={24} />
-                    <h3>CPF</h3>
+                {/* RG Verso */}
+                <div className="form-group-doc">
+                  <label className="doc-label">
+                    RG Verso
+                    {cliente.rg_verso_url ? (
+                      <span className="doc-status-badge success">
+                        <CheckCircle size={14} />
+                        Enviado
+                      </span>
+                    ) : (
+                      <span className="doc-status-badge warning">
+                        <Clock size={14} />
+                        Pendente
+                      </span>
+                    )}
+                  </label>
+                  <div className="file-upload-wrapper">
+                    {cliente.rg_verso_url ? (
+                      <div className="file-upload-info">
+                        <span className="file-name" title={cliente.rg_verso_url.split('/').pop()?.split('?')[0]}>
+                          {cliente.rg_verso_url.split('/').pop()?.split('?')[0]}
+                        </span>
+                        <a href={getUrlComCacheBust(cliente.rg_verso_url)} target="_blank" rel="noopener noreferrer" className="doc-preview">
+                          Ver arquivo
+                        </a>
+                      </div>
+                    ) : null}
+                    <label className="file-upload-label">
+                      <input
+                        type="file"
+                        accept="image/*,.pdf"
+                        onChange={(e) => e.target.files[0] && uploadDocumentoCliente(e.target.files[0], 'rg_verso')}
+                        className="file-upload-input"
+                        disabled={uploadingDoc && uploadingDocType === 'rg_verso'}
+                      />
+                      <span className="file-upload-button">
+                        {uploadingDoc && uploadingDocType === 'rg_verso' ? (
+                          <>
+                            <div className="loading-spinner-small"></div>
+                            Enviando...
+                          </>
+                        ) : (
+                          'Escolher Arquivo'
+                        )}
+                      </span>
+                    </label>
                   </div>
-                  {cliente.cpf_url ? (
-                    <div className="documento-status success">
-                      <CheckCircle size={20} />
-                      <span>Enviado</span>
-                      <a 
-                        href={cliente.cpf_url} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="btn-download"
-                      >
-                        <Download size={16} />
-                        Baixar
-                      </a>
-                    </div>
-                  ) : (
-                    <div className="documento-status pendente">
-                      <Clock size={20} />
-                      <span>Pendente</span>
-                    </div>
-                  )}
                 </div>
 
-                <div className="documento-card">
-                  <div className="documento-header">
-                    <FileText size={24} />
-                    <h3>Comprovante de Residência</h3>
+                {/* CPF */}
+                <div className="form-group-doc">
+                  <label className="doc-label">
+                    CPF
+                    {cliente.cpf_url ? (
+                      <span className="doc-status-badge success">
+                        <CheckCircle size={14} />
+                        Enviado
+                      </span>
+                    ) : (
+                      <span className="doc-status-badge warning">
+                        <Clock size={14} />
+                        Pendente
+                      </span>
+                    )}
+                  </label>
+                  <div className="file-upload-wrapper">
+                    {cliente.cpf_url ? (
+                      <div className="file-upload-info">
+                        <span className="file-name" title={cliente.cpf_url.split('/').pop()?.split('?')[0]}>
+                          {cliente.cpf_url.split('/').pop()?.split('?')[0]}
+                        </span>
+                        <a href={getUrlComCacheBust(cliente.cpf_url)} target="_blank" rel="noopener noreferrer" className="doc-preview">
+                          Ver arquivo
+                        </a>
+                      </div>
+                    ) : null}
+                    <label className="file-upload-label">
+                      <input
+                        type="file"
+                        accept="image/*,.pdf"
+                        onChange={(e) => e.target.files[0] && uploadDocumentoCliente(e.target.files[0], 'cpf')}
+                        className="file-upload-input"
+                        disabled={uploadingDoc && uploadingDocType === 'cpf'}
+                      />
+                      <span className="file-upload-button">
+                        {uploadingDoc && uploadingDocType === 'cpf' ? (
+                          <>
+                            <div className="loading-spinner-small"></div>
+                            Enviando...
+                          </>
+                        ) : (
+                          'Escolher Arquivo'
+                        )}
+                      </span>
+                    </label>
                   </div>
-                  {cliente.comprovante_residencia_url ? (
-                    <div className="documento-status success">
-                      <CheckCircle size={20} />
-                      <span>Enviado</span>
-                      <a 
-                        href={cliente.comprovante_residencia_url} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="btn-download"
-                      >
-                        <Download size={16} />
-                        Baixar
-                      </a>
-                    </div>
-                  ) : (
-                    <div className="documento-status pendente">
-                      <Clock size={20} />
-                      <span>Pendente</span>
-                    </div>
-                  )}
                 </div>
 
-                <div className="documento-card">
-                  <div className="documento-header">
-                    <FileText size={24} />
-                    <h3>Comprovante de Renda</h3>
+                {/* Comprovante de Residência */}
+                <div className="form-group-doc">
+                  <label className="doc-label">
+                    Comprovante de Residência
+                    {cliente.comprovante_residencia_url ? (
+                      <span className="doc-status-badge success">
+                        <CheckCircle size={14} />
+                        Enviado
+                      </span>
+                    ) : (
+                      <span className="doc-status-badge warning">
+                        <Clock size={14} />
+                        Pendente
+                      </span>
+                    )}
+                  </label>
+                  <div className="file-upload-wrapper">
+                    {cliente.comprovante_residencia_url ? (
+                      <div className="file-upload-info">
+                        <span className="file-name" title={cliente.comprovante_residencia_url.split('/').pop()?.split('?')[0]}>
+                          {cliente.comprovante_residencia_url.split('/').pop()?.split('?')[0]}
+                        </span>
+                        <a href={getUrlComCacheBust(cliente.comprovante_residencia_url)} target="_blank" rel="noopener noreferrer" className="doc-preview">
+                          Ver arquivo
+                        </a>
+                      </div>
+                    ) : null}
+                    <label className="file-upload-label">
+                      <input
+                        type="file"
+                        accept="image/*,.pdf"
+                        onChange={(e) => e.target.files[0] && uploadDocumentoCliente(e.target.files[0], 'comprovante_residencia')}
+                        className="file-upload-input"
+                        disabled={uploadingDoc && uploadingDocType === 'comprovante_residencia'}
+                      />
+                      <span className="file-upload-button">
+                        {uploadingDoc && uploadingDocType === 'comprovante_residencia' ? (
+                          <>
+                            <div className="loading-spinner-small"></div>
+                            Enviando...
+                          </>
+                        ) : (
+                          'Escolher Arquivo'
+                        )}
+                      </span>
+                    </label>
                   </div>
-                  {cliente.comprovante_renda_url ? (
-                    <div className="documento-status success">
-                      <CheckCircle size={20} />
-                      <span>Enviado</span>
-                      <a 
-                        href={cliente.comprovante_renda_url} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="btn-download"
-                      >
-                        <Download size={16} />
-                        Baixar
-                      </a>
-                    </div>
-                  ) : (
-                    <div className="documento-status pendente">
-                      <Clock size={20} />
-                      <span>Pendente</span>
-                    </div>
-                  )}
                 </div>
 
-                {cliente.certidao_casamento_url && (
-                  <div className="documento-card">
-                    <div className="documento-header">
-                      <FileText size={24} />
-                      <h3>Certidão de Casamento</h3>
-                    </div>
-                    <div className="documento-status success">
-                      <CheckCircle size={20} />
-                      <span>Enviado</span>
-                      <a 
-                        href={cliente.certidao_casamento_url} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="btn-download"
-                      >
-                        <Download size={16} />
-                        Baixar
-                      </a>
-                    </div>
+                {/* Comprovante de Renda */}
+                <div className="form-group-doc">
+                  <label className="doc-label">
+                    Comprovante de Renda
+                    {cliente.comprovante_renda_url ? (
+                      <span className="doc-status-badge success">
+                        <CheckCircle size={14} />
+                        Enviado
+                      </span>
+                    ) : (
+                      <span className="doc-status-badge warning">
+                        <Clock size={14} />
+                        Pendente
+                      </span>
+                    )}
+                  </label>
+                  <div className="file-upload-wrapper">
+                    {cliente.comprovante_renda_url ? (
+                      <div className="file-upload-info">
+                        <span className="file-name" title={cliente.comprovante_renda_url.split('/').pop()?.split('?')[0]}>
+                          {cliente.comprovante_renda_url.split('/').pop()?.split('?')[0]}
+                        </span>
+                        <a href={getUrlComCacheBust(cliente.comprovante_renda_url)} target="_blank" rel="noopener noreferrer" className="doc-preview">
+                          Ver arquivo
+                        </a>
+                      </div>
+                    ) : null}
+                    <label className="file-upload-label">
+                      <input
+                        type="file"
+                        accept="image/*,.pdf"
+                        onChange={(e) => e.target.files[0] && uploadDocumentoCliente(e.target.files[0], 'comprovante_renda')}
+                        className="file-upload-input"
+                        disabled={uploadingDoc && uploadingDocType === 'comprovante_renda'}
+                      />
+                      <span className="file-upload-button">
+                        {uploadingDoc && uploadingDocType === 'comprovante_renda' ? (
+                          <>
+                            <div className="loading-spinner-small"></div>
+                            Enviando...
+                          </>
+                        ) : (
+                          'Escolher Arquivo'
+                        )}
+                      </span>
+                    </label>
                   </div>
-                )}
+                </div>
+
+                {/* Certidão de Casamento */}
+                <div className="form-group-doc">
+                  <label className="doc-label">
+                    Certidão de Casamento/União
+                    {cliente.certidao_casamento_url ? (
+                      <span className="doc-status-badge success">
+                        <CheckCircle size={14} />
+                        Enviado
+                      </span>
+                    ) : (
+                      <span className="doc-status-badge warning">
+                        <Clock size={14} />
+                        Pendente
+                      </span>
+                    )}
+                  </label>
+                  <div className="file-upload-wrapper">
+                    {cliente.certidao_casamento_url ? (
+                      <div className="file-upload-info">
+                        <span className="file-name" title={cliente.certidao_casamento_url.split('/').pop()?.split('?')[0]}>
+                          {cliente.certidao_casamento_url.split('/').pop()?.split('?')[0]}
+                        </span>
+                        <a href={getUrlComCacheBust(cliente.certidao_casamento_url)} target="_blank" rel="noopener noreferrer" className="doc-preview">
+                          Ver arquivo
+                        </a>
+                      </div>
+                    ) : null}
+                    <label className="file-upload-label">
+                      <input
+                        type="file"
+                        accept="image/*,.pdf"
+                        onChange={(e) => e.target.files[0] && uploadDocumentoCliente(e.target.files[0], 'certidao_casamento')}
+                        className="file-upload-input"
+                        disabled={uploadingDoc && uploadingDocType === 'certidao_casamento'}
+                      />
+                      <span className="file-upload-button">
+                        {uploadingDoc && uploadingDocType === 'certidao_casamento' ? (
+                          <>
+                            <div className="loading-spinner-small"></div>
+                            Enviando...
+                          </>
+                        ) : (
+                          'Escolher Arquivo'
+                        )}
+                      </span>
+                    </label>
+                  </div>
+                </div>
               </div>
             </section>
           )}
@@ -637,17 +1262,10 @@ const ClienteDashboard = () => {
           {/* Perfil Tab */}
           {activeTab === 'perfil' && (
             <section className="perfil-section">
-              <div className="section-header-cliente">
-                <h2>
-                  <UserIcon size={24} />
-                  Meu Perfil
-                </h2>
-              </div>
-
               <div className="perfil-card-cliente">
                 <div className="perfil-header-cliente">
                   <div className="avatar-large">
-                    {cliente.nome_completo?.charAt(0) || 'C'}
+                    {cliente.nome_completo?.charAt(0).toUpperCase() || 'C'}
                   </div>
                   <div className="perfil-info-header">
                     <h3>{cliente.nome_completo}</h3>
@@ -656,63 +1274,74 @@ const ClienteDashboard = () => {
                 </div>
 
                 <div className="perfil-details-grid">
-                  <div className="detail-row">
-                    <span className="detail-label">CPF</span>
-                    <span className="detail-value">{cliente.cpf || '-'}</span>
+                  <div className="perfil-detail-card">
+                    <span className="perfil-detail-label">CPF</span>
+                    <span className="perfil-detail-value">{cliente.cpf || '-'}</span>
                   </div>
                   
-                  <div className="detail-row">
-                    <span className="detail-label">RG</span>
-                    <span className="detail-value">{cliente.rg || '-'}</span>
+                  <div className="perfil-detail-card">
+                    <span className="perfil-detail-label">RG</span>
+                    <span className="perfil-detail-value">{cliente.rg || '-'}</span>
                   </div>
                   
-                  <div className="detail-row">
-                    <span className="detail-label">Data de Nascimento</span>
-                    <span className="detail-value">{formatDate(cliente.data_nascimento)}</span>
+                  <div className="perfil-detail-card">
+                    <span className="perfil-detail-label">DATA DE NASCIMENTO</span>
+                    <span className="perfil-detail-value">{formatDate(cliente.data_nascimento) || '-'}</span>
                   </div>
                   
-                  <div className="detail-row">
-                    <span className="detail-label">Email</span>
-                    <span className="detail-value">{cliente.email || '-'}</span>
+                  <div className="perfil-detail-card">
+                    <span className="perfil-detail-label">EMAIL</span>
+                    <span className="perfil-detail-value">{cliente.email || '-'}</span>
                   </div>
                   
-                  <div className="detail-row">
-                    <span className="detail-label">Telefone</span>
-                    <span className="detail-value">{cliente.telefone || '-'}</span>
+                  <div className="perfil-detail-card">
+                    <span className="perfil-detail-label">TELEFONE</span>
+                    <span className="perfil-detail-value">{cliente.telefone || '-'}</span>
                   </div>
                   
-                  <div className="detail-row">
-                    <span className="detail-label">Endereço</span>
-                    <span className="detail-value">{cliente.endereco || '-'}</span>
+                  <div className="perfil-detail-card">
+                    <span className="perfil-detail-label">ENDEREÇO</span>
+                    <span className="perfil-detail-value">{cliente.endereco || '-'}</span>
                   </div>
                   
-                  <div className="detail-row">
-                    <span className="detail-label">Profissão</span>
-                    <span className="detail-value">{cliente.profissao || '-'}</span>
+                  {cliente.cep && (
+                    <div className="perfil-detail-card">
+                      <span className="perfil-detail-label">CEP</span>
+                      <span className="perfil-detail-value">{cliente.cep}</span>
+                    </div>
+                  )}
+                  
+                  <div className="perfil-detail-card">
+                    <span className="perfil-detail-label">PROFISSÃO</span>
+                    <span className="perfil-detail-value">{cliente.profissao || '-'}</span>
                   </div>
                   
-                  <div className="detail-row">
-                    <span className="detail-label">Empresa</span>
-                    <span className="detail-value">{cliente.empresa_trabalho || '-'}</span>
+                  <div className="perfil-detail-card">
+                    <span className="perfil-detail-label">EMPRESA</span>
+                    <span className="perfil-detail-value">{cliente.empresa_trabalho || '-'}</span>
                   </div>
                   
-                  <div className="detail-row">
-                    <span className="detail-label">Renda Mensal</span>
-                    <span className="detail-value">{formatCurrency(cliente.renda_mensal)}</span>
+                  <div className="perfil-detail-card highlight">
+                    <span className="perfil-detail-label">RENDA MENSAL</span>
+                    <span className="perfil-detail-value">{formatCurrency(cliente.renda_mensal)}</span>
                   </div>
                 </div>
 
-                {cliente.tem_complemento_renda && (
-                  <div className="complemento-renda-section">
-                    <h4>Complemento de Renda</h4>
-                    <p>Você possui complementadores de renda cadastrados</p>
-                  </div>
-                )}
-
-                {cliente.possui_3_anos_fgts && (
-                  <div className="fgts-info">
-                    <CheckCircle size={20} />
-                    <span>Possui 3 anos de FGTS</span>
+                {(cliente.tem_complemento_renda || cliente.possui_3_anos_fgts) && (
+                  <div className="perfil-badges-section">
+                    {cliente.possui_3_anos_fgts && (
+                      <div className="perfil-badge success">
+                        <CheckCircle size={18} />
+                        <span>Possui 3 anos de FGTS</span>
+                      </div>
+                    )}
+                    
+                    {cliente.tem_complemento_renda && (
+                      <div className="perfil-badge info">
+                        <UserIcon size={18} />
+                        <span>Complemento de Renda Cadastrado</span>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -725,4 +1354,5 @@ const ClienteDashboard = () => {
 }
 
 export default ClienteDashboard
+
 

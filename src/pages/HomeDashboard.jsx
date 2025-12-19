@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { 
   DollarSign, TrendingUp, Users, Target, 
@@ -9,53 +9,213 @@ import {
 import Ticker from '../components/Ticker'
 import '../styles/HomeDashboard.css'
 
-const HomeDashboard = ({ showTicker = true, showHeader = true }) => {
+const HomeDashboard = ({ 
+  showTicker = true, 
+  showHeader = true,
+  vendas = [],
+  corretores = [],
+  pagamentos = [],
+  empreendimentos = []
+}) => {
   const { userProfile } = useAuth()
   const [periodo, setPeriodo] = useState('mes')
 
-  // Dados estáticos para demonstração
-  const statsData = {
-    vendasTotal: 18750000,
-    vendasMes: 2450000,
-    comissoesPendentes: 156800,
-    comissoesPagas: 892000,
-    corretoresAtivos: 24,
-    vendasHoje: 485000,
-    metaMensal: 78,
-    leadsNovos: 12
-  }
+  // Calcular estatísticas reais
+  const statsData = useMemo(() => {
+    const hoje = new Date()
+    const inicioMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1)
+    const inicioMesAnterior = new Date(hoje.getFullYear(), hoje.getMonth() - 1, 1)
+    const fimMesAnterior = new Date(hoje.getFullYear(), hoje.getMonth(), 0, 23, 59, 59, 999)
+    const inicioHoje = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate(), 0, 0, 0, 0)
+    const fimHoje = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate(), 23, 59, 59, 999)
 
-  const vendasMensais = [
-    { mes: 'Jan', valor: 1800000 },
-    { mes: 'Fev', valor: 2100000 },
-    { mes: 'Mar', valor: 1950000 },
-    { mes: 'Abr', valor: 2300000 },
-    { mes: 'Mai', valor: 2450000 },
-    { mes: 'Jun', valor: 2200000 }
-  ]
+    // Total de vendas
+    const vendasTotal = vendas.reduce((acc, v) => acc + (parseFloat(v.valor_venda) || 0), 0)
 
-  const distribuicaoComissoes = [
-    { tipo: 'Corretor Externo', valor: 65, cor: '#4ade80' },
-    { tipo: 'Corretor Interno', valor: 25, cor: '#60a5fa' },
-    { tipo: 'Gerente', valor: 7, cor: '#facc15' },
-    { tipo: 'Diretor', valor: 3, cor: '#a78bfa' }
-  ]
+    // Vendas do mês atual
+    const vendasMes = vendas
+      .filter(v => {
+        const dataVenda = new Date(v.data_venda)
+        return dataVenda >= inicioMes
+      })
+      .reduce((acc, v) => acc + (parseFloat(v.valor_venda) || 0), 0)
 
-  const topCorretores = [
-    { nome: 'João Silva', vendas: 12, valor: 5820000, posicao: 1 },
-    { nome: 'Maria Santos', vendas: 10, valor: 4850000, posicao: 2 },
-    { nome: 'Pedro Costa', vendas: 9, valor: 4365000, posicao: 3 },
-    { nome: 'Ana Oliveira', vendas: 8, valor: 3880000, posicao: 4 },
-    { nome: 'Carlos Souza', vendas: 7, valor: 3395000, posicao: 5 }
-  ]
+    // Vendas do mês anterior
+    const vendasMesAnterior = vendas
+      .filter(v => {
+        const dataVenda = new Date(v.data_venda)
+        return dataVenda >= inicioMesAnterior && dataVenda <= fimMesAnterior
+      })
+      .reduce((acc, v) => acc + (parseFloat(v.valor_venda) || 0), 0)
 
-  const vendasRecentes = [
-    { id: 1, cliente: 'Residencial Vista Verde', valor: 485000, data: '2024-01-15', status: 'pago' },
-    { id: 2, cliente: 'Apartamento Centro', valor: 320000, data: '2024-01-14', status: 'pendente' },
-    { id: 3, cliente: 'Casa Jardim', valor: 650000, data: '2024-01-13', status: 'pago' },
-    { id: 4, cliente: 'Condomínio Premium', valor: 780000, data: '2024-01-12', status: 'pendente' },
-    { id: 5, cliente: 'Terreno Comercial', valor: 420000, data: '2024-01-11', status: 'pago' }
-  ]
+    // Vendas de hoje
+    const vendasHoje = vendas
+      .filter(v => {
+        const dataVenda = new Date(v.data_venda)
+        return dataVenda >= inicioHoje && dataVenda <= fimHoje
+      })
+      .reduce((acc, v) => acc + (parseFloat(v.valor_venda) || 0), 0)
+
+    // Comissões pendentes (pagamentos com status pendente)
+    const comissoesPendentes = pagamentos
+      .filter(p => p.status === 'pendente')
+      .reduce((acc, p) => acc + (parseFloat(p.comissao_gerada) || 0), 0)
+
+    // Comissões pagas
+    const comissoesPagas = pagamentos
+      .filter(p => p.status === 'pago')
+      .reduce((acc, p) => acc + (parseFloat(p.comissao_gerada) || 0), 0)
+
+    // Comissões do mês anterior (para comparação)
+    const comissoesPendentesMesAnterior = pagamentos
+      .filter(p => {
+        const dataPag = new Date(p.created_at || p.data_prevista)
+        return p.status === 'pendente' && dataPag >= inicioMesAnterior && dataPag <= fimMesAnterior
+      })
+      .reduce((acc, p) => acc + (parseFloat(p.comissao_gerada) || 0), 0)
+
+    // Corretores ativos (com vendas)
+    const corretoresComVendas = new Set(vendas.map(v => v.corretor_id))
+    const corretoresAtivos = corretoresComVendas.size
+
+    // Calcular variação percentual
+    const variacaoVendas = vendasMesAnterior > 0 
+      ? ((vendasMes - vendasMesAnterior) / vendasMesAnterior) * 100 
+      : 0
+
+    const variacaoComissoesPendentes = comissoesPendentesMesAnterior > 0
+      ? ((comissoesPendentes - comissoesPendentesMesAnterior) / comissoesPendentesMesAnterior) * 100
+      : 0
+
+    // Meta mensal (calculada como % do total de vendas do mês vs média mensal)
+    const primeiraVenda = vendas.length > 0 ? new Date(vendas.sort((a, b) => new Date(a.data_venda) - new Date(b.data_venda))[0].data_venda) : hoje
+    const diasDesdeInicio = Math.max(1, Math.ceil((hoje - primeiraVenda) / (1000 * 60 * 60 * 24)))
+    const mesesDesdeInicio = Math.max(1, diasDesdeInicio / 30)
+    const mediaMensal = vendasTotal / mesesDesdeInicio
+    const metaMensal = mediaMensal > 0 ? Math.round((vendasMes / mediaMensal) * 100) : 0
+
+    return {
+      vendasTotal,
+      vendasMes,
+      vendasHoje,
+      comissoesPendentes,
+      comissoesPagas,
+      corretoresAtivos,
+      metaMensal: Math.min(metaMensal, 100),
+      variacaoVendas: Math.round(variacaoVendas * 10) / 10,
+      variacaoComissoesPendentes: Math.round(variacaoComissoesPendentes * 10) / 10
+    }
+  }, [vendas, pagamentos, corretores])
+
+  // Calcular vendas mensais dos últimos 6 meses
+  const vendasMensais = useMemo(() => {
+    const meses = []
+    const hoje = new Date()
+    
+    for (let i = 5; i >= 0; i--) {
+      const data = new Date(hoje.getFullYear(), hoje.getMonth() - i, 1)
+      const mesInicio = new Date(data.getFullYear(), data.getMonth(), 1)
+      const mesFim = new Date(data.getFullYear(), data.getMonth() + 1, 0, 23, 59, 59, 999)
+      
+      const valor = vendas
+        .filter(v => {
+          const dataVenda = new Date(v.data_venda)
+          return dataVenda >= mesInicio && dataVenda <= mesFim
+        })
+        .reduce((acc, v) => acc + (parseFloat(v.valor_venda) || 0), 0)
+      
+      const nomesMeses = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']
+      meses.push({
+        mes: nomesMeses[data.getMonth()],
+        valor
+      })
+    }
+    
+    return meses
+  }, [vendas])
+
+  // Calcular distribuição de comissões por tipo de corretor
+  const distribuicaoComissoes = useMemo(() => {
+    const externo = vendas
+      .filter(v => v.tipo_corretor === 'externo')
+      .reduce((acc, v) => acc + (parseFloat(v.comissao_total) || 0), 0)
+    
+    const interno = vendas
+      .filter(v => v.tipo_corretor === 'interno')
+      .reduce((acc, v) => acc + (parseFloat(v.comissao_total) || 0), 0)
+    
+    const total = externo + interno
+    
+    if (total === 0) {
+      return [
+        { tipo: 'Corretor Externo', valor: 0, cor: '#4ade80' },
+        { tipo: 'Corretor Interno', valor: 0, cor: '#60a5fa' }
+      ]
+    }
+
+    return [
+      { 
+        tipo: 'Corretor Externo', 
+        valor: Math.round((externo / total) * 100), 
+        cor: '#4ade80' 
+      },
+      { 
+        tipo: 'Corretor Interno', 
+        valor: Math.round((interno / total) * 100), 
+        cor: '#60a5fa' 
+      }
+    ]
+  }, [vendas])
+
+  // Calcular top corretores
+  const topCorretores = useMemo(() => {
+    const corretoresMap = {}
+    
+    vendas.forEach(venda => {
+      const corretorId = venda.corretor_id
+      if (!corretorId) return
+      
+      if (!corretoresMap[corretorId]) {
+        const corretor = corretores.find(c => c.id === corretorId)
+        corretoresMap[corretorId] = {
+          id: corretorId,
+          nome: corretor?.nome || 'Corretor Desconhecido',
+          vendas: 0,
+          valor: 0
+        }
+      }
+      
+      corretoresMap[corretorId].vendas++
+      corretoresMap[corretorId].valor += parseFloat(venda.valor_venda) || 0
+    })
+    
+    return Object.values(corretoresMap)
+      .sort((a, b) => b.valor - a.valor)
+      .slice(0, 5)
+      .map((c, index) => ({
+        ...c,
+        posicao: index + 1
+      }))
+  }, [vendas, corretores])
+
+  // Vendas recentes (últimas 5)
+  const vendasRecentes = useMemo(() => {
+    return vendas
+      .sort((a, b) => new Date(b.data_venda) - new Date(a.data_venda))
+      .slice(0, 5)
+      .map(v => {
+        const empreendimento = empreendimentos.find(e => e.id === v.empreendimento_id)
+        const temPagamentoPago = pagamentos.some(p => p.venda_id === v.id && p.status === 'pago')
+        
+        return {
+          id: v.id,
+          cliente: v.nome_cliente || empreendimento?.nome || 'Cliente não informado',
+          valor: parseFloat(v.valor_venda) || 0,
+          data: v.data_venda,
+          status: temPagamentoPago ? 'pago' : 'pendente'
+        }
+      })
+  }, [vendas, empreendimentos, pagamentos])
 
   const formatCurrency = (value) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -66,7 +226,7 @@ const HomeDashboard = ({ showTicker = true, showHeader = true }) => {
     }).format(value)
   }
 
-  const maxVendas = Math.max(...vendasMensais.map(v => v.valor))
+  const maxVendas = Math.max(...vendasMensais.map(v => v.valor), 1)
 
   return (
     <div className="home-dashboard">
@@ -103,10 +263,12 @@ const HomeDashboard = ({ showTicker = true, showHeader = true }) => {
             <div className="stat-content">
               <span className="stat-label">Total em Vendas</span>
               <span className="stat-value">{formatCurrency(statsData.vendasTotal)}</span>
-              <div className="stat-change positive">
-                <ArrowUpRight size={14} />
-                <span>+8.2% vs mês anterior</span>
-              </div>
+              {statsData.variacaoVendas !== 0 && (
+                <div className={`stat-change ${statsData.variacaoVendas >= 0 ? 'positive' : 'negative'}`}>
+                  {statsData.variacaoVendas >= 0 ? <ArrowUpRight size={14} /> : <ArrowDownRight size={14} />}
+                  <span>{statsData.variacaoVendas >= 0 ? '+' : ''}{statsData.variacaoVendas.toFixed(1)}% vs mês anterior</span>
+                </div>
+              )}
             </div>
           </div>
 
@@ -117,10 +279,12 @@ const HomeDashboard = ({ showTicker = true, showHeader = true }) => {
             <div className="stat-content">
               <span className="stat-label">Vendas Este Mês</span>
               <span className="stat-value">{formatCurrency(statsData.vendasMes)}</span>
-              <div className="stat-change positive">
-                <ArrowUpRight size={14} />
-                <span>+12.5% vs mês anterior</span>
-              </div>
+              {statsData.variacaoVendas !== 0 && (
+                <div className={`stat-change ${statsData.variacaoVendas >= 0 ? 'positive' : 'negative'}`}>
+                  {statsData.variacaoVendas >= 0 ? <ArrowUpRight size={14} /> : <ArrowDownRight size={14} />}
+                  <span>{statsData.variacaoVendas >= 0 ? '+' : ''}{statsData.variacaoVendas.toFixed(1)}% vs mês anterior</span>
+                </div>
+              )}
             </div>
           </div>
 
@@ -131,10 +295,12 @@ const HomeDashboard = ({ showTicker = true, showHeader = true }) => {
             <div className="stat-content">
               <span className="stat-label">Comissões Pendentes</span>
               <span className="stat-value">{formatCurrency(statsData.comissoesPendentes)}</span>
-              <div className="stat-change negative">
-                <ArrowDownRight size={14} />
-                <span>-3.2% vs mês anterior</span>
-              </div>
+              {statsData.variacaoComissoesPendentes !== 0 && (
+                <div className={`stat-change ${statsData.variacaoComissoesPendentes >= 0 ? 'positive' : 'negative'}`}>
+                  {statsData.variacaoComissoesPendentes >= 0 ? <ArrowUpRight size={14} /> : <ArrowDownRight size={14} />}
+                  <span>{statsData.variacaoComissoesPendentes >= 0 ? '+' : ''}{statsData.variacaoComissoesPendentes.toFixed(1)}% vs mês anterior</span>
+                </div>
+              )}
             </div>
           </div>
 
@@ -147,7 +313,7 @@ const HomeDashboard = ({ showTicker = true, showHeader = true }) => {
               <span className="stat-value">{formatCurrency(statsData.comissoesPagas)}</span>
               <div className="stat-change positive">
                 <ArrowUpRight size={14} />
-                <span>+15.8% vs mês anterior</span>
+                <span>Total acumulado</span>
               </div>
             </div>
           </div>
@@ -161,7 +327,7 @@ const HomeDashboard = ({ showTicker = true, showHeader = true }) => {
               <span className="stat-value">{statsData.corretoresAtivos}</span>
               <div className="stat-change positive">
                 <ArrowUpRight size={14} />
-                <span>+2 este mês</span>
+                <span>Com vendas registradas</span>
               </div>
             </div>
           </div>
@@ -175,7 +341,7 @@ const HomeDashboard = ({ showTicker = true, showHeader = true }) => {
               <span className="stat-value">{statsData.metaMensal}%</span>
               <div className="stat-change positive">
                 <ArrowUpRight size={14} />
-                <span>+4% vs semana anterior</span>
+                <span>Progresso do mês</span>
               </div>
             </div>
           </div>
@@ -224,24 +390,30 @@ const HomeDashboard = ({ showTicker = true, showHeader = true }) => {
             </div>
             <div className="chart-container">
               <div className="pie-chart-container">
-                <div className="pie-chart">
-                  {distribuicaoComissoes.map((item, index, array) => {
-                    const startPercent = array.slice(0, index).reduce((acc, i) => acc + i.valor, 0)
-                    const endPercent = startPercent + item.valor
-                    return (
-                      <div
-                        key={index}
-                        className="pie-segment"
-                        style={{
-                          background: `conic-gradient(from ${startPercent * 3.6}deg, ${item.cor} 0deg ${item.valor * 3.6}deg, transparent ${item.valor * 3.6}deg)`
-                        }}
-                      />
-                    )
-                  })}
-                  <div className="pie-center">
-                    <span className="pie-total">100%</span>
+                {distribuicaoComissoes.length > 0 ? (
+                  <div className="pie-chart">
+                    {distribuicaoComissoes.map((item, index, array) => {
+                      const startPercent = array.slice(0, index).reduce((acc, i) => acc + i.valor, 0)
+                      const endPercent = startPercent + item.valor
+                      return (
+                        <div
+                          key={index}
+                          className="pie-segment"
+                          style={{
+                            background: `conic-gradient(from ${startPercent * 3.6}deg, ${item.cor} 0deg ${item.valor * 3.6}deg, transparent ${item.valor * 3.6}deg)`
+                          }}
+                        />
+                      )
+                    })}
+                    <div className="pie-center">
+                      <span className="pie-total">100%</span>
+                    </div>
                   </div>
-                </div>
+                ) : (
+                  <div className="pie-chart-empty">
+                    <span>Sem dados</span>
+                  </div>
+                )}
               </div>
               <div className="pie-legend">
                 {distribuicaoComissoes.map((item, index) => (
@@ -268,26 +440,32 @@ const HomeDashboard = ({ showTicker = true, showHeader = true }) => {
               <button className="btn-view-all">Ver Todos</button>
             </div>
             <div className="table-content">
-              <div className="ranking-list">
-                {topCorretores.map((corretor) => (
-                  <div key={corretor.posicao} className="ranking-item">
-                    <div className="ranking-position">
-                      {corretor.posicao <= 3 ? (
-                        <Award size={18} className="top-three" />
-                      ) : (
-                        <span className="position-number">#{corretor.posicao}</span>
-                      )}
-                    </div>
-                    <div className="ranking-info">
-                      <span className="ranking-name">{corretor.nome}</span>
-                      <div className="ranking-stats">
-                        <span>{corretor.vendas} vendas</span>
+              {topCorretores.length > 0 ? (
+                <div className="ranking-list">
+                  {topCorretores.map((corretor) => (
+                    <div key={corretor.id} className="ranking-item">
+                      <div className="ranking-position">
+                        {corretor.posicao <= 3 ? (
+                          <Award size={18} className="top-three" />
+                        ) : (
+                          <span className="position-number">#{corretor.posicao}</span>
+                        )}
                       </div>
+                      <div className="ranking-info">
+                        <span className="ranking-name">{corretor.nome}</span>
+                        <div className="ranking-stats">
+                          <span>{corretor.vendas} {corretor.vendas === 1 ? 'venda' : 'vendas'}</span>
+                        </div>
+                      </div>
+                      <div className="ranking-value">{formatCurrency(corretor.valor)}</div>
                     </div>
-                    <div className="ranking-value">{formatCurrency(corretor.valor)}</div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="empty-state">
+                  <span>Nenhum corretor com vendas registradas</span>
+                </div>
+              )}
             </div>
           </div>
 
@@ -301,38 +479,44 @@ const HomeDashboard = ({ showTicker = true, showHeader = true }) => {
               <button className="btn-view-all">Ver Todas</button>
             </div>
             <div className="table-content">
-              <div className="recent-list">
-                {vendasRecentes.map((venda) => (
-                  <div key={venda.id} className="recent-item">
-                    <div className="recent-icon">
-                      <Building2 size={18} />
-                    </div>
-                    <div className="recent-info">
-                      <span className="recent-title">{venda.cliente}</span>
-                      <div className="recent-meta">
-                        <Calendar size={12} />
-                        <span>{new Date(venda.data).toLocaleDateString('pt-BR')}</span>
+              {vendasRecentes.length > 0 ? (
+                <div className="recent-list">
+                  {vendasRecentes.map((venda) => (
+                    <div key={venda.id} className="recent-item">
+                      <div className="recent-icon">
+                        <Building2 size={18} />
+                      </div>
+                      <div className="recent-info">
+                        <span className="recent-title">{venda.cliente}</span>
+                        <div className="recent-meta">
+                          <Calendar size={12} />
+                          <span>{new Date(venda.data).toLocaleDateString('pt-BR')}</span>
+                        </div>
+                      </div>
+                      <div className="recent-details">
+                        <span className="recent-value">{formatCurrency(venda.valor)}</span>
+                        <span className={`status-badge ${venda.status}`}>
+                          {venda.status === 'pago' ? (
+                            <>
+                              <CheckCircle2 size={12} />
+                              Pago
+                            </>
+                          ) : (
+                            <>
+                              <Clock size={12} />
+                              Pendente
+                            </>
+                          )}
+                        </span>
                       </div>
                     </div>
-                    <div className="recent-details">
-                      <span className="recent-value">{formatCurrency(venda.valor)}</span>
-                      <span className={`status-badge ${venda.status}`}>
-                        {venda.status === 'pago' ? (
-                          <>
-                            <CheckCircle2 size={12} />
-                            Pago
-                          </>
-                        ) : (
-                          <>
-                            <Clock size={12} />
-                            Pendente
-                          </>
-                        )}
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="empty-state">
+                  <span>Nenhuma venda registrada</span>
+                </div>
+              )}
             </div>
           </div>
         </div>

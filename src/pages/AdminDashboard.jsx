@@ -12,6 +12,8 @@ import {
 import logo from '../imgs/logo.png'
 import Ticker from '../components/Ticker'
 import HomeDashboard from './HomeDashboard'
+// import CadastrarCorretores from '../components/CadastrarCorretores'
+// import ImportarVendas from '../components/ImportarVendas'
 import '../styles/Dashboard.css'
 
 const AdminDashboard = () => {
@@ -62,12 +64,51 @@ const AdminDashboard = () => {
   const [modalType, setModalType] = useState('')
   const [selectedItem, setSelectedItem] = useState(null)
   const [filterTipo, setFilterTipo] = useState('todos')
+  
+  // Filtros para Vendas
+  const [filtrosVendas, setFiltrosVendas] = useState({
+    corretor: '',
+    empreendimento: '',
+    status: 'todos',
+    bloco: '',
+    dataInicio: '',
+    dataFim: '',
+    valorMin: '',
+    valorMax: ''
+  })
+  
+  // Filtros para Pagamentos
+  const [filtrosPagamentos, setFiltrosPagamentos] = useState({
+    status: 'todos',
+    corretor: '',
+    empreendimento: '',
+    tipo: 'todos',
+    dataInicio: '',
+    dataFim: '',
+    buscaVenda: ''
+  })
+  
+  // Filtros para Corretores
+  const [filtrosCorretores, setFiltrosCorretores] = useState({
+    busca: '',
+    tipo: 'todos',
+    empreendimento: '',
+    autonomo: 'todos' // todos, sim, nao
+  })
+  
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState({ type: '', text: '' })
   const [contratoFile, setContratoFile] = useState(null)
   const [uploadingContrato, setUploadingContrato] = useState(false)
   const [pagamentoDetalhe, setPagamentoDetalhe] = useState(null)
   const [vendaExpandida, setVendaExpandida] = useState(null)
+  const [showModalConfirmarPagamento, setShowModalConfirmarPagamento] = useState(false)
+  const [pagamentoParaConfirmar, setPagamentoParaConfirmar] = useState(null)
+  const [formConfirmarPagamento, setFormConfirmarPagamento] = useState({
+    valorPersonalizado: ''
+  })
+  // const [mostrarCadastroMassa, setMostrarCadastroMassa] = useState(false)
+  // const [mostrarImportarVendas, setMostrarImportarVendas] = useState(false)
   const [cargoExpandido, setCargoExpandido] = useState(null) // Formato: "empreendimentoId-cargoId"
   const [cargosExpandidos, setCargosExpandidos] = useState({}) // Formato: { "empreendimentoId-externo": true, "empreendimentoId-interno": false }
   const [clientes, setClientes] = useState([])
@@ -96,10 +137,23 @@ const AdminDashboard = () => {
   // Agrupar pagamentos por venda
   const pagamentosAgrupados = pagamentos.reduce((acc, pag) => {
     const vendaId = pag.venda_id
-    if (!acc[vendaId]) {
-      acc[vendaId] = {
+    if (!vendaId) return acc // Ignorar pagamentos sem venda_id
+    
+    // Comparação segura de IDs
+    const vendaIdStr = String(vendaId)
+    
+    if (!acc[vendaIdStr]) {
+      // Buscar venda completa se não estiver no pag.venda
+      const vendaCompleta = pag.venda || vendas.find(v => String(v.id) === vendaIdStr)
+      
+      if (!vendaCompleta) {
+        console.warn('⚠️ Venda não encontrada para pagamento:', vendaId)
+        return acc
+      }
+      
+      acc[vendaIdStr] = {
         venda_id: vendaId,
-        venda: pag.venda,
+        venda: vendaCompleta,
         pagamentos: [],
         totalValor: 0,
         totalComissao: 0,
@@ -107,18 +161,37 @@ const AdminDashboard = () => {
         totalPendente: 0
       }
     }
-    acc[vendaId].pagamentos.push(pag)
-    acc[vendaId].totalValor += parseFloat(pag.valor) || 0
-    acc[vendaId].totalComissao += parseFloat(pag.comissao_gerada) || 0
+    acc[vendaIdStr].pagamentos.push(pag)
+    acc[vendaIdStr].totalValor += parseFloat(pag.valor) || 0
+    acc[vendaIdStr].totalComissao += parseFloat(pag.comissao_gerada) || 0
     if (pag.status === 'pago') {
-      acc[vendaId].totalPago += parseFloat(pag.valor) || 0
+      // Considerar valor da comissão paga (pode ser personalizado) ou comissão gerada
+      const comissaoPaga = parseFloat(pag.valor_comissao_pago) || parseFloat(pag.comissao_gerada) || 0
+      acc[vendaIdStr].totalPago += comissaoPaga
+      // Subtrair valor já pago se houver
+      const valorJaPago = parseFloat(pag.valor_ja_pago) || 0
+      acc[vendaIdStr].totalPendente -= valorJaPago
     } else {
-      acc[vendaId].totalPendente += parseFloat(pag.valor) || 0
+      acc[vendaIdStr].totalPendente += parseFloat(pag.comissao_gerada) || 0
+      // Subtrair valor já pago se houver (mesmo em pendente)
+      const valorJaPago = parseFloat(pag.valor_ja_pago) || 0
+      acc[vendaIdStr].totalPendente -= valorJaPago
     }
     return acc
   }, {})
 
   const listaVendasComPagamentos = Object.values(pagamentosAgrupados)
+  
+  /* DEBUG: Verificar quantas vendas aparecem na lista
+  console.log('🔍 DEBUG listaVendasComPagamentos:', {
+    totalVendas: vendas.length,
+    totalPagamentos: pagamentos.length,
+    vendasComPagamentos: listaVendasComPagamentos.length,
+    vendasSemPagamentos: vendas.filter(v => {
+      const temPagamento = pagamentos.some(p => String(p.venda_id) === String(v.id))
+      return !temPagamento
+    }).length
+  })*/
 
   // Formulário de empreendimento
   const [empreendimentoForm, setEmpreendimentoForm] = useState({
@@ -137,6 +210,7 @@ const AdminDashboard = () => {
     cliente_id: '',
     unidade: '',
     bloco: '',
+    andar: '',
     valor_venda: '',
     tipo_corretor: 'externo',
     data_venda: new Date().toISOString().split('T')[0],
@@ -324,18 +398,17 @@ const AdminDashboard = () => {
     
     const valorPagamento = parseFloat(pagamento.valor) || 0
     
-    // PEGAR A COMISSÃO TOTAL JÁ CALCULADA NA VENDA
-    const comissaoTotalVenda = parseFloat(venda.comissao_total) || 0
+    // USAR A COMISSÃO JÁ CALCULADA E SALVA NO PAGAMENTO
+    // A comissao_gerada já foi calculada corretamente na importação como: valorParcela * (percentualTotal / 100)
+    let comissaoTotalParcela = parseFloat(pagamento.comissao_gerada) || 0
     
-    // Buscar todas as parcelas desta venda para calcular o total pro-soluto
-    const parcelasVenda = pagamentos.filter(p => p.venda_id === venda.id)
-    const valorTotalParcelas = parcelasVenda.reduce((acc, p) => acc + (parseFloat(p.valor) || 0), 0)
-    
-    // Fator de proporção = comissão total da venda / valor total das parcelas
-    const fatorProporcao = valorTotalParcelas > 0 ? comissaoTotalVenda / valorTotalParcelas : 0
-    
-    // Comissão desta parcela = valor da parcela × fator de proporção
-    const comissaoTotalParcela = valorPagamento * fatorProporcao
+    // Se não houver comissao_gerada salva, calcular usando o percentual total de comissão
+    if (comissaoTotalParcela === 0) {
+      // Calcular percentual total dos cargos
+      const percentualTotal = cargosDoTipo.reduce((acc, c) => acc + (parseFloat(c.percentual) || 0), 0)
+      const fatorComissao = percentualTotal / 100
+      comissaoTotalParcela = valorPagamento * fatorComissao
+    }
     
     // Calcular percentual total dos cargos para distribuição
     const percentualTotal = cargosDoTipo.reduce((acc, c) => acc + (parseFloat(c.percentual) || 0), 0)
@@ -391,6 +464,45 @@ const AdminDashboard = () => {
     return () => window.removeEventListener('resize', checkScreenSize)
   }, [])
 
+  // Atualizar descrição automaticamente baseado em unidade, bloco e andar
+  useEffect(() => {
+    if (modalType === 'venda') {
+      const partes = []
+      
+      if (vendaForm.unidade) {
+        partes.push(`Unidade: ${vendaForm.unidade}`)
+      }
+      
+      if (vendaForm.bloco) {
+        partes.push(`Torre: ${vendaForm.bloco}`)
+      }
+      
+      if (vendaForm.andar) {
+        partes.push(`Andar: ${vendaForm.andar}`)
+      }
+      
+      // Só atualiza se houver pelo menos um campo preenchido
+      // e se a descrição atual estiver vazia ou seguir o padrão automático
+      if (partes.length > 0) {
+        const descricaoAutomatica = partes.join(' | ')
+        const descricaoAtual = vendaForm.descricao || ''
+        
+        // Verifica se a descrição atual está vazia ou segue o padrão automático
+        const seguePadrao = !descricaoAtual || 
+          descricaoAtual.includes('Unidade:') || 
+          descricaoAtual.includes('Torre:') || 
+          descricaoAtual.includes('Andar:')
+        
+        if (seguePadrao && descricaoAutomatica !== descricaoAtual) {
+          setVendaForm(prev => ({ ...prev, descricao: descricaoAutomatica }))
+        }
+      } else if (!vendaForm.descricao) {
+        // Se não há campos preenchidos e descrição está vazia, limpa
+        setVendaForm(prev => ({ ...prev, descricao: '' }))
+      }
+    }
+  }, [vendaForm.unidade, vendaForm.bloco, vendaForm.andar, modalType])
+
   const fetchData = async () => {
     setLoading(true)
     
@@ -419,16 +531,55 @@ const AdminDashboard = () => {
         console.error('Erro ao buscar cargos:', cargosError)
       }
 
-      // Buscar pagamentos pro-soluto (sem JOINs)
-      const { data: pagamentosData, error: pagamentosError } = await supabase
-        .from('pagamentos_prosoluto')
-        .select('*')
+      // Buscar pagamentos pro-soluto (sem JOINs) - buscar todos sem limite
+      // O Supabase tem limite padrão de 1000, então precisamos buscar em lotes ou aumentar o limite
+      let pagamentosData = []
+      let hasMore = true
+      let page = 0
+      const pageSize = 1000
       
-      if (pagamentosError) {
-        console.error('Erro ao buscar pagamentos:', pagamentosError)
+      while (hasMore) {
+        const { data: pageData, error: pagamentosError } = await supabase
+          .from('pagamentos_prosoluto')
+          .select('*')
+          .range(page * pageSize, (page + 1) * pageSize - 1)
+        
+        if (pagamentosError) {
+          console.error('Erro ao buscar pagamentos:', pagamentosError)
+          break
+        }
+        
+        if (pageData && pageData.length > 0) {
+          pagamentosData = [...pagamentosData, ...pageData]
+          hasMore = pageData.length === pageSize
+          page++
+        } else {
+          hasMore = false
+        }
       }
-      console.log('Pagamentos do banco:', pagamentosData)
-
+      
+     // console.log('Pagamentos do banco:', pagamentosData.length, 'registros')
+      
+      // DEBUG: Verificar estrutura dos dados
+      /*console.log('🔍 DEBUG fetchData:', {
+        totalVendas: vendasData?.length || 0,
+        totalPagamentos: pagamentosData?.length || 0,
+        vendasComProSoluto: (vendasData || []).filter(v => {
+          const valorProSoluto = parseFloat(v.valor_pro_soluto) || 0
+          return valorProSoluto > 0
+        }).length,
+        // Verificar se há vendas sem pagamentos no banco
+        vendasSemPagamentosNoBanco: (vendasData || []).filter(v => {
+          const valorProSoluto = parseFloat(v.valor_pro_soluto) || 0
+          if (valorProSoluto <= 0) return false
+          const temPagamento = (pagamentosData || []).some(p => String(p.venda_id) === String(v.id))
+          return !temPagamento
+        }).length,
+        // Verificar tipos de IDs
+        tipoIdVenda: vendasData?.[0]?.id ? typeof vendasData[0].id : 'N/A',
+        tipoIdPagamento: pagamentosData?.[0]?.venda_id ? typeof pagamentosData[0].venda_id : 'N/A'
+      })
+*/
       // Associar cargos aos empreendimentos manualmente
       const empreendimentosComCargos = (empreendimentosData || []).map(emp => ({
         ...emp,
@@ -448,9 +599,10 @@ const AdminDashboard = () => {
 
       // Associar dados relacionados aos pagamentos manualmente
       const pagamentosComRelacionamentos = (pagamentosData || []).map(pag => {
-        const venda = (vendasData || []).find(v => v.id === pag.venda_id)
-        const corretor = venda ? (corretoresData || []).find(c => c.id === venda.corretor_id) : null
-        const empreendimento = venda ? (empreendimentosData || []).find(e => e.id === venda.empreendimento_id) : null
+        // Comparação segura de IDs (convertendo para string)
+        const venda = (vendasData || []).find(v => String(v.id) === String(pag.venda_id))
+        const corretor = venda ? (corretoresData || []).find(c => String(c.id) === String(venda.corretor_id)) : null
+        const empreendimento = venda ? (empreendimentosData || []).find(e => String(e.id) === String(venda.empreendimento_id)) : null
         
         return {
           ...pag,
@@ -467,6 +619,16 @@ const AdminDashboard = () => {
           } : null
         }
       })
+
+      // DEBUG: Verificar quantos pagamentos não encontraram venda
+      const pagamentosSemVenda = pagamentosComRelacionamentos.filter(p => !p.venda)
+      if (pagamentosSemVenda.length > 0) {
+        console.warn('⚠️ Pagamentos sem venda encontrada:', pagamentosSemVenda.length, pagamentosSemVenda.slice(0, 5).map(p => ({
+          pagamento_id: p.id,
+          venda_id: p.venda_id,
+          tipo_id: typeof p.venda_id
+        })))
+      }
 
       // Associar empreendimento e cargo aos corretores
       const corretoresComRelacionamentos = (corretoresData || []).map(corretor => {
@@ -510,20 +672,20 @@ const AdminDashboard = () => {
       setPagamentos(pagamentosComRelacionamentos || [])
       setClientes(clientesComComplementadores || [])
       
-      console.log('✅ Dados carregados com sucesso:', {
+      /*console.log('✅ Dados carregados com sucesso:', {
         corretores: corretoresComRelacionamentos?.length || 0,
         vendas: vendasComRelacionamentos?.length || 0,
         empreendimentos: empreendimentosComCargos?.length || 0,
         pagamentos: pagamentosComRelacionamentos?.length || 0,
         clientes: clientesComComplementadores?.length || 0
-      })
+      })*/
       
     } catch (error) {
       console.error('❌ Erro crítico ao carregar dados:', error)
       setMessage({ type: 'error', text: `Erro ao carregar dados: ${error.message || 'Erro desconhecido'}. Tente recarregar a página.` })
     } finally {
       setLoading(false)
-      console.log('🏁 fetchData finalizado')
+     // console.log('🏁 fetchData finalizado')
     }
   }
 
@@ -570,6 +732,31 @@ const AdminDashboard = () => {
       return corretor.percentual_corretor
     }
     return corretor?.tipo_corretor === 'interno' ? 2.5 : 4
+  }
+
+  // Função auxiliar para calcular a comissão do corretor
+  const calcularComissaoCorretor = (comissoesDinamicas, corretorId, valorVenda) => {
+    if (!comissoesDinamicas || !comissoesDinamicas.cargos || comissoesDinamicas.cargos.length === 0) {
+      // Fallback: calcular baseado no percentual padrão
+      const percentualCorretor = getCorretorPercentual(corretorId)
+      return (valorVenda * percentualCorretor) / 100
+    }
+
+    // Procurar pelo cargo do corretor nos cargos calculados
+    const cargoCorretor = comissoesDinamicas.cargos.find(c => 
+      c.nome_cargo.toLowerCase().includes('corretor') || 
+      c.nome_cargo.toLowerCase().includes('autônomo') ||
+      c.nome_cargo.toLowerCase().includes('corretor interno') ||
+      c.nome_cargo.toLowerCase().includes('corretor externo')
+    )
+    
+    if (cargoCorretor) {
+      return cargoCorretor.valor
+    }
+
+    // Se não encontrar, calcular baseado no percentual do corretor
+    const percentualCorretor = getCorretorPercentual(corretorId)
+    return (valorVenda * percentualCorretor) / 100
   }
 
   const handleSaveVenda = async () => {
@@ -669,26 +856,31 @@ const AdminDashboard = () => {
     // Ex: 7% -> 0.07, então parcela de R$ 1.000 x 0.07 = R$ 70 de comissão
     const fatorComissao = comissoesDinamicas.percentualTotal / 100
     
-    console.log('Cálculo venda:', {
+    // Calcular comissão do corretor
+    const comissaoCorretor = calcularComissaoCorretor(comissoesDinamicas, vendaForm.corretor_id, valorVenda)
+    
+    /*console.log('Cálculo venda:', {
       valorVenda,
       valorSinal,
       valorEntradaTotal,
       valorTotalBalao,
       valorProSoluto,
       comissaoTotal: comissoesDinamicas.total,
+      comissaoCorretor,
       fatorComissao,
       teveSinal: vendaForm.teve_sinal,
       teveEntrada: vendaForm.teve_entrada,
       parcelouEntrada: vendaForm.parcelou_entrada,
       teveBalao: vendaForm.teve_balao
     })
-
+*/
     const vendaData = {
       corretor_id: vendaForm.corretor_id,
       empreendimento_id: isCorretorAutonomo ? null : (vendaForm.empreendimento_id || null),
       cliente_id: vendaForm.cliente_id || null,
       unidade: vendaForm.unidade || null,
       bloco: vendaForm.bloco?.toUpperCase() || null,
+      andar: vendaForm.andar || null,
       valor_venda: valorVenda,
       tipo_corretor: vendaForm.tipo_corretor,
       data_venda: vendaForm.data_venda,
@@ -710,6 +902,7 @@ const AdminDashboard = () => {
       valor_pro_soluto: valorProSoluto || null,
       fator_comissao: fatorComissao || null,
       comissao_total: comissoesDinamicas.total,
+      comissao_corretor: comissaoCorretor,
       contrato_url: vendaForm.contrato_url || null,
       contrato_nome: vendaForm.contrato_nome || null
     }
@@ -966,10 +1159,10 @@ const AdminDashboard = () => {
         if (pagError) {
           console.error('Erro ao criar pagamentos:', pagError)
         } else {
-          console.log('Pagamentos criados:', pagamentos.length)
+         // console.log('Pagamentos criados:', pagamentos.length)
         }
       } else {
-        console.log('Nenhum pagamento para criar. Pro-soluto:', valorProSoluto)
+       // console.log('Nenhum pagamento para criar. Pro-soluto:', valorProSoluto)
       }
     }
 
@@ -1251,32 +1444,101 @@ const AdminDashboard = () => {
     }
   }
 
-  // Confirmar pagamento pro-soluto
-  const confirmarPagamento = async (pagamentoId) => {
-    const { error } = await supabase
-      .from('pagamentos_prosoluto')
-      .update({ 
-        status: 'pago',
-        data_pagamento: new Date().toISOString().split('T')[0]
-      })
-      .eq('id', pagamentoId)
-    
-    if (error) {
-      setMessage({ type: 'error', text: 'Erro ao confirmar: ' + error.message })
-      return
-    }
-    
-    fetchData()
-    setMessage({ type: 'success', text: 'Pagamento confirmado!' })
-    setTimeout(() => setMessage({ type: '', text: '' }), 3000)
+  // Abrir modal de confirmação de pagamento
+  const confirmarPagamento = (pagamento) => {
+    setPagamentoParaConfirmar(pagamento)
+    setFormConfirmarPagamento({
+      valorPersonalizado: ''
+    })
+    setShowModalConfirmarPagamento(true)
   }
 
-  // Identificar vendas sem pagamentos
+  // Confirmar pagamento pro-soluto com valores personalizados
+  const processarConfirmarPagamento = async () => {
+    if (!pagamentoParaConfirmar) return
+
+    try {
+      // Atualizar pagamento - apenas status e data
+      // O valor personalizado será usado apenas para cálculo, não será salvo no banco
+      const updateData = {
+        status: 'pago',
+        data_pagamento: new Date().toISOString().split('T')[0]
+      }
+
+      // Se houver valor personalizado, podemos salvar em um campo de observação ou comentário
+      // Por enquanto, apenas confirmamos o pagamento
+      const { error } = await supabase
+        .from('pagamentos_prosoluto')
+        .update(updateData)
+        .eq('id', pagamentoParaConfirmar.id)
+      
+      if (error) {
+        setMessage({ type: 'error', text: 'Erro ao confirmar: ' + error.message })
+        return
+      }
+      
+      // Se houver valor personalizado diferente do padrão, podemos criar um registro separado
+      // ou apenas usar na lógica de cálculo sem salvar
+      const valorComissao = formConfirmarPagamento.valorPersonalizado
+        ? parseFloat(formConfirmarPagamento.valorPersonalizado) || 0
+        : parseFloat(pagamentoParaConfirmar.comissao_gerada) || 0
+      
+      // Se o valor personalizado for diferente, podemos atualizar a comissão_gerada
+      if (formConfirmarPagamento.valorPersonalizado && 
+          Math.abs(valorComissao - (parseFloat(pagamentoParaConfirmar.comissao_gerada) || 0)) > 0.01) {
+        await supabase
+          .from('pagamentos_prosoluto')
+          .update({ comissao_gerada: valorComissao })
+          .eq('id', pagamentoParaConfirmar.id)
+      }
+      
+      setShowModalConfirmarPagamento(false)
+      setPagamentoParaConfirmar(null)
+      fetchData()
+      setMessage({ type: 'success', text: 'Pagamento confirmado!' })
+      setTimeout(() => setMessage({ type: '', text: '' }), 3000)
+    } catch (error) {
+      console.error('Erro ao processar confirmação:', error)
+      setMessage({ type: 'error', text: 'Erro ao confirmar pagamento' })
+    }
+  }
+
+  // Identificar vendas sem pagamentos (APENAS as que têm valor_pro_soluto > 0)
   const vendasSemPagamentos = vendas.filter(v => {
-    const temPagamento = pagamentos.some(p => p.venda_id === v.id)
+    // Só considerar vendas que têm valor pro-soluto > 0
+    const valorProSoluto = parseFloat(v.valor_pro_soluto) || 0
+    if (valorProSoluto <= 0) return false // Ignorar vendas sem pro-soluto
+    
+    // Verificar se tem pagamentos (comparação segura de IDs)
+    const temPagamento = pagamentos.some(p => String(p.venda_id) === String(v.id))
     return !temPagamento
   })
 
+  // DEBUG: Adicionar log detalhado para investigar
+  /*console.log('🔍 DEBUG vendasSemPagamentos:', {
+    totalVendas: vendas.length,
+    vendasComProSoluto: vendas.filter(v => {
+      const valorProSoluto = parseFloat(v.valor_pro_soluto) || 0
+      return valorProSoluto > 0
+    }).length,
+    totalPagamentos: pagamentos.length,
+    vendasSemPagamentos: vendasSemPagamentos.length,
+    // Verificar tipos de IDs
+    tipoIdVenda: vendas.length > 0 ? typeof vendas[0].id : 'N/A',
+    tipoIdPagamento: pagamentos.length > 0 ? typeof pagamentos[0].venda_id : 'N/A',
+    // Verificar se há IDs diferentes
+    primeirasVendasIds: vendas.slice(0, 5).map(v => ({ 
+      id: v.id, 
+      tipo: typeof v.id, 
+      valorProSoluto: v.valor_pro_soluto,
+      temPagamento: pagamentos.some(p => String(p.venda_id) === String(v.id))
+    })),
+    primeirosPagamentosVendaIds: pagamentos.slice(0, 5).map(p => ({ 
+      venda_id: p.venda_id, 
+      tipo: typeof p.venda_id 
+    }))
+  })
+*/
   // Gerar pagamentos para uma venda específica
   const gerarPagamentosVenda = async (venda) => {
     setSaving(true)
@@ -1330,6 +1592,19 @@ const AdminDashboard = () => {
     const valorProSoluto = valorSinal + valorEntradaTotal + valorTotalBalao
     // Fator de comissão = Percentual total / 100
     const fatorComissao = comissoesDinamicas.percentualTotal / 100
+    
+    // Calcular e atualizar comissão do corretor na venda se não estiver preenchida
+    const comissaoCorretor = calcularComissaoCorretor(comissoesDinamicas, venda.corretor_id, valorVenda)
+    if (!venda.comissao_corretor || venda.comissao_corretor === 0) {
+      await supabase
+        .from('vendas')
+        .update({ 
+          comissao_corretor: comissaoCorretor,
+          comissao_total: comissoesDinamicas.total,
+          fator_comissao: fatorComissao
+        })
+        .eq('id', venda.id)
+    }
     
     const novosPagamentos = []
     
@@ -1541,6 +1816,7 @@ const AdminDashboard = () => {
       cliente_id: '',
       unidade: '',
       bloco: '',
+      andar: '',
       valor_venda: '',
       tipo_corretor: 'externo',
       data_venda: new Date().toISOString().split('T')[0],
@@ -1611,19 +1887,43 @@ const AdminDashboard = () => {
   const uploadDocumentoCliente = async (file, tipo) => {
     setUploadingDoc(true)
     try {
+      // Verificar sessão
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+      
+      if (sessionError || !session) {
+        throw new Error('Sessão não encontrada. Por favor, faça login novamente.')
+      }
+
       const fileExt = file.name.split('.').pop()
       const fileName = `${tipo}_${Date.now()}.${fileExt}`
       const filePath = `clientes/${fileName}`
 
-      const { error: uploadError } = await supabase.storage
+      // Log para debug
+      console.log('=== DEBUG UPLOAD (ADMIN) ===')
+      console.log('User ID:', session?.user?.id)
+      console.log('User ID Type:', typeof session?.user?.id)
+      console.log('File Path:', filePath)
+      console.log('File Name:', fileName)
+      console.log('File Size:', file.size)
+      console.log('File Type:', file.type)
+      console.log('Session User ID:', session?.user?.id)
+
+      const { data: uploadData, error: uploadError } = await supabase.storage
         .from('documentos')
         .upload(filePath, file)
 
-      if (uploadError) throw uploadError
+      if (uploadError) {
+        console.error('=== ERRO NO UPLOAD (ADMIN) ===')
+        console.error('Upload Error:', uploadError)
+        console.error('Error Message:', uploadError.message)
+        console.error('Error Status:', uploadError.statusCode)
+        console.error('Error Details:', uploadError)
+        throw uploadError
+      }
 
       const { data: { publicUrl } } = supabase.storage
         .from('documentos')
-        .getPublicUrl(filePath)
+        .getPublicUrl(uploadData?.path || filePath)
 
       setClienteForm(prev => ({ ...prev, [`${tipo}_url`]: publicUrl }))
       return publicUrl
@@ -1956,6 +2256,7 @@ const AdminDashboard = () => {
       cliente_id: venda.cliente_id || '',
       unidade: venda.unidade || '',
       bloco: venda.bloco || '',
+      andar: venda.andar || '',
       valor_venda: venda.valor_venda.toString(),
       tipo_corretor: venda.tipo_corretor,
       data_venda: venda.data_venda,
@@ -2384,10 +2685,92 @@ const AdminDashboard = () => {
   }
 
   const filteredVendas = vendas.filter(venda => {
-    const matchSearch = venda.corretor?.nome?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                       venda.descricao?.toLowerCase().includes(searchTerm.toLowerCase())
+    // Busca por texto
+    const matchSearch = !searchTerm || 
+      venda.corretor?.nome?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      venda.descricao?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      venda.nome_cliente?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      venda.unidade?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      venda.bloco?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      venda.empreendimento?.nome?.toLowerCase().includes(searchTerm.toLowerCase())
+    
+    // Filtro por tipo de corretor
     const matchTipo = filterTipo === 'todos' || venda.tipo_corretor === filterTipo
-    return matchSearch && matchTipo
+    
+    // Filtro por corretor
+    const matchCorretor = !filtrosVendas.corretor || venda.corretor_id === filtrosVendas.corretor
+    
+    // Filtro por empreendimento
+    const matchEmpreendimento = !filtrosVendas.empreendimento || venda.empreendimento_id === filtrosVendas.empreendimento
+    
+    // Filtro por status
+    const matchStatus = filtrosVendas.status === 'todos' || venda.status === filtrosVendas.status
+    
+    // Filtro por bloco
+    const matchBloco = !filtrosVendas.bloco || (venda.bloco && venda.bloco.toUpperCase() === filtrosVendas.bloco.toUpperCase())
+    
+    // Filtro por data
+    const matchData = (() => {
+      if (!filtrosVendas.dataInicio && !filtrosVendas.dataFim) return true
+      const dataVenda = new Date(venda.data_venda)
+      if (filtrosVendas.dataInicio && dataVenda < new Date(filtrosVendas.dataInicio)) return false
+      if (filtrosVendas.dataFim) {
+        const dataFim = new Date(filtrosVendas.dataFim)
+        dataFim.setHours(23, 59, 59, 999)
+        if (dataVenda > dataFim) return false
+      }
+      return true
+    })()
+    
+    // Filtro por valor
+    const matchValor = (() => {
+      const valorVenda = parseFloat(venda.valor_venda) || 0
+      if (filtrosVendas.valorMin && valorVenda < parseFloat(filtrosVendas.valorMin)) return false
+      if (filtrosVendas.valorMax && valorVenda > parseFloat(filtrosVendas.valorMax)) return false
+      return true
+    })()
+    
+    return matchSearch && matchTipo && matchCorretor && matchEmpreendimento && matchStatus && matchBloco && matchData && matchValor
+  })
+  
+  // Filtrar pagamentos
+  const filteredPagamentos = listaVendasComPagamentos.filter(grupo => {
+    // Filtro por corretor
+    const matchCorretor = !filtrosPagamentos.corretor || grupo.venda?.corretor_id === filtrosPagamentos.corretor
+    
+    // Filtro por empreendimento
+    const matchEmpreendimento = !filtrosPagamentos.empreendimento || grupo.venda?.empreendimento_id === filtrosPagamentos.empreendimento
+    
+    // Filtro por status (verifica se tem pagamentos com o status)
+    const matchStatus = filtrosPagamentos.status === 'todos' || 
+      grupo.pagamentos.some(p => p.status === filtrosPagamentos.status)
+    
+    // Filtro por tipo de pagamento
+    const matchTipo = filtrosPagamentos.tipo === 'todos' || 
+      grupo.pagamentos.some(p => p.tipo === filtrosPagamentos.tipo)
+    
+    // Filtro por data
+    const matchData = (() => {
+      if (!filtrosPagamentos.dataInicio && !filtrosPagamentos.dataFim) return true
+      return grupo.pagamentos.some(pag => {
+        const dataPag = new Date(pag.data_prevista)
+        if (filtrosPagamentos.dataInicio && dataPag < new Date(filtrosPagamentos.dataInicio)) return false
+        if (filtrosPagamentos.dataFim) {
+          const dataFim = new Date(filtrosPagamentos.dataFim)
+          dataFim.setHours(23, 59, 59, 999)
+          if (dataPag > dataFim) return false
+        }
+        return true
+      })
+    })()
+    
+    // Busca por venda
+    const matchBusca = !filtrosPagamentos.buscaVenda ||
+      grupo.venda?.corretor?.nome?.toLowerCase().includes(filtrosPagamentos.buscaVenda.toLowerCase()) ||
+      grupo.venda?.empreendimento?.nome?.toLowerCase().includes(filtrosPagamentos.buscaVenda.toLowerCase()) ||
+      grupo.venda?.nome_cliente?.toLowerCase().includes(filtrosPagamentos.buscaVenda.toLowerCase())
+    
+    return matchCorretor && matchEmpreendimento && matchStatus && matchTipo && matchData && matchBusca
   })
 
   // Quando seleciona um corretor na venda, atualiza o tipo automaticamente
@@ -2413,8 +2796,141 @@ const AdminDashboard = () => {
     })
   }
 
+
+  // Função para gerar dados do Ticker (métricas globais do admin)
+  const getTickerData = () => {
+    const hoje = new Date()
+    const inicioHoje = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate(), 0, 0, 0, 0)
+    const fimHoje = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate(), 23, 59, 59, 999)
+    
+    // Vendas hoje
+    const vendasHoje = vendas.filter(v => {
+      const dataVenda = new Date(v.data_venda)
+      return dataVenda >= inicioHoje && dataVenda <= fimHoje
+    })
+    const totalVendasHoje = vendasHoje.reduce((acc, v) => acc + (parseFloat(v.valor_venda) || 0), 0)
+    
+    // Vendas este mês
+    const vendasMes = vendas.filter(v => {
+      const dataVenda = new Date(v.data_venda)
+      return dataVenda.getMonth() === hoje.getMonth() && 
+             dataVenda.getFullYear() === hoje.getFullYear()
+    })
+    const totalVendasMes = vendasMes.reduce((acc, v) => acc + (parseFloat(v.valor_venda) || 0), 0)
+    
+    // Total em vendas
+    const totalVendas = vendas.reduce((acc, v) => acc + (parseFloat(v.valor_venda) || 0), 0)
+    
+    // Comissões pendentes (todas as vendas com status pendente)
+    const comissoesPendentes = vendas
+      .filter(v => v.status === 'pendente')
+      .reduce((acc, v) => acc + (parseFloat(v.comissao_total) || 0), 0)
+    
+    // Corretores ativos
+    const corretoresAtivos = corretores.filter(c => c.ativo !== false).length
+    
+    // Média por venda
+    const mediaPorVenda = vendas.length > 0 ? totalVendas / vendas.length : 0
+    
+    // Pagamentos hoje (pro-soluto)
+    const pagamentosHoje = pagamentos.filter(p => {
+      if (!p.data_pagamento) return false
+      const dataPagamento = new Date(p.data_pagamento)
+      return dataPagamento >= inicioHoje && dataPagamento <= fimHoje
+    })
+    const totalPagamentosHoje = pagamentosHoje.reduce((acc, p) => acc + (parseFloat(p.valor) || 0), 0)
+    
+    // Formatar valores
+    const formatTicker = (value) => {
+      if (value >= 1000000) {
+        return `R$ ${(value / 1000000).toFixed(1)}M`
+      } else if (value >= 1000) {
+        return `R$ ${(value / 1000).toFixed(0)}k`
+      }
+      return new Intl.NumberFormat('pt-BR', {
+        style: 'currency',
+        currency: 'BRL',
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0
+      }).format(value)
+    }
+
+    const tickerData = [
+      {
+        name: 'VENDAS HOJE',
+        value: formatTicker(totalVendasHoje),
+        change: vendasHoje.length > 0 ? `+${vendasHoje.length}` : '0',
+        type: vendasHoje.length > 0 ? 'positive' : 'neutral'
+      },
+      {
+        name: 'COMISSÕES PENDENTES',
+        value: formatTicker(comissoesPendentes),
+        change: '0%',
+        type: comissoesPendentes > 0 ? 'negative' : 'neutral'
+      },
+      {
+        name: 'TOTAL EM VENDAS',
+        value: formatTicker(totalVendas),
+        change: vendas.length > 0 ? `${vendas.length} vendas` : '0',
+        type: 'positive'
+      },
+      {
+        name: 'CORRETORES ATIVOS',
+        value: corretoresAtivos.toString(),
+        change: corretoresAtivos > 0 ? `+${corretoresAtivos}` : '0',
+        type: 'positive'
+      },
+      {
+        name: 'MÉDIA POR VENDA',
+        value: formatTicker(mediaPorVenda),
+        change: '0%',
+        type: 'positive'
+      },
+      {
+        name: 'PAGAMENTOS HOJE',
+        value: formatTicker(totalPagamentosHoje),
+        change: pagamentosHoje.length > 0 ? `+${pagamentosHoje.length}` : '0',
+        type: pagamentosHoje.length > 0 ? 'positive' : 'neutral'
+      }
+    ]
+
+    // Adicionar métricas opcionais se houver dados futuros
+    // Exemplo: Meta mensal, Leads novos (comentado para uso futuro)
+    // if (metaMensal) {
+    //   tickerData.push({
+    //     name: 'META MENSAL',
+    //     value: `${metaMensal}%`,
+    //     change: '+4%',
+    //     type: 'positive'
+    //   })
+    // }
+    // if (leadsNovos) {
+    //   tickerData.push({
+    //     name: 'LEADS NOVOS',
+    //     value: leadsNovos.toString(),
+    //     change: `+${leadsNovos}`,
+    //     type: 'positive'
+    //   })
+    // }
+
+    return tickerData
+  }
+
   return (
     <div className="dashboard-container">
+      {/* Barra de Carregamento Global */}
+      {(loading || authLoading) && (
+        <div className="global-loading-overlay">
+          <div className="global-loading-content">
+            <div className="loading-spinner-large"></div>
+            <p className="loading-text">Carregando dados...</p>
+            <div className="loading-progress-bar">
+              <div className="loading-progress-fill"></div>
+            </div>
+          </div>
+        </div>
+      )}
+      
       {/* Message Toast */}
       {message.text && (
         <div className={`toast-message ${message.type}`}>
@@ -2538,7 +3054,7 @@ const AdminDashboard = () => {
       {/* Main Content */}
       <main className={`main-content ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
         {/* Ticker */}
-        <Ticker />
+        <Ticker data={getTickerData()} />
         
         {/* Header */}
         <header className="main-header">
@@ -2624,35 +3140,156 @@ const AdminDashboard = () => {
         {/* Content */}
         {activeTab === 'dashboard' && (
           <div style={{ padding: '0', flex: 1, overflow: 'auto' }}>
-            <HomeDashboard showTicker={false} showHeader={false} />
+            <HomeDashboard 
+              showTicker={false} 
+              showHeader={false}
+              vendas={vendas}
+              corretores={corretores}
+              pagamentos={pagamentos}
+              empreendimentos={empreendimentos}
+            />
           </div>
         )}
         {activeTab === 'vendas' && (
           <div className="content-section">
-            <div className="section-header">
+            {/* Busca */}
+            <div className="filters-section">
               <div className="search-box">
                 <Search size={20} />
                 <input 
                   type="text" 
-                  placeholder="Buscar vendas..."
+                  placeholder="Buscar por corretor, cliente, unidade, empreendimento..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
               </div>
-              <div className="filter-group">
-                <Filter size={18} />
-                <select 
-                  value={filterTipo} 
-                  onChange={(e) => setFilterTipo(e.target.value)}
-                >
-                  <option value="todos">Todos</option>
-                  <option value="interno">Interno</option>
-                  <option value="externo">Externo</option>
-                </select>
+              
+              {/* Filtros em Grid */}
+              <div className="filters-grid">
+                <div className="filter-item">
+                  <label className="filter-label">
+                    <Filter size={16} />
+                    Tipo de Corretor
+                  </label>
+                  <select 
+                    value={filterTipo} 
+                    onChange={(e) => setFilterTipo(e.target.value)}
+                    className="filter-select"
+                  >
+                    <option value="todos">Todos</option>
+                    <option value="interno">Interno</option>
+                    <option value="externo">Externo</option>
+                  </select>
+                </div>
+                
+                <div className="filter-item">
+                  <label className="filter-label">Corretor</label>
+                  <select 
+                    value={filtrosVendas.corretor} 
+                    onChange={(e) => setFiltrosVendas({...filtrosVendas, corretor: e.target.value})}
+                    className="filter-select"
+                  >
+                    <option value="">Todos</option>
+                    {corretores.map(c => (
+                      <option key={c.id} value={c.id}>{c.nome}</option>
+                    ))}
+                  </select>
+                </div>
+                
+                <div className="filter-item">
+                  <label className="filter-label">Empreendimento</label>
+                  <select 
+                    value={filtrosVendas.empreendimento} 
+                    onChange={(e) => setFiltrosVendas({...filtrosVendas, empreendimento: e.target.value})}
+                    className="filter-select"
+                  >
+                    <option value="">Todos</option>
+                    {empreendimentos.map(e => (
+                      <option key={e.id} value={e.id}>{e.nome}</option>
+                    ))}
+                  </select>
+                </div>
+                
+                <div className="filter-item">
+                  <label className="filter-label">Status</label>
+                  <select 
+                    value={filtrosVendas.status} 
+                    onChange={(e) => setFiltrosVendas({...filtrosVendas, status: e.target.value})}
+                    className="filter-select"
+                  >
+                    <option value="todos">Todos</option>
+                    <option value="pendente">Pendente</option>
+                    <option value="pago">Pago</option>
+                    <option value="em_andamento">Em Andamento</option>
+                  </select>
+                </div>
+                
+                <div className="filter-item">
+                  <label className="filter-label">Bloco</label>
+                  <select 
+                    value={filtrosVendas.bloco} 
+                    onChange={(e) => setFiltrosVendas({...filtrosVendas, bloco: e.target.value})}
+                    className="filter-select"
+                  >
+                    <option value="">Todos</option>
+                    {(() => {
+                      // Coletar blocos únicos das vendas
+                      const blocosUnicos = [...new Set(vendas
+                        .filter(v => v.bloco && v.bloco.trim() !== '')
+                        .map(v => v.bloco.toUpperCase())
+                        .sort()
+                      )]
+                      return blocosUnicos.map(bloco => (
+                        <option key={bloco} value={bloco}>{bloco}</option>
+                      ))
+                    })()}
+                  </select>
+                </div>
+                
+                <div className="filter-item">
+                  <label className="filter-label">Data Início</label>
+                  <input 
+                    type="date"
+                    value={filtrosVendas.dataInicio}
+                    onChange={(e) => setFiltrosVendas({...filtrosVendas, dataInicio: e.target.value})}
+                    className="filter-input-date"
+                  />
+                </div>
+                
+                <div className="filter-item">
+                  <label className="filter-label">Data Fim</label>
+                  <input 
+                    type="date"
+                    value={filtrosVendas.dataFim}
+                    onChange={(e) => setFiltrosVendas({...filtrosVendas, dataFim: e.target.value})}
+                    className="filter-input-date"
+                  />
+                </div>
               </div>
+              
+              <button
+                className="btn-clear-filters"
+                onClick={() => {
+                  setFiltrosVendas({
+                    corretor: '',
+                    empreendimento: '',
+                    status: 'todos',
+                    bloco: '',
+                    dataInicio: '',
+                    dataFim: '',
+                    valorMin: '',
+                    valorMax: ''
+                  })
+                  setSearchTerm('')
+                  setFilterTipo('todos')
+                }}
+              >
+                <X size={16} />
+                Limpar Filtros
+              </button>
             </div>
 
-            <div className="table-container">
+                <div className="table-container">
               <table className="data-table">
                 <thead>
                   <tr>
@@ -2744,93 +3381,229 @@ const AdminDashboard = () => {
 
         {activeTab === 'corretores' && (
           <div className="content-section">
+            {/* Filtros de Corretores */}
+            <div className="filters-section">
+              <div className="search-box">
+                <Search size={20} />
+                <input 
+                  type="text" 
+                  placeholder="Buscar por nome, email, telefone..."
+                  value={filtrosCorretores.busca}
+                  onChange={(e) => setFiltrosCorretores({...filtrosCorretores, busca: e.target.value})}
+                />
+              </div>
+              
+              {/* Filtros em Grid */}
+              <div className="filters-grid">
+                <div className="filter-item">
+                  <label className="filter-label">
+                    <Filter size={16} />
+                    Tipo de Corretor
+                  </label>
+                  <select 
+                    value={filtrosCorretores.tipo} 
+                    onChange={(e) => setFiltrosCorretores({...filtrosCorretores, tipo: e.target.value})}
+                    className="filter-select"
+                  >
+                    <option value="todos">Todos</option>
+                    <option value="interno">Interno</option>
+                    <option value="externo">Externo</option>
+                  </select>
+                </div>
+                
+                <div className="filter-item">
+                  <label className="filter-label">Empreendimento</label>
+                  <select 
+                    value={filtrosCorretores.empreendimento} 
+                    onChange={(e) => setFiltrosCorretores({...filtrosCorretores, empreendimento: e.target.value})}
+                    className="filter-select"
+                  >
+                    <option value="">Todos</option>
+                    <option value="sem_vinculo">Sem Vínculo</option>
+                    {empreendimentos.map(e => (
+                      <option key={e.id} value={e.id}>{e.nome}</option>
+                    ))}
+                  </select>
+                </div>
+                
+                <div className="filter-item">
+                  <label className="filter-label">Tipo de Vínculo</label>
+                  <select 
+                    value={filtrosCorretores.autonomo} 
+                    onChange={(e) => setFiltrosCorretores({...filtrosCorretores, autonomo: e.target.value})}
+                    className="filter-select"
+                  >
+                    <option value="todos">Todos</option>
+                    <option value="sim">Autônomo</option>
+                    <option value="nao">Vinculado</option>
+                  </select>
+                </div>
+              </div>
+              
+              <button
+                className="btn-clear-filters"
+                onClick={() => {
+                  setFiltrosCorretores({
+                    busca: '',
+                    tipo: 'todos',
+                    empreendimento: '',
+                    autonomo: 'todos'
+                  })
+                }}
+              >
+                <X size={16} />
+                Limpar Filtros
+              </button>
+            </div>
+            
+            {/* Lista de Corretores */}
             {corretores.length === 0 ? (
               <div className="empty-state-box">
                 <Users size={48} />
                 <h3>Nenhum corretor cadastrado</h3>
                 <p>Clique em "Novo Corretor" para adicionar</p>
               </div>
-            ) : (
-              <div className="corretores-grid">
-                {corretores.map((corretor) => {
-                  const vendasCorretor = vendas.filter(v => v.corretor_id === corretor.id)
-                  const totalComissao = vendasCorretor.reduce((acc, v) => acc + v.comissao_corretor, 0)
-                  const totalVendas = vendasCorretor.reduce((acc, v) => acc + v.valor_venda, 0)
-                  const percentual = corretor.percentual_corretor || (corretor.tipo_corretor === 'interno' ? 2.5 : 4)
-                  
-                  return (
-                    <div key={corretor.id} className="corretor-card">
-                      <div className="corretor-header">
-                        <div className="corretor-avatar large">
-                          {corretor.nome?.charAt(0)}
-                        </div>
-                        <div className="corretor-info">
-                          <h3>{corretor.nome}</h3>
-                          <div className="corretor-badges">
-                            <span className={`badge ${corretor.tipo_corretor}`}>
-                              {corretor.tipo_corretor === 'interno' ? 'Interno' : 'Externo'}
-                            </span>
-                            <span className="badge percent">
-                              <Percent size={12} />
-                              {percentual}%
-                            </span>
+            ) : (() => {
+              // Filtrar corretores
+              const filteredCorretores = corretores.filter(corretor => {
+                // Busca por texto
+                const matchBusca = !filtrosCorretores.busca ||
+                  corretor.nome?.toLowerCase().includes(filtrosCorretores.busca.toLowerCase()) ||
+                  corretor.email?.toLowerCase().includes(filtrosCorretores.busca.toLowerCase()) ||
+                  corretor.telefone?.toLowerCase().includes(filtrosCorretores.busca.toLowerCase())
+                
+                // Filtro por tipo
+                const matchTipo = filtrosCorretores.tipo === 'todos' || corretor.tipo_corretor === filtrosCorretores.tipo
+                
+                // Filtro por empreendimento
+                const matchEmpreendimento = (() => {
+                  if (!filtrosCorretores.empreendimento) return true
+                  if (filtrosCorretores.empreendimento === 'sem_vinculo') {
+                    return !corretor.empreendimento_id
+                  }
+                  return corretor.empreendimento_id === filtrosCorretores.empreendimento
+                })()
+                
+                // Filtro por autônomo
+                const matchAutonomo = (() => {
+                  if (filtrosCorretores.autonomo === 'todos') return true
+                  const isAutonomo = !corretor.empreendimento_id && corretor.percentual_corretor
+                  if (filtrosCorretores.autonomo === 'sim') return isAutonomo
+                  if (filtrosCorretores.autonomo === 'nao') return !isAutonomo
+                  return true
+                })()
+                
+                return matchBusca && matchTipo && matchEmpreendimento && matchAutonomo
+              })
+              
+              return filteredCorretores.length === 0 ? (
+                <div className="empty-state-box">
+                  <Users size={48} />
+                  <h3>Nenhum corretor encontrado</h3>
+                  <p>Não há corretores que correspondam aos filtros selecionados</p>
+                </div>
+              ) : (
+                <div className="corretores-grid">
+                  {filteredCorretores.map((corretor) => {
+                    const vendasCorretor = vendas.filter(v => v.corretor_id === corretor.id)
+                    const totalComissao = vendasCorretor.reduce((acc, v) => acc + (parseFloat(v.comissao_corretor) || 0), 0)
+                    const totalVendas = vendasCorretor.reduce((acc, v) => acc + (parseFloat(v.valor_venda) || 0), 0)
+                    const percentual = corretor.percentual_corretor || (corretor.tipo_corretor === 'interno' ? 2.5 : 4)
+                    const isAutonomo = !corretor.empreendimento_id && corretor.percentual_corretor
+                    
+                    return (
+                      <div key={corretor.id} className="corretor-card">
+                        <div className="corretor-header">
+                          <div className="corretor-avatar large">
+                            {corretor.nome?.charAt(0)}
                           </div>
-                          {(corretor.empreendimento?.nome || corretor.cargo?.nome_cargo) && (
-                            <div className="corretor-vinculo">
-                              {corretor.empreendimento?.nome && (
-                                <span className="vinculo-item">
-                                  <Building size={12} />
-                                  {corretor.empreendimento.nome}
+                          <div className="corretor-info">
+                            <h3>{corretor.nome}</h3>
+                            <div className="corretor-badges">
+                              <span className={`badge ${corretor.tipo_corretor}`}>
+                                {corretor.tipo_corretor === 'interno' ? 'Interno' : 'Externo'}
+                              </span>
+                              {isAutonomo && (
+                                <span className="badge autonomo">
+                                  Autônomo
                                 </span>
                               )}
-                              {corretor.cargo?.nome_cargo && (
-                                <span className="vinculo-item cargo">
-                                  {corretor.cargo.nome_cargo}
-                                </span>
-                              )}
+                              <span className="badge percent">
+                                <Percent size={12} />
+                                {percentual}%
+                              </span>
                             </div>
+                            {(corretor.empreendimento?.nome || corretor.cargo?.nome_cargo) && (
+                              <div className="corretor-vinculo">
+                                {corretor.empreendimento?.nome && (
+                                  <span className="vinculo-item">
+                                    <Building size={12} />
+                                    {corretor.empreendimento.nome}
+                                  </span>
+                                )}
+                                {corretor.cargo?.nome_cargo && (
+                                  <span className="vinculo-item cargo">
+                                    {corretor.cargo.nome_cargo}
+                                    {corretor.cargo.percentual && ` (${corretor.cargo.percentual}%)`}
+                                  </span>
+                                )}
+                              </div>
+                            )}
+                            {isAutonomo && (
+                              <div className="corretor-vinculo">
+                                <span className="vinculo-item">
+                                  Comissão Personalizada: {percentual}%
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                          <div className="corretor-actions">
+                            <button 
+                              className="action-btn edit small"
+                              onClick={() => openEditCorretor(corretor)}
+                              title="Editar corretor"
+                            >
+                              <Edit2 size={14} />
+                            </button>
+                            <button 
+                              className="action-btn delete small"
+                              onClick={() => handleDeleteCorretor(corretor)}
+                              title="Excluir corretor"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
+                        </div>
+                        <div className="corretor-email">
+                          <Mail size={14} />
+                          <span>{corretor.email}</span>
+                          {corretor.telefone && (
+                            <>
+                              <span style={{ margin: '0 8px' }}>•</span>
+                              <span>{corretor.telefone}</span>
+                            </>
                           )}
                         </div>
-                        <div className="corretor-actions">
-                          <button 
-                            className="action-btn edit small"
-                            onClick={() => openEditCorretor(corretor)}
-                            title="Editar corretor"
-                          >
-                            <Edit2 size={14} />
-                          </button>
-                          <button 
-                            className="action-btn delete small"
-                            onClick={() => handleDeleteCorretor(corretor)}
-                            title="Excluir corretor"
-                          >
-                            <Trash2 size={14} />
-                          </button>
+                        <div className="corretor-stats">
+                          <div className="corretor-stat">
+                            <span className="label">Total em Vendas</span>
+                            <span className="value">{formatCurrency(totalVendas)}</span>
+                          </div>
+                          <div className="corretor-stat">
+                            <span className="label">Comissão a Receber</span>
+                            <span className="value gold">{formatCurrency(totalComissao)}</span>
+                          </div>
+                          <div className="corretor-stat">
+                            <span className="label">Nº de Vendas</span>
+                            <span className="value">{vendasCorretor.length}</span>
+                          </div>
                         </div>
                       </div>
-                      <div className="corretor-email">
-                        <Mail size={14} />
-                        <span>{corretor.email}</span>
-                      </div>
-                      <div className="corretor-stats">
-                        <div className="corretor-stat">
-                          <span className="label">Total em Vendas</span>
-                          <span className="value">{formatCurrency(totalVendas)}</span>
-                        </div>
-                        <div className="corretor-stat">
-                          <span className="label">Comissão a Receber</span>
-                          <span className="value gold">{formatCurrency(totalComissao)}</span>
-                        </div>
-                        <div className="corretor-stat">
-                          <span className="label">Nº de Vendas</span>
-                          <span className="value">{vendasCorretor.length}</span>
-                        </div>
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            )}
+                    )
+                  })}
+                </div>
+              )
+            })()}
           </div>
         )}
 
@@ -3059,6 +3832,116 @@ const AdminDashboard = () => {
 
         {activeTab === 'pagamentos' && (
           <div className="content-section">
+            {/* Filtros de Pagamentos */}
+            <div className="filters-section">
+              <div className="search-box">
+                <Search size={20} />
+                <input 
+                  type="text" 
+                  placeholder="Buscar por corretor, empreendimento, cliente..."
+                  value={filtrosPagamentos.buscaVenda}
+                  onChange={(e) => setFiltrosPagamentos({...filtrosPagamentos, buscaVenda: e.target.value})}
+                />
+              </div>
+              
+              {/* Filtros em Grid */}
+              <div className="filters-grid">
+                <div className="filter-item">
+                  <label className="filter-label">Status</label>
+                  <select 
+                    value={filtrosPagamentos.status} 
+                    onChange={(e) => setFiltrosPagamentos({...filtrosPagamentos, status: e.target.value})}
+                    className="filter-select"
+                  >
+                    <option value="todos">Todos</option>
+                    <option value="pendente">Pendente</option>
+                    <option value="pago">Pago</option>
+                  </select>
+                </div>
+                
+                <div className="filter-item">
+                  <label className="filter-label">Tipo de Pagamento</label>
+                  <select 
+                    value={filtrosPagamentos.tipo} 
+                    onChange={(e) => setFiltrosPagamentos({...filtrosPagamentos, tipo: e.target.value})}
+                    className="filter-select"
+                  >
+                    <option value="todos">Todos</option>
+                    <option value="sinal">Sinal</option>
+                    <option value="entrada">Entrada</option>
+                    <option value="parcela_entrada">Parcela Entrada</option>
+                    <option value="balao">Balão</option>
+                  </select>
+                </div>
+                
+                <div className="filter-item">
+                  <label className="filter-label">Corretor</label>
+                  <select 
+                    value={filtrosPagamentos.corretor} 
+                    onChange={(e) => setFiltrosPagamentos({...filtrosPagamentos, corretor: e.target.value})}
+                    className="filter-select"
+                  >
+                    <option value="">Todos</option>
+                    {corretores.map(c => (
+                      <option key={c.id} value={c.id}>{c.nome}</option>
+                    ))}
+                  </select>
+                </div>
+                
+                <div className="filter-item">
+                  <label className="filter-label">Empreendimento</label>
+                  <select 
+                    value={filtrosPagamentos.empreendimento} 
+                    onChange={(e) => setFiltrosPagamentos({...filtrosPagamentos, empreendimento: e.target.value})}
+                    className="filter-select"
+                  >
+                    <option value="">Todos</option>
+                    {empreendimentos.map(e => (
+                      <option key={e.id} value={e.id}>{e.nome}</option>
+                    ))}
+                  </select>
+                </div>
+                
+                <div className="filter-item">
+                  <label className="filter-label">Data Início</label>
+                  <input 
+                    type="date"
+                    value={filtrosPagamentos.dataInicio}
+                    onChange={(e) => setFiltrosPagamentos({...filtrosPagamentos, dataInicio: e.target.value})}
+                    className="filter-input-date"
+                  />
+                </div>
+                
+                <div className="filter-item">
+                  <label className="filter-label">Data Fim</label>
+                  <input 
+                    type="date"
+                    value={filtrosPagamentos.dataFim}
+                    onChange={(e) => setFiltrosPagamentos({...filtrosPagamentos, dataFim: e.target.value})}
+                    className="filter-input-date"
+                  />
+                </div>
+              </div>
+              
+              <button
+                className="btn-clear-filters"
+                onClick={() => {
+                  setFiltrosPagamentos({
+                    status: 'todos',
+                    corretor: '',
+                    empreendimento: '',
+                    tipo: 'todos',
+                    dataInicio: '',
+                    dataFim: '',
+                    buscaVenda: ''
+                  })
+                }}
+              >
+                <X size={16} />
+                Limpar Filtros
+              </button>
+            </div>
+            
             {/* Aviso de vendas sem pagamentos */}
             {vendasSemPagamentos.length > 0 && (
               <div className="alert-box warning" style={{
@@ -3123,10 +4006,15 @@ const AdminDashboard = () => {
                     <span className="resumo-label">Comissão Pendente</span>
                     <span className="resumo-valor pendente">
                       {formatCurrency(listaVendasComPagamentos.reduce((acc, grupo) => {
-                        const comissaoTotal = parseFloat(grupo.venda?.comissao_total) || 0
-                        const totalParcelas = grupo.totalValor
-                        const parcelasPendentes = grupo.pagamentos.filter(p => p.status === 'pendente').reduce((a, p) => a + (parseFloat(p.valor) || 0), 0)
-                        return totalParcelas > 0 ? acc + (comissaoTotal * parcelasPendentes / totalParcelas) : acc
+                        // Calcular comissão pendente considerando valores já pagos
+                        return acc + grupo.pagamentos.reduce((sum, pag) => {
+                          if (pag.status === 'pendente') {
+                            const comissaoParcela = parseFloat(pag.comissao_gerada) || 0
+                            const valorJaPago = parseFloat(pag.valor_ja_pago) || 0
+                            return sum + (comissaoParcela - valorJaPago)
+                          }
+                          return sum
+                        }, 0)
                       }, 0))}
                     </span>
                   </div>
@@ -3153,7 +4041,14 @@ const AdminDashboard = () => {
 
                 {/* Vendas Agrupadas */}
                 <div className="vendas-pagamentos-lista">
-                  {listaVendasComPagamentos.map((grupo) => (
+                  {filteredPagamentos.length === 0 ? (
+                    <div className="empty-state-box">
+                      <CreditCard size={48} />
+                      <h3>Nenhum pagamento encontrado</h3>
+                      <p>Não há pagamentos que correspondam aos filtros selecionados</p>
+                    </div>
+                  ) : (
+                    filteredPagamentos.map((grupo) => (
                     <div key={grupo.venda_id} className="venda-pagamento-card">
                       {/* Header da Venda - Clicável */}
                       <div 
@@ -3196,10 +4091,15 @@ const AdminDashboard = () => {
                             <span className="valor-label">Comissão Pendente</span>
                             <span className="valor-number pendente">{formatCurrency(
                               (() => {
-                                const comissaoTotal = parseFloat(grupo.venda?.comissao_total) || 0
-                                const totalParcelas = grupo.totalValor
-                                const parcelasPendentes = grupo.pagamentos.filter(p => p.status === 'pendente').reduce((a, p) => a + (parseFloat(p.valor) || 0), 0)
-                                return totalParcelas > 0 ? (comissaoTotal * parcelasPendentes / totalParcelas) : 0
+                                // Calcular comissão pendente considerando valores já pagos
+                                return grupo.pagamentos.reduce((sum, pag) => {
+                                  if (pag.status === 'pendente') {
+                                    const comissaoParcela = parseFloat(pag.comissao_gerada) || 0
+                                    const valorJaPago = parseFloat(pag.valor_ja_pago) || 0
+                                    return sum + (comissaoParcela - valorJaPago)
+                                  }
+                                  return sum
+                                }, 0)
                               })()
                             )}</span>
                           </div>
@@ -3246,7 +4146,7 @@ const AdminDashboard = () => {
                                   {pag.status !== 'pago' && (
                                     <button 
                                       className="btn-small-confirm"
-                                      onClick={(e) => { e.stopPropagation(); confirmarPagamento(pag.id); }}
+                                      onClick={(e) => { e.stopPropagation(); confirmarPagamento(pag); }}
                                     >
                                       Confirmar
                                     </button>
@@ -3278,7 +4178,8 @@ const AdminDashboard = () => {
                         </div>
                       )}
                     </div>
-                  ))}
+                    ))
+                  )}
                 </div>
 
                 {/* Modal de Detalhes do Pagamento */}
@@ -3361,6 +4262,93 @@ const AdminDashboard = () => {
                               </tr>
                             </tfoot>
                           </table>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Modal de Confirmação de Pagamento */}
+                {showModalConfirmarPagamento && pagamentoParaConfirmar && (
+                  <div className="modal-overlay" onClick={() => setShowModalConfirmarPagamento(false)}>
+                    <div className="modal" onClick={e => e.stopPropagation()}>
+                      <div className="modal-header">
+                        <h2>Confirmar Pagamento</h2>
+                        <button className="close-btn" onClick={() => setShowModalConfirmarPagamento(false)}>
+                          <X size={24} />
+                        </button>
+                      </div>
+                      <div className="modal-body">
+                        {/* Informações do Pagamento */}
+                        <div className="form-section">
+                          <h3>Informações da Parcela</h3>
+                          <div className="info-row">
+                            <span className="label">Tipo:</span>
+                            <span className="value">
+                              {pagamentoParaConfirmar.tipo === 'sinal' && 'Sinal'}
+                              {pagamentoParaConfirmar.tipo === 'entrada' && 'Entrada'}
+                              {pagamentoParaConfirmar.tipo === 'parcela_entrada' && `Parcela de Entrada ${pagamentoParaConfirmar.numero_parcela}`}
+                              {pagamentoParaConfirmar.tipo === 'balao' && (pagamentoParaConfirmar.numero_parcela ? `Balão ${pagamentoParaConfirmar.numero_parcela}` : 'Balão')}
+                            </span>
+                          </div>
+                          <div className="info-row">
+                            <span className="label">Valor da Parcela:</span>
+                            <span className="value">{formatCurrency(pagamentoParaConfirmar.valor)}</span>
+                          </div>
+                        </div>
+
+                        {/* Comissão que tem que ser paga */}
+                        <div className="form-section">
+                          <div className="info-row highlight">
+                            <span className="label">Comissão que tem que ser paga:</span>
+                            <span className="value highlight">{formatCurrency(pagamentoParaConfirmar.comissao_gerada || 0)}</span>
+                          </div>
+                        </div>
+
+                        {/* Valor a Personalizar */}
+                        <div className="form-section">
+                          <label>
+                            <span>Valor a Personalizar (opcional)</span>
+                            <input
+                              type="number"
+                              step="0.01"
+                              min="0"
+                              placeholder="Deixe vazio para usar o valor padrão"
+                              value={formConfirmarPagamento.valorPersonalizado}
+                              onChange={(e) => setFormConfirmarPagamento({...formConfirmarPagamento, valorPersonalizado: e.target.value})}
+                            />
+                            <small>Se preenchido, este valor será usado ao invés do valor padrão da comissão</small>
+                          </label>
+                        </div>
+
+                        {/* Resumo */}
+                        <div className="form-section summary">
+                          <h3>Resumo</h3>
+                          <div className="info-row">
+                            <span className="label">Valor da Comissão a Confirmar:</span>
+                            <span className="value highlight">
+                              {formatCurrency(
+                                formConfirmarPagamento.valorPersonalizado
+                                  ? parseFloat(formConfirmarPagamento.valorPersonalizado) || 0
+                                  : (pagamentoParaConfirmar.comissao_gerada || 0)
+                              )}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="modal-actions">
+                          <button
+                            className="btn-secondary"
+                            onClick={() => setShowModalConfirmarPagamento(false)}
+                          >
+                            Cancelar
+                          </button>
+                          <button
+                            className="btn-primary"
+                            onClick={processarConfirmarPagamento}
+                          >
+                            Confirmar Pagamento
+                          </button>
                         </div>
                       </div>
                     </div>
@@ -3663,7 +4651,11 @@ const AdminDashboard = () => {
                       onChange={(e) => handleCorretorChange(e.target.value)}
                     >
                       <option value="">Selecione</option>
-                      {corretores.map((c) => {
+                      {[...corretores].sort((a, b) => {
+                        const nomeA = (a.nome || '').toLowerCase()
+                        const nomeB = (b.nome || '').toLowerCase()
+                        return nomeA.localeCompare(nomeB, 'pt-BR')
+                      }).map((c) => {
                         const isAutonomo = !c.empreendimento_id && c.percentual_corretor
                         const percentual = c.percentual_corretor || (c.tipo_corretor === 'interno' ? 2.5 : 4)
                         return (
@@ -3775,6 +4767,27 @@ const AdminDashboard = () => {
                         }}
                       />
                     </div>
+                    <div className="form-group">
+                      <label>Andar</label>
+                      <input
+                        type="text"
+                        placeholder="Ex: 7 ou 7°Pav"
+                        value={vendaForm.andar}
+                        onChange={(e) => {
+                          setVendaForm({...vendaForm, andar: e.target.value})
+                        }}
+                        onBlur={(e) => {
+                          // Ao sair do campo, se digitar apenas números, formatar automaticamente
+                          let val = e.target.value.trim()
+                          if (val && /^\d+$/.test(val)) {
+                            val = `${val}°Pav`
+                            setVendaForm({...vendaForm, andar: val})
+                          }
+                        }}
+                      />
+                    </div>
+                  </div>
+                  <div className="form-row">
                     <div className="form-group">
                       <label>Descrição (opcional)</label>
                       <input
@@ -5112,6 +6125,7 @@ const AdminDashboard = () => {
           </div>
         </div>
       )}
+
     </div>
   )
 }
