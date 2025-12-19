@@ -103,10 +103,15 @@ const ClienteDashboard = () => {
           let corretoresMap = {}
           
           if (empreendimentoIds.length > 0) {
-            const { data: empData } = await supabase
+            const { data: empData, error: empError } = await supabase
               .from('empreendimentos')
-              .select('id, nome, endereco')
+              .select('id, nome')
               .in('id', empreendimentoIds)
+            
+            if (empError) {
+              console.error('Erro ao buscar empreendimentos:', empError)
+            }
+            
             if (empData) {
               empreendimentosMap = empData.reduce((acc, emp) => {
                 acc[emp.id] = emp
@@ -129,11 +134,22 @@ const ClienteDashboard = () => {
           }
           
           // Adicionar dados relacionados às compras
-          const comprasComRelacoes = comprasData.map(compra => ({
-            ...compra,
-            empreendimentos: empreendimentosMap[compra.empreendimento_id] || null,
-            corretores: corretoresMap[compra.corretor_id] || null
-          }))
+          const comprasComRelacoes = comprasData.map(compra => {
+            // Buscar empreendimento - tentar com ID como string e como UUID
+            const empreendimentoId = compra.empreendimento_id
+            const empreendimento = empreendimentoId 
+              ? (empreendimentosMap[empreendimentoId] || 
+                 empreendimentosMap[String(empreendimentoId)] ||
+                 null)
+              : null
+            
+            return {
+              ...compra,
+              empreendimentos: empreendimento,
+              empreendimento: empreendimento, // Também adicionar no singular para compatibilidade
+              corretores: corretoresMap[compra.corretor_id] || null
+            }
+          })
           
           setCompras(comprasComRelacoes)
         } else {
@@ -177,12 +193,8 @@ const ClienteDashboard = () => {
   // Dados dinâmicos para o Ticker
   const getTickerData = () => {
     const totalCompras = compras.reduce((acc, c) => acc + (parseFloat(c.valor_venda) || 0), 0)
-    const comprasHoje = compras.filter(c => {
-      const dataVenda = new Date(c.data_venda)
-      const hoje = new Date()
-      return dataVenda.toDateString() === hoje.toDateString()
-    })
-    const totalComprasHoje = comprasHoje.reduce((acc, c) => acc + (parseFloat(c.valor_venda) || 0), 0)
+    const comprasPagas = compras.filter(c => c.status === 'pago')
+    const totalJaPago = comprasPagas.reduce((acc, c) => acc + (parseFloat(c.valor_venda) || 0), 0)
     const comprasMes = compras.filter(c => {
       const dataVenda = new Date(c.data_venda)
       const hoje = new Date()
@@ -201,10 +213,10 @@ const ClienteDashboard = () => {
 
     return [
       {
-        name: 'COMPRAS HOJE',
-        value: formatTicker(totalComprasHoje),
-        change: comprasHoje.length > 0 ? `+${comprasHoje.length}` : '0',
-        type: comprasHoje.length > 0 ? 'positive' : 'neutral'
+        name: 'TOTAL JÁ PAGO',
+        value: formatTicker(totalJaPago),
+        change: comprasPagas.length > 0 ? `${comprasPagas.length} compras` : '0',
+        type: comprasPagas.length > 0 ? 'positive' : 'neutral'
       },
       {
         name: 'TOTAL EM COMPRAS',
@@ -565,28 +577,18 @@ const ClienteDashboard = () => {
                       
                       <div className="compra-details">
                         <div className="detail-item">
-                          <Calendar size={16} />
+                          <Calendar size={18} />
                           <div>
-                            <span className="detail-label">Data da Compra</span>
+                            <span className="detail-label">DATA DA COMPRA</span>
                             <span className="detail-value">{formatDate(compra.data_venda)}</span>
                           </div>
                         </div>
                         
-                        {compra.empreendimentos && (
-                          <div className="detail-item">
-                            <Building size={16} />
-                            <div>
-                              <span className="detail-label">Empreendimento</span>
-                              <span className="detail-value">{compra.empreendimentos.nome}</span>
-                            </div>
-                          </div>
-                        )}
-                        
                         {compra.corretores && (
                           <div className="detail-item">
-                            <UserIcon size={16} />
+                            <UserIcon size={18} />
                             <div>
-                              <span className="detail-label">Corretor</span>
+                              <span className="detail-label">CORRETOR</span>
                               <span className="detail-value">{compra.corretores.nome}</span>
                             </div>
                           </div>
@@ -594,11 +596,23 @@ const ClienteDashboard = () => {
                         
                         {compra.unidade && (
                           <div className="detail-item">
-                            <MapPin size={16} />
+                            <MapPin size={18} />
                             <div>
-                              <span className="detail-label">Unidade</span>
+                              <span className="detail-label">UNIDADE</span>
                               <span className="detail-value">
-                                {compra.bloco ? `${compra.bloco} - ` : ''}{compra.unidade}
+                                {compra.bloco ? `${compra.bloco} - ` : ''}{compra.unidade}{compra.andar ? ` | ${compra.andar}` : ''}
+                              </span>
+                            </div>
+                          </div>
+                        )}
+                        
+                        {(compra.empreendimentos || compra.empreendimento) && (
+                          <div className="detail-item">
+                            <Building size={18} />
+                            <div>
+                              <span className="detail-label">EMPREENDIMENTO</span>
+                              <span className="detail-value">
+                                {compra.empreendimentos?.nome || compra.empreendimento?.nome || '-'}
                               </span>
                             </div>
                           </div>
@@ -932,7 +946,7 @@ const ClienteDashboard = () => {
               <div className="perfil-card-cliente">
                 <div className="perfil-header-cliente">
                   <div className="avatar-large">
-                    {cliente.nome_completo?.charAt(0) || 'C'}
+                    {cliente.nome_completo?.charAt(0).toUpperCase() || 'C'}
                   </div>
                   <div className="perfil-info-header">
                     <h3>{cliente.nome_completo}</h3>
@@ -941,70 +955,74 @@ const ClienteDashboard = () => {
                 </div>
 
                 <div className="perfil-details-grid">
-                  <div className="detail-row">
-                    <span className="detail-label">CPF</span>
-                    <span className="detail-value">{cliente.cpf || '-'}</span>
+                  <div className="perfil-detail-card">
+                    <span className="perfil-detail-label">CPF</span>
+                    <span className="perfil-detail-value">{cliente.cpf || '-'}</span>
                   </div>
                   
-                  <div className="detail-row">
-                    <span className="detail-label">RG</span>
-                    <span className="detail-value">{cliente.rg || '-'}</span>
+                  <div className="perfil-detail-card">
+                    <span className="perfil-detail-label">RG</span>
+                    <span className="perfil-detail-value">{cliente.rg || '-'}</span>
                   </div>
                   
-                  <div className="detail-row">
-                    <span className="detail-label">Data de Nascimento</span>
-                    <span className="detail-value">{formatDate(cliente.data_nascimento)}</span>
+                  <div className="perfil-detail-card">
+                    <span className="perfil-detail-label">DATA DE NASCIMENTO</span>
+                    <span className="perfil-detail-value">{formatDate(cliente.data_nascimento) || '-'}</span>
                   </div>
                   
-                  <div className="detail-row">
-                    <span className="detail-label">Email</span>
-                    <span className="detail-value">{cliente.email || '-'}</span>
+                  <div className="perfil-detail-card">
+                    <span className="perfil-detail-label">EMAIL</span>
+                    <span className="perfil-detail-value">{cliente.email || '-'}</span>
                   </div>
                   
-                  <div className="detail-row">
-                    <span className="detail-label">Telefone</span>
-                    <span className="detail-value">{cliente.telefone || '-'}</span>
+                  <div className="perfil-detail-card">
+                    <span className="perfil-detail-label">TELEFONE</span>
+                    <span className="perfil-detail-value">{cliente.telefone || '-'}</span>
                   </div>
                   
-                  <div className="detail-row">
-                    <span className="detail-label">Endereço</span>
-                    <span className="detail-value">{cliente.endereco || '-'}</span>
+                  <div className="perfil-detail-card">
+                    <span className="perfil-detail-label">ENDEREÇO</span>
+                    <span className="perfil-detail-value">{cliente.endereco || '-'}</span>
                   </div>
                   
                   {cliente.cep && (
-                    <div className="detail-row">
-                      <span className="detail-label">CEP</span>
-                      <span className="detail-value">{cliente.cep}</span>
+                    <div className="perfil-detail-card">
+                      <span className="perfil-detail-label">CEP</span>
+                      <span className="perfil-detail-value">{cliente.cep}</span>
                     </div>
                   )}
                   
-                  <div className="detail-row">
-                    <span className="detail-label">Profissão</span>
-                    <span className="detail-value">{cliente.profissao || '-'}</span>
+                  <div className="perfil-detail-card">
+                    <span className="perfil-detail-label">PROFISSÃO</span>
+                    <span className="perfil-detail-value">{cliente.profissao || '-'}</span>
                   </div>
                   
-                  <div className="detail-row">
-                    <span className="detail-label">Empresa</span>
-                    <span className="detail-value">{cliente.empresa_trabalho || '-'}</span>
+                  <div className="perfil-detail-card">
+                    <span className="perfil-detail-label">EMPRESA</span>
+                    <span className="perfil-detail-value">{cliente.empresa_trabalho || '-'}</span>
                   </div>
                   
-                  <div className="detail-row">
-                    <span className="detail-label">Renda Mensal</span>
-                    <span className="detail-value">{formatCurrency(cliente.renda_mensal)}</span>
+                  <div className="perfil-detail-card highlight">
+                    <span className="perfil-detail-label">RENDA MENSAL</span>
+                    <span className="perfil-detail-value">{formatCurrency(cliente.renda_mensal)}</span>
                   </div>
                 </div>
 
-                {cliente.tem_complemento_renda && (
-                  <div className="complemento-renda-section">
-                    <h4>Complemento de Renda</h4>
-                    <p>Você possui complementadores de renda cadastrados</p>
-                  </div>
-                )}
-
-                {cliente.possui_3_anos_fgts && (
-                  <div className="fgts-info">
-                    <CheckCircle size={20} />
-                    <span>Possui 3 anos de FGTS</span>
+                {(cliente.tem_complemento_renda || cliente.possui_3_anos_fgts) && (
+                  <div className="perfil-badges-section">
+                    {cliente.possui_3_anos_fgts && (
+                      <div className="perfil-badge success">
+                        <CheckCircle size={18} />
+                        <span>Possui 3 anos de FGTS</span>
+                      </div>
+                    )}
+                    
+                    {cliente.tem_complemento_renda && (
+                      <div className="perfil-badge info">
+                        <UserIcon size={18} />
+                        <span>Complemento de Renda Cadastrado</span>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -1017,4 +1035,5 @@ const ClienteDashboard = () => {
 }
 
 export default ClienteDashboard
+
 
