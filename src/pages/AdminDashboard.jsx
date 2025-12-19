@@ -182,7 +182,7 @@ const AdminDashboard = () => {
 
   const listaVendasComPagamentos = Object.values(pagamentosAgrupados)
   
-  // DEBUG: Verificar quantas vendas aparecem na lista
+  /* DEBUG: Verificar quantas vendas aparecem na lista
   console.log('🔍 DEBUG listaVendasComPagamentos:', {
     totalVendas: vendas.length,
     totalPagamentos: pagamentos.length,
@@ -191,7 +191,7 @@ const AdminDashboard = () => {
       const temPagamento = pagamentos.some(p => String(p.venda_id) === String(v.id))
       return !temPagamento
     }).length
-  })
+  })*/
 
   // Formulário de empreendimento
   const [empreendimentoForm, setEmpreendimentoForm] = useState({
@@ -558,10 +558,10 @@ const AdminDashboard = () => {
         }
       }
       
-      console.log('Pagamentos do banco:', pagamentosData.length, 'registros')
+     // console.log('Pagamentos do banco:', pagamentosData.length, 'registros')
       
       // DEBUG: Verificar estrutura dos dados
-      console.log('🔍 DEBUG fetchData:', {
+      /*console.log('🔍 DEBUG fetchData:', {
         totalVendas: vendasData?.length || 0,
         totalPagamentos: pagamentosData?.length || 0,
         vendasComProSoluto: (vendasData || []).filter(v => {
@@ -579,7 +579,7 @@ const AdminDashboard = () => {
         tipoIdVenda: vendasData?.[0]?.id ? typeof vendasData[0].id : 'N/A',
         tipoIdPagamento: pagamentosData?.[0]?.venda_id ? typeof pagamentosData[0].venda_id : 'N/A'
       })
-
+*/
       // Associar cargos aos empreendimentos manualmente
       const empreendimentosComCargos = (empreendimentosData || []).map(emp => ({
         ...emp,
@@ -672,20 +672,20 @@ const AdminDashboard = () => {
       setPagamentos(pagamentosComRelacionamentos || [])
       setClientes(clientesComComplementadores || [])
       
-      console.log('✅ Dados carregados com sucesso:', {
+      /*console.log('✅ Dados carregados com sucesso:', {
         corretores: corretoresComRelacionamentos?.length || 0,
         vendas: vendasComRelacionamentos?.length || 0,
         empreendimentos: empreendimentosComCargos?.length || 0,
         pagamentos: pagamentosComRelacionamentos?.length || 0,
         clientes: clientesComComplementadores?.length || 0
-      })
+      })*/
       
     } catch (error) {
       console.error('❌ Erro crítico ao carregar dados:', error)
       setMessage({ type: 'error', text: `Erro ao carregar dados: ${error.message || 'Erro desconhecido'}. Tente recarregar a página.` })
     } finally {
       setLoading(false)
-      console.log('🏁 fetchData finalizado')
+     // console.log('🏁 fetchData finalizado')
     }
   }
 
@@ -859,7 +859,7 @@ const AdminDashboard = () => {
     // Calcular comissão do corretor
     const comissaoCorretor = calcularComissaoCorretor(comissoesDinamicas, vendaForm.corretor_id, valorVenda)
     
-    console.log('Cálculo venda:', {
+    /*console.log('Cálculo venda:', {
       valorVenda,
       valorSinal,
       valorEntradaTotal,
@@ -873,7 +873,7 @@ const AdminDashboard = () => {
       parcelouEntrada: vendaForm.parcelou_entrada,
       teveBalao: vendaForm.teve_balao
     })
-
+*/
     const vendaData = {
       corretor_id: vendaForm.corretor_id,
       empreendimento_id: isCorretorAutonomo ? null : (vendaForm.empreendimento_id || null),
@@ -1159,10 +1159,10 @@ const AdminDashboard = () => {
         if (pagError) {
           console.error('Erro ao criar pagamentos:', pagError)
         } else {
-          console.log('Pagamentos criados:', pagamentos.length)
+         // console.log('Pagamentos criados:', pagamentos.length)
         }
       } else {
-        console.log('Nenhum pagamento para criar. Pro-soluto:', valorProSoluto)
+       // console.log('Nenhum pagamento para criar. Pro-soluto:', valorProSoluto)
       }
     }
 
@@ -1515,7 +1515,7 @@ const AdminDashboard = () => {
   })
 
   // DEBUG: Adicionar log detalhado para investigar
-  console.log('🔍 DEBUG vendasSemPagamentos:', {
+  /*console.log('🔍 DEBUG vendasSemPagamentos:', {
     totalVendas: vendas.length,
     vendasComProSoluto: vendas.filter(v => {
       const valorProSoluto = parseFloat(v.valor_pro_soluto) || 0
@@ -1538,7 +1538,7 @@ const AdminDashboard = () => {
       tipo: typeof p.venda_id 
     }))
   })
-
+*/
   // Gerar pagamentos para uma venda específica
   const gerarPagamentosVenda = async (venda) => {
     setSaving(true)
@@ -1887,19 +1887,43 @@ const AdminDashboard = () => {
   const uploadDocumentoCliente = async (file, tipo) => {
     setUploadingDoc(true)
     try {
+      // Verificar sessão
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+      
+      if (sessionError || !session) {
+        throw new Error('Sessão não encontrada. Por favor, faça login novamente.')
+      }
+
       const fileExt = file.name.split('.').pop()
       const fileName = `${tipo}_${Date.now()}.${fileExt}`
       const filePath = `clientes/${fileName}`
 
-      const { error: uploadError } = await supabase.storage
+      // Log para debug
+      console.log('=== DEBUG UPLOAD (ADMIN) ===')
+      console.log('User ID:', session?.user?.id)
+      console.log('User ID Type:', typeof session?.user?.id)
+      console.log('File Path:', filePath)
+      console.log('File Name:', fileName)
+      console.log('File Size:', file.size)
+      console.log('File Type:', file.type)
+      console.log('Session User ID:', session?.user?.id)
+
+      const { data: uploadData, error: uploadError } = await supabase.storage
         .from('documentos')
         .upload(filePath, file)
 
-      if (uploadError) throw uploadError
+      if (uploadError) {
+        console.error('=== ERRO NO UPLOAD (ADMIN) ===')
+        console.error('Upload Error:', uploadError)
+        console.error('Error Message:', uploadError.message)
+        console.error('Error Status:', uploadError.statusCode)
+        console.error('Error Details:', uploadError)
+        throw uploadError
+      }
 
       const { data: { publicUrl } } = supabase.storage
         .from('documentos')
-        .getPublicUrl(filePath)
+        .getPublicUrl(uploadData?.path || filePath)
 
       setClienteForm(prev => ({ ...prev, [`${tipo}_url`]: publicUrl }))
       return publicUrl

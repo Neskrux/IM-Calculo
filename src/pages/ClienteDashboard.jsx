@@ -245,45 +245,177 @@ const ClienteDashboard = () => {
     ]
   }
 
+  // Helper para adicionar cache busting na URL
+  const getUrlComCacheBust = (url) => {
+    if (!url) return url
+    const separator = url.includes('?') ? '&' : '?'
+    return `${url}${separator}t=${Date.now()}`
+  }
+
   // Upload de documento do cliente
   const uploadDocumentoCliente = async (file, tipo) => {
-    if (!file || !cliente) return
+    if (!file || !cliente || !user) {
+      alert('Você precisa estar autenticado para fazer upload de documentos.')
+      return
+    }
+
+    // Verificar se o usuário está autenticado
+    if (!user || !user.id) {
+      alert('Você precisa estar autenticado para fazer upload de documentos.')
+      return
+    }
     
     setUploadingDoc(true)
     setUploadingDocType(tipo)
     
     try {
-      const fileExt = file.name.split('.').pop()
-      const fileName = `${tipo}_${cliente.id}_${Date.now()}.${fileExt}`
-      const filePath = `clientes/${fileName}`
+      // Verificar se a sessão está ativa
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+      
+      if (sessionError || !session) {
+        throw new Error('Sessão não encontrada. Por favor, faça login novamente.')
+      }
 
-      const { error: uploadError } = await supabase.storage
+      // ========== VALIDAÇÕES DE SEGURANÇA ==========
+      
+      // 1. Validar tipo de documento permitido
+      const tiposPermitidos = [
+        'rg_frente',
+        'rg_verso',
+        'cpf',
+        'comprovante_residencia',
+        'comprovante_renda',
+        'certidao_casamento'
+      ]
+      
+      if (!tiposPermitidos.includes(tipo)) {
+        throw new Error('Tipo de documento inválido.')
+      }
+
+      // 2. Validar extensão do arquivo
+      const extensoesPermitidas = ['pdf', 'jpg', 'jpeg', 'png', 'gif', 'webp']
+      const fileExt = file.name.split('.').pop()?.toLowerCase()
+      
+      if (!fileExt || !extensoesPermitidas.includes(fileExt)) {
+        throw new Error(`Tipo de arquivo não permitido. Use: ${extensoesPermitidas.join(', ').toUpperCase()}`)
+      }
+
+      // 2.1. Validar tipo MIME do arquivo (segurança adicional)
+      const mimeTypesPermitidos = [
+        'application/pdf',
+        'image/jpeg',
+        'image/jpg',
+        'image/png',
+        'image/gif',
+        'image/webp'
+      ]
+      
+      if (!mimeTypesPermitidos.includes(file.type)) {
+        throw new Error('Tipo de arquivo inválido. Apenas PDF e imagens são permitidos.')
+      }
+
+      // 3. Validar tamanho do arquivo (máximo 10MB)
+      const maxSize = 10 * 1024 * 1024 // 10MB em bytes
+      if (file.size > maxSize) {
+        throw new Error('Arquivo muito grande. Tamanho máximo: 10MB')
+      }
+
+      if (file.size === 0) {
+        throw new Error('Arquivo vazio não é permitido.')
+      }
+
+      // 4. Garantir que user.id existe
+      if (!user || !user.id) {
+        throw new Error('Erro de autenticação. Faça login novamente.')
+      }
+
+      // 5. Construir caminho igual ao AdminDashboard
+      // Se já existe documento, usar o mesmo nome para substituir, senão criar novo
+      let fileName, filePath
+      const documentoExistente = cliente[`${tipo}_url`]
+      
+      if (documentoExistente) {
+        // Se já existe, extrair o nome do arquivo da URL existente
+        try {
+          const urlParts = documentoExistente.split('/')
+          let nomeExistente = urlParts[urlParts.length - 1]
+          // Remover query parameters se existirem (ex: ?token=xyz)
+          nomeExistente = nomeExistente.split('?')[0]
+          // Validar se o nome extraído é válido
+          if (nomeExistente && nomeExistente.length > 0) {
+            fileName = nomeExistente
+            filePath = `clientes/${fileName}`
+          } else {
+            // Se não conseguir extrair, criar novo arquivo
+            fileName = `${tipo}_${Date.now()}.${fileExt}`
+            filePath = `clientes/${fileName}`
+          }
+        } catch (error) {
+          // Se houver erro na extração, criar novo arquivo
+          console.warn('Erro ao extrair nome do arquivo existente, criando novo:', error)
+          fileName = `${tipo}_${Date.now()}.${fileExt}`
+          filePath = `clientes/${fileName}`
+        }
+      } else {
+        // Se não existe, criar novo arquivo
+        fileName = `${tipo}_${Date.now()}.${fileExt}`
+        filePath = `clientes/${fileName}`
+      }
+
+      // 6. Validação final do caminho (prevenir path traversal)
+      if (filePath.includes('..') || filePath.includes('//') || !filePath.startsWith('clientes/')) {
+        throw new Error('Caminho de arquivo inválido.')
+      }
+
+      // Fazer upload - se já existe, vai substituir automaticamente
+      const { data: uploadData, error: uploadError } = await supabase.storage
         .from('documentos')
-        .upload(filePath, file)
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: true // Permite substituir se já existir
+        })
 
-      if (uploadError) throw uploadError
+      if (uploadError) {
+        throw uploadError
+      }
 
       const { data: { publicUrl } } = supabase.storage
         .from('documentos')
-        .getPublicUrl(filePath)
+        .getPublicUrl(uploadData?.path || filePath)
 
-      // Atualizar cliente no banco
+      // Atualizar cliente no banco - usar user.id para garantir segurança
       const { error: updateError } = await supabase
         .from('clientes')
         .update({ [`${tipo}_url`]: publicUrl })
         .eq('id', cliente.id)
+        .eq('user_id', user.id) // Garantir que só atualiza usando o user.id logado
 
-      if (updateError) throw updateError
+      if (updateError) {
+        console.error('Erro ao atualizar cliente:', updateError)
+        throw new Error('Erro ao salvar o documento. Verifique suas permissões.')
+      }
 
-      // Atualizar estado local
+      // Atualizar estado local com URL atualizada
       setCliente(prev => ({ ...prev, [`${tipo}_url`]: publicUrl }))
       
-      // Recarregar dados
+      // Pequeno delay para garantir que o arquivo foi processado no storage
+      await new Promise(resolve => setTimeout(resolve, 500))
+      
+      // Recarregar dados para garantir sincronização
       await fetchClienteData()
       
     } catch (error) {
       console.error('Erro no upload:', error)
-      alert('Erro ao fazer upload do documento. Tente novamente.')
+      
+      let errorMessage = 'Erro ao fazer upload do documento.'
+      
+      if (error.message?.includes('row-level security') || error.message?.includes('RLS')) {
+        errorMessage = 'Você não tem permissão para fazer upload de documentos. Entre em contato com o administrador.'
+      } else if (error.message) {
+        errorMessage = error.message
+      }
+      
+      alert(errorMessage)
     } finally {
       setUploadingDoc(false)
       setUploadingDocType(null)
@@ -655,10 +787,10 @@ const ClienteDashboard = () => {
                   <div className="file-upload-wrapper">
                     {cliente.rg_frente_url ? (
                       <div className="file-upload-info">
-                        <span className="file-name" title={cliente.rg_frente_url.split('/').pop()}>
-                          {cliente.rg_frente_url.split('/').pop()}
+                        <span className="file-name" title={cliente.rg_frente_url.split('/').pop()?.split('?')[0]}>
+                          {cliente.rg_frente_url.split('/').pop()?.split('?')[0]}
                         </span>
-                        <a href={cliente.rg_frente_url} target="_blank" rel="noopener noreferrer" className="doc-preview">
+                        <a href={getUrlComCacheBust(cliente.rg_frente_url)} target="_blank" rel="noopener noreferrer" className="doc-preview">
                           Ver arquivo
                         </a>
                       </div>
@@ -704,10 +836,10 @@ const ClienteDashboard = () => {
                   <div className="file-upload-wrapper">
                     {cliente.rg_verso_url ? (
                       <div className="file-upload-info">
-                        <span className="file-name" title={cliente.rg_verso_url.split('/').pop()}>
-                          {cliente.rg_verso_url.split('/').pop()}
+                        <span className="file-name" title={cliente.rg_verso_url.split('/').pop()?.split('?')[0]}>
+                          {cliente.rg_verso_url.split('/').pop()?.split('?')[0]}
                         </span>
-                        <a href={cliente.rg_verso_url} target="_blank" rel="noopener noreferrer" className="doc-preview">
+                        <a href={getUrlComCacheBust(cliente.rg_verso_url)} target="_blank" rel="noopener noreferrer" className="doc-preview">
                           Ver arquivo
                         </a>
                       </div>
@@ -753,10 +885,10 @@ const ClienteDashboard = () => {
                   <div className="file-upload-wrapper">
                     {cliente.cpf_url ? (
                       <div className="file-upload-info">
-                        <span className="file-name" title={cliente.cpf_url.split('/').pop()}>
-                          {cliente.cpf_url.split('/').pop()}
+                        <span className="file-name" title={cliente.cpf_url.split('/').pop()?.split('?')[0]}>
+                          {cliente.cpf_url.split('/').pop()?.split('?')[0]}
                         </span>
-                        <a href={cliente.cpf_url} target="_blank" rel="noopener noreferrer" className="doc-preview">
+                        <a href={getUrlComCacheBust(cliente.cpf_url)} target="_blank" rel="noopener noreferrer" className="doc-preview">
                           Ver arquivo
                         </a>
                       </div>
@@ -802,10 +934,10 @@ const ClienteDashboard = () => {
                   <div className="file-upload-wrapper">
                     {cliente.comprovante_residencia_url ? (
                       <div className="file-upload-info">
-                        <span className="file-name" title={cliente.comprovante_residencia_url.split('/').pop()}>
-                          {cliente.comprovante_residencia_url.split('/').pop()}
+                        <span className="file-name" title={cliente.comprovante_residencia_url.split('/').pop()?.split('?')[0]}>
+                          {cliente.comprovante_residencia_url.split('/').pop()?.split('?')[0]}
                         </span>
-                        <a href={cliente.comprovante_residencia_url} target="_blank" rel="noopener noreferrer" className="doc-preview">
+                        <a href={getUrlComCacheBust(cliente.comprovante_residencia_url)} target="_blank" rel="noopener noreferrer" className="doc-preview">
                           Ver arquivo
                         </a>
                       </div>
@@ -851,10 +983,10 @@ const ClienteDashboard = () => {
                   <div className="file-upload-wrapper">
                     {cliente.comprovante_renda_url ? (
                       <div className="file-upload-info">
-                        <span className="file-name" title={cliente.comprovante_renda_url.split('/').pop()}>
-                          {cliente.comprovante_renda_url.split('/').pop()}
+                        <span className="file-name" title={cliente.comprovante_renda_url.split('/').pop()?.split('?')[0]}>
+                          {cliente.comprovante_renda_url.split('/').pop()?.split('?')[0]}
                         </span>
-                        <a href={cliente.comprovante_renda_url} target="_blank" rel="noopener noreferrer" className="doc-preview">
+                        <a href={getUrlComCacheBust(cliente.comprovante_renda_url)} target="_blank" rel="noopener noreferrer" className="doc-preview">
                           Ver arquivo
                         </a>
                       </div>
@@ -900,10 +1032,10 @@ const ClienteDashboard = () => {
                   <div className="file-upload-wrapper">
                     {cliente.certidao_casamento_url ? (
                       <div className="file-upload-info">
-                        <span className="file-name" title={cliente.certidao_casamento_url.split('/').pop()}>
-                          {cliente.certidao_casamento_url.split('/').pop()}
+                        <span className="file-name" title={cliente.certidao_casamento_url.split('/').pop()?.split('?')[0]}>
+                          {cliente.certidao_casamento_url.split('/').pop()?.split('?')[0]}
                         </span>
-                        <a href={cliente.certidao_casamento_url} target="_blank" rel="noopener noreferrer" className="doc-preview">
+                        <a href={getUrlComCacheBust(cliente.certidao_casamento_url)} target="_blank" rel="noopener noreferrer" className="doc-preview">
                           Ver arquivo
                         </a>
                       </div>
