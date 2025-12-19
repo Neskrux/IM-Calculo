@@ -12,6 +12,8 @@ import {
 import logo from '../imgs/logo.png'
 import Ticker from '../components/Ticker'
 import HomeDashboard from './HomeDashboard'
+// import CadastrarCorretores from '../components/CadastrarCorretores'
+// import ImportarVendas from '../components/ImportarVendas'
 import '../styles/Dashboard.css'
 
 const AdminDashboard = () => {
@@ -68,6 +70,8 @@ const AdminDashboard = () => {
   const [uploadingContrato, setUploadingContrato] = useState(false)
   const [pagamentoDetalhe, setPagamentoDetalhe] = useState(null)
   const [vendaExpandida, setVendaExpandida] = useState(null)
+  // const [mostrarCadastroMassa, setMostrarCadastroMassa] = useState(false)
+  // const [mostrarImportarVendas, setMostrarImportarVendas] = useState(false)
   const [cargoExpandido, setCargoExpandido] = useState(null) // Formato: "empreendimentoId-cargoId"
   const [cargosExpandidos, setCargosExpandidos] = useState({}) // Formato: { "empreendimentoId-externo": true, "empreendimentoId-interno": false }
   const [clientes, setClientes] = useState([])
@@ -96,10 +100,23 @@ const AdminDashboard = () => {
   // Agrupar pagamentos por venda
   const pagamentosAgrupados = pagamentos.reduce((acc, pag) => {
     const vendaId = pag.venda_id
-    if (!acc[vendaId]) {
-      acc[vendaId] = {
+    if (!vendaId) return acc // Ignorar pagamentos sem venda_id
+    
+    // Comparação segura de IDs
+    const vendaIdStr = String(vendaId)
+    
+    if (!acc[vendaIdStr]) {
+      // Buscar venda completa se não estiver no pag.venda
+      const vendaCompleta = pag.venda || vendas.find(v => String(v.id) === vendaIdStr)
+      
+      if (!vendaCompleta) {
+        console.warn('⚠️ Venda não encontrada para pagamento:', vendaId)
+        return acc
+      }
+      
+      acc[vendaIdStr] = {
         venda_id: vendaId,
-        venda: pag.venda,
+        venda: vendaCompleta,
         pagamentos: [],
         totalValor: 0,
         totalComissao: 0,
@@ -107,18 +124,29 @@ const AdminDashboard = () => {
         totalPendente: 0
       }
     }
-    acc[vendaId].pagamentos.push(pag)
-    acc[vendaId].totalValor += parseFloat(pag.valor) || 0
-    acc[vendaId].totalComissao += parseFloat(pag.comissao_gerada) || 0
+    acc[vendaIdStr].pagamentos.push(pag)
+    acc[vendaIdStr].totalValor += parseFloat(pag.valor) || 0
+    acc[vendaIdStr].totalComissao += parseFloat(pag.comissao_gerada) || 0
     if (pag.status === 'pago') {
-      acc[vendaId].totalPago += parseFloat(pag.valor) || 0
+      acc[vendaIdStr].totalPago += parseFloat(pag.valor) || 0
     } else {
-      acc[vendaId].totalPendente += parseFloat(pag.valor) || 0
+      acc[vendaIdStr].totalPendente += parseFloat(pag.valor) || 0
     }
     return acc
   }, {})
 
   const listaVendasComPagamentos = Object.values(pagamentosAgrupados)
+  
+  // DEBUG: Verificar quantas vendas aparecem na lista
+  console.log('🔍 DEBUG listaVendasComPagamentos:', {
+    totalVendas: vendas.length,
+    totalPagamentos: pagamentos.length,
+    vendasComPagamentos: listaVendasComPagamentos.length,
+    vendasSemPagamentos: vendas.filter(v => {
+      const temPagamento = pagamentos.some(p => String(p.venda_id) === String(v.id))
+      return !temPagamento
+    }).length
+  })
 
   // Formulário de empreendimento
   const [empreendimentoForm, setEmpreendimentoForm] = useState({
@@ -324,18 +352,17 @@ const AdminDashboard = () => {
     
     const valorPagamento = parseFloat(pagamento.valor) || 0
     
-    // PEGAR A COMISSÃO TOTAL JÁ CALCULADA NA VENDA
-    const comissaoTotalVenda = parseFloat(venda.comissao_total) || 0
+    // USAR A COMISSÃO JÁ CALCULADA E SALVA NO PAGAMENTO
+    // A comissao_gerada já foi calculada corretamente na importação como: valorParcela * (percentualTotal / 100)
+    let comissaoTotalParcela = parseFloat(pagamento.comissao_gerada) || 0
     
-    // Buscar todas as parcelas desta venda para calcular o total pro-soluto
-    const parcelasVenda = pagamentos.filter(p => p.venda_id === venda.id)
-    const valorTotalParcelas = parcelasVenda.reduce((acc, p) => acc + (parseFloat(p.valor) || 0), 0)
-    
-    // Fator de proporção = comissão total da venda / valor total das parcelas
-    const fatorProporcao = valorTotalParcelas > 0 ? comissaoTotalVenda / valorTotalParcelas : 0
-    
-    // Comissão desta parcela = valor da parcela × fator de proporção
-    const comissaoTotalParcela = valorPagamento * fatorProporcao
+    // Se não houver comissao_gerada salva, calcular usando o percentual total de comissão
+    if (comissaoTotalParcela === 0) {
+      // Calcular percentual total dos cargos
+      const percentualTotal = cargosDoTipo.reduce((acc, c) => acc + (parseFloat(c.percentual) || 0), 0)
+      const fatorComissao = percentualTotal / 100
+      comissaoTotalParcela = valorPagamento * fatorComissao
+    }
     
     // Calcular percentual total dos cargos para distribuição
     const percentualTotal = cargosDoTipo.reduce((acc, c) => acc + (parseFloat(c.percentual) || 0), 0)
@@ -419,15 +446,54 @@ const AdminDashboard = () => {
         console.error('Erro ao buscar cargos:', cargosError)
       }
 
-      // Buscar pagamentos pro-soluto (sem JOINs)
-      const { data: pagamentosData, error: pagamentosError } = await supabase
-        .from('pagamentos_prosoluto')
-        .select('*')
+      // Buscar pagamentos pro-soluto (sem JOINs) - buscar todos sem limite
+      // O Supabase tem limite padrão de 1000, então precisamos buscar em lotes ou aumentar o limite
+      let pagamentosData = []
+      let hasMore = true
+      let page = 0
+      const pageSize = 1000
       
-      if (pagamentosError) {
-        console.error('Erro ao buscar pagamentos:', pagamentosError)
+      while (hasMore) {
+        const { data: pageData, error: pagamentosError } = await supabase
+          .from('pagamentos_prosoluto')
+          .select('*')
+          .range(page * pageSize, (page + 1) * pageSize - 1)
+        
+        if (pagamentosError) {
+          console.error('Erro ao buscar pagamentos:', pagamentosError)
+          break
+        }
+        
+        if (pageData && pageData.length > 0) {
+          pagamentosData = [...pagamentosData, ...pageData]
+          hasMore = pageData.length === pageSize
+          page++
+        } else {
+          hasMore = false
+        }
       }
-      console.log('Pagamentos do banco:', pagamentosData)
+      
+      console.log('Pagamentos do banco:', pagamentosData.length, 'registros')
+      
+      // DEBUG: Verificar estrutura dos dados
+      console.log('🔍 DEBUG fetchData:', {
+        totalVendas: vendasData?.length || 0,
+        totalPagamentos: pagamentosData?.length || 0,
+        vendasComProSoluto: (vendasData || []).filter(v => {
+          const valorProSoluto = parseFloat(v.valor_pro_soluto) || 0
+          return valorProSoluto > 0
+        }).length,
+        // Verificar se há vendas sem pagamentos no banco
+        vendasSemPagamentosNoBanco: (vendasData || []).filter(v => {
+          const valorProSoluto = parseFloat(v.valor_pro_soluto) || 0
+          if (valorProSoluto <= 0) return false
+          const temPagamento = (pagamentosData || []).some(p => String(p.venda_id) === String(v.id))
+          return !temPagamento
+        }).length,
+        // Verificar tipos de IDs
+        tipoIdVenda: vendasData?.[0]?.id ? typeof vendasData[0].id : 'N/A',
+        tipoIdPagamento: pagamentosData?.[0]?.venda_id ? typeof pagamentosData[0].venda_id : 'N/A'
+      })
 
       // Associar cargos aos empreendimentos manualmente
       const empreendimentosComCargos = (empreendimentosData || []).map(emp => ({
@@ -448,9 +514,10 @@ const AdminDashboard = () => {
 
       // Associar dados relacionados aos pagamentos manualmente
       const pagamentosComRelacionamentos = (pagamentosData || []).map(pag => {
-        const venda = (vendasData || []).find(v => v.id === pag.venda_id)
-        const corretor = venda ? (corretoresData || []).find(c => c.id === venda.corretor_id) : null
-        const empreendimento = venda ? (empreendimentosData || []).find(e => e.id === venda.empreendimento_id) : null
+        // Comparação segura de IDs (convertendo para string)
+        const venda = (vendasData || []).find(v => String(v.id) === String(pag.venda_id))
+        const corretor = venda ? (corretoresData || []).find(c => String(c.id) === String(venda.corretor_id)) : null
+        const empreendimento = venda ? (empreendimentosData || []).find(e => String(e.id) === String(venda.empreendimento_id)) : null
         
         return {
           ...pag,
@@ -467,6 +534,16 @@ const AdminDashboard = () => {
           } : null
         }
       })
+
+      // DEBUG: Verificar quantos pagamentos não encontraram venda
+      const pagamentosSemVenda = pagamentosComRelacionamentos.filter(p => !p.venda)
+      if (pagamentosSemVenda.length > 0) {
+        console.warn('⚠️ Pagamentos sem venda encontrada:', pagamentosSemVenda.length, pagamentosSemVenda.slice(0, 5).map(p => ({
+          pagamento_id: p.id,
+          venda_id: p.venda_id,
+          tipo_id: typeof p.venda_id
+        })))
+      }
 
       // Associar empreendimento e cargo aos corretores
       const corretoresComRelacionamentos = (corretoresData || []).map(corretor => {
@@ -1301,10 +1378,40 @@ const AdminDashboard = () => {
     setTimeout(() => setMessage({ type: '', text: '' }), 3000)
   }
 
-  // Identificar vendas sem pagamentos
+  // Identificar vendas sem pagamentos (APENAS as que têm valor_pro_soluto > 0)
   const vendasSemPagamentos = vendas.filter(v => {
-    const temPagamento = pagamentos.some(p => p.venda_id === v.id)
+    // Só considerar vendas que têm valor pro-soluto > 0
+    const valorProSoluto = parseFloat(v.valor_pro_soluto) || 0
+    if (valorProSoluto <= 0) return false // Ignorar vendas sem pro-soluto
+    
+    // Verificar se tem pagamentos (comparação segura de IDs)
+    const temPagamento = pagamentos.some(p => String(p.venda_id) === String(v.id))
     return !temPagamento
+  })
+
+  // DEBUG: Adicionar log detalhado para investigar
+  console.log('🔍 DEBUG vendasSemPagamentos:', {
+    totalVendas: vendas.length,
+    vendasComProSoluto: vendas.filter(v => {
+      const valorProSoluto = parseFloat(v.valor_pro_soluto) || 0
+      return valorProSoluto > 0
+    }).length,
+    totalPagamentos: pagamentos.length,
+    vendasSemPagamentos: vendasSemPagamentos.length,
+    // Verificar tipos de IDs
+    tipoIdVenda: vendas.length > 0 ? typeof vendas[0].id : 'N/A',
+    tipoIdPagamento: pagamentos.length > 0 ? typeof pagamentos[0].venda_id : 'N/A',
+    // Verificar se há IDs diferentes
+    primeirasVendasIds: vendas.slice(0, 5).map(v => ({ 
+      id: v.id, 
+      tipo: typeof v.id, 
+      valorProSoluto: v.valor_pro_soluto,
+      temPagamento: pagamentos.some(p => String(p.venda_id) === String(v.id))
+    })),
+    primeirosPagamentosVendaIds: pagamentos.slice(0, 5).map(p => ({ 
+      venda_id: p.venda_id, 
+      tipo: typeof p.venda_id 
+    }))
   })
 
   // Gerar pagamentos para uma venda específica
@@ -2793,29 +2900,29 @@ const AdminDashboard = () => {
         {activeTab === 'vendas' && (
           <div className="content-section">
             <div className="section-header">
-              <div className="search-box">
-                <Search size={20} />
-                <input 
-                  type="text" 
-                  placeholder="Buscar vendas..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
-              </div>
-              <div className="filter-group">
-                <Filter size={18} />
-                <select 
-                  value={filterTipo} 
-                  onChange={(e) => setFilterTipo(e.target.value)}
-                >
-                  <option value="todos">Todos</option>
-                  <option value="interno">Interno</option>
-                  <option value="externo">Externo</option>
-                </select>
-              </div>
-            </div>
+                  <div className="search-box">
+                    <Search size={20} />
+                    <input 
+                      type="text" 
+                      placeholder="Buscar vendas..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                    />
+                  </div>
+                  <div className="filter-group">
+                    <Filter size={18} />
+                    <select 
+                      value={filterTipo} 
+                      onChange={(e) => setFilterTipo(e.target.value)}
+                    >
+                      <option value="todos">Todos</option>
+                      <option value="interno">Interno</option>
+                      <option value="externo">Externo</option>
+                    </select>
+                  </div>
+                </div>
 
-            <div className="table-container">
+                <div className="table-container">
               <table className="data-table">
                 <thead>
                   <tr>
