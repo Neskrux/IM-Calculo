@@ -299,6 +299,12 @@
   flex: 1;
 }
 
+.compra-title .venda-expand-btn-wrapper {
+  margin: 0;
+  padding: 0;
+  border: none;
+}
+
 .compra-title h3 {
   font-size: 22px;
   font-weight: 600;
@@ -402,6 +408,443 @@
   background: rgba(245, 158, 11, 0.15);
   color: #f59e0b;
   border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+/* Botão Ver mais - Expandir Compra */
+.venda-expand-btn-wrapper {
+  display: flex;
+  align-items: center;
+}
+
+.venda-expand-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: transparent;
+  border: 1px solid var(--accent-primary, #4a90d9);
+  border-radius: 8px;
+  color: var(--accent-primary, #4a90d9);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-family: 'Montserrat', sans-serif;
+}
+
+.venda-expand-btn:hover {
+  background: rgba(74, 144, 217, 0.1);
+  border-color: var(--accent-primary, #4a90d9);
+  transform: translateY(-2px);
+}
+
+.venda-expand-btn svg {
+  transition: transform 0.3s ease;
+}
+
+.venda-expand-btn svg.rotated {
+  transform: rotate(180deg);
+}
+
+/* Seção Expandida - Detalhes da Compra */
+.compra-detalhes-expandidos {
+  margin-top: 24px;
+  padding-top: 24px;
+  border-top: 1px solid var(--border-subtle, rgba(74, 144, 217, 0.15));
+  animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.detalhes-header {
+  margin-bottom: 20px;
+}
+
+.detalhes-header h5 {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary, #f0f4f8);
+  margin: 0;
+  font-family: 'Montserrat', sans-serif;
+}
+
+.detalhes-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+}
+
+.detalhe-item {
+  padding: 16px;
+  background: rgba(74, 144, 217, 0.05);
+  border: 1px solid rgba(74, 144, 217, 0.1);
+  border-radius: 10px;
+  transition: all 0.2s ease;
+}
+
+.detalhe-item:hover {
+  background: rgba(74, 144, 217, 0.1);
+  border-color: rgba(74, 144, 217, 0.2);
+}
+
+.detalhe-item.full-width {
+  grid-column: 1 / -1;
+}
+
+.detalhe-label {
+  display: block;
+  font-size: 11px;
+  color: var(--text-secondary, #94a3b8);
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  font-weight: 700;
+  margin-bottom: 8px;
+  font-family: 'Montserrat', sans-serif;
+}
+
+.detalhe-value {
+  display: block;
+  font-size: 16px;
+  color: var(--text-primary, #f0f4f8);
+  font-weight: 600;
+  line-height: 1.5;
+  font-family: 'Montserrat', sans-serif;
+}
+
+.detalhe-value.highlight {
+  color: var(--accent-primary, #4a90d9);
+  font-size: 18px;
+}
+
+/* Grupos de Balões */
+.grupos-balao-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.grupo-balao-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: rgba(74, 144, 217, 0.1);
+  border-radius: 6px;
+  border: 1px solid rgba(74, 144, 217, 0.2);
+}
+
+.grupo-balao-qtd {
+  font-size: 14px;
+  color: var(--text-primary, #f0f4f8);
+  font-weight: 500;
+}
+
+.grupo-balao-valor {
+  font-size: 14px;
+  color: var(--accent-primary, #4a90d9);
+  font-weight: 600;
+  margin-left: auto;
+}
+
+/* Detalhamento de Pagamentos - Estilo baseado no CorretorDashboard */
+.compra-pagamentos-detalhes {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(74, 144, 217, 0.15);
+  background: rgba(10, 22, 40, 0.5);
+  border-radius: 8px;
+  padding: 16px;
+  animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.parcelas-header {
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(74, 144, 217, 0.1);
+}
+
+.parcelas-header h5 {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary, #f0f4f8);
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-family: 'Montserrat', sans-serif;
+}
+
+.parcelas-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.cliente-parcela-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px;
+  border-radius: 6px;
+  border: 1px solid rgba(74, 144, 217, 0.1);
+  background: rgba(13, 31, 60, 0.3);
+  transition: all 0.2s ease;
+}
+
+.cliente-parcela-row:hover {
+  background: rgba(13, 31, 60, 0.5);
+  border-color: rgba(74, 144, 217, 0.2);
+}
+
+.cliente-parcela-row.pago {
+  background: rgba(16, 185, 129, 0.1);
+  border-color: rgba(16, 185, 129, 0.2);
+}
+
+.cliente-parcela-row.pago:hover {
+  background: rgba(16, 185, 129, 0.15);
+}
+
+.cliente-parcela-tipo {
+  flex: 0 0 120px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary, #f0f4f8);
+  font-family: 'Montserrat', sans-serif;
+}
+
+.cliente-parcela-data {
+  flex: 0 0 100px;
+  font-size: 13px;
+  color: var(--text-secondary, #94a3b8);
+}
+
+.cliente-parcela-valor {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary, #f0f4f8);
+  font-family: 'Montserrat', sans-serif;
+}
+
+.cliente-parcela-status {
+  flex: 0 0 auto;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.status-pill.pago {
+  background: rgba(16, 185, 129, 0.15);
+  color: #10b981;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.status-pill.pendente {
+  background: rgba(245, 158, 11, 0.15);
+  color: #f59e0b;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.parcelas-empty {
+  padding: 20px;
+  text-align: center;
+  color: var(--text-secondary, #94a3b8);
+  font-size: 13px;
+}
+
+/* Grupos de Pagamentos */
+.pagamento-grupo {
+  margin-bottom: 32px;
+  background: rgba(13, 31, 60, 0.3);
+  border: 1px solid rgba(74, 144, 217, 0.1);
+  border-radius: 12px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.pagamento-grupo:last-child {
+  margin-bottom: 0;
+}
+
+.pagamento-grupo:hover {
+  border-color: rgba(74, 144, 217, 0.2);
+  background: rgba(13, 31, 60, 0.4);
+}
+
+.grupo-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  background: rgba(74, 144, 217, 0.08);
+  border-bottom: 1px solid rgba(74, 144, 217, 0.15);
+}
+
+.grupo-titulo {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary, #f0f4f8);
+  font-family: 'Montserrat', sans-serif;
+  margin: 0;
+  letter-spacing: -0.2px;
+}
+
+.grupo-resumo {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.grupo-total-valor {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary, #f0f4f8);
+  font-family: 'Montserrat', sans-serif;
+}
+
+.grupo-contador {
+  font-size: 12px;
+  color: var(--text-secondary, #94a3b8);
+  font-weight: 500;
+}
+
+.pagamento-grupo .parcelas-list {
+  padding: 0;
+  background: transparent;
+  border: none;
+}
+
+/* Botão de Expansão de Grupo */
+.grupo-expand-btn-wrapper {
+  padding: 12px 20px;
+  border-top: 1px solid rgba(74, 144, 217, 0.15);
+  background: rgba(10, 22, 40, 0.3);
+  display: flex;
+  justify-content: center;
+}
+
+.grupo-expand-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: rgba(74, 144, 217, 0.1);
+  border: 1px solid rgba(74, 144, 217, 0.2);
+  border-radius: 6px;
+  color: var(--accent-primary, #4a90d9);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: 'Montserrat', sans-serif;
+}
+
+.grupo-expand-btn:hover {
+  background: rgba(74, 144, 217, 0.15);
+  border-color: rgba(74, 144, 217, 0.3);
+  transform: translateY(-1px);
+}
+
+.grupo-expand-btn:active {
+  transform: translateY(0);
+}
+
+.grupo-expand-btn svg {
+  transition: transform 0.3s ease;
+}
+
+.grupo-expand-btn svg.rotated {
+  transform: rotate(180deg);
+}
+
+/* Responsive para Detalhamento de Pagamentos */
+@media (max-width: 768px) {
+  .cliente-parcela-row {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .cliente-parcela-tipo,
+  .cliente-parcela-data,
+  .cliente-parcela-valor {
+    flex: 1 1 calc(50% - 8px);
+    min-width: 100px;
+  }
+
+  .cliente-parcela-status {
+    flex: 1 1 100%;
+    justify-content: flex-start;
+    margin-top: 8px;
+  }
+
+  .pagamento-grupo {
+    margin-bottom: 24px;
+    border-radius: 8px;
+  }
+
+  .grupo-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px 16px;
+  }
+
+  .grupo-titulo {
+    font-size: 14px;
+    width: 100%;
+  }
+
+  .grupo-resumo {
+    width: 100%;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .grupo-total-valor {
+    font-size: 13px;
+  }
+
+  .grupo-contador {
+    font-size: 11px;
+    width: 100%;
+  }
+
+  .compra-pagamentos-detalhes {
+    padding: 12px;
+  }
 }
 
 /* Documentos Section - Design Profissional */
