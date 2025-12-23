@@ -2,6 +2,7 @@ import { useState, useRef } from 'react'
 import { supabase } from '../lib/supabase'
 import * as XLSX from 'xlsx'
 import { Upload, FileText, CheckCircle, XCircle, AlertCircle, Download } from 'lucide-react'
+import { calcularComissoesDinamicas } from '../lib/calculos'
 import '../styles/ImportarVendas.css'
 
 const ImportarVendas = ({ corretores = [], empreendimentos = [], clientes = [] }) => {
@@ -270,26 +271,7 @@ const ImportarVendas = ({ corretores = [], empreendimentos = [], clientes = [] }
     }
   }
 
-  // Calcular comissões (similar ao AdminDashboard)
-  const calcularComissoesDinamicas = (valorVenda, empreendimentoId, tipoCorretor) => {
-    const empreendimento = empreendimentos.find(e => e.id === empreendimentoId)
-    if (!empreendimento || !empreendimento.cargos) {
-      return { cargos: [], total: 0, percentualTotal: 0 }
-    }
-
-    const cargos = empreendimento.cargos.filter(c => c.tipo_corretor === tipoCorretor)
-    const comissoes = cargos.map(cargo => ({
-      cargo_id: cargo.id,
-      nome_cargo: cargo.nome_cargo,
-      percentual: cargo.percentual,
-      valor: (valorVenda * cargo.percentual) / 100
-    }))
-
-    const total = comissoes.reduce((sum, c) => sum + c.valor, 0)
-    const percentualTotal = comissoes.reduce((sum, c) => sum + c.percentual, 0)
-
-    return { cargos: comissoes, total, percentualTotal }
-  }
+  // Função calcularComissoesDinamicas agora está centralizada em src/lib/calculos/comissoes.js
 
   // Processar arquivo Excel
   const processarArquivo = async (file) => {
@@ -699,7 +681,7 @@ const ImportarVendas = ({ corretores = [], empreendimentos = [], clientes = [] }
 
           // 9. Calcular comissões
           const tipoCorretor = corretor.tipo_corretor || 'externo'
-          const comissoesDinamicas = calcularComissoesDinamicas(valorVenda, empreendimento.id, tipoCorretor)
+          const comissoesDinamicas = calcularComissoesDinamicas(valorVenda, empreendimento.id, tipoCorretor, empreendimentos)
           
           if (comissoesDinamicas.cargos.length === 0) {
             throw new Error(`Nenhum cargo de comissão encontrado para o empreendimento "${empreendimento.nome}" e tipo de corretor "${tipoCorretor}". Configure os cargos no empreendimento primeiro.`)

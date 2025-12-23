@@ -16,6 +16,13 @@ import HomeDashboard from './HomeDashboard'
 // import ImportarVendas from '../components/ImportarVendas'
 import '../styles/Dashboard.css'
 
+// Importar funções centralizadas de cálculos
+import { 
+  calcularComissoesDinamicas,
+  calcularValorProSoluto,
+  calcularFatorComissao
+} from '../lib/calculos'
+
 const AdminDashboard = () => {
   const { userProfile, signOut, loading: authLoading } = useAuth()
   const { tab } = useParams()
@@ -295,30 +302,7 @@ const AdminDashboard = () => {
   // Cargos filtrados por empreendimento selecionado
   const [cargosDisponiveis, setCargosDisponiveis] = useState([])
 
-  // Calcular comissões baseado nos cargos do empreendimento (DINÂMICO)
-  const calcularComissoesDinamicas = (valorVenda, empreendimentoId, tipoCorretor) => {
-    const emp = empreendimentos.find(e => e.id === empreendimentoId)
-    if (!emp) return { cargos: [], total: 0, percentualTotal: 0 }
-    
-    // Filtrar cargos pelo tipo de corretor
-    const cargosDoTipo = emp.cargos?.filter(c => c.tipo_corretor === tipoCorretor) || []
-    
-    // Calcular percentual total primeiro
-    const percentualTotal = cargosDoTipo.reduce((acc, c) => acc + parseFloat(c.percentual || 0), 0)
-    
-    // Calcular comissão para cada cargo
-    const comissoesPorCargo = cargosDoTipo.map(cargo => ({
-      cargo_id: cargo.id,
-      nome_cargo: cargo.nome_cargo,
-      percentual: parseFloat(cargo.percentual),
-      valor: (valorVenda * parseFloat(cargo.percentual)) / 100
-    }))
-    
-    // Total em reais
-    const total = comissoesPorCargo.reduce((acc, c) => acc + c.valor, 0)
-    
-    return { cargos: comissoesPorCargo, total, percentualTotal }
-  }
+  // Função calcularComissoesDinamicas agora está centralizada em src/lib/calculos/comissoes.js
 
   // Calcular valores por setor (cargo) para um empreendimento
   const calcularValoresPorSetor = (empreendimentoId) => {
@@ -719,10 +703,12 @@ const AdminDashboard = () => {
       return { cargos: [], total: 0, percentualTotal: 0 }
     }
 
+    // Usar função centralizada
     return calcularComissoesDinamicas(
       parseFloat(vendaForm.valor_venda || 0),
       vendaForm.empreendimento_id,
-      vendaForm.tipo_corretor
+      vendaForm.tipo_corretor,
+      empreendimentos
     )
   }
 
@@ -813,11 +799,12 @@ const AdminDashboard = () => {
           percentualTotal: percentualCorretor
         }
       } else {
-        // Corretor vinculado: usa cargos do empreendimento
+        // Corretor vinculado: usa cargos do empreendimento (função centralizada)
         comissoesDinamicas = calcularComissoesDinamicas(
           valorVenda,
           vendaForm.empreendimento_id,
-          vendaForm.tipo_corretor
+          vendaForm.tipo_corretor,
+          empreendimentos
         )
       }
 
@@ -855,6 +842,71 @@ const AdminDashboard = () => {
     // Fator de comissão = Percentual total de comissão / 100
     // Ex: 7% -> 0.07, então parcela de R$ 1.000 x 0.07 = R$ 70 de comissão
     const fatorComissao = comissoesDinamicas.percentualTotal / 100
+
+    // TESTE: Função temporária de teste comparativo (remover após validação)
+    const testarCalculoProSoluto = (vendaForm, gruposParcelasEntrada, gruposBalao, comissoesDinamicas) => {
+      // CÁLCULO ANTIGO (atual)
+      const valorSinalAntigo = vendaForm.teve_sinal ? (parseFloat(vendaForm.valor_sinal) || 0) : 0
+      
+      let valorEntradaTotalAntigo = 0
+      if (vendaForm.teve_entrada) {
+        if (vendaForm.parcelou_entrada) {
+          valorEntradaTotalAntigo = gruposParcelasEntrada.reduce((sum, grupo) => {
+            if (!grupo || typeof grupo !== 'object' || grupo === null) return sum
+            return sum + ((parseFloat(grupo.qtd) || 0) * (parseFloat(grupo.valor) || 0))
+          }, 0)
+        } else {
+          valorEntradaTotalAntigo = parseFloat(vendaForm.valor_entrada) || 0
+        }
+      }
+      
+      let valorTotalBalaoAntigo = 0
+      if (vendaForm.teve_balao === 'sim') {
+        valorTotalBalaoAntigo = gruposBalao.reduce((sum, grupo) => {
+          if (!grupo || typeof grupo !== 'object' || grupo === null) return sum
+          return sum + ((parseFloat(grupo.qtd) || 0) * (parseFloat(grupo.valor) || 0))
+        }, 0)
+      }
+      
+      const valorProSolutoAntigo = valorSinalAntigo + valorEntradaTotalAntigo + valorTotalBalaoAntigo
+      const fatorComissaoAntigo = comissoesDinamicas.percentualTotal / 100
+      
+      // CÁLCULO NOVO (função centralizada)
+      const valorProSolutoNovo = calcularValorProSoluto(vendaForm, gruposParcelasEntrada, gruposBalao)
+      const fatorComissaoNovo = calcularFatorComissao(comissoesDinamicas.percentualTotal)
+      
+      // COMPARAÇÃO
+      const resultado = {
+        antigo: {
+          valorProSoluto: valorProSolutoAntigo,
+          fatorComissao: fatorComissaoAntigo,
+          detalhes: {
+            valorSinal: valorSinalAntigo,
+            valorEntradaTotal: valorEntradaTotalAntigo,
+            valorTotalBalao: valorTotalBalaoAntigo
+          }
+        },
+        novo: {
+          valorProSoluto: valorProSolutoNovo,
+          fatorComissao: fatorComissaoNovo
+        },
+        saoIguais: valorProSolutoNovo !== null && 
+                   Math.abs(valorProSolutoAntigo - valorProSolutoNovo) < 0.01 &&
+                   Math.abs(fatorComissaoAntigo - fatorComissaoNovo) < 0.01
+      }
+      
+      // LOG DE TESTE
+      if (valorProSolutoNovo !== null && !resultado.saoIguais) {
+        console.error('❌ TESTE PRO-SOLUTO: Diferença encontrada!', resultado)
+      } else if (valorProSolutoNovo !== null) {
+        console.log('✅ TESTE PRO-SOLUTO: Resultados idênticos', resultado)
+      }
+      
+      return resultado
+    }
+    
+    // TESTE: Chamar função de teste comparativo
+    testarCalculoProSoluto(vendaForm, gruposParcelasEntrada, gruposBalao, comissoesDinamicas)
     
     // Calcular comissão do corretor
     const comissaoCorretor = calcularComissaoCorretor(comissoesDinamicas, vendaForm.corretor_id, valorVenda)
@@ -1566,11 +1618,12 @@ const AdminDashboard = () => {
         percentualTotal: percentualCorretor
       }
     } else {
-      // Corretor vinculado: usa cargos do empreendimento
+      // Corretor vinculado: usa cargos do empreendimento (função centralizada)
       comissoesDinamicas = calcularComissoesDinamicas(
         valorVenda,
         venda.empreendimento_id,
-        venda.tipo_corretor
+        venda.tipo_corretor,
+        empreendimentos
       )
     }
     
@@ -1592,6 +1645,37 @@ const AdminDashboard = () => {
     const valorProSoluto = valorSinal + valorEntradaTotal + valorTotalBalao
     // Fator de comissão = Percentual total / 100
     const fatorComissao = comissoesDinamicas.percentualTotal / 100
+
+    // TESTE: Comparar cálculo antigo vs novo (gerarPagamentosVenda)
+    // Esta função usa campos simples do banco, não grupos
+    const valorProSolutoAntigo = valorProSoluto
+    const fatorComissaoAntigo = fatorComissao
+    
+    // CÁLCULO NOVO (função centralizada)
+    // Para gerarPagamentosVenda, não temos grupos, então passar arrays vazios
+    // A função detectará e usará campos simples (qtd_parcelas_entrada, etc)
+    const valorProSolutoNovo = calcularValorProSoluto(venda, [], [])
+    const fatorComissaoNovo = calcularFatorComissao(comissoesDinamicas.percentualTotal)
+    
+    // COMPARAÇÃO
+    const saoIguais = Math.abs(valorProSolutoAntigo - valorProSolutoNovo) < 0.01 &&
+                      Math.abs(fatorComissaoAntigo - fatorComissaoNovo) < 0.01
+    
+    if (!saoIguais) {
+      console.error('❌ TESTE PRO-SOLUTO (gerarPagamentosVenda): Diferença encontrada!', {
+        antigo: { valorProSoluto: valorProSolutoAntigo, fatorComissao: fatorComissaoAntigo },
+        novo: { valorProSoluto: valorProSolutoNovo, fatorComissao: fatorComissaoNovo },
+        diferenca: {
+          valorProSoluto: Math.abs(valorProSolutoAntigo - valorProSolutoNovo),
+          fatorComissao: Math.abs(fatorComissaoAntigo - fatorComissaoNovo)
+        }
+      })
+    } else {
+      console.log('✅ TESTE PRO-SOLUTO (gerarPagamentosVenda): Resultados idênticos', {
+        valorProSoluto: valorProSolutoNovo,
+        fatorComissao: fatorComissaoNovo
+      })
+    }
     
     // Calcular e atualizar comissão do corretor na venda se não estiver preenchida
     const comissaoCorretor = calcularComissaoCorretor(comissoesDinamicas, venda.corretor_id, valorVenda)
