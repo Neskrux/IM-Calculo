@@ -808,124 +808,19 @@ const AdminDashboard = () => {
         )
       }
 
-      // Calcular valor pro-soluto e fator de comissão
+      // Calcular valor pro-soluto e fator de comissão (usando funções centralizadas)
+      const valorProSoluto = calcularValorProSoluto(vendaForm, gruposParcelasEntrada, gruposBalao)
+      
+      // Fator de comissão = Percentual total de comissão / 100
+      // Ex: 7% -> 0.07, então parcela de R$ 1.000 x 0.07 = R$ 70 de comissão
+      const fatorComissao = calcularFatorComissao(comissoesDinamicas.percentualTotal)
+      
+      // Calcular valor do sinal (usado para criar pagamentos individuais)
       const valorSinal = vendaForm.teve_sinal ? (parseFloat(vendaForm.valor_sinal) || 0) : 0
-      
-      // Entrada: se parcelou, soma todos os grupos. Se não parcelou, usa valor_entrada
-      let valorEntradaTotal = 0
-      if (vendaForm.teve_entrada) {
-        if (vendaForm.parcelou_entrada) {
-          // Soma todos os grupos: cada grupo = qtd × valor (apenas grupos válidos)
-          valorEntradaTotal = gruposParcelasEntrada.reduce((sum, grupo) => {
-            // Garantir que grupo é um objeto válido
-            if (!grupo || typeof grupo !== 'object' || grupo === null) return sum
-            return sum + ((parseFloat(grupo.qtd) || 0) * (parseFloat(grupo.valor) || 0))
-          }, 0)
-        } else {
-          valorEntradaTotal = parseFloat(vendaForm.valor_entrada) || 0
-        }
-      }
-      
-      // Balões: soma todos os grupos (apenas grupos válidos)
-      let valorTotalBalao = 0
-      if (vendaForm.teve_balao === 'sim') {
-        valorTotalBalao = gruposBalao.reduce((sum, grupo) => {
-          // Garantir que grupo é um objeto válido
-          if (!grupo || typeof grupo !== 'object' || grupo === null) return sum
-          return sum + ((parseFloat(grupo.qtd) || 0) * (parseFloat(grupo.valor) || 0))
-        }, 0)
-      }
-    
-    // Pro-soluto = sinal + entrada + balões
-    const valorProSoluto = valorSinal + valorEntradaTotal + valorTotalBalao
-    
-    // Fator de comissão = Percentual total de comissão / 100
-    // Ex: 7% -> 0.07, então parcela de R$ 1.000 x 0.07 = R$ 70 de comissão
-    const fatorComissao = comissoesDinamicas.percentualTotal / 100
 
-    // TESTE: Função temporária de teste comparativo (remover após validação)
-    const testarCalculoProSoluto = (vendaForm, gruposParcelasEntrada, gruposBalao, comissoesDinamicas) => {
-      // CÁLCULO ANTIGO (atual)
-      const valorSinalAntigo = vendaForm.teve_sinal ? (parseFloat(vendaForm.valor_sinal) || 0) : 0
-      
-      let valorEntradaTotalAntigo = 0
-      if (vendaForm.teve_entrada) {
-        if (vendaForm.parcelou_entrada) {
-          valorEntradaTotalAntigo = gruposParcelasEntrada.reduce((sum, grupo) => {
-            if (!grupo || typeof grupo !== 'object' || grupo === null) return sum
-            return sum + ((parseFloat(grupo.qtd) || 0) * (parseFloat(grupo.valor) || 0))
-          }, 0)
-        } else {
-          valorEntradaTotalAntigo = parseFloat(vendaForm.valor_entrada) || 0
-        }
-      }
-      
-      let valorTotalBalaoAntigo = 0
-      if (vendaForm.teve_balao === 'sim') {
-        valorTotalBalaoAntigo = gruposBalao.reduce((sum, grupo) => {
-          if (!grupo || typeof grupo !== 'object' || grupo === null) return sum
-          return sum + ((parseFloat(grupo.qtd) || 0) * (parseFloat(grupo.valor) || 0))
-        }, 0)
-      }
-      
-      const valorProSolutoAntigo = valorSinalAntigo + valorEntradaTotalAntigo + valorTotalBalaoAntigo
-      const fatorComissaoAntigo = comissoesDinamicas.percentualTotal / 100
-      
-      // CÁLCULO NOVO (função centralizada)
-      const valorProSolutoNovo = calcularValorProSoluto(vendaForm, gruposParcelasEntrada, gruposBalao)
-      const fatorComissaoNovo = calcularFatorComissao(comissoesDinamicas.percentualTotal)
-      
-      // COMPARAÇÃO
-      const resultado = {
-        antigo: {
-          valorProSoluto: valorProSolutoAntigo,
-          fatorComissao: fatorComissaoAntigo,
-          detalhes: {
-            valorSinal: valorSinalAntigo,
-            valorEntradaTotal: valorEntradaTotalAntigo,
-            valorTotalBalao: valorTotalBalaoAntigo
-          }
-        },
-        novo: {
-          valorProSoluto: valorProSolutoNovo,
-          fatorComissao: fatorComissaoNovo
-        },
-        saoIguais: valorProSolutoNovo !== null && 
-                   Math.abs(valorProSolutoAntigo - valorProSolutoNovo) < 0.01 &&
-                   Math.abs(fatorComissaoAntigo - fatorComissaoNovo) < 0.01
-      }
-      
-      // LOG DE TESTE
-      if (valorProSolutoNovo !== null && !resultado.saoIguais) {
-        console.error('❌ TESTE PRO-SOLUTO: Diferença encontrada!', resultado)
-      } else if (valorProSolutoNovo !== null) {
-        console.log('✅ TESTE PRO-SOLUTO: Resultados idênticos', resultado)
-      }
-      
-      return resultado
-    }
-    
-    // TESTE: Chamar função de teste comparativo
-    testarCalculoProSoluto(vendaForm, gruposParcelasEntrada, gruposBalao, comissoesDinamicas)
-    
     // Calcular comissão do corretor
     const comissaoCorretor = calcularComissaoCorretor(comissoesDinamicas, vendaForm.corretor_id, valorVenda)
     
-    /*console.log('Cálculo venda:', {
-      valorVenda,
-      valorSinal,
-      valorEntradaTotal,
-      valorTotalBalao,
-      valorProSoluto,
-      comissaoTotal: comissoesDinamicas.total,
-      comissaoCorretor,
-      fatorComissao,
-      teveSinal: vendaForm.teve_sinal,
-      teveEntrada: vendaForm.teve_entrada,
-      parcelouEntrada: vendaForm.parcelou_entrada,
-      teveBalao: vendaForm.teve_balao
-    })
-*/
     const vendaData = {
       corretor_id: vendaForm.corretor_id,
       empreendimento_id: isCorretorAutonomo ? null : (vendaForm.empreendimento_id || null),
@@ -1233,6 +1128,347 @@ const AdminDashboard = () => {
       setSelectedItem(null)
       resetVendaForm()
       fetchData()
+    }
+  }
+
+  // IDs de teste para validação completa
+  const IDS_TESTE = {
+    corretor_id: '5e721ccd-3435-47ae-a282-29d3b223f9f5', // ID correto do corretor
+    cliente_id: 'f29a99ce-39cd-4824-aca5-ab60513d5673'
+  }
+
+  // Função de teste completo de Pro-Soluto (valida de ponta a ponta incluindo banco)
+  const executarTestesCompletosProSoluto = async () => {
+    console.log('🚀 Iniciando testes completos de Pro-Soluto...')
+    console.log('📋 IDs de Teste:', IDS_TESTE)
+    console.log('═'.repeat(80))
+    
+    const resultados = []
+    let passou = 0
+    let falhou = 0
+    
+    // Verificar se IDs existem
+    const corretorTeste = corretores.find(c => c.id === IDS_TESTE.corretor_id)
+    
+    if (!corretorTeste) {
+      setMessage({ type: 'error', text: '❌ Corretor de teste não encontrado! Verifique o ID.' })
+      return
+    }
+    
+    console.log('📋 Corretor de teste encontrado:', {
+      id: corretorTeste.id,
+      nome: corretorTeste.nome,
+      tipo_corretor: corretorTeste.tipo_corretor,
+      empreendimento_id: corretorTeste.empreendimento_id
+    })
+    
+    // Verificar se cliente existe
+    let clienteTeste = clientes.find(c => c.id === IDS_TESTE.cliente_id)
+    
+    if (!clienteTeste) {
+      // Se não encontrar no array, buscar do banco
+      console.log('🔍 Cliente não encontrado no array, buscando no banco...')
+      const { data: clienteBanco, error: erroCliente } = await supabase
+        .from('clientes')
+        .select('id, nome_completo, ativo')
+        .eq('id', IDS_TESTE.cliente_id)
+        .single()
+      
+      if (erroCliente || !clienteBanco) {
+        setMessage({ 
+          type: 'error', 
+          text: `❌ Cliente de teste não encontrado! ID: ${IDS_TESTE.cliente_id}` 
+        })
+        console.error('❌ Erro ao buscar cliente:', erroCliente)
+        return
+      }
+      
+      if (!clienteBanco.ativo) {
+        setMessage({ 
+          type: 'error', 
+          text: `❌ Cliente de teste está inativo! ID: ${IDS_TESTE.cliente_id}` 
+        })
+        return
+      }
+      
+      clienteTeste = clienteBanco
+      console.log('✅ Cliente de teste encontrado no banco:', {
+        id: clienteTeste.id,
+        nome: clienteTeste.nome_completo,
+        ativo: clienteTeste.ativo
+      })
+    } else {
+      console.log('✅ Cliente de teste encontrado:', {
+        id: clienteTeste.id,
+        nome: clienteTeste.nome_completo,
+        ativo: clienteTeste.ativo
+      })
+    }
+    
+    if (!empreendimentos || empreendimentos.length === 0) {
+      setMessage({ type: 'error', text: '❌ Nenhum empreendimento encontrado! Carregue os dados primeiro.' })
+      return
+    }
+    
+    // Cenários de teste
+    const cenarios = [
+      {
+        nome: 'Cenário 1: Apenas Sinal',
+        vendaForm: {
+          corretor_id: IDS_TESTE.corretor_id,
+          cliente_id: IDS_TESTE.cliente_id,
+          valor_venda: '100000',
+          empreendimento_id: corretorTeste.empreendimento_id || empreendimentos[0]?.id,
+          tipo_corretor: corretorTeste.tipo_corretor || 'externo',
+          data_venda: new Date().toISOString().split('T')[0],
+          teve_sinal: true,
+          valor_sinal: '10000',
+          teve_entrada: false,
+          teve_balao: 'nao',
+          grupos_parcelas_entrada: [],
+          grupos_balao: []
+        },
+        valorEsperado: 10000
+      },
+      {
+        nome: 'Cenário 2: Entrada à Vista',
+        vendaForm: {
+          corretor_id: IDS_TESTE.corretor_id,
+          cliente_id: IDS_TESTE.cliente_id,
+          valor_venda: '100000',
+          empreendimento_id: corretorTeste.empreendimento_id || empreendimentos[0]?.id,
+          tipo_corretor: corretorTeste.tipo_corretor || 'externo',
+          data_venda: new Date().toISOString().split('T')[0],
+          teve_sinal: false,
+          teve_entrada: true,
+          parcelou_entrada: false,
+          valor_entrada: '20000',
+          teve_balao: 'nao',
+          grupos_parcelas_entrada: [],
+          grupos_balao: []
+        },
+        valorEsperado: 20000
+      },
+      {
+        nome: 'Cenário 3: Entrada Parcelada (1 grupo)',
+        vendaForm: {
+          corretor_id: IDS_TESTE.corretor_id,
+          cliente_id: IDS_TESTE.cliente_id,
+          valor_venda: '100000',
+          empreendimento_id: corretorTeste.empreendimento_id || empreendimentos[0]?.id,
+          tipo_corretor: corretorTeste.tipo_corretor || 'externo',
+          data_venda: new Date().toISOString().split('T')[0],
+          teve_sinal: false,
+          teve_entrada: true,
+          parcelou_entrada: true,
+          grupos_parcelas_entrada: [{qtd: '5', valor: '2000'}],
+          teve_balao: 'nao',
+          grupos_balao: []
+        },
+        valorEsperado: 10000
+      },
+      {
+        nome: 'Cenário 4: Sinal + Entrada + Balões',
+        vendaForm: {
+          corretor_id: IDS_TESTE.corretor_id,
+          cliente_id: IDS_TESTE.cliente_id,
+          valor_venda: '100000',
+          empreendimento_id: corretorTeste.empreendimento_id || empreendimentos[0]?.id,
+          tipo_corretor: corretorTeste.tipo_corretor || 'externo',
+          data_venda: new Date().toISOString().split('T')[0],
+          teve_sinal: true,
+          valor_sinal: '5000',
+          teve_entrada: true,
+          parcelou_entrada: true,
+          grupos_parcelas_entrada: [{qtd: '4', valor: '2500'}],
+          teve_balao: 'sim',
+          grupos_balao: [{qtd: '1', valor: '10000'}]
+        },
+        valorEsperado: 25000
+      }
+    ]
+    
+    setMessage({ type: 'info', text: '🧪 Executando testes... Isso pode levar alguns segundos.' })
+    
+    for (let i = 0; i < cenarios.length; i++) {
+      const cenario = cenarios[i]
+      console.log(`\n[${i + 1}/${cenarios.length}] Testando: ${cenario.nome}`)
+      
+      try {
+        // 1. Calcular valores esperados usando funções centralizadas
+        const gruposParcelasEntrada = cenario.vendaForm.grupos_parcelas_entrada || []
+        const gruposBalao = cenario.vendaForm.grupos_balao || []
+        
+        const valorProSolutoCalculado = calcularValorProSoluto(
+          cenario.vendaForm,
+          gruposParcelasEntrada,
+          gruposBalao
+        )
+        
+        // 2. Calcular comissões
+        const valorVenda = parseFloat(cenario.vendaForm.valor_venda)
+        const comissoesDinamicas = calcularComissoesDinamicas(
+          valorVenda,
+          cenario.vendaForm.empreendimento_id,
+          cenario.vendaForm.tipo_corretor,
+          empreendimentos
+        )
+        
+        const fatorComissaoCalculado = calcularFatorComissao(comissoesDinamicas.percentualTotal)
+        
+        // 3. Preparar dados para salvar
+        const vendaData = {
+          corretor_id: cenario.vendaForm.corretor_id,
+          empreendimento_id: cenario.vendaForm.empreendimento_id,
+          cliente_id: cenario.vendaForm.cliente_id,
+          valor_venda: valorVenda,
+          tipo_corretor: cenario.vendaForm.tipo_corretor,
+          data_venda: cenario.vendaForm.data_venda,
+          teve_sinal: cenario.vendaForm.teve_sinal,
+          valor_sinal: cenario.vendaForm.valor_sinal || null,
+          teve_entrada: cenario.vendaForm.teve_entrada,
+          valor_entrada: cenario.vendaForm.valor_entrada || null,
+          parcelou_entrada: cenario.vendaForm.parcelou_entrada || false,
+          teve_balao: cenario.vendaForm.teve_balao,
+          valor_pro_soluto: valorProSolutoCalculado,
+          fator_comissao: fatorComissaoCalculado,
+          comissao_total: comissoesDinamicas.total,
+          status: 'pendente',
+          descricao: `[TESTE] ${cenario.nome}`
+        }
+        
+        // 4. Salvar venda
+        const { data: vendaSalva, error } = await supabase
+          .from('vendas')
+          .insert([vendaData])
+          .select()
+          .single()
+        
+        if (error) {
+          console.error(`❌ Erro ao salvar venda: ${error.message}`)
+          resultados.push({
+            cenario: cenario.nome,
+            status: 'erro',
+            erro: error.message
+          })
+          falhou++
+          continue
+        }
+        
+        // 5. Aguardar um pouco para garantir que o banco processou
+        await new Promise(resolve => setTimeout(resolve, 500))
+        
+        // 6. Verificar no banco de dados
+        const { data: vendaDoBanco, error: erroBusca } = await supabase
+          .from('vendas')
+          .select('*')
+          .eq('id', vendaSalva.id)
+          .single()
+        
+        if (erroBusca) {
+          console.error(`❌ Erro ao buscar venda: ${erroBusca.message}`)
+          resultados.push({
+            cenario: cenario.nome,
+            status: 'erro',
+            erro: erroBusca.message
+          })
+          falhou++
+          continue
+        }
+        
+        // 7. Comparar valores
+        const valorProSolutoBanco = parseFloat(vendaDoBanco.valor_pro_soluto) || 0
+        const fatorComissaoBanco = parseFloat(vendaDoBanco.fator_comissao) || 0
+        
+        const valorCorreto = Math.abs(valorProSolutoBanco - cenario.valorEsperado) < 0.01
+        const fatorCorreto = Math.abs(fatorComissaoBanco - fatorComissaoCalculado) < 0.01
+        const calculoCorreto = Math.abs(valorProSolutoBanco - valorProSolutoCalculado) < 0.01
+        
+        const passouTeste = valorCorreto && fatorCorreto && calculoCorreto
+        
+        const resultado = {
+          cenario: cenario.nome,
+          status: passouTeste ? 'passou' : 'falhou',
+          calculado: {
+            valorProSoluto: valorProSolutoCalculado,
+            fatorComissao: fatorComissaoCalculado
+          },
+          banco: {
+            valorProSoluto: valorProSolutoBanco,
+            fatorComissao: fatorComissaoBanco,
+            venda_id: vendaSalva.id
+          },
+          esperado: {
+            valorProSoluto: cenario.valorEsperado
+          },
+          validacoes: {
+            valorCorreto,
+            fatorCorreto,
+            calculoCorreto
+          }
+        }
+        
+        if (passouTeste) {
+          console.log(`✅ ${cenario.nome}`, resultado)
+          passou++
+        } else {
+          console.error(`❌ ${cenario.nome}`, resultado)
+          falhou++
+        }
+        
+        resultados.push(resultado)
+        
+        // Limpar venda de teste (opcional - descomentar se quiser limpar)
+        // await supabase.from('vendas').delete().eq('id', vendaSalva.id)
+        
+      } catch (error) {
+        console.error(`❌ Erro no teste ${cenario.nome}:`, error)
+        resultados.push({
+          cenario: cenario.nome,
+          status: 'erro',
+          erro: error.message
+        })
+        falhou++
+      }
+    }
+    
+    // Resumo final
+    console.log('\n' + '═'.repeat(80))
+    console.log('📊 RESUMO DOS TESTES COMPLETOS')
+    console.log('═'.repeat(80))
+    console.log(`✅ Passou: ${passou}/${cenarios.length}`)
+    console.log(`❌ Falhou: ${falhou}/${cenarios.length}`)
+    console.log(`📈 Taxa de sucesso: ${((passou / cenarios.length) * 100).toFixed(2)}%`)
+    
+    if (falhou > 0) {
+      console.log('\n❌ TESTES QUE FALHARAM:')
+      resultados.filter(r => r.status !== 'passou').forEach(r => {
+        console.log(`  - ${r.cenario}: ${r.erro || 'Valores incorretos'}`)
+      })
+    }
+    
+    // Mostrar mensagem no sistema
+    if (falhou === 0) {
+      setMessage({ 
+        type: 'success', 
+        text: `✅ Todos os testes passaram! (${passou}/${cenarios.length}) - Verifique o console para detalhes.` 
+      })
+    } else {
+      setMessage({ 
+        type: 'error', 
+        text: `❌ ${falhou} teste(s) falharam. Verifique o console para detalhes.` 
+      })
+    }
+    
+    // Recarregar dados
+    await fetchData()
+    
+    return {
+      total: cenarios.length,
+      passou,
+      falhou,
+      taxaSucesso: (passou / cenarios.length) * 100,
+      resultados
     }
   }
 
@@ -1627,55 +1863,14 @@ const AdminDashboard = () => {
       )
     }
     
-    const valorSinal = venda.teve_sinal ? (parseFloat(venda.valor_sinal) || 0) : 0
-    
-    let valorEntradaTotal = 0
-    if (venda.teve_entrada) {
-      if (venda.parcelou_entrada) {
-        valorEntradaTotal = (parseFloat(venda.qtd_parcelas_entrada) || 0) * (parseFloat(venda.valor_parcela_entrada) || 0)
-      } else {
-        valorEntradaTotal = parseFloat(venda.valor_entrada) || 0
-      }
-    }
-    
-    const valorTotalBalao = venda.teve_balao === 'sim' 
-      ? (parseFloat(venda.qtd_balao) || 0) * (parseFloat(venda.valor_balao) || 0)
-      : 0
-    
-    const valorProSoluto = valorSinal + valorEntradaTotal + valorTotalBalao
-    // Fator de comissão = Percentual total / 100
-    const fatorComissao = comissoesDinamicas.percentualTotal / 100
-
-    // TESTE: Comparar cálculo antigo vs novo (gerarPagamentosVenda)
-    // Esta função usa campos simples do banco, não grupos
-    const valorProSolutoAntigo = valorProSoluto
-    const fatorComissaoAntigo = fatorComissao
-    
-    // CÁLCULO NOVO (função centralizada)
+    // Calcular valor pro-soluto e fator de comissão (usando funções centralizadas)
     // Para gerarPagamentosVenda, não temos grupos, então passar arrays vazios
     // A função detectará e usará campos simples (qtd_parcelas_entrada, etc)
-    const valorProSolutoNovo = calcularValorProSoluto(venda, [], [])
-    const fatorComissaoNovo = calcularFatorComissao(comissoesDinamicas.percentualTotal)
+    const valorProSoluto = calcularValorProSoluto(venda, [], [])
+    const fatorComissao = calcularFatorComissao(comissoesDinamicas.percentualTotal)
     
-    // COMPARAÇÃO
-    const saoIguais = Math.abs(valorProSolutoAntigo - valorProSolutoNovo) < 0.01 &&
-                      Math.abs(fatorComissaoAntigo - fatorComissaoNovo) < 0.01
-    
-    if (!saoIguais) {
-      console.error('❌ TESTE PRO-SOLUTO (gerarPagamentosVenda): Diferença encontrada!', {
-        antigo: { valorProSoluto: valorProSolutoAntigo, fatorComissao: fatorComissaoAntigo },
-        novo: { valorProSoluto: valorProSolutoNovo, fatorComissao: fatorComissaoNovo },
-        diferenca: {
-          valorProSoluto: Math.abs(valorProSolutoAntigo - valorProSolutoNovo),
-          fatorComissao: Math.abs(fatorComissaoAntigo - fatorComissaoNovo)
-        }
-      })
-    } else {
-      console.log('✅ TESTE PRO-SOLUTO (gerarPagamentosVenda): Resultados idênticos', {
-        valorProSoluto: valorProSolutoNovo,
-        fatorComissao: fatorComissaoNovo
-      })
-    }
+    // Calcular valor do sinal (usado para criar pagamentos individuais)
+    const valorSinal = venda.teve_sinal ? (parseFloat(venda.valor_sinal) || 0) : 0
     
     // Calcular e atualizar comissão do corretor na venda se não estiver preenchida
     const comissaoCorretor = calcularComissaoCorretor(comissoesDinamicas, venda.corretor_id, valorVenda)
@@ -3156,18 +3351,29 @@ const AdminDashboard = () => {
           </h1>
           <div className="header-actions">
             {activeTab === 'vendas' && (
-              <button 
-                className="btn-primary"
-                onClick={() => {
-                  resetVendaForm()
-                  setSelectedItem(null)
-                  setModalType('venda')
-                  setShowModal(true)
-                }}
-              >
-                <Plus size={20} />
-                <span>Nova Venda</span>
-              </button>
+              <>
+                <button 
+                  className="btn-primary"
+                  onClick={() => {
+                    resetVendaForm()
+                    setSelectedItem(null)
+                    setModalType('venda')
+                    setShowModal(true)
+                  }}
+                >
+                  <Plus size={20} />
+                  <span>Nova Venda</span>
+                </button>
+                <button 
+                  className="btn-secondary"
+                  onClick={executarTestesCompletosProSoluto}
+                  style={{ marginLeft: '10px' }}
+                  title="Executar testes completos de Pro-Soluto (cria vendas de teste e valida no banco)"
+                >
+                  <Calculator size={20} />
+                  <span>🧪 Testar Pro-Soluto</span>
+                </button>
+              </>
             )}
             {activeTab === 'corretores' && (
               <button 

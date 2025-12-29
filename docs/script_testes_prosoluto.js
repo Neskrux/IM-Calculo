@@ -2,7 +2,7 @@
  * Script de Testes: Cálculos de Pro-Soluto
  * 
  * IDs de Teste:
- * - Corretor: 0489316a-a963-415d-b9d1-1b6dac16482f (tabela usuarios)
+ * - Corretor: 5e721ccd-3435-47ae-a282-29d3b223f9f5 (tabela usuarios)
  * - Cliente: f29a99ce-39cd-4824-aca5-ab60513d5673 (tabela clientes)
  * 
  * INSTRUÇÕES:
@@ -16,7 +16,7 @@
 
 // IDs de teste
 const IDS_TESTE = {
-  corretor_id: '0489316a-a963-415d-b9d1-1b6dac16482f', // tabela usuarios
+  corretor_id: '5e721ccd-3435-47ae-a282-29d3b223f9f5', // tabela usuarios - ID correto
   cliente_id: 'f29a99ce-39cd-4824-aca5-ab60513d5673'   // tabela clientes
 }
 

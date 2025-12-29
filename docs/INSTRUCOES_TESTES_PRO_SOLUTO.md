@@ -2,7 +2,7 @@
 
 ## 📋 IDs de Teste Configurados
 
-- **Corretor ID**: `0489316a-a963-415d-b9d1-1b6dac16482f` (tabela `usuarios`)
+- **Corretor ID**: `5e721ccd-3435-47ae-a282-29d3b223f9f5` (tabela `usuarios`)
 - **Cliente ID**: `f29a99ce-39cd-4824-aca5-ab60513d5673` (tabela `clientes`)
 
 ---

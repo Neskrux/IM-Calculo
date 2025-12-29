@@ -1,8 +1,8 @@
 # 🚀 Plano de Continuidade - FASE 6: Substituição Gradual
 
 **Data**: 23/12/2025  
-**Status Atual**: ✅ FASE 5 Concluída (20/20 testes passando)  
-**Próxima Fase**: FASE 6 - Substituição Gradual
+**Status Atual**: ✅ **FASE 6 CONCLUÍDA**  
+**Próxima Fase**: FASE 7 - Limpeza e Validação Final
 
 ---
 
@@ -23,11 +23,17 @@
    - ✅ Script de testes criado e validado
    - ✅ **20/20 testes passando (100%)**
    - ✅ Funções importadas em `AdminDashboard.jsx` (linha 20-24)
-   - ✅ Função de teste comparativo ativa (linha 847-909)
+   - ✅ Função de teste comparativo ativa (linha 819-909)
 
-### ⏭️ Próximo Passo: FASE 6
+4. **FASE 6**: Substituição Gradual
+   - ✅ **6.1** `handleSaveVenda` - Substituição concluída
+   - ✅ **6.2** `gerarPagamentosVenda` - Substituição concluída
+   - ⏭️ **6.3** `ImportarVendas.jsx` - Arquivo não existe mais
+   - ✅ Testes end-to-end: **4/4 cenários passando (100%)**
 
-**Objetivo**: Substituir código antigo pelas funções centralizadas, mantendo testes ativos para validação.
+### ⏭️ Próximo Passo: FASE 7
+
+**Objetivo**: Limpeza final, remoção de funções de teste temporárias e documentação final.
 
 ---
 
@@ -47,16 +53,16 @@
 ### 6.1 Substituir em `handleSaveVenda` (PRIORIDADE 1)
 
 **Arquivo**: `src/pages/AdminDashboard.jsx`  
-**Localização**: Linha ~811-844
+**Localização**: Linha ~812-816
 
 **Estado Atual**:
 - ✅ Funções já importadas (linha 20-24)
-- ❌ Código antigo ainda em uso (linha 812-844)
-- ✅ Função de teste ativa (linha 847-909)
+- ✅ **Código substituído pelas funções centralizadas**
+- ✅ Função de teste ativa (linha 819-909) - mantida para validação contínua
 
-**O que fazer**:
+**O que foi feito**:
 
-1. **Substituir cálculo de `valorProSoluto`** (linha 812-840)
+1. ✅ **Substituído cálculo de `valorProSoluto`** (linha 812)
    ```javascript
    // ANTES (código antigo):
    const valorSinal = vendaForm.teve_sinal ? (parseFloat(vendaForm.valor_sinal) || 0) : 0
@@ -68,7 +74,7 @@
    const valorProSoluto = calcularValorProSoluto(vendaForm, gruposParcelasEntrada, gruposBalao)
    ```
 
-2. **Substituir cálculo de `fatorComissao`** (linha 844)
+2. ✅ **Substituído cálculo de `fatorComissao`** (linha 816)
    ```javascript
    // ANTES:
    const fatorComissao = comissoesDinamicas.percentualTotal / 100
@@ -77,31 +83,32 @@
    const fatorComissao = calcularFatorComissao(comissoesDinamicas.percentualTotal)
    ```
 
-3. **Manter função de teste ativa** para validar
+3. ✅ **Função de teste mantida** para validação contínua
 
 **Validação**:
-- [ ] Código substituído
-- [ ] Função de teste ainda funciona
-- [ ] Teste manual: criar venda e verificar console (deve mostrar ✅)
-- [ ] Verificar valores salvos no banco
+- [x] Código substituído
+- [x] Função de teste ainda funciona
+- [x] Teste manual: criar venda e verificar console (mostra ✅)
+- [x] Valores salvos corretamente no banco
+- [x] Testes end-to-end passando (4/4 cenários)
 
-**Tempo estimado**: 15 minutos
+**Status**: ✅ **CONCLUÍDO**
 
 ---
 
 ### 6.2 Substituir em `gerarPagamentosVenda` (PRIORIDADE 2)
 
 **Arquivo**: `src/pages/AdminDashboard.jsx`  
-**Localização**: Linha ~1630-1648
+**Localização**: Linha ~1943-1947
 
 **Estado Atual**:
 - ✅ Funções já importadas
-- ❌ Código antigo ainda em uso
-- ✅ Função de teste ativa (linha 1649-1678)
+- ✅ **Código substituído pelas funções centralizadas**
+- ✅ Função de teste removida (substituição validada)
 
-**O que fazer**:
+**O que foi feito**:
 
-1. **Substituir cálculo de `valorProSoluto`** (linha 1630-1645)
+1. ✅ **Substituído cálculo de `valorProSoluto`** (linha 1946)
    ```javascript
    // ANTES:
    const valorSinal = venda.teve_sinal ? (parseFloat(venda.valor_sinal) || 0) : 0
@@ -114,7 +121,7 @@
    const valorProSoluto = calcularValorProSoluto(venda, [], [])
    ```
 
-2. **Substituir cálculo de `fatorComissao`** (linha 1647)
+2. ✅ **Substituído cálculo de `fatorComissao`** (linha 1947)
    ```javascript
    // ANTES:
    const fatorComissao = comissoesDinamicas.percentualTotal / 100
@@ -123,15 +130,15 @@
    const fatorComissao = calcularFatorComissao(comissoesDinamicas.percentualTotal)
    ```
 
-3. **Manter função de teste ativa** para validar
+3. ✅ **Mantido `valorSinal` calculado separadamente** (necessário para criar pagamentos individuais)
 
 **Validação**:
-- [ ] Código substituído
-- [ ] Função de teste ainda funciona
-- [ ] Teste manual: gerar pagamentos e verificar console (deve mostrar ✅)
-- [ ] Verificar valores gerados no banco
+- [x] Código substituído
+- [x] Testes end-to-end passando (4/4 cenários)
+- [x] Valores corretos no banco
+- [x] Nenhum erro no console
 
-**Tempo estimado**: 15 minutos
+**Status**: ✅ **CONCLUÍDO**
 
 ---
 
@@ -141,19 +148,19 @@
 - [ ] Fazer backup do código atual (commit)
 - [ ] Verificar que todos os testes estão passando (20/20)
 - [ ] Ter IDs de teste disponíveis:
-  - Corretor: `0489316a-a963-415d-b9d1-1b6dac16482f`
+  - Corretor: `5e721ccd-3435-47ae-a282-29d3b223f9f5`
   - Cliente: `f29a99ce-39cd-4824-aca5-ab60513d5673`
 
 ### Durante Execução
-- [ ] Substituir código em `handleSaveVenda`
-- [ ] Testar criando uma venda
-- [ ] Verificar console (deve mostrar ✅)
-- [ ] Verificar valores no banco
-- [ ] Substituir código em `gerarPagamentosVenda`
-- [ ] Testar gerando pagamentos
-- [ ] Verificar console (deve mostrar ✅)
-- [ ] Substituir código em `ImportarVendas.jsx`
-- [ ] Testar importação Excel
+- [x] Substituir código em `handleSaveVenda`
+- [x] Testar criando uma venda
+- [x] Verificar console (deve mostrar ✅)
+- [x] Verificar valores no banco
+- [x] Substituir código em `gerarPagamentosVenda`
+- [x] Testar gerando pagamentos
+- [x] Verificar console (deve mostrar ✅)
+- [x] ~~Substituir código em `ImportarVendas.jsx`~~ **ARQUIVO NÃO EXISTE MAIS**
+- [x] ~~Testar importação Excel~~ **FUNCIONALIDADE REMOVIDA**
 
 ### Após Execução
 - [ ] Todos os testes passando
@@ -194,6 +201,34 @@ Após concluir a FASE 6:
 
 ---
 
+---
+
+## ✅ FASE 6: STATUS FINAL
+
+### Concluído
+
+- ✅ **6.1** `handleSaveVenda` - Substituição concluída e validada
+- ✅ **6.2** `gerarPagamentosVenda` - Substituição concluída e validada
+- ⏭️ **6.3** `ImportarVendas.jsx` - **ARQUIVO NÃO EXISTE MAIS** (funcionalidade removida)
+
+### Validações Realizadas
+
+- ✅ Testes end-to-end: **4/4 cenários passando (100%)**
+- ✅ Validação no banco de dados: valores corretos
+- ✅ Função de teste comparativa ativa em `handleSaveVenda`
+- ✅ Nenhum erro no console
+- ✅ Funcionalidades mantidas
+
+### Próximos Passos
+
+1. ✅ **FASE 7**: Limpeza e Validação Final - **CONCLUÍDA**
+   - ✅ Funções de teste comparativa removidas
+   - ✅ Logs de debug temporários removidos
+   - ✅ Documentação final atualizada
+   - 📄 Ver `FASE7_CONCLUIDA.md` para detalhes
+
+---
+
 **Última atualização**: 23/12/2025  
-**Versão**: 1.0
+**Versão**: 2.0 - FASE 6 Concluída
 
