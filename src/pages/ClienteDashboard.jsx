@@ -11,6 +11,7 @@ import {
 } from 'lucide-react'
 import logo from '../imgs/logo.png'
 import Ticker from '../components/Ticker'
+import { formatTelefone } from '../utils/formatters'
 import '../styles/Dashboard.css'
 import '../styles/ClienteDashboard.css'
 
@@ -1296,7 +1297,7 @@ const ClienteDashboard = () => {
                   
                   <div className="perfil-detail-card">
                     <span className="perfil-detail-label">TELEFONE</span>
-                    <span className="perfil-detail-value">{cliente.telefone || '-'}</span>
+                    <span className="perfil-detail-value">{cliente.telefone ? formatTelefone(cliente.telefone) : '-'}</span>
                   </div>
                   
                   <div className="perfil-detail-card">

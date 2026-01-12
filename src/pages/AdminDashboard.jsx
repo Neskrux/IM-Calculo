@@ -23,6 +23,13 @@ import {
   calcularFatorComissao
 } from '../lib/calculos'
 
+// Importar funções centralizadas de formatação
+import {
+  formatCurrency,
+  formatCurrencyInput,
+  formatTelefone
+} from '../utils/formatters'
+
 const AdminDashboard = () => {
   const { userProfile, signOut, loading: authLoading } = useAuth()
   const { tab } = useParams()
@@ -2576,29 +2583,7 @@ const AdminDashboard = () => {
   }
 
   // Formatar telefone: (00) 00000-0000
-  const formatTelefone = (value) => {
-    if (!value) return ''
-    const numbers = value.replace(/\D/g, '')
-    const limited = numbers.slice(0, 11)
-    if (limited.length <= 2) return `(${limited}`
-    if (limited.length <= 7) return `(${limited.slice(0, 2)}) ${limited.slice(2)}`
-    return `(${limited.slice(0, 2)}) ${limited.slice(2, 7)}-${limited.slice(7)}`
-  }
-
-  const formatCurrency = (value) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL'
-    }).format(value)
-  }
-
-  // Formatar valor como moeda para input
-  const formatCurrencyInput = (value) => {
-    if (!value) return ''
-    const num = parseFloat(value)
-    if (isNaN(num)) return ''
-    return num.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-  }
+  // Funções de formatação agora importadas de src/utils/formatters.js
 
   // Converter valor formatado para número
   const parseCurrencyInput = (formattedValue) => {
@@ -3870,7 +3855,7 @@ const AdminDashboard = () => {
                           {corretor.telefone && (
                             <>
                               <span style={{ margin: '0 8px' }}>•</span>
-                              <span>{corretor.telefone}</span>
+                              <span>{formatTelefone(corretor.telefone)}</span>
                             </>
                           )}
                         </div>
@@ -4696,7 +4681,7 @@ const AdminDashboard = () => {
                     <div className="cliente-details">
                       <div className="detail-row">
                         <Phone size={14} />
-                        <span>{cliente.telefone || '-'}</span>
+                        <span>{cliente.telefone ? formatTelefone(cliente.telefone) : '-'}</span>
                       </div>
                       <div className="detail-row">
                         <Mail size={14} />
