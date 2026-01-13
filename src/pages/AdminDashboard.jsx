@@ -7,11 +7,12 @@ import autoTable from 'jspdf-autotable'
 import { 
   Users, DollarSign, TrendingUp, Plus, Edit2, Trash2, 
   Search, Filter, LogOut, Menu, X, ChevronDown, Save, Eye,
-  Calculator, Calendar, User, Briefcase, CheckCircle, Clock, UserPlus, Mail, Lock, Percent, Building, PlusCircle, CreditCard, Check, Upload, FileText, Trash, UserCircle, Phone, MapPin, Camera, Download, FileDown, LayoutDashboard, ChevronLeft, ChevronRight, PanelLeftClose, PanelLeft, AlertCircle
+  Calculator, Calendar, User, Briefcase, CheckCircle, Clock, UserPlus, Mail, Lock, Percent, Building, PlusCircle, CreditCard, Check, Upload, FileText, Trash, UserCircle, Phone, MapPin, Camera, Download, FileDown, LayoutDashboard, ChevronLeft, ChevronRight, PanelLeftClose, PanelLeft, AlertCircle, RefreshCw
 } from 'lucide-react'
 import logo from '../imgs/logo.png'
 import Ticker from '../components/Ticker'
 import HomeDashboard from './HomeDashboard'
+import SincronizarSienge from '../components/SincronizarSienge'
 // import CadastrarCorretores from '../components/CadastrarCorretores'
 // import ImportarVendas from '../components/ImportarVendas'
 import '../styles/Dashboard.css'
@@ -3014,6 +3015,14 @@ const AdminDashboard = () => {
             <TrendingUp size={20} />
             <span>Relatórios</span>
           </button>
+          <button 
+            className={`nav-item ${activeTab === 'sienge' ? 'active' : ''}`}
+            onClick={() => navigate('/admin/sienge')}
+            title="Sincronizar Sienge"
+          >
+            <RefreshCw size={20} />
+            <span>Sincronizar Sienge</span>
+          </button>
         </nav>
 
         <div className="sidebar-footer">
@@ -3069,6 +3078,7 @@ const AdminDashboard = () => {
             {activeTab === 'pagamentos' && 'Acompanhamento de Pagamentos'}
             {activeTab === 'clientes' && 'Cadastro de Clientes'}
             {activeTab === 'relatorios' && 'Relatórios'}
+            {activeTab === 'sienge' && 'Sincronização Sienge'}
           </h1>
           <div className="header-actions">
             {activeTab === 'vendas' && (
@@ -4442,6 +4452,12 @@ const AdminDashboard = () => {
                 ))}
               </div>
             )}
+          </div>
+        )}
+
+        {activeTab === 'sienge' && (
+          <div className="content-section">
+            <SincronizarSienge />
           </div>
         )}
 
