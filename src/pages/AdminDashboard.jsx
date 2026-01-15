@@ -12,7 +12,7 @@ import {
 import logo from '../imgs/logo.png'
 import Ticker from '../components/Ticker'
 import HomeDashboard from './HomeDashboard'
-import SincronizarSienge from '../components/SincronizarSienge'
+import SincronizarSiengeV2 from '../components/SincronizarSiengeV2'
 // import CadastrarCorretores from '../components/CadastrarCorretores'
 // import ImportarVendas from '../components/ImportarVendas'
 import '../styles/Dashboard.css'
@@ -4457,7 +4457,7 @@ const AdminDashboard = () => {
 
         {activeTab === 'sienge' && (
           <div className="content-section">
-            <SincronizarSienge />
+            <SincronizarSiengeV2 />
           </div>
         )}
 

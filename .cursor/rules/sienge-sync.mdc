@@ -1,0 +1,99 @@
+---
+description: Regras para sincronização Sienge → Supabase
+globs: ["src/services/sienge/**/*.js", "src/components/Sincronizar*.jsx"]
+alwaysApply: true
+---
+
+# Regras de Sincronização Sienge
+
+## Regra #1: NUNCA usar Supabase Auth em sincronização
+
+```javascript
+// ❌ PROIBIDO - Causa rate limit 429 e conflitos
+await supabase.auth.admin.createUser({ email, password })
+
+// ✅ CORRETO - Inserir direto na tabela usuarios
+await supabase.from('usuarios').insert({ nome, email, tipo: 'corretor' })
+```
+
+**Por quê?**
+- Supabase Auth tem rate limits agressivos (429)
+- Auth é para identidade/login, não para espelho de ERP
+- Corretores sincronizados não precisam fazer login
+
+## Regra #2: Sempre usar RAW-first
+
+1. **Ingestão RAW** → `sienge_raw.objects` (100% dos dados)
+2. **Sync para Core** → `usuarios`, `clientes`, `vendas`
+
+```javascript
+// Passo 1: Ingerir RAW
+await ingestCreditors()
+await ingestCustomers()
+await ingestSalesContracts()
+
+// Passo 2: Sync para tabelas core
+await syncCorretoresFromRaw()
+await syncClientesFromRaw()
+await syncVendasFromRaw()
+```
+
+## Regra #3: Upsert por Sienge ID
+
+Sempre usar as chaves de sincronização:
+
+| Tabela | Chave |
+|--------|-------|
+| `usuarios` | `sienge_broker_id` |
+| `clientes` | `sienge_customer_id` |
+| `vendas` | `sienge_contract_id` |
+| `empreendimentos` | `sienge_enterprise_id` |
+
+```javascript
+// ✅ CORRETO - Upsert por sienge_id
+const { data: existente } = await supabase
+  .from('usuarios')
+  .select('id')
+  .eq('sienge_broker_id', String(siengeId))
+  .maybeSingle()
+
+if (existente) {
+  await supabase.from('usuarios').update(dados).eq('id', existente.id)
+} else {
+  await supabase.from('usuarios').insert(dados)
+}
+```
+
+## Regra #4: Email fake determinístico
+
+Se corretor não tem email, gerar fake determinístico:
+
+```javascript
+const email = emailReal || `corretor.${siengeId}@sync.local`
+```
+
+## Regra #5: Placeholders para dependências
+
+Se venda referencia corretor/cliente que não existe:
+
+```javascript
+// Criar placeholder ao invés de falhar
+const corretorId = await getOrCreateCorretorPlaceholder(siengeBrokerId)
+```
+
+## Regra #6: Ordem de sincronização
+
+```
+1. Corretores (não tem dependências)
+2. Clientes (não tem dependências)
+3. Vendas (depende de corretores e clientes)
+```
+
+## Arquivos principais
+
+- `src/services/sienge/rawIngestion.js` - Ingestão RAW
+- `src/services/sienge/syncCorretoresV2.js` - Sync corretores (SEM Auth)
+- `src/services/sienge/syncClientesV2.js` - Sync clientes
+- `src/services/sienge/syncVendasV2.js` - Sync vendas
+- `migrations/001_sienge_raw_schema.sql` - Schema RAW
+- `migrations/002_usuarios_sem_auth_dependency.sql` - Usuarios sem Auth
