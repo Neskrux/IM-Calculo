@@ -97,12 +97,62 @@ const mapearCliente = (customer) => {
 }
 
 /**
+ * Sincroniza cônjuge do cliente para complementadores_renda
+ */
+const syncConjuge = async (clienteId, spouse, siengeCustomerId) => {
+  if (!spouse || !spouse.name) return null
+  
+  try {
+    // Verificar se já existe cônjuge para este cliente
+    const { data: existente } = await supabase
+      .from('complementadores_renda')
+      .select('id')
+      .eq('cliente_id', clienteId)
+      .eq('sienge_spouse_id', String(siengeCustomerId))
+      .maybeSingle()
+    
+    const dadosConjuge = {
+      cliente_id: clienteId,
+      sienge_spouse_id: String(siengeCustomerId),
+      nome: spouse.name,
+      cpf: extractCpf(spouse.cpf),
+      email: spouse.email || null,
+      telefone: extractTelefone(spouse.phones),
+      profissao: spouse.profession || null,
+      data_nascimento: spouse.birthDate || null,
+      rg: spouse.numberIdentityCard || null,
+      parentesco: 'Cônjuge',
+      origem: 'sienge'
+    }
+    
+    if (existente) {
+      // Atualizar
+      await supabase
+        .from('complementadores_renda')
+        .update(dadosConjuge)
+        .eq('id', existente.id)
+      return 'atualizado'
+    } else {
+      // Criar
+      await supabase
+        .from('complementadores_renda')
+        .insert(dadosConjuge)
+      return 'criado'
+    }
+  } catch (error) {
+    console.warn(`⚠️ Erro ao sincronizar cônjuge do cliente ${clienteId}:`, error.message)
+    return 'erro'
+  }
+}
+
+/**
  * Sincroniza clientes do RAW para public.clientes
  */
 export const syncClientesFromRaw = async (options = {}) => {
   const {
     onProgress = null,
-    dryRun = false
+    dryRun = false,
+    syncConjuges = true
   } = options
 
   const stats = {
@@ -111,6 +161,8 @@ export const syncClientesFromRaw = async (options = {}) => {
     atualizados: 0,
     inalterados: 0,
     erros: 0,
+    conjugesCriados: 0,
+    conjugesAtualizados: 0,
     detalhes: []
   }
 
@@ -172,6 +224,8 @@ export const syncClientesFromRaw = async (options = {}) => {
           continue
         }
 
+        let clienteId = null
+        
         if (existente) {
           // Atualizar existente
           const { error: updateError } = await supabase
@@ -184,19 +238,30 @@ export const syncClientesFromRaw = async (options = {}) => {
 
           if (updateError) throw updateError
           stats.atualizados++
+          clienteId = existente.id
 
         } else {
           // Criar novo
-          const { error: insertError } = await supabase
+          const { data: novoCliente, error: insertError } = await supabase
             .from('clientes')
             .insert({
               ...dadosCliente,
               created_at: new Date().toISOString(),
               updated_at: new Date().toISOString()
             })
+            .select('id')
+            .single()
 
           if (insertError) throw insertError
           stats.criados++
+          clienteId = novoCliente.id
+        }
+        
+        // Sincronizar cônjuge se existir
+        if (syncConjuges && customer.spouse && customer.spouse.name && clienteId) {
+          const resultadoConjuge = await syncConjuge(clienteId, customer.spouse, customer.id)
+          if (resultadoConjuge === 'criado') stats.conjugesCriados++
+          if (resultadoConjuge === 'atualizado') stats.conjugesAtualizados++
         }
 
         if (onProgress) {
@@ -221,6 +286,8 @@ export const syncClientesFromRaw = async (options = {}) => {
     console.log(`   Total: ${stats.total}`)
     console.log(`   Criados: ${stats.criados}`)
     console.log(`   Atualizados: ${stats.atualizados}`)
+    console.log(`   Cônjuges criados: ${stats.conjugesCriados}`)
+    console.log(`   Cônjuges atualizados: ${stats.conjugesAtualizados}`)
     console.log(`   Erros: ${stats.erros}`)
 
     return stats

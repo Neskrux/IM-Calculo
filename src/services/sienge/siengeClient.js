@@ -215,6 +215,61 @@ export const getSalesContracts = async (options = {}) => {
 }
 
 /**
+ * Busca contrato de venda por ID (com detalhes completos)
+ * GET /sales-contracts/{id}
+ */
+export const getSalesContract = async (contractId, dryRun = false) => {
+  if (dryRun) {
+    console.log('[DRY RUN] Buscaria contrato:', contractId)
+    return null
+  }
+
+  return await siengeGet(`/sales-contracts/${contractId}`)
+}
+
+/**
+ * Busca títulos/parcelas a receber de um contrato
+ * GET /receivable-bills ou similar
+ * Nota: Este endpoint pode variar dependendo da versão do Sienge
+ */
+export const getReceivableBills = async (options = {}) => {
+  const {
+    contractId = null,
+    enterpriseId = null,
+    customerId = null,
+    status = null, // 'paid', 'pending', 'overdue'
+    limit = 200,
+    offset = 0,
+    dryRun = false
+  } = options
+
+  if (dryRun) {
+    console.log('[DRY RUN] Buscaria títulos a receber:', { contractId, enterpriseId })
+    return { results: [] }
+  }
+
+  const params = { limit, offset }
+  if (contractId) params.contractId = contractId
+  if (enterpriseId) params.enterpriseId = enterpriseId
+  if (customerId) params.customerId = customerId
+  if (status) params.status = status
+
+  try {
+    // Tentar endpoint de títulos a receber
+    return await siengeGet('/receivable-bills', params)
+  } catch (error) {
+    console.warn('Endpoint /receivable-bills não disponível:', error.message)
+    // Fallback: tentar outro endpoint comum
+    try {
+      return await siengeGet('/accounts-receivable/installments', params)
+    } catch (error2) {
+      console.warn('Endpoint /accounts-receivable/installments não disponível:', error2.message)
+      return { results: [] }
+    }
+  }
+}
+
+/**
  * Busca empreendimento por ID
  * GET /enterprises/{id}
  */

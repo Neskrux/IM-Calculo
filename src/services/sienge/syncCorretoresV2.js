@@ -73,6 +73,46 @@ const formatarEndereco = (address) => {
 }
 
 /**
+ * Extrai celular (segundo telefone ou tipo celular)
+ */
+const extractCelular = (phones) => {
+  if (!phones || !Array.isArray(phones) || phones.length === 0) return null
+  // Procurar telefone do tipo celular ou o segundo telefone
+  const celular = phones.find(p => 
+    p.type === 'Celular' || p.type === 'celular' || p.type === 2
+  ) || (phones.length > 1 ? phones[1] : null)
+  
+  if (!celular) return null
+  const ddd = celular?.ddd || ''
+  const number = celular?.number || ''
+  return `${ddd}${number}`.replace(/\D/g, '') || null
+}
+
+/**
+ * Extrai cidade do endereço
+ */
+const extractCidade = (address) => {
+  if (!address) return null
+  return address.cityName || address.city || null
+}
+
+/**
+ * Extrai estado do endereço
+ */
+const extractEstado = (address) => {
+  if (!address) return null
+  return address.state || address.uf || null
+}
+
+/**
+ * Extrai CEP do endereço
+ */
+const extractCep = (address) => {
+  if (!address) return null
+  return address.zipCode?.replace(/\D/g, '') || null
+}
+
+/**
  * Mapeia corretor do Sienge para formato do Supabase
  */
 const mapearCorretor = (creditor) => {
@@ -85,13 +125,22 @@ const mapearCorretor = (creditor) => {
     nome_fantasia: creditor.tradeName || null,
     email: email || `corretor.${siengeBrokerId}@sync.local`, // Email fake determinístico
     telefone: extractTelefone(creditor.phones),
+    celular: extractCelular(creditor.phones),
     cpf: extractCpf(creditor.cpf),
     cnpj: extractCnpj(creditor.cnpj),
     endereco: formatarEndereco(creditor.address),
+    endereco_completo: formatarEndereco(creditor.address),
+    cidade: extractCidade(creditor.address),
+    estado: extractEstado(creditor.address),
+    cep: extractCep(creditor.address),
     tipo: 'corretor',
     tipo_corretor: 'externo', // Default, pode ser ajustado depois
     ativo: creditor.active !== false,
-    origem: 'sienge'
+    origem: 'sienge',
+    observacoes: creditor.observation || null,
+    sienge_updated_at: creditor.modifiedAt 
+      ? new Date(creditor.modifiedAt).toISOString() 
+      : new Date().toISOString()
   }
 }
 
@@ -189,9 +238,16 @@ export const syncCorretoresFromRaw = async (options = {}) => {
                 ? dadosCorretor.email 
                 : existente.email,
               telefone: dadosCorretor.telefone,
+              celular: dadosCorretor.celular,
               cpf: dadosCorretor.cpf,
               cnpj: dadosCorretor.cnpj,
               endereco: dadosCorretor.endereco,
+              endereco_completo: dadosCorretor.endereco_completo,
+              cidade: dadosCorretor.cidade,
+              estado: dadosCorretor.estado,
+              cep: dadosCorretor.cep,
+              observacoes: dadosCorretor.observacoes,
+              sienge_updated_at: dadosCorretor.sienge_updated_at,
               ativo: dadosCorretor.ativo,
               updated_at: new Date().toISOString()
             })

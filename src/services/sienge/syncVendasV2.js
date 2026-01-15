@@ -652,6 +652,11 @@ export const syncVendasFromRaw = async (options = {}) => {
           )
           stats.pagamentosCriados += qtdPagamentos
         }
+        
+        // ===== CRIAR/ATUALIZAR COMISSAO_VENDA =====
+        if (vendaId && corretorId && paymentData.valor_pro_soluto > 0) {
+          await criarOuAtualizarComissaoVenda(vendaId, corretorId, empreendimentoId, paymentData, fatorComissao)
+        }
 
         if (onProgress) {
           onProgress({
@@ -688,6 +693,58 @@ export const syncVendasFromRaw = async (options = {}) => {
   } catch (error) {
     console.error('❌ [SYNC] Erro na sincronização de vendas:', error)
     throw error
+  }
+}
+
+/**
+ * Cria ou atualiza registro em comissoes_venda
+ */
+const criarOuAtualizarComissaoVenda = async (vendaId, corretorId, empreendimentoId, paymentData, fatorComissao) => {
+  try {
+    // Calcular comissão total
+    const valorProSoluto = paymentData.valor_pro_soluto || 0
+    const comissaoTotal = valorProSoluto * (fatorComissao || 0.07)
+    
+    // Verificar se já existe
+    const { data: existente } = await supabase
+      .from('comissoes_venda')
+      .select('id')
+      .eq('venda_id', vendaId)
+      .eq('corretor_id', corretorId)
+      .maybeSingle()
+    
+    const dadosComissao = {
+      venda_id: vendaId,
+      corretor_id: corretorId,
+      empreendimento_id: empreendimentoId,
+      valor_base: valorProSoluto,
+      percentual: (fatorComissao || 0.07) * 100,
+      valor_comissao: comissaoTotal,
+      status: 'pendente',
+      origem: 'sienge'
+    }
+    
+    if (existente) {
+      // Atualizar
+      await supabase
+        .from('comissoes_venda')
+        .update({
+          ...dadosComissao,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', existente.id)
+    } else {
+      // Criar
+      await supabase
+        .from('comissoes_venda')
+        .insert({
+          ...dadosComissao,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })
+    }
+  } catch (error) {
+    console.warn(`⚠️ Erro ao criar comissao_venda para venda ${vendaId}:`, error.message)
   }
 }
 

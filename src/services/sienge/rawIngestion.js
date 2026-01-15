@@ -218,10 +218,12 @@ export const ingestCreditors = async (options = {}) => {
 
 /**
  * Ingestão RAW de Clientes
+ * Suporta modifiedAfter para sincronização incremental
  */
 export const ingestCustomers = async (options = {}) => {
   const {
     enterpriseId = SIENGE_CONFIG.enterpriseId,
+    modifiedAfter = null, // Data ISO: "2025-01-15" - busca apenas modificados após esta data
     onProgress = null,
     runId = null
   } = options
@@ -230,19 +232,22 @@ export const ingestCustomers = async (options = {}) => {
     total: 0,
     inserted: 0,
     updated: 0,
-    errors: 0
+    errors: 0,
+    incremental: !!modifiedAfter
   }
 
   let offset = 0
   const limit = 200
   let hasMore = true
 
-  console.log(`📥 [RAW] Iniciando ingestão de customers (enterpriseId: ${enterpriseId})...`)
+  const modoTexto = modifiedAfter ? `INCREMENTAL (após ${modifiedAfter})` : 'COMPLETO'
+  console.log(`📥 [RAW] Iniciando ingestão de customers - ${modoTexto}...`)
 
   while (hasMore) {
     try {
       const params = { limit, offset }
       if (enterpriseId) params.enterpriseId = enterpriseId
+      if (modifiedAfter) params.modifiedAfter = modifiedAfter
 
       const sourceUrl = getSiengeUrl('/customers') + `?${new URLSearchParams(params)}`
       const response = await siengeGet('/customers', params)
@@ -297,10 +302,12 @@ export const ingestCustomers = async (options = {}) => {
 
 /**
  * Ingestão RAW de Contratos de Venda
+ * Suporta modifiedAfter para sincronização incremental
  */
 export const ingestSalesContracts = async (options = {}) => {
   const {
     enterpriseId = SIENGE_CONFIG.enterpriseId,
+    modifiedAfter = null, // Data ISO: "2025-01-15" - busca apenas modificados após esta data
     onProgress = null,
     runId = null
   } = options
@@ -309,19 +316,22 @@ export const ingestSalesContracts = async (options = {}) => {
     total: 0,
     inserted: 0,
     updated: 0,
-    errors: 0
+    errors: 0,
+    incremental: !!modifiedAfter
   }
 
   let offset = 0
   const limit = 200
   let hasMore = true
 
-  console.log(`📥 [RAW] Iniciando ingestão de sales-contracts (enterpriseId: ${enterpriseId})...`)
+  const modoTexto = modifiedAfter ? `INCREMENTAL (após ${modifiedAfter})` : 'COMPLETO'
+  console.log(`📥 [RAW] Iniciando ingestão de sales-contracts - ${modoTexto}...`)
 
   while (hasMore) {
     try {
       const params = { limit, offset }
       if (enterpriseId) params.enterpriseId = enterpriseId
+      if (modifiedAfter) params.modifiedAfter = modifiedAfter
 
       const sourceUrl = getSiengeUrl('/sales-contracts') + `?${new URLSearchParams(params)}`
       const response = await siengeGet('/sales-contracts', params)
@@ -375,34 +385,119 @@ export const ingestSalesContracts = async (options = {}) => {
 }
 
 /**
+ * Ingestão RAW de Empreendimentos
+ */
+export const ingestEnterprises = async (options = {}) => {
+  const {
+    onProgress = null,
+    runId = null
+  } = options
+
+  const stats = {
+    total: 0,
+    inserted: 0,
+    updated: 0,
+    errors: 0
+  }
+
+  console.log('📥 [RAW] Iniciando ingestão de enterprises...')
+
+  try {
+    const sourceUrl = getSiengeUrl('/enterprises')
+    const response = await siengeGet('/enterprises')
+    
+    // A API pode retornar { results: [...] } ou array direto
+    const enterprises = Array.isArray(response) 
+      ? response 
+      : (response.results || [])
+
+    console.log(`📊 [RAW] Total de empreendimentos na API: ${enterprises.length}`)
+
+    for (const enterprise of enterprises) {
+      stats.total++
+
+      const result = await upsertRawObject(
+        'enterprises',
+        enterprise.id,
+        enterprise,
+        enterprise.id, // enterpriseId é o próprio ID
+        sourceUrl,
+        runId
+      )
+
+      if (result.success) {
+        stats.inserted++
+      } else {
+        stats.errors++
+      }
+
+      if (onProgress) {
+        onProgress({
+          entity: 'enterprises',
+          current: stats.total,
+          total: enterprises.length
+        })
+      }
+    }
+
+    console.log(`✅ [RAW] Enterprises: ${stats.total} empreendimentos`)
+
+  } catch (error) {
+    console.error('❌ [RAW] Erro na ingestão de enterprises:', error)
+    stats.errors++
+  }
+
+  return stats
+}
+
+/**
  * Ingestão RAW completa (todos os endpoints)
  */
 export const ingestAll = async (options = {}) => {
   const {
     enterpriseId = SIENGE_CONFIG.enterpriseId,
+    modifiedAfter = null, // Data ISO para sync incremental
     onProgress = null
   } = options
 
+  const isIncremental = !!modifiedAfter
+
   const runId = await createRun({
-    entities: ['creditors', 'customers', 'sales-contracts'],
-    enterpriseId
+    entities: ['enterprises', 'creditors', 'customers', 'sales-contracts'],
+    enterpriseId,
+    modifiedAfter,
+    incremental: isIncremental
   })
 
   const metrics = {
+    enterprises: { total: 0, errors: 0 },
     creditors: { total: 0, corretores: 0, errors: 0 },
-    customers: { total: 0, errors: 0 },
-    salesContracts: { total: 0, errors: 0 }
+    customers: { total: 0, errors: 0, incremental: isIncremental },
+    salesContracts: { total: 0, errors: 0, incremental: isIncremental },
+    incremental: isIncremental
   }
 
   let status = 'OK'
   let error = null
 
   try {
-    console.log('🚀 [RAW] Iniciando ingestão completa...')
+    const modoTexto = isIncremental ? `INCREMENTAL (após ${modifiedAfter})` : 'COMPLETO'
+    console.log(`🚀 [RAW] Iniciando ingestão ${modoTexto}...`)
     console.log(`   Enterprise ID: ${enterpriseId}`)
     console.log(`   Run ID: ${runId}`)
+    if (isIncremental) {
+      console.log(`   📅 modifiedAfter: ${modifiedAfter}`)
+    }
 
-    // 1. Creditors (corretores)
+    // 0. Enterprises (empreendimentos) - PRIMEIRO! (sempre busca todos - são poucos)
+    if (onProgress) onProgress({ phase: 'enterprises', message: 'Buscando empreendimentos...' })
+    const enterprisesStats = await ingestEnterprises({
+      runId,
+      onProgress: (p) => onProgress?.({ ...p, phase: 'enterprises' })
+    })
+    metrics.enterprises = enterprisesStats
+
+    // 1. Creditors (corretores) - sempre busca todos (não suporta modifiedAfter bem)
     if (onProgress) onProgress({ phase: 'creditors', message: 'Buscando corretores...' })
     const creditorsStats = await ingestCreditors({
       runId,
@@ -410,34 +505,40 @@ export const ingestAll = async (options = {}) => {
     })
     metrics.creditors = creditorsStats
 
-    // 2. Customers (clientes)
-    if (onProgress) onProgress({ phase: 'customers', message: 'Buscando clientes...' })
+    // 2. Customers (clientes) - SUPORTA modifiedAfter
+    const customersMsg = isIncremental ? `Buscando clientes modificados após ${modifiedAfter}...` : 'Buscando clientes...'
+    if (onProgress) onProgress({ phase: 'customers', message: customersMsg })
     const customersStats = await ingestCustomers({
       enterpriseId,
+      modifiedAfter, // ⚡ Sync incremental!
       runId,
       onProgress: (p) => onProgress?.({ ...p, phase: 'customers' })
     })
     metrics.customers = customersStats
 
-    // 3. Sales Contracts (vendas)
-    if (onProgress) onProgress({ phase: 'sales-contracts', message: 'Buscando contratos...' })
+    // 3. Sales Contracts (vendas) - SUPORTA modifiedAfter
+    const contractsMsg = isIncremental ? `Buscando contratos modificados após ${modifiedAfter}...` : 'Buscando contratos...'
+    if (onProgress) onProgress({ phase: 'sales-contracts', message: contractsMsg })
     const contractsStats = await ingestSalesContracts({
       enterpriseId,
+      modifiedAfter, // ⚡ Sync incremental!
       runId,
       onProgress: (p) => onProgress?.({ ...p, phase: 'sales-contracts' })
     })
     metrics.salesContracts = contractsStats
 
     // Verificar se houve erros parciais
-    const totalErrors = creditorsStats.errors + customersStats.errors + contractsStats.errors
+    const totalErrors = enterprisesStats.errors + creditorsStats.errors + customersStats.errors + contractsStats.errors
     if (totalErrors > 0) {
       status = 'PARTIAL'
     }
 
-    console.log('✅ [RAW] Ingestão completa finalizada!')
+    const modoFinal = isIncremental ? 'INCREMENTAL' : 'COMPLETA'
+    console.log(`✅ [RAW] Ingestão ${modoFinal} finalizada!`)
+    console.log(`   Empreendimentos: ${metrics.enterprises.total}`)
     console.log(`   Corretores: ${metrics.creditors.corretores}`)
-    console.log(`   Clientes: ${metrics.customers.total}`)
-    console.log(`   Contratos: ${metrics.salesContracts.total}`)
+    console.log(`   Clientes: ${metrics.customers.total}${isIncremental ? ' (modificados)' : ''}`)
+    console.log(`   Contratos: ${metrics.salesContracts.total}${isIncremental ? ' (modificados)' : ''}`)
 
   } catch (err) {
     console.error('❌ [RAW] Erro na ingestão:', err)

@@ -9,10 +9,17 @@ export {
   ingestCreditors,
   ingestCustomers,
   ingestSalesContracts,
+  ingestEnterprises,
   ingestAll,
   getRawObjects,
   countRawObjects
 } from './rawIngestion'
+
+// Sync Empreendimentos
+export {
+  ingestEmpreendimentos,
+  syncEmpreendimentosFromRaw
+} from './syncEmpreendimentosV2'
 
 // Sync Corretores (SEM Auth)
 export {
@@ -21,14 +28,14 @@ export {
   findCorretorBySiengeId
 } from './syncCorretoresV2'
 
-// Sync Clientes
+// Sync Clientes (com cônjuges)
 export {
   syncClientesFromRaw,
   findClienteBySiengeId,
   getOrCreateClientePlaceholder
 } from './syncClientesV2'
 
-// Sync Vendas + Pagamentos Pro-Soluto
+// Sync Vendas + Pagamentos Pro-Soluto + Comissões
 export {
   syncVendasFromRaw,
   findVendaBySiengeId,
@@ -36,13 +43,21 @@ export {
   mapearPaymentConditions
 } from './syncVendasV2'
 
+// Sync Unidades
+export {
+  ingestUnidades,
+  syncUnidadesFromRaw
+} from './syncUnidadesV2'
+
 // Orquestrador
 export {
   syncCompleto,
   apenasIngestaoRaw,
   apenasSyncCore,
   getEstatisticas,
-  getVendasNaoSincronizadas
+  getVendasNaoSincronizadas,
+  getLastSyncDate,
+  setLastSyncDate
 } from './syncOrchestrator'
 
 // Cliente Sienge (funções de baixo nível)
@@ -57,3 +72,4 @@ export {
   getUnit,
   getUnits
 } from './siengeClient'
+ 

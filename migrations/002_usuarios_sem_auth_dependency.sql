@@ -234,3 +234,4 @@ $$ LANGUAGE plpgsql;
 -- =============================================
 GRANT EXECUTE ON FUNCTION public.upsert_corretor_sienge TO authenticated, service_role;
 GRANT EXECUTE ON FUNCTION public.get_or_create_corretor_placeholder TO authenticated, service_role;
+

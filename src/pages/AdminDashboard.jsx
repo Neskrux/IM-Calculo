@@ -97,6 +97,18 @@ const AdminDashboard = () => {
     autonomo: 'todos' // todos, sim, nao
   })
   
+  // Filtros para Empreendimentos
+  const [filtrosEmpreendimentos, setFiltrosEmpreendimentos] = useState({
+    busca: ''
+  })
+  
+  // Filtros para Clientes
+  const [filtrosClientes, setFiltrosClientes] = useState({
+    busca: '',
+    possuiFgts: 'todos',
+    temComplemento: 'todos'
+  })
+  
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState({ type: '', text: '' })
   const [contratoFile, setContratoFile] = useState(null)
@@ -118,12 +130,16 @@ const AdminDashboard = () => {
   // Estados para relatórios
   const [relatorioFiltros, setRelatorioFiltros] = useState({
     tipo: 'pagamentos', // pagamentos, comissoes, vendas
+    corretorId: '', // filtro por corretor
     vendaId: '',
-    cargoId: '',
+    cargoId: 'Corretor', // Padrão: Corretor
     status: 'todos',
     dataInicio: '',
-    dataFim: ''
+    dataFim: '',
+    empreendimentoId: '', // filtro por empreendimento
+    empreendimentoDetalhe: '' // para o card de detalhes por empreendimento
   })
+  const [buscaCorretorRelatorio, setBuscaCorretorRelatorio] = useState('')
   const [gerandoPdf, setGerandoPdf] = useState(false)
 
   // Toggle sidebar collapsed state
@@ -512,16 +528,19 @@ const AdminDashboard = () => {
       const [
         { data: corretoresData, error: corretoresError },
         { data: vendasData, error: vendasError },
-        { data: empreendimentosData, error: empreendimentosError }
+        { data: empreendimentosData, error: empreendimentosError },
+        { data: clientesData, error: clientesError }
       ] = await Promise.all([
         supabase.from('usuarios').select('*').eq('tipo', 'corretor'),
         supabase.from('vendas').select('*'),
-        supabase.from('empreendimentos').select('*')
+        supabase.from('empreendimentos').select('*'),
+        supabase.from('clientes').select('*')
       ])
 
       if (corretoresError) console.error('Erro ao buscar corretores:', corretoresError)
       if (vendasError) console.error('Erro ao buscar vendas:', vendasError)
       if (empreendimentosError) console.error('Erro ao buscar empreendimentos:', empreendimentosError)
+      if (clientesError) console.error('Erro ao buscar clientes:', clientesError)
 
       // Buscar cargos separadamente
       const { data: cargosData, error: cargosError } = await supabase
@@ -591,10 +610,12 @@ const AdminDashboard = () => {
       const vendasComRelacionamentos = (vendasData || []).map(venda => {
         const corretor = (corretoresData || []).find(c => c.id === venda.corretor_id)
         const empreendimento = (empreendimentosData || []).find(e => e.id === venda.empreendimento_id)
+        const cliente = (clientesData || []).find(c => c.id === venda.cliente_id)
         return {
           ...venda,
-          corretor: corretor ? { nome: corretor.nome, email: corretor.email, tipo_corretor: corretor.tipo_corretor, percentual_corretor: corretor.percentual_corretor } : null,
-          empreendimento: empreendimento ? { nome: empreendimento.nome } : null
+          corretor: corretor ? { id: corretor.id, nome: corretor.nome, email: corretor.email, tipo_corretor: corretor.tipo_corretor, percentual_corretor: corretor.percentual_corretor } : null,
+          empreendimento: empreendimento ? { id: empreendimento.id, nome: empreendimento.nome } : null,
+          cliente: cliente ? { id: cliente.id, nome: cliente.nome_completo, cpf: cliente.cpf, cnpj: cliente.cnpj, email: cliente.email, telefone: cliente.telefone } : null
         }
       })
 
@@ -604,6 +625,7 @@ const AdminDashboard = () => {
         const venda = (vendasData || []).find(v => String(v.id) === String(pag.venda_id))
         const corretor = venda ? (corretoresData || []).find(c => String(c.id) === String(venda.corretor_id)) : null
         const empreendimento = venda ? (empreendimentosData || []).find(e => String(e.id) === String(venda.empreendimento_id)) : null
+        const cliente = venda ? (clientesData || []).find(c => String(c.id) === String(venda.cliente_id)) : null
         
         return {
           ...pag,
@@ -613,10 +635,16 @@ const AdminDashboard = () => {
             comissao_total: venda.comissao_total,
             tipo_corretor: venda.tipo_corretor,
             empreendimento_id: venda.empreendimento_id,
+            corretor_id: venda.corretor_id,
+            cliente_id: venda.cliente_id,
             descricao: venda.descricao,
+            bloco: venda.bloco,
+            unidade: venda.unidade,
+            nome_cliente: venda.nome_cliente,
             fator_comissao: venda.fator_comissao,
-            corretor: corretor ? { nome: corretor.nome } : null,
-            empreendimento: empreendimento ? { nome: empreendimento.nome } : null
+            corretor: corretor ? { id: corretor.id, nome: corretor.nome, percentual_corretor: corretor.percentual_corretor } : null,
+            empreendimento: empreendimento ? { id: empreendimento.id, nome: empreendimento.nome } : null,
+            cliente: cliente ? { id: cliente.id, nome: cliente.nome_completo, cpf: cliente.cpf, cnpj: cliente.cnpj } : null
           } : null
         }
       })
@@ -641,16 +669,6 @@ const AdminDashboard = () => {
           cargo: cargo ? { nome_cargo: cargo.nome_cargo, percentual: cargo.percentual } : null
         }
       })
-
-      // Buscar clientes
-      const { data: clientesData, error: clientesError } = await supabase
-        .from('clientes')
-        .select('*')
-        .eq('ativo', true)
-      
-      if (clientesError) {
-        console.error('Erro ao buscar clientes:', clientesError)
-      }
 
       // Buscar complementadores de renda
       const { data: complementadoresData, error: complementadoresError } = await supabase
@@ -2314,6 +2332,35 @@ const AdminDashboard = () => {
     }).format(value)
   }
 
+  // Formatar nome com primeira letra maiúscula (Title Case)
+  const formatNome = (nome) => {
+    if (!nome) return ''
+    return nome
+      .toLowerCase()
+      .split(' ')
+      .map(palavra => {
+        // Preposições e artigos em minúsculo
+        const minusculas = ['de', 'da', 'do', 'das', 'dos', 'e', 'em', 'na', 'no', 'nas', 'nos']
+        if (minusculas.includes(palavra)) return palavra
+        return palavra.charAt(0).toUpperCase() + palavra.slice(1)
+      })
+      .join(' ')
+  }
+
+  // Ordenar corretores alfabeticamente
+  const corretoresOrdenados = [...corretores].sort((a, b) => {
+    const nomeA = (a.nome || '').toLowerCase()
+    const nomeB = (b.nome || '').toLowerCase()
+    return nomeA.localeCompare(nomeB, 'pt-BR')
+  })
+
+  // Ordenar empreendimentos alfabeticamente
+  const empreendimentosOrdenados = [...empreendimentos].sort((a, b) => {
+    const nomeA = (a.nome || '').toLowerCase()
+    const nomeB = (b.nome || '').toLowerCase()
+    return nomeA.localeCompare(nomeB, 'pt-BR')
+  })
+
   // Formatar valor como moeda para input
   const formatCurrencyInput = (value) => {
     if (!value) return ''
@@ -2343,77 +2390,186 @@ const AdminDashboard = () => {
       const corSecundaria = [16, 185, 129] // #10b981
       const corTexto = [51, 65, 85] // #334155
       
+      // Buscar nome do corretor se filtrado
+      const corretorSelecionado = relatorioFiltros.corretorId 
+        ? corretores.find(c => c.id === relatorioFiltros.corretorId)
+        : null
+      
+      // Buscar nome do empreendimento se filtrado
+      const empreendimentoSelecionado = relatorioFiltros.empreendimentoId
+        ? empreendimentos.find(e => e.id === relatorioFiltros.empreendimentoId)
+        : null
+      
       // Cabeçalho
       doc.setFillColor(...corPrimaria)
-      doc.rect(0, 0, pageWidth, 40, 'F')
+      doc.rect(0, 0, pageWidth, 45, 'F')
       
       doc.setTextColor(255, 255, 255)
-      doc.setFontSize(22)
+      doc.setFontSize(20)
       doc.setFont('helvetica', 'bold')
-      doc.text('RELATÓRIO DE COMISSÕES', pageWidth / 2, 18, { align: 'center' })
       
-      doc.setFontSize(11)
+      // Título dinâmico baseado nos filtros
+      let tituloRelatorio = 'RELATÓRIO DE COMISSÕES'
+      if (corretorSelecionado) {
+        tituloRelatorio = `RELATÓRIO DE COMISSÕES`
+        doc.text(tituloRelatorio, pageWidth / 2, 15, { align: 'center' })
+        doc.setFontSize(14)
+        doc.text(corretorSelecionado.nome.toUpperCase(), pageWidth / 2, 26, { align: 'center' })
+        doc.setFontSize(10)
+        doc.setFont('helvetica', 'normal')
+        doc.text(`${corretorSelecionado.tipo_corretor === 'interno' ? 'Corretor Interno' : 'Corretor Externo'}`, pageWidth / 2, 34, { align: 'center' })
+      } else {
+        doc.text(tituloRelatorio, pageWidth / 2, 18, { align: 'center' })
+      }
+      
+      doc.setFontSize(9)
       doc.setFont('helvetica', 'normal')
-      doc.text(`Gerado em: ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR')}`, pageWidth / 2, 30, { align: 'center' })
+      doc.text(`Gerado em: ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR')}`, pageWidth / 2, 42, { align: 'center' })
       
-      let yPosition = 50
+      let yPosition = 55
       
-      // Filtrar dados
-      let dadosFiltrados = [...listaVendasComPagamentos]
+      // Determinar fonte de dados: se há pagamentos, usar listaVendasComPagamentos
+      // Caso contrário, criar lista a partir das vendas diretamente
+      let dadosFiltrados = []
+      
+      console.log('🔍 [RELATÓRIO] Debug fonte de dados:', {
+        listaVendasComPagamentos: listaVendasComPagamentos.length,
+        vendas: vendas.length,
+        pagamentos: pagamentos.length
+      })
+      
+      if (listaVendasComPagamentos.length > 0) {
+        // Usar dados agrupados por pagamentos
+        console.log('📋 [RELATÓRIO] Usando listaVendasComPagamentos')
+        dadosFiltrados = [...listaVendasComPagamentos]
+      } else if (vendas.length > 0) {
+        // Fallback: criar estrutura a partir das vendas diretamente
+        console.log('📋 [RELATÓRIO] Usando vendas diretamente (sem pagamentos_prosoluto)')
+        dadosFiltrados = vendas.map(venda => ({
+          venda_id: venda.id,
+          venda: venda,
+          pagamentos: [],
+          totalValor: parseFloat(venda.valor_pro_soluto) || parseFloat(venda.valor_venda) || 0,
+          totalComissao: parseFloat(venda.comissao_total) || 0,
+          totalPago: venda.status === 'pago' ? (parseFloat(venda.comissao_total) || 0) : 0,
+          totalPendente: venda.status !== 'pago' ? (parseFloat(venda.comissao_total) || 0) : 0
+        }))
+      } else {
+        console.warn('⚠️ [RELATÓRIO] Nenhuma venda encontrada! Verifique se os dados foram carregados.')
+      }
+      
+      console.log('🔍 [RELATÓRIO] Filtros aplicados:', relatorioFiltros)
+      console.log('🔍 [RELATÓRIO] Antes dos filtros:', dadosFiltrados.length, 'vendas')
+      
+      // NOVO: Filtro por corretor
+      if (relatorioFiltros.corretorId) {
+        const antes = dadosFiltrados.length
+        dadosFiltrados = dadosFiltrados.filter(g => {
+          // Prioridade: corretor.id (objeto aninhado) > corretor_id (campo direto)
+          const corretorIdVenda = String(g.venda?.corretor?.id || g.venda?.corretor_id || '')
+          const corretorIdFiltro = String(relatorioFiltros.corretorId)
+          return corretorIdVenda === corretorIdFiltro
+        })
+        console.log(`   Filtro corretor: ${antes} → ${dadosFiltrados.length}`)
+      }
+      
+      // NOVO: Filtro por empreendimento
+      if (relatorioFiltros.empreendimentoId) {
+        const antes = dadosFiltrados.length
+        dadosFiltrados = dadosFiltrados.filter(g => {
+          // Prioridade: empreendimento.id (objeto aninhado) > empreendimento_id (campo direto)
+          const empIdVenda = String(g.venda?.empreendimento?.id || g.venda?.empreendimento_id || '')
+          const empIdFiltro = String(relatorioFiltros.empreendimentoId)
+          return empIdVenda === empIdFiltro
+        })
+        console.log(`   Filtro empreendimento: ${antes} → ${dadosFiltrados.length}`)
+      }
       
       if (relatorioFiltros.vendaId) {
+        const antes = dadosFiltrados.length
         dadosFiltrados = dadosFiltrados.filter(g => g.venda_id === relatorioFiltros.vendaId)
+        console.log(`   Filtro venda: ${antes} → ${dadosFiltrados.length}`)
       }
       
       if (relatorioFiltros.status !== 'todos') {
-        dadosFiltrados = dadosFiltrados.map(g => ({
-          ...g,
-          pagamentos: g.pagamentos.filter(p => p.status === relatorioFiltros.status)
-        })).filter(g => g.pagamentos.length > 0)
+        const antes = dadosFiltrados.length
+        if (listaVendasComPagamentos.length > 0) {
+          // Filtrar por status dos pagamentos - MAS MANTER A VENDA se tiver pagamentos do status
+          dadosFiltrados = dadosFiltrados.map(g => ({
+            ...g,
+            pagamentos: g.pagamentos.filter(p => p.status === relatorioFiltros.status)
+          })).filter(g => g.pagamentos.length > 0)
+        } else {
+          // Filtrar por status da venda
+          dadosFiltrados = dadosFiltrados.filter(g => g.venda?.status === relatorioFiltros.status)
+        }
+        console.log(`   Filtro status (${relatorioFiltros.status}): ${antes} → ${dadosFiltrados.length}`)
       }
       
       // Filtro por data
       if (relatorioFiltros.dataInicio || relatorioFiltros.dataFim) {
+        const antes = dadosFiltrados.length
         const dataInicio = relatorioFiltros.dataInicio ? new Date(relatorioFiltros.dataInicio) : null
         const dataFim = relatorioFiltros.dataFim ? new Date(relatorioFiltros.dataFim + 'T23:59:59') : null
         
-        dadosFiltrados = dadosFiltrados.map(g => ({
-          ...g,
-          pagamentos: g.pagamentos.filter(p => {
-            const dataPagamento = new Date(p.data_prevista)
-            if (dataInicio && dataPagamento < dataInicio) return false
-            if (dataFim && dataPagamento > dataFim) return false
+        if (listaVendasComPagamentos.length > 0) {
+          dadosFiltrados = dadosFiltrados.map(g => ({
+            ...g,
+            pagamentos: g.pagamentos.filter(p => {
+              const dataPagamento = new Date(p.data_prevista)
+              if (dataInicio && dataPagamento < dataInicio) return false
+              if (dataFim && dataPagamento > dataFim) return false
+              return true
+            })
+          })).filter(g => g.pagamentos.length > 0)
+        } else {
+          // Filtrar por data da venda
+          dadosFiltrados = dadosFiltrados.filter(g => {
+            const dataVenda = new Date(g.venda?.data_venda)
+            if (dataInicio && dataVenda < dataInicio) return false
+            if (dataFim && dataVenda > dataFim) return false
             return true
           })
-        })).filter(g => g.pagamentos.length > 0)
+        }
+        console.log(`   Filtro data: ${antes} → ${dadosFiltrados.length}`)
       }
       
-      // Título do filtro aplicado
+      console.log('📊 [RELATÓRIO] Dados filtrados FINAL:', dadosFiltrados.length, 'vendas')
+      
+      // Box de Filtros Aplicados
+      doc.setFillColor(241, 245, 249) // #f1f5f9
+      doc.roundedRect(14, yPosition, pageWidth - 28, 20, 2, 2, 'F')
+      
       doc.setTextColor(...corTexto)
-      doc.setFontSize(12)
+      doc.setFontSize(9)
       doc.setFont('helvetica', 'bold')
+      doc.text('FILTROS APLICADOS:', 18, yPosition + 7)
       
-      let filtroTexto = 'Todas as vendas'
-      if (relatorioFiltros.vendaId) {
-        const vendaSelecionada = dadosFiltrados[0]
-        filtroTexto = `Venda: ${vendaSelecionada?.venda?.corretor?.nome || 'N/A'} - Unidade ${vendaSelecionada?.venda?.unidade || 'N/A'}`
-      }
-      if (relatorioFiltros.status !== 'todos') {
-        filtroTexto += ` | Status: ${relatorioFiltros.status === 'pago' ? 'Pago' : 'Pendente'}`
-      }
-      if (relatorioFiltros.cargoId) {
-        filtroTexto += ` | Cargo: ${relatorioFiltros.cargoId}`
-      }
+      doc.setFont('helvetica', 'normal')
+      let filtrosTexto = []
+      if (corretorSelecionado) filtrosTexto.push(`Corretor: ${corretorSelecionado.nome}`)
+      if (empreendimentoSelecionado) filtrosTexto.push(`Empreend.: ${empreendimentoSelecionado.nome}`)
+      if (relatorioFiltros.status !== 'todos') filtrosTexto.push(`Status: ${relatorioFiltros.status === 'pago' ? 'Pago' : 'Pendente'}`)
+      if (relatorioFiltros.cargoId) filtrosTexto.push(`Cargo: ${relatorioFiltros.cargoId}`)
       if (relatorioFiltros.dataInicio || relatorioFiltros.dataFim) {
         const inicio = relatorioFiltros.dataInicio ? new Date(relatorioFiltros.dataInicio).toLocaleDateString('pt-BR') : 'início'
         const fim = relatorioFiltros.dataFim ? new Date(relatorioFiltros.dataFim).toLocaleDateString('pt-BR') : 'hoje'
-        filtroTexto += ` | Período: ${inicio} a ${fim}`
+        filtrosTexto.push(`Período: ${inicio} a ${fim}`)
       }
+      if (filtrosTexto.length === 0) filtrosTexto.push('Nenhum filtro aplicado - Exibindo todos os dados')
       
-      doc.text(filtroTexto, 14, yPosition)
-      yPosition += 10
+      doc.text(filtrosTexto.join(' | '), 18, yPosition + 14)
+      yPosition += 28
       
       // Resumo geral - calcular baseado no cargo selecionado ou total
+      // Obter percentual do corretor filtrado para cálculo dos totais
+      const corretorParaTotais = relatorioFiltros.corretorId 
+        ? corretores.find(c => c.id === relatorioFiltros.corretorId)
+        : null
+      const percentualCorretorTotais = corretorParaTotais?.percentual_corretor 
+        ? parseFloat(corretorParaTotais.percentual_corretor) / 100 
+        : null
+      
       let totalComissao = 0
       let totalPago = 0
       
@@ -2431,14 +2587,29 @@ const AdminDashboard = () => {
             }
           })
         })
+      } else if (percentualCorretorTotais !== null) {
+        // Se há filtro por corretor com percentual próprio, recalcular comissões
+        dadosFiltrados.forEach(grupo => {
+          grupo.pagamentos.forEach(pag => {
+            const valorParcela = parseFloat(pag.valor) || 0
+            const comissao = valorParcela * percentualCorretorTotais
+            totalComissao += comissao
+            if (pag.status === 'pago') {
+              totalPago += comissao
+            }
+          })
+        })
       } else {
-        totalComissao = dadosFiltrados.reduce((acc, g) => acc + (parseFloat(g.venda?.comissao_total) || 0), 0)
-        totalPago = dadosFiltrados.reduce((acc, g) => {
-          const comissaoTotal = parseFloat(g.venda?.comissao_total) || 0
-          const totalParcelas = g.totalValor
-          const parcelasPagas = g.pagamentos.filter(p => p.status === 'pago').reduce((a, p) => a + (parseFloat(p.valor) || 0), 0)
-          return totalParcelas > 0 ? acc + (comissaoTotal * parcelasPagas / totalParcelas) : acc
-        }, 0)
+        // Usar comissao_gerada dos pagamentos
+        dadosFiltrados.forEach(grupo => {
+          grupo.pagamentos.forEach(pag => {
+            const comissao = parseFloat(pag.comissao_gerada) || 0
+            totalComissao += comissao
+            if (pag.status === 'pago') {
+              totalPago += comissao
+            }
+          })
+        })
       }
       const totalPendente = totalComissao - totalPago
       
@@ -2479,43 +2650,109 @@ const AdminDashboard = () => {
         }
         
         const venda = grupo.venda
-        const corretor = venda?.corretor?.nome || 'N/A'
+        const corretor = venda?.corretor?.nome || venda?.nome_corretor || 'N/A'
         const empreendimento = venda?.empreendimento?.nome || 'N/A'
-        const unidade = venda?.unidade || 'N/A'
-        const comissaoVenda = parseFloat(venda?.comissao_total) || 0
+        const unidade = venda?.unidade || venda?.numero_unidade || '-'
+        const bloco = venda?.bloco || venda?.numero_bloco || '-'
+        const cliente = venda?.nome_cliente || venda?.cliente?.nome_completo || venda?.cliente?.nome || 'Cliente não informado'
+        const dataVenda = venda?.data_venda ? new Date(venda.data_venda).toLocaleDateString('pt-BR') : (venda?.data_emissao ? new Date(venda.data_emissao).toLocaleDateString('pt-BR') : '-')
+        const valorVenda = parseFloat(venda?.valor_venda) || parseFloat(venda?.valor_venda_total) || 0
         
-        // Título da venda
+        // Calcular comissão da venda - usar percentual do corretor se filtrado
+        let comissaoVenda = 0
+        if (percentualCorretorTotais !== null) {
+          // Recalcular usando percentual do corretor
+          comissaoVenda = grupo.pagamentos.reduce((acc, p) => {
+            const valorParcela = parseFloat(p.valor) || 0
+            return acc + (valorParcela * percentualCorretorTotais)
+          }, 0)
+        } else {
+          // Usar soma das comissões dos pagamentos
+          comissaoVenda = parseFloat(venda?.comissao_total) || grupo.totalComissao || grupo.pagamentos.reduce((acc, p) => acc + (parseFloat(p.comissao_gerada) || 0), 0)
+        }
+        
+        // Título da venda - Box principal
         doc.setFillColor(...corPrimaria)
-        doc.rect(14, yPosition, pageWidth - 28, 8, 'F')
+        doc.rect(14, yPosition, pageWidth - 28, 18, 'F')
         doc.setTextColor(255, 255, 255)
         doc.setFontSize(10)
         doc.setFont('helvetica', 'bold')
-        doc.text(`${empreendimento} - Unidade ${unidade} | Corretor: ${corretor}`, 18, yPosition + 5.5)
-        doc.text(`Comissão: ${formatCurrency(comissaoVenda)}`, pageWidth - 18, yPosition + 5.5, { align: 'right' })
+        doc.text(`${empreendimento}`, 18, yPosition + 6)
+        doc.setFontSize(9)
+        doc.setFont('helvetica', 'normal')
+        doc.text(`Bloco: ${bloco} | Unidade: ${unidade} | Data: ${dataVenda}`, 18, yPosition + 13)
         
-        yPosition += 12
+        // Valores à direita
+        doc.setFontSize(9)
+        doc.text(`Venda: ${formatCurrency(valorVenda)}`, pageWidth - 18, yPosition + 6, { align: 'right' })
+        doc.setFont('helvetica', 'bold')
+        doc.text(`Comissão: ${formatCurrency(comissaoVenda)}`, pageWidth - 18, yPosition + 13, { align: 'right' })
+        
+        yPosition += 22
+        
+        // Linha de informações do cliente e corretor
+        doc.setFillColor(226, 232, 240) // #e2e8f0
+        doc.rect(14, yPosition, pageWidth - 28, 10, 'F')
+        doc.setTextColor(...corTexto)
+        doc.setFontSize(8)
+        doc.setFont('helvetica', 'normal')
+        doc.text(`Cliente: ${cliente}`, 18, yPosition + 6)
+        doc.text(`Corretor: ${corretor}`, pageWidth - 18, yPosition + 6, { align: 'right' })
+        
+        yPosition += 14
+        
+        // Obter percentual do corretor filtrado (se houver filtro por corretor)
+        const corretorFiltrado = relatorioFiltros.corretorId 
+          ? corretores.find(c => c.id === relatorioFiltros.corretorId)
+          : null
+        const percentualCorretor = corretorFiltrado?.percentual_corretor 
+          ? parseFloat(corretorFiltrado.percentual_corretor) / 100 
+          : null
         
         // Tabela de parcelas
         const parcelas = grupo.pagamentos.map(pag => {
-          const comissoesCargo = calcularComissaoPorCargoPagamento(pag)
-          let comissaoExibir = calcularComissaoTotalPagamento(pag)
+          const valorParcela = parseFloat(pag.valor) || 0
+          
+          // Se há filtro por corretor e o corretor tem percentual próprio, usar esse percentual
+          let comissaoExibir = parseFloat(pag.comissao_gerada) || 0
+          let percentualUsado = 0
+          
+          if (percentualCorretor !== null && valorParcela > 0) {
+            // Recalcular comissão usando o percentual do corretor
+            comissaoExibir = valorParcela * percentualCorretor
+            percentualUsado = percentualCorretor * 100
+          } else if (valorParcela > 0 && comissaoExibir > 0) {
+            // Calcular percentual a partir da comissão existente
+            percentualUsado = (comissaoExibir / valorParcela) * 100
+          }
           
           // Se filtro por cargo, mostrar apenas comissão daquele cargo
           if (relatorioFiltros.cargoId) {
+            const comissoesCargo = calcularComissaoPorCargoPagamento(pag)
             const cargoEncontrado = comissoesCargo.find(c => c.nome_cargo === relatorioFiltros.cargoId)
             comissaoExibir = cargoEncontrado ? cargoEncontrado.valor : 0
+            percentualUsado = valorParcela > 0 ? (comissaoExibir / valorParcela) * 100 : 0
           }
           
-          // Calcular percentual da comissão em relação ao valor da parcela (sem arredondamento)
-          const valorParcela = parseFloat(pag.valor) || 0
-          const percentualComissao = valorParcela > 0 ? ((comissaoExibir / valorParcela) * 100).toFixed(6).replace(/\.?0+$/, '') : '0'
+          // Formatar percentual com 2 casas decimais
+          const percentualComissao = percentualUsado.toFixed(2)
+          
+          // Formatar tipo de pagamento
+          const tipoFormatado = {
+            'sinal': 'Sinal',
+            'entrada': 'Entrada',
+            'parcela_entrada': 'Parc. Entrada',
+            'balao': 'Balão',
+            'financiamento': 'Financ.',
+            'mensal': 'Mensal'
+          }[pag.tipo_pagamento || pag.tipo] || (pag.tipo_pagamento || pag.tipo || '-').charAt(0).toUpperCase() + (pag.tipo_pagamento || pag.tipo || '').slice(1)
           
           return [
-            pag.tipo_pagamento?.charAt(0).toUpperCase() + pag.tipo_pagamento?.slice(1) || '-',
-            new Date(pag.data_prevista).toLocaleDateString('pt-BR'),
+            tipoFormatado,
+            pag.data_prevista ? new Date(pag.data_prevista).toLocaleDateString('pt-BR') : '-',
             formatCurrency(pag.valor),
             pag.status === 'pago' ? 'Pago' : 'Pendente',
-            `${percentualComissao}%`,
+            `${percentualComissao.replace('.', ',')}%`,
             formatCurrency(comissaoExibir)
           ]
         })
@@ -2549,36 +2786,265 @@ const AdminDashboard = () => {
           margin: { left: 14, right: 14 }
         })
         
-        yPosition = doc.lastAutoTable.finalY + 5
+        yPosition = doc.lastAutoTable.finalY + 10
+      })
+      
+      // RESUMO EXECUTIVO FINAL (especialmente útil quando filtrado por corretor)
+      if (dadosFiltrados.length > 0) {
+        // Verificar se precisa nova página
+        if (yPosition > 220) {
+          doc.addPage()
+          yPosition = 20
+        }
         
-        // Divisão por cargo (se filtro de cargo específico não estiver ativo)
-        if (!relatorioFiltros.cargoId) {
-          const cargosVenda = {}
-          grupo.pagamentos.forEach(pag => {
-            const comissoesCargo = calcularComissaoPorCargoPagamento(pag)
-            comissoesCargo.forEach(cargo => {
-              if (!cargosVenda[cargo.nome_cargo]) {
-                cargosVenda[cargo.nome_cargo] = 0
-              }
-              cargosVenda[cargo.nome_cargo] += cargo.valor
+        yPosition += 10
+        
+        // Título do resumo
+        doc.setFillColor(...corSecundaria)
+        doc.rect(14, yPosition, pageWidth - 28, 10, 'F')
+        doc.setTextColor(255, 255, 255)
+        doc.setFontSize(12)
+        doc.setFont('helvetica', 'bold')
+        doc.text('RESUMO EXECUTIVO', pageWidth / 2, yPosition + 7, { align: 'center' })
+        yPosition += 15
+        
+        // Calcular estatísticas usando comissao_gerada dos pagamentos
+        const totalVendasRelatorio = dadosFiltrados.length
+        const totalParcelasRelatorio = dadosFiltrados.reduce((acc, g) => acc + g.pagamentos.length, 0)
+        const totalValorVendas = dadosFiltrados.reduce((acc, g) => acc + (parseFloat(g.venda?.valor_venda) || parseFloat(g.venda?.valor_venda_total) || 0), 0)
+        const totalComissaoRelatorio = dadosFiltrados.reduce((acc, g) => {
+          return acc + g.pagamentos.reduce((a, p) => a + (parseFloat(p.comissao_gerada) || 0), 0)
+        }, 0)
+        const totalPagoRelatorio = dadosFiltrados.reduce((acc, g) => {
+          return acc + g.pagamentos.filter(p => p.status === 'pago').reduce((a, p) => a + (parseFloat(p.comissao_gerada) || 0), 0)
+        }, 0)
+        const totalPendenteRelatorio = totalComissaoRelatorio - totalPagoRelatorio
+        
+        // Grid de estatísticas
+        const statsData = [
+          ['Total de Vendas', totalVendasRelatorio.toString()],
+          ['Total de Parcelas', totalParcelasRelatorio.toString()],
+          ['Valor Total em Vendas', formatCurrency(totalValorVendas)],
+          ['Comissão Total', formatCurrency(totalComissaoRelatorio)],
+          ['Comissão Paga', formatCurrency(totalPagoRelatorio)],
+          ['Comissão Pendente', formatCurrency(totalPendenteRelatorio)]
+        ]
+        
+        autoTable(doc, {
+          startY: yPosition,
+          head: [['Métrica', 'Valor']],
+          body: statsData,
+          theme: 'grid',
+          headStyles: {
+            fillColor: corPrimaria,
+            textColor: 255,
+            fontStyle: 'bold',
+            fontSize: 10
+          },
+          bodyStyles: {
+            fontSize: 10,
+            textColor: corTexto
+          },
+          columnStyles: {
+            0: { cellWidth: 80, fontStyle: 'bold' },
+            1: { cellWidth: 80, halign: 'right' }
+          },
+          margin: { left: 25, right: 25 },
+          tableWidth: 160
+        })
+        
+        yPosition = doc.lastAutoTable.finalY + 10
+        
+        // Se filtrado por corretor, adicionar lista de empreendimentos
+        if (corretorSelecionado) {
+          const empreendimentosDoCorretor = [...new Set(dadosFiltrados.map(g => g.venda?.empreendimento?.nome).filter(Boolean))]
+          
+          if (empreendimentosDoCorretor.length > 0) {
+            doc.setTextColor(...corTexto)
+            doc.setFontSize(10)
+            doc.setFont('helvetica', 'bold')
+            doc.text('Empreendimentos:', 25, yPosition + 5)
+            doc.setFont('helvetica', 'normal')
+            doc.text(empreendimentosDoCorretor.join(', '), 25, yPosition + 12)
+            yPosition += 20
+          }
+        }
+        
+        // ========================================
+        // PREVISIBILIDADE DE RECEBIMENTO
+        // ========================================
+        
+        // Coletar todas as parcelas pendentes e agrupar por mês
+        const parcelasPendentes = []
+        dadosFiltrados.forEach(grupo => {
+          grupo.pagamentos
+            .filter(p => p.status === 'pendente' || p.status !== 'pago')
+            .forEach(pag => {
+              const comissao = parseFloat(pag.comissao_gerada) || 0
+              parcelasPendentes.push({
+                data: new Date(pag.data_prevista),
+                valor: comissao,
+                empreendimento: grupo.venda?.empreendimento?.nome || 'N/A',
+                unidade: grupo.venda?.unidade || '-',
+                bloco: grupo.venda?.bloco || '-',
+                tipo: pag.tipo_pagamento || 'parcela'
+              })
             })
+        })
+        
+        if (parcelasPendentes.length > 0) {
+          // Verificar se precisa nova página
+          if (yPosition > 180) {
+            doc.addPage()
+            yPosition = 20
+          }
+          
+          yPosition += 5
+          
+          // Título da seção
+          doc.setFillColor(59, 130, 246) // Azul
+          doc.rect(14, yPosition, pageWidth - 28, 10, 'F')
+          doc.setTextColor(255, 255, 255)
+          doc.setFontSize(11)
+          doc.setFont('helvetica', 'bold')
+          doc.text('📅 PREVISÃO DE RECEBIMENTO', pageWidth / 2, yPosition + 7, { align: 'center' })
+          yPosition += 15
+          
+          // Agrupar por mês/ano
+          const previsaoPorMes = {}
+          const hoje = new Date()
+          
+          parcelasPendentes.forEach(p => {
+            const mesAno = `${p.data.getFullYear()}-${String(p.data.getMonth() + 1).padStart(2, '0')}`
+            if (!previsaoPorMes[mesAno]) {
+              previsaoPorMes[mesAno] = {
+                total: 0,
+                qtd: 0,
+                parcelas: []
+              }
+            }
+            previsaoPorMes[mesAno].total += p.valor
+            previsaoPorMes[mesAno].qtd += 1
+            previsaoPorMes[mesAno].parcelas.push(p)
           })
           
-          const cargosData = Object.entries(cargosVenda).map(([nome, valor]) => [nome, formatCurrency(valor)])
+          // Ordenar por data
+          const mesesOrdenados = Object.keys(previsaoPorMes).sort()
           
-          if (cargosData.length > 0) {
+          // Criar tabela de previsão
+          const nomeMes = (mesAno) => {
+            const [ano, mes] = mesAno.split('-')
+            const meses = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 
+                          'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro']
+            return `${meses[parseInt(mes) - 1]}/${ano}`
+          }
+          
+          const previsaoData = mesesOrdenados.slice(0, 12).map(mesAno => {
+            const dados = previsaoPorMes[mesAno]
+            const [ano, mes] = mesAno.split('-')
+            const dataRef = new Date(parseInt(ano), parseInt(mes) - 1)
+            const isPassado = dataRef < new Date(hoje.getFullYear(), hoje.getMonth())
+            const isAtual = dataRef.getMonth() === hoje.getMonth() && dataRef.getFullYear() === hoje.getFullYear()
+            
+            let status = ''
+            if (isAtual) status = '🔔 ESTE MÊS'
+            else if (isPassado) status = '⚠️ ATRASADO'
+            else status = '📆 Futuro'
+            
+            return [
+              nomeMes(mesAno),
+              dados.qtd.toString() + ' parcela(s)',
+              formatCurrency(dados.total),
+              status
+            ]
+          })
+          
+          // Calcular totais por período
+          const proximosMeses = mesesOrdenados.slice(0, 3)
+          const totalProximos3Meses = proximosMeses.reduce((acc, m) => acc + (previsaoPorMes[m]?.total || 0), 0)
+          
+          autoTable(doc, {
+            startY: yPosition,
+            head: [['Período', 'Qtd. Parcelas', 'Valor Previsto', 'Status']],
+            body: previsaoData,
+            theme: 'striped',
+            headStyles: {
+              fillColor: [59, 130, 246],
+              textColor: 255,
+              fontStyle: 'bold',
+              fontSize: 9
+            },
+            bodyStyles: {
+              fontSize: 9,
+              textColor: corTexto
+            },
+            columnStyles: {
+              0: { cellWidth: 45 },
+              1: { cellWidth: 35, halign: 'center' },
+              2: { cellWidth: 45, halign: 'right' },
+              3: { cellWidth: 40, halign: 'center' }
+            },
+            margin: { left: 14, right: 14 },
+            didParseCell: function(data) {
+              // Colorir células baseado no status
+              if (data.section === 'body' && data.column.index === 3) {
+                const cellText = data.cell.raw
+                if (cellText.includes('ATRASADO')) {
+                  data.cell.styles.textColor = [220, 38, 38] // Vermelho
+                  data.cell.styles.fontStyle = 'bold'
+                } else if (cellText.includes('ESTE MÊS')) {
+                  data.cell.styles.textColor = [16, 185, 129] // Verde
+                  data.cell.styles.fontStyle = 'bold'
+                }
+              }
+            }
+          })
+          
+          yPosition = doc.lastAutoTable.finalY + 8
+          
+          // Box com destaque do total dos próximos 3 meses
+          doc.setFillColor(236, 253, 245) // Verde claro
+          doc.roundedRect(14, yPosition, pageWidth - 28, 18, 2, 2, 'F')
+          doc.setDrawColor(16, 185, 129)
+          doc.roundedRect(14, yPosition, pageWidth - 28, 18, 2, 2, 'S')
+          
+          doc.setTextColor(16, 185, 129)
+          doc.setFontSize(10)
+          doc.setFont('helvetica', 'bold')
+          doc.text('💰 Previsão próximos 3 meses:', 20, yPosition + 8)
+          doc.setFontSize(14)
+          doc.text(formatCurrency(totalProximos3Meses), pageWidth - 20, yPosition + 11, { align: 'right' })
+          
+          yPosition += 25
+          
+          // Detalhe das próximas parcelas (top 10)
+          const proximasParcelas = parcelasPendentes
+            .filter(p => p.data >= hoje)
+            .sort((a, b) => a.data - b.data)
+            .slice(0, 10)
+          
+          if (proximasParcelas.length > 0 && yPosition < 230) {
+            doc.setTextColor(...corTexto)
             doc.setFontSize(9)
             doc.setFont('helvetica', 'bold')
-            doc.setTextColor(...corTexto)
-            doc.text('Divisão por Beneficiário:', 14, yPosition + 3)
+            doc.text('Próximas 10 parcelas a receber:', 14, yPosition + 3)
+            yPosition += 6
+            
+            const proximasData = proximasParcelas.map(p => [
+              p.data.toLocaleDateString('pt-BR'),
+              `${p.empreendimento}`,
+              `Bl. ${p.bloco} Un. ${p.unidade}`,
+              p.tipo.charAt(0).toUpperCase() + p.tipo.slice(1),
+              formatCurrency(p.valor)
+            ])
             
             autoTable(doc, {
-              startY: yPosition + 6,
-              head: [['Beneficiário', 'Valor Total']],
-              body: cargosData,
+              startY: yPosition,
+              head: [['Data', 'Empreendimento', 'Unidade', 'Tipo', 'Comissão']],
+              body: proximasData,
               theme: 'plain',
               headStyles: {
-                fillColor: [226, 232, 240],
+                fillColor: [241, 245, 249],
                 textColor: corTexto,
                 fontStyle: 'bold',
                 fontSize: 8
@@ -2588,19 +3054,17 @@ const AdminDashboard = () => {
                 textColor: corTexto
               },
               columnStyles: {
-                0: { cellWidth: 80 },
-                1: { cellWidth: 50, halign: 'right' }
+                0: { cellWidth: 25 },
+                1: { cellWidth: 50 },
+                2: { cellWidth: 35 },
+                3: { cellWidth: 30 },
+                4: { cellWidth: 30, halign: 'right' }
               },
-              margin: { left: 14, right: 14 },
-              tableWidth: 130
+              margin: { left: 14, right: 14 }
             })
-            
-            yPosition = doc.lastAutoTable.finalY + 10
           }
         }
-        
-        yPosition += 5
-      })
+      }
       
       // Rodapé em todas as páginas
       const pageCount = doc.internal.getNumberOfPages()
@@ -2610,12 +3074,19 @@ const AdminDashboard = () => {
         doc.rect(0, doc.internal.pageSize.getHeight() - 15, pageWidth, 15, 'F')
         doc.setTextColor(255, 255, 255)
         doc.setFontSize(8)
-        doc.text('Sistema de Gestão de Comissões - InvestMoney', 14, doc.internal.pageSize.getHeight() - 6)
+        doc.text('Sistema de Gestão de Comissões - Nohros Imobiliária', 14, doc.internal.pageSize.getHeight() - 6)
         doc.text(`Página ${i} de ${pageCount}`, pageWidth - 14, doc.internal.pageSize.getHeight() - 6, { align: 'right' })
       }
       
-      // Salvar PDF
-      const nomeArquivo = `relatorio_comissoes_${new Date().toISOString().split('T')[0]}.pdf`
+      // Salvar PDF com nome mais descritivo
+      let nomeArquivo = 'relatorio_comissoes'
+      if (corretorSelecionado) {
+        nomeArquivo = `comissoes_${corretorSelecionado.nome.replace(/\s+/g, '_').toLowerCase()}`
+      }
+      if (relatorioFiltros.status !== 'todos') {
+        nomeArquivo += `_${relatorioFiltros.status}`
+      }
+      nomeArquivo += `_${new Date().toISOString().split('T')[0]}.pdf`
       doc.save(nomeArquivo)
       
       setMessage({ type: 'success', text: 'Relatório gerado com sucesso!' })
@@ -2732,6 +3203,11 @@ const AdminDashboard = () => {
     })()
     
     return matchSearch && matchTipo && matchCorretor && matchEmpreendimento && matchStatus && matchBloco && matchData && matchValor
+  }).sort((a, b) => {
+    // Ordenar por data mais recente primeiro
+    const dataA = new Date(a.data_venda || a.created_at || 0)
+    const dataB = new Date(b.data_venda || b.created_at || 0)
+    return dataB - dataA
   })
   
   // Filtrar pagamentos
@@ -2772,6 +3248,45 @@ const AdminDashboard = () => {
       grupo.venda?.nome_cliente?.toLowerCase().includes(filtrosPagamentos.buscaVenda.toLowerCase())
     
     return matchCorretor && matchEmpreendimento && matchStatus && matchTipo && matchData && matchBusca
+  }).sort((a, b) => {
+    // Ordenar por data da venda mais recente primeiro
+    const dataA = new Date(a.venda?.data_venda || a.venda?.created_at || 0)
+    const dataB = new Date(b.venda?.data_venda || b.venda?.created_at || 0)
+    return dataB - dataA
+  })
+
+  // Filtro de Empreendimentos
+  const filteredEmpreendimentos = empreendimentos.filter(emp => {
+    const matchBusca = !filtrosEmpreendimentos.busca ||
+      emp.nome?.toLowerCase().includes(filtrosEmpreendimentos.busca.toLowerCase()) ||
+      emp.descricao?.toLowerCase().includes(filtrosEmpreendimentos.busca.toLowerCase())
+    
+    return matchBusca
+  })
+
+  // Filtro de Clientes
+  const filteredClientes = clientes.filter(cliente => {
+    // Busca por texto
+    const matchBusca = !filtrosClientes.busca ||
+      cliente.nome_completo?.toLowerCase().includes(filtrosClientes.busca.toLowerCase()) ||
+      cliente.cpf?.toLowerCase().includes(filtrosClientes.busca.toLowerCase()) ||
+      cliente.email?.toLowerCase().includes(filtrosClientes.busca.toLowerCase()) ||
+      cliente.telefone?.toLowerCase().includes(filtrosClientes.busca.toLowerCase()) ||
+      cliente.profissao?.toLowerCase().includes(filtrosClientes.busca.toLowerCase()) ||
+      cliente.empresa_trabalho?.toLowerCase().includes(filtrosClientes.busca.toLowerCase()) ||
+      cliente.endereco?.toLowerCase().includes(filtrosClientes.busca.toLowerCase())
+    
+    // Filtro por FGTS
+    const matchFgts = filtrosClientes.possuiFgts === 'todos' ||
+      (filtrosClientes.possuiFgts === 'sim' && cliente.possui_3_anos_fgts) ||
+      (filtrosClientes.possuiFgts === 'nao' && !cliente.possui_3_anos_fgts)
+    
+    // Filtro por complemento de renda
+    const matchComplemento = filtrosClientes.temComplemento === 'todos' ||
+      (filtrosClientes.temComplemento === 'sim' && cliente.tem_complemento_renda) ||
+      (filtrosClientes.temComplemento === 'nao' && !cliente.tem_complemento_renda)
+    
+    return matchBusca && matchFgts && matchComplemento
   })
 
   // Quando seleciona um corretor na venda, atualiza o tipo automaticamente
@@ -3200,8 +3715,8 @@ const AdminDashboard = () => {
                     className="filter-select"
                   >
                     <option value="">Todos</option>
-                    {corretores.map(c => (
-                      <option key={c.id} value={c.id}>{c.nome}</option>
+                    {corretoresOrdenados.map(c => (
+                      <option key={c.id} value={c.id}>{formatNome(c.nome)}</option>
                     ))}
                   </select>
                 </div>
@@ -3214,7 +3729,7 @@ const AdminDashboard = () => {
                     className="filter-select"
                   >
                     <option value="">Todos</option>
-                    {empreendimentos.map(e => (
+                    {[...empreendimentos].sort((a, b) => (a.nome || '').localeCompare(b.nome || '', 'pt-BR')).map(e => (
                       <option key={e.id} value={e.id}>{e.nome}</option>
                     ))}
                   </select>
@@ -3367,14 +3882,27 @@ const AdminDashboard = () => {
                         <td>
                           <div className="action-buttons">
                             <button 
+                              className="action-btn view"
+                              onClick={() => {
+                                setSelectedItem(venda)
+                                setModalType('visualizar-venda')
+                                setShowModal(true)
+                              }}
+                              title="Visualizar"
+                            >
+                              <Eye size={16} />
+                            </button>
+                            <button 
                               className="action-btn edit"
                               onClick={() => openEditModal(venda)}
+                              title="Editar"
                             >
                               <Edit2 size={16} />
                             </button>
                             <button 
                               className="action-btn delete"
                               onClick={() => handleDeleteVenda(venda.id)}
+                              title="Excluir"
                             >
                               <Trash2 size={16} />
                             </button>
@@ -3619,19 +4147,55 @@ const AdminDashboard = () => {
 
         {activeTab === 'empreendimentos' && (
           <div className="content-section">
-            {empreendimentos.length === 0 ? (
+            {/* Filtros de Empreendimentos */}
+            <div className="filters-section">
+              <div className="search-box">
+                <Search size={20} />
+                <input 
+                  type="text" 
+                  placeholder="Buscar por nome ou descrição..."
+                  value={filtrosEmpreendimentos.busca}
+                  onChange={(e) => setFiltrosEmpreendimentos({...filtrosEmpreendimentos, busca: e.target.value})}
+                />
+              </div>
+              
+              {filtrosEmpreendimentos.busca && (
+                <button
+                  className="btn-clear-filters"
+                  onClick={() => setFiltrosEmpreendimentos({ busca: '' })}
+                >
+                  <X size={16} />
+                  Limpar Busca
+                </button>
+              )}
+            </div>
+
+            {filteredEmpreendimentos.length === 0 ? (
               <div className="empty-state-box">
                 <Building size={48} />
-                <h3>Nenhum empreendimento cadastrado</h3>
-                <p>Clique em "Novo Empreendimento" para adicionar</p>
+                <h3>{empreendimentos.length === 0 ? 'Nenhum empreendimento cadastrado' : 'Nenhum empreendimento encontrado'}</h3>
+                <p>{empreendimentos.length === 0 ? 'Clique em "Novo Empreendimento" para adicionar' : 'Tente outra busca'}</p>
               </div>
             ) : (
               <div className="empreendimentos-grid">
-                {empreendimentos.map((emp) => (
+                {filteredEmpreendimentos.map((emp) => (
                   <div key={emp.id} className="empreendimento-card">
                     <div className="empreendimento-header">
                       <div className="empreendimento-info">
                         <h3>{emp.nome}</h3>
+                        {emp.sienge_enterprise_id && (
+                          <span style={{ 
+                            fontSize: '10px', 
+                            color: '#10b981', 
+                            background: 'rgba(16, 185, 129, 0.1)',
+                            padding: '2px 6px',
+                            borderRadius: '4px',
+                            marginBottom: '4px',
+                            display: 'inline-block'
+                          }}>
+                            ✓ Sienge #{emp.sienge_enterprise_id}
+                          </span>
+                        )}
                         <div className="comissoes-totais">
                           <span className="badge externo">
                             Externo: {emp.comissao_total_externo || 7}%
@@ -3640,6 +4204,44 @@ const AdminDashboard = () => {
                             Interno: {emp.comissao_total_interno || 6}%
                           </span>
                         </div>
+                        {/* Resumo de Comissões */}
+                        {(() => {
+                          const vendasEmp = vendas.filter(v => v.empreendimento_id === emp.id)
+                          const pagamentosEmp = pagamentos.filter(p => vendasEmp.some(v => v.id === p.venda_id))
+                          const totalVendas = vendasEmp.length
+                          const comissaoTotal = pagamentosEmp.reduce((acc, p) => acc + (parseFloat(p.comissao_gerada) || 0), 0)
+                          const comissaoPaga = pagamentosEmp
+                            .filter(p => p.status === 'pago')
+                            .reduce((acc, p) => acc + (parseFloat(p.comissao_gerada) || 0), 0)
+                          const comissaoPendente = comissaoTotal - comissaoPaga
+                          
+                          return totalVendas > 0 ? (
+                            <div style={{ 
+                              marginTop: '8px', 
+                              padding: '8px', 
+                              background: 'rgba(0,0,0,0.2)', 
+                              borderRadius: '6px',
+                              fontSize: '11px'
+                            }}>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                                <span style={{ color: 'rgba(255,255,255,0.6)' }}>Vendas:</span>
+                                <span style={{ fontWeight: '600' }}>{totalVendas}</span>
+                              </div>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                                <span style={{ color: 'rgba(255,255,255,0.6)' }}>Comissão Total:</span>
+                                <span style={{ fontWeight: '600' }}>{formatCurrency(comissaoTotal)}</span>
+                              </div>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                                <span style={{ color: '#10b981' }}>Paga:</span>
+                                <span style={{ fontWeight: '600', color: '#10b981' }}>{formatCurrency(comissaoPaga)}</span>
+                              </div>
+                              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                <span style={{ color: '#fbbf24' }}>Pendente:</span>
+                                <span style={{ fontWeight: '600', color: '#fbbf24' }}>{formatCurrency(comissaoPendente)}</span>
+                              </div>
+                            </div>
+                          ) : null
+                        })()}
                       </div>
                       <div className="empreendimento-actions">
                         <button 
@@ -3892,8 +4494,8 @@ const AdminDashboard = () => {
                     className="filter-select"
                   >
                     <option value="">Todos</option>
-                    {corretores.map(c => (
-                      <option key={c.id} value={c.id}>{c.nome}</option>
+                    {corretoresOrdenados.map(c => (
+                      <option key={c.id} value={c.id}>{formatNome(c.nome)}</option>
                     ))}
                   </select>
                 </div>
@@ -3906,7 +4508,7 @@ const AdminDashboard = () => {
                     className="filter-select"
                   >
                     <option value="">Todos</option>
-                    {empreendimentos.map(e => (
+                    {[...empreendimentos].sort((a, b) => (a.nome || '').localeCompare(b.nome || '', 'pt-BR')).map(e => (
                       <option key={e.id} value={e.id}>{e.nome}</option>
                     ))}
                   </select>
@@ -4114,8 +4716,36 @@ const AdminDashboard = () => {
                             )}</span>
                           </div>
                         </div>
-                        <div className="expand-icon">
-                          <ChevronDown size={20} className={vendaExpandida === grupo.venda_id ? 'rotated' : ''} />
+                        <div className="header-actions-pagamento" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <button 
+                            className="action-btn view"
+                            onClick={(e) => {
+                              e.stopPropagation() // Impedir expansão ao clicar
+                              const vendaCompleta = vendas.find(v => v.id === grupo.venda_id) || grupo.venda
+                              setSelectedItem(vendaCompleta)
+                              setModalType('visualizar-venda')
+                              setShowModal(true)
+                            }}
+                            title="Visualizar Venda"
+                            style={{ 
+                              background: 'rgba(59, 130, 246, 0.1)',
+                              border: '1px solid rgba(59, 130, 246, 0.3)',
+                              color: '#3b82f6',
+                              padding: '6px 10px',
+                              borderRadius: '6px',
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '4px',
+                              fontSize: '12px'
+                            }}
+                          >
+                            <Eye size={14} />
+                            Ver
+                          </button>
+                          <div className="expand-icon">
+                            <ChevronDown size={20} className={vendaExpandida === grupo.venda_id ? 'rotated' : ''} />
+                          </div>
                         </div>
                       </div>
 
@@ -4371,15 +5001,70 @@ const AdminDashboard = () => {
 
         {activeTab === 'clientes' && (
           <div className="content-section">
-            {clientes.length === 0 ? (
+            {/* Filtros de Clientes */}
+            <div className="filters-section">
+              <div className="search-box">
+                <Search size={20} />
+                <input 
+                  type="text" 
+                  placeholder="Buscar por nome, CPF, email, telefone, profissão..."
+                  value={filtrosClientes.busca}
+                  onChange={(e) => setFiltrosClientes({...filtrosClientes, busca: e.target.value})}
+                />
+              </div>
+              
+              {/* Filtros em Grid */}
+              <div className="filters-grid">
+                <div className="filter-item">
+                  <label className="filter-label">
+                    <Filter size={16} />
+                    FGTS (3+ anos)
+                  </label>
+                  <select 
+                    value={filtrosClientes.possuiFgts} 
+                    onChange={(e) => setFiltrosClientes({...filtrosClientes, possuiFgts: e.target.value})}
+                    className="filter-select"
+                  >
+                    <option value="todos">Todos</option>
+                    <option value="sim">Sim</option>
+                    <option value="nao">Não</option>
+                  </select>
+                </div>
+                
+                <div className="filter-item">
+                  <label className="filter-label">Complemento de Renda</label>
+                  <select 
+                    value={filtrosClientes.temComplemento} 
+                    onChange={(e) => setFiltrosClientes({...filtrosClientes, temComplemento: e.target.value})}
+                    className="filter-select"
+                  >
+                    <option value="todos">Todos</option>
+                    <option value="sim">Sim</option>
+                    <option value="nao">Não</option>
+                  </select>
+                </div>
+              </div>
+              
+              {(filtrosClientes.busca || filtrosClientes.possuiFgts !== 'todos' || filtrosClientes.temComplemento !== 'todos') && (
+                <button
+                  className="btn-clear-filters"
+                  onClick={() => setFiltrosClientes({ busca: '', possuiFgts: 'todos', temComplemento: 'todos' })}
+                >
+                  <X size={16} />
+                  Limpar Filtros
+                </button>
+              )}
+            </div>
+
+            {filteredClientes.length === 0 ? (
               <div className="empty-state-box">
                 <UserCircle size={48} />
-                <h3>Nenhum cliente cadastrado</h3>
-                <p>Clique em "Novo Cliente" para adicionar</p>
+                <h3>{clientes.length === 0 ? 'Nenhum cliente cadastrado' : 'Nenhum cliente encontrado'}</h3>
+                <p>{clientes.length === 0 ? 'Clique em "Novo Cliente" para adicionar' : 'Tente ajustar os filtros'}</p>
               </div>
             ) : (
               <div className="clientes-grid">
-                {clientes.map((cliente) => (
+                {filteredClientes.map((cliente) => (
                   <div key={cliente.id} className="cliente-card">
                     <div className="cliente-header">
                       <div className="cliente-avatar">
@@ -4473,20 +5158,116 @@ const AdminDashboard = () => {
                 </div>
               </div>
               
+              {/* Busca de Corretor */}
+              <div className="filters-section" style={{ marginBottom: '16px' }}>
+                <div className="search-box">
+                  <Search size={20} />
+                  <input 
+                    type="text" 
+                    placeholder="Buscar corretor por nome..."
+                    value={buscaCorretorRelatorio}
+                    onChange={(e) => setBuscaCorretorRelatorio(e.target.value)}
+                  />
+                </div>
+              </div>
+
               <div className="gerador-filtros">
                 <div className="filtro-grupo">
-                  <label>Venda</label>
+                  <label><User size={14} /> Corretor</label>
                   <select
-                    value={relatorioFiltros.vendaId}
-                    onChange={(e) => setRelatorioFiltros({...relatorioFiltros, vendaId: e.target.value})}
+                    value={relatorioFiltros.corretorId}
+                    onChange={(e) => {
+                      const novoCorretorId = e.target.value
+                      // Ao mudar corretor, resetar empreendimento e venda
+                      // O empreendimento será filtrado automaticamente no dropdown
+                      setRelatorioFiltros({
+                        ...relatorioFiltros, 
+                        corretorId: novoCorretorId, 
+                        empreendimentoId: '', // Reset empreendimento
+                        vendaId: '' // Reset venda
+                      })
+                    }}
                   >
-                    <option value="">Todas as vendas</option>
-                    {listaVendasComPagamentos.map((grupo) => (
-                      <option key={grupo.venda_id} value={grupo.venda_id}>
-                        {grupo.venda?.empreendimento?.nome} - Un. {grupo.venda?.unidade} ({grupo.venda?.corretor?.nome})
-                      </option>
-                    ))}
+                    <option value="">Todos os corretores</option>
+                    {corretoresOrdenados
+                      .filter(corretor => {
+                        if (!buscaCorretorRelatorio) return true
+                        const busca = buscaCorretorRelatorio.toLowerCase()
+                        return corretor.nome?.toLowerCase().includes(busca)
+                      })
+                      .map((corretor) => (
+                        <option key={corretor.id} value={corretor.id}>
+                          {formatNome(corretor.nome)} ({corretor.tipo_corretor === 'interno' ? 'Interno' : 'Externo'})
+                        </option>
+                      ))}
                   </select>
+                  {buscaCorretorRelatorio && (
+                    <small style={{ color: '#10b981', marginTop: '4px', display: 'block' }}>
+                      {corretoresOrdenados.filter(c => c.nome?.toLowerCase().includes(buscaCorretorRelatorio.toLowerCase())).length} corretor(es) encontrado(s)
+                    </small>
+                  )}
+                </div>
+                
+                <div className="filtro-grupo">
+                  <label><Building size={14} /> Empreendimento</label>
+                  <select
+                    value={relatorioFiltros.empreendimentoId}
+                    onChange={(e) => {
+                      const novoEmpId = e.target.value
+                      // Ao mudar empreendimento, verificar se o cargo selecionado existe no novo empreendimento
+                      let novoCargo = relatorioFiltros.cargoId
+                      if (novoEmpId && novoCargo && novoCargo !== 'Corretor') {
+                        const empNovo = empreendimentos.find(emp => emp.id === novoEmpId)
+                        const cargoExiste = empNovo?.cargos?.some(c => c.nome_cargo === novoCargo)
+                        if (!cargoExiste) {
+                          novoCargo = 'Corretor' // Reset para Corretor se cargo não existe no novo empreendimento
+                        }
+                      }
+                      setRelatorioFiltros({...relatorioFiltros, empreendimentoId: novoEmpId, cargoId: novoCargo, vendaId: ''})
+                    }}
+                  >
+                    {(() => {
+                      // Se há corretor selecionado, filtrar empreendimentos onde ele tem vendas
+                      let empreendimentosFiltrados = [...empreendimentos]
+                      
+                      if (relatorioFiltros.corretorId) {
+                        // Buscar IDs de empreendimentos onde o corretor tem vendas
+                        const empIdsDoCorretor = new Set()
+                        vendas.forEach(v => {
+                          const corretorId = v.corretor_id || v.corretor?.id
+                          if (String(corretorId) === String(relatorioFiltros.corretorId)) {
+                            const empId = v.empreendimento_id || v.empreendimento?.id
+                            if (empId) empIdsDoCorretor.add(String(empId))
+                          }
+                        })
+                        empreendimentosFiltrados = empreendimentos.filter(emp => empIdsDoCorretor.has(String(emp.id)))
+                      }
+                      
+                      const qtdEmpreendimentos = empreendimentosFiltrados.length
+                      
+                      return (
+                        <>
+                          <option value="">
+                            {relatorioFiltros.corretorId 
+                              ? `Todos os empreendimentos (${qtdEmpreendimentos})` 
+                              : 'Todos os empreendimentos'}
+                          </option>
+                          {empreendimentosFiltrados
+                            .sort((a, b) => (a.nome || '').localeCompare(b.nome || '', 'pt-BR'))
+                            .map((emp) => (
+                              <option key={emp.id} value={emp.id}>
+                                {emp.nome} {emp.cargos?.length > 0 ? `(${emp.cargos.length} cargos)` : ''}
+                              </option>
+                            ))}
+                        </>
+                      )
+                    })()}
+                  </select>
+                  {relatorioFiltros.corretorId && (
+                    <small style={{ color: '#10b981', marginTop: '4px', display: 'block' }}>
+                      Empreendimentos com vendas do corretor
+                    </small>
+                  )}
                 </div>
                 
                 <div className="filtro-grupo">
@@ -4501,26 +5282,68 @@ const AdminDashboard = () => {
                   </select>
                 </div>
                 
+                {/* Só mostra o filtro de cargo se um empreendimento estiver selecionado */}
+                {relatorioFiltros.empreendimentoId && (
+                  <div className="filtro-grupo">
+                    <label>Beneficiário / Cargo</label>
+                    <select
+                      value={relatorioFiltros.cargoId}
+                      onChange={(e) => setRelatorioFiltros({...relatorioFiltros, cargoId: e.target.value})}
+                    >
+                      <option value="">Todos os cargos</option>
+                      <option value="Corretor">Corretor</option>
+                      {(() => {
+                        // Buscar cargos específicos do empreendimento selecionado (sem duplicatas)
+                        const empSelecionado = empreendimentos.find(e => e.id === relatorioFiltros.empreendimentoId)
+                        const cargosUnicos = new Set()
+                        
+                        if (empSelecionado?.cargos) {
+                          empSelecionado.cargos.forEach(c => {
+                            if (c.nome_cargo && c.nome_cargo !== 'Corretor') {
+                              cargosUnicos.add(c.nome_cargo)
+                            }
+                          })
+                        }
+                        
+                        return Array.from(cargosUnicos).sort().map(cargo => (
+                          <option key={cargo} value={cargo}>{cargo}</option>
+                        ))
+                      })()}
+                    </select>
+                    <small style={{ color: '#64748b', marginTop: '4px', display: 'block' }}>
+                      Cargos do {empreendimentos.find(e => e.id === relatorioFiltros.empreendimentoId)?.nome || 'empreendimento'}
+                    </small>
+                  </div>
+                )}
+                
                 <div className="filtro-grupo">
-                  <label>Beneficiário / Cargo</label>
+                  <label>Venda Específica</label>
                   <select
-                    value={relatorioFiltros.cargoId}
-                    onChange={(e) => setRelatorioFiltros({...relatorioFiltros, cargoId: e.target.value})}
+                    value={relatorioFiltros.vendaId}
+                    onChange={(e) => setRelatorioFiltros({...relatorioFiltros, vendaId: e.target.value})}
                   >
-                    <option value="">Todos os cargos</option>
-                    {(() => {
-                      // Coletar todos os cargos únicos
-                      const cargosUnicos = new Set()
-                      listaVendasComPagamentos.forEach(grupo => {
-                        grupo.pagamentos.forEach(pag => {
-                          const comissoes = calcularComissaoPorCargoPagamento(pag)
-                          comissoes.forEach(c => cargosUnicos.add(c.nome_cargo))
-                        })
+                    <option value="">Todas as vendas ({vendas.length})</option>
+                    {(listaVendasComPagamentos.length > 0 ? listaVendasComPagamentos : vendas.map(v => ({ venda_id: v.id, venda: v })))
+                      .filter(grupo => {
+                        const venda = grupo.venda
+                        // Filtrar por corretor se selecionado
+                        const corretorId = venda?.corretor_id || venda?.corretor?.id
+                        if (relatorioFiltros.corretorId && corretorId !== relatorioFiltros.corretorId) return false
+                        // Filtrar por empreendimento se selecionado
+                        const empId = venda?.empreendimento_id || venda?.empreendimento?.id
+                        if (relatorioFiltros.empreendimentoId && empId !== relatorioFiltros.empreendimentoId) return false
+                        return true
                       })
-                      return Array.from(cargosUnicos).map(cargo => (
-                        <option key={cargo} value={cargo}>{cargo}</option>
-                      ))
-                    })()}
+                      .sort((a, b) => {
+                        const empA = a.venda?.empreendimento?.nome || ''
+                        const empB = b.venda?.empreendimento?.nome || ''
+                        return empA.localeCompare(empB, 'pt-BR')
+                      })
+                      .map((grupo) => (
+                        <option key={grupo.venda_id} value={grupo.venda_id}>
+                          {grupo.venda?.empreendimento?.nome || 'Sem empreend.'} - Bl. {grupo.venda?.bloco || '-'} Un. {grupo.venda?.unidade || '-'} ({formatNome(grupo.venda?.corretor?.nome) || 'Sem corretor'})
+                        </option>
+                      ))}
                   </select>
                 </div>
                 
@@ -4542,6 +5365,30 @@ const AdminDashboard = () => {
                   />
                 </div>
               </div>
+              
+              {/* Botão Limpar Filtros */}
+              {(relatorioFiltros.corretorId || relatorioFiltros.empreendimentoId || relatorioFiltros.vendaId || relatorioFiltros.status !== 'todos' || relatorioFiltros.cargoId !== 'Corretor' || relatorioFiltros.dataInicio || relatorioFiltros.dataFim || buscaCorretorRelatorio) && (
+                <button
+                  className="btn-clear-filters"
+                  onClick={() => {
+                    setRelatorioFiltros({
+                      tipo: 'pagamentos',
+                      corretorId: '',
+                      vendaId: '',
+                      cargoId: 'Corretor', // Manter padrão como Corretor
+                      status: 'todos',
+                      dataInicio: '',
+                      dataFim: '',
+                      empreendimentoId: ''
+                    })
+                    setBuscaCorretorRelatorio('')
+                  }}
+                  style={{ marginBottom: '16px' }}
+                >
+                  <X size={16} />
+                  Limpar Filtros
+                </button>
+              )}
               
               <button 
                 className="btn-gerar-pdf"
@@ -4573,81 +5420,456 @@ const AdminDashboard = () => {
                 <div className="resumo-card-item">
                   <span className="resumo-titulo">Comissão Total</span>
                   <span className="resumo-numero verde">
-                    {formatCurrency(vendas.reduce((acc, v) => acc + (parseFloat(v.comissao_total) || 0), 0))}
+                    {formatCurrency(
+                      // Usar comissao_gerada dos pagamentos (mais preciso que comissao_total da venda)
+                      pagamentos.reduce((acc, p) => acc + (parseFloat(p.comissao_gerada) || 0), 0)
+                    )}
                   </span>
                 </div>
                 <div className="resumo-card-item">
                   <span className="resumo-titulo">Comissão Paga</span>
                   <span className="resumo-numero azul">
-                    {formatCurrency(listaVendasComPagamentos.reduce((acc, grupo) => {
-                      const comissaoTotal = parseFloat(grupo.venda?.comissao_total) || 0
-                      const totalParcelas = grupo.totalValor
-                      const parcelasPagas = grupo.pagamentos.filter(p => p.status === 'pago').reduce((a, p) => a + (parseFloat(p.valor) || 0), 0)
-                      return totalParcelas > 0 ? acc + (comissaoTotal * parcelasPagas / totalParcelas) : acc
-                    }, 0))}
+                    {formatCurrency(
+                      // Somar comissão dos pagamentos com status 'pago'
+                      pagamentos
+                        .filter(p => p.status === 'pago')
+                        .reduce((acc, p) => acc + (parseFloat(p.comissao_gerada) || 0), 0)
+                    )}
                   </span>
                 </div>
                 <div className="resumo-card-item">
                   <span className="resumo-titulo">Comissão Pendente</span>
                   <span className="resumo-numero amarelo">
-                    {formatCurrency(listaVendasComPagamentos.reduce((acc, grupo) => {
-                      const comissaoTotal = parseFloat(grupo.venda?.comissao_total) || 0
-                      const totalParcelas = grupo.totalValor
-                      const parcelasPendentes = grupo.pagamentos.filter(p => p.status === 'pendente').reduce((a, p) => a + (parseFloat(p.valor) || 0), 0)
-                      return totalParcelas > 0 ? acc + (comissaoTotal * parcelasPendentes / totalParcelas) : acc
-                    }, 0))}
+                    {formatCurrency(
+                      // Somar comissão dos pagamentos com status 'pendente'
+                      pagamentos
+                        .filter(p => p.status === 'pendente')
+                        .reduce((acc, p) => acc + (parseFloat(p.comissao_gerada) || 0), 0)
+                    )}
                   </span>
                 </div>
               </div>
             </div>
             
-            {/* Divisão por Beneficiário */}
-            <div className="relatorio-beneficiarios">
-              <h3>Comissão por Beneficiário</h3>
-              <div className="beneficiarios-lista">
-                {(() => {
-                  const cargosTotal = {}
-                  listaVendasComPagamentos.forEach(grupo => {
-                    grupo.pagamentos.forEach(pag => {
-                      const comissoesCargo = calcularComissaoPorCargoPagamento(pag)
-                      comissoesCargo.forEach(cargo => {
-                        if (!cargosTotal[cargo.nome_cargo]) {
-                          cargosTotal[cargo.nome_cargo] = { pendente: 0, pago: 0 }
-                        }
+            {/* Comissão por Empreendimento */}
+            <div className="relatorio-beneficiarios" style={{ paddingBottom: '200px' }}>
+              <h3 style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+                <Building size={20} />
+                Comissão por Empreendimento
+              </h3>
+              
+              {/* Seletor de Empreendimento */}
+              <div style={{ marginBottom: '16px', position: 'relative', zIndex: 10 }}>
+                <select
+                  value={relatorioFiltros.empreendimentoDetalhe || ''}
+                  onChange={(e) => setRelatorioFiltros({...relatorioFiltros, empreendimentoDetalhe: e.target.value})}
+                  className="filter-select"
+                  style={{
+                    width: '100%',
+                    padding: '12px 16px'
+                  }}
+                >
+                  <option value="">Selecione um empreendimento para ver detalhes</option>
+                  {empreendimentosOrdenados.map(emp => (
+                    <option key={emp.id} value={emp.id}>{formatNome(emp.nome)}</option>
+                  ))}
+                </select>
+              </div>
+              
+              {/* Detalhes do Empreendimento Selecionado */}
+              {relatorioFiltros.empreendimentoDetalhe ? (
+                <div className="beneficiarios-lista">
+                  {(() => {
+                    const empId = relatorioFiltros.empreendimentoDetalhe
+                    const empSelecionado = empreendimentos.find(e => e.id === empId)
+                    
+                    // Filtrar vendas do empreendimento
+                    const vendasEmp = listaVendasComPagamentos.filter(g => 
+                      g.venda?.empreendimento_id === empId
+                    )
+                    
+                    // Calcular totais
+                    let totalVendas = vendasEmp.length
+                    let valorTotalVendas = 0
+                    let comissaoTotal = 0
+                    let comissaoPaga = 0
+                    let comissaoPendente = 0
+                    const corretoresEmp = {}
+                    const cargosEmp = {}
+                    
+                    vendasEmp.forEach(grupo => {
+                      valorTotalVendas += parseFloat(grupo.venda?.valor_venda) || 0
+                      
+                      // Agrupar por corretor
+                      const corretorNome = grupo.venda?.corretor?.nome || 'Sem corretor'
+                      if (!corretoresEmp[corretorNome]) {
+                        corretoresEmp[corretorNome] = { vendas: 0, comissao: 0 }
+                      }
+                      corretoresEmp[corretorNome].vendas++
+                      
+                      grupo.pagamentos.forEach(pag => {
+                        const comissaoPag = parseFloat(pag.comissao_gerada) || 0
+                        comissaoTotal += comissaoPag
+                        corretoresEmp[corretorNome].comissao += comissaoPag
+                        
                         if (pag.status === 'pago') {
-                          cargosTotal[cargo.nome_cargo].pago += cargo.valor
+                          comissaoPaga += comissaoPag
                         } else {
-                          cargosTotal[cargo.nome_cargo].pendente += cargo.valor
+                          comissaoPendente += comissaoPag
                         }
+                        
+                        // Calcular por cargo
+                        const comissoesCargo = calcularComissaoPorCargoPagamento(pag)
+                        comissoesCargo.forEach(cargo => {
+                          if (!cargosEmp[cargo.nome_cargo]) {
+                            cargosEmp[cargo.nome_cargo] = { pago: 0, pendente: 0 }
+                          }
+                          if (pag.status === 'pago') {
+                            cargosEmp[cargo.nome_cargo].pago += cargo.valor
+                          } else {
+                            cargosEmp[cargo.nome_cargo].pendente += cargo.valor
+                          }
+                        })
                       })
                     })
-                  })
-                  
-                  return Object.entries(cargosTotal).map(([nome, valores]) => (
-                    <div key={nome} className="beneficiario-row">
-                      <span className="beneficiario-nome">{nome}</span>
-                      <div className="beneficiario-valores">
-                        <span className="valor-pago">Pago: {formatCurrency(valores.pago)}</span>
-                        <span className="valor-pendente">Pendente: {formatCurrency(valores.pendente)}</span>
-                        <span className="valor-total">Total: {formatCurrency(valores.pago + valores.pendente)}</span>
-                      </div>
-                    </div>
-                  ))
-                })()}
-              </div>
+                    
+                    return (
+                      <>
+                        {/* Header do Empreendimento */}
+                        <div style={{
+                          background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(16, 185, 129, 0.1))',
+                          padding: '20px',
+                          borderRadius: '12px',
+                          marginBottom: '16px',
+                          border: '1px solid rgba(59, 130, 246, 0.3)'
+                        }}>
+                          <h4 style={{ margin: '0 0 4px 0', fontSize: '20px', color: '#3b82f6' }}>
+                            {empSelecionado?.nome || 'Empreendimento'}
+                          </h4>
+                          <p style={{ margin: 0, color: 'rgba(255,255,255,0.6)', fontSize: '14px' }}>
+                            Comissão: {empSelecionado?.comissao_total_externo || 7}% (Externo) | {empSelecionado?.comissao_total_interno || 6}% (Interno)
+                          </p>
+                        </div>
+                        
+                        {/* Resumo Geral */}
+                        <div style={{
+                          display: 'grid',
+                          gridTemplateColumns: 'repeat(4, 1fr)',
+                          gap: '12px',
+                          marginBottom: '20px'
+                        }}>
+                          <div style={{ background: 'rgba(255,255,255,0.05)', padding: '16px', borderRadius: '8px', textAlign: 'center' }}>
+                            <span style={{ display: 'block', color: 'rgba(255,255,255,0.6)', fontSize: '12px', marginBottom: '4px' }}>Vendas</span>
+                            <span style={{ fontSize: '24px', fontWeight: '700' }}>{totalVendas}</span>
+                          </div>
+                          <div style={{ background: 'rgba(255,255,255,0.05)', padding: '16px', borderRadius: '8px', textAlign: 'center' }}>
+                            <span style={{ display: 'block', color: 'rgba(255,255,255,0.6)', fontSize: '12px', marginBottom: '4px' }}>Valor Total</span>
+                            <span style={{ fontSize: '18px', fontWeight: '700' }}>{formatCurrency(valorTotalVendas)}</span>
+                          </div>
+                          <div style={{ background: 'rgba(16, 185, 129, 0.1)', padding: '16px', borderRadius: '8px', textAlign: 'center', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
+                            <span style={{ display: 'block', color: '#10b981', fontSize: '12px', marginBottom: '4px' }}>Comissão Paga</span>
+                            <span style={{ fontSize: '18px', fontWeight: '700', color: '#10b981' }}>{formatCurrency(comissaoPaga)}</span>
+                          </div>
+                          <div style={{ background: 'rgba(234, 179, 8, 0.1)', padding: '16px', borderRadius: '8px', textAlign: 'center', border: '1px solid rgba(234, 179, 8, 0.2)' }}>
+                            <span style={{ display: 'block', color: '#eab308', fontSize: '12px', marginBottom: '4px' }}>Comissão Pendente</span>
+                            <span style={{ fontSize: '18px', fontWeight: '700', color: '#eab308' }}>{formatCurrency(comissaoPendente)}</span>
+                          </div>
+                        </div>
+                        
+                        {/* Corretores do Empreendimento */}
+                        <div style={{ marginBottom: '20px' }}>
+                          <h5 style={{ margin: '0 0 12px 0', color: '#94a3b8', fontSize: '13px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                            <User size={14} style={{ marginRight: '6px', verticalAlign: 'middle' }} />
+                            Corretores ({Object.keys(corretoresEmp).length})
+                          </h5>
+                          {Object.entries(corretoresEmp)
+                            .sort((a, b) => b[1].comissao - a[1].comissao)
+                            .map(([nome, dados]) => (
+                              <div key={nome} className="beneficiario-row" style={{ 
+                                background: 'rgba(255,255,255,0.03)',
+                                padding: '12px 16px',
+                                borderRadius: '8px',
+                                marginBottom: '8px',
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center'
+                              }}>
+                                <div>
+                                  <span style={{ fontWeight: '600' }}>{formatNome(nome)}</span>
+                                  <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: '13px', marginLeft: '8px' }}>
+                                    {dados.vendas} venda{dados.vendas > 1 ? 's' : ''}
+                                  </span>
+                                </div>
+                                <span style={{ fontWeight: '700', color: '#10b981' }}>{formatCurrency(dados.comissao)}</span>
+                              </div>
+                            ))}
+                        </div>
+                        
+                        {/* Divisão por Cargo */}
+                        <div>
+                          <h5 style={{ margin: '0 0 12px 0', color: '#94a3b8', fontSize: '13px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                            <Briefcase size={14} style={{ marginRight: '6px', verticalAlign: 'middle' }} />
+                            Divisão por Cargo
+                          </h5>
+                          {Object.entries(cargosEmp)
+                            .sort((a, b) => (b[1].pago + b[1].pendente) - (a[1].pago + a[1].pendente))
+                            .map(([nome, valores]) => (
+                              <div key={nome} className="beneficiario-row">
+                                <span className="beneficiario-nome">{nome}</span>
+                                <div className="beneficiario-valores">
+                                  <span className="valor-pago">Pago: {formatCurrency(valores.pago)}</span>
+                                  <span className="valor-pendente">Pendente: {formatCurrency(valores.pendente)}</span>
+                                  <span className="valor-total">Total: {formatCurrency(valores.pago + valores.pendente)}</span>
+                                </div>
+                              </div>
+                            ))}
+                          {Object.keys(cargosEmp).length === 0 && (
+                            <p style={{ color: 'rgba(255,255,255,0.5)', textAlign: 'center', padding: '20px' }}>
+                              Nenhum cargo configurado para este empreendimento
+                            </p>
+                          )}
+                        </div>
+                      </>
+                    )
+                  })()}
+                </div>
+              ) : null}
             </div>
           </div>
         )}
       </main>
 
+      {/* Modal de Visualização de Venda */}
+      {showModal && modalType === 'visualizar-venda' && selectedItem && (
+        <div className="modal-overlay" onClick={() => setShowModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '800px' }}>
+            <div className="modal-header">
+              <h2>
+                <Eye size={20} style={{ marginRight: '8px' }} />
+                Detalhes da Venda
+              </h2>
+              <button className="close-btn" onClick={() => setShowModal(false)}>
+                <X size={24} />
+              </button>
+            </div>
+            
+            <div className="modal-body" style={{ padding: '24px' }}>
+              {/* Informações Principais */}
+              <div style={{ 
+                display: 'grid', 
+                gridTemplateColumns: 'repeat(2, 1fr)', 
+                gap: '20px',
+                marginBottom: '24px'
+              }}>
+                <div style={{ 
+                  background: 'rgba(255,255,255,0.05)', 
+                  padding: '16px', 
+                  borderRadius: '12px',
+                  border: '1px solid rgba(255,255,255,0.1)'
+                }}>
+                  <h4 style={{ margin: '0 0 12px 0', color: '#94a3b8', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                    Empreendimento
+                  </h4>
+                  <p style={{ margin: 0, fontSize: '18px', fontWeight: '600' }}>
+                    {selectedItem.empreendimento?.nome || 'Não informado'}
+                  </p>
+                  <p style={{ margin: '4px 0 0', color: 'rgba(255,255,255,0.6)', fontSize: '14px' }}>
+                    {selectedItem.bloco && `Bloco ${selectedItem.bloco}`}
+                    {selectedItem.bloco && selectedItem.unidade && ' - '}
+                    {selectedItem.unidade && `Unidade ${selectedItem.unidade}`}
+                    {!selectedItem.bloco && !selectedItem.unidade && 'Sem bloco/unidade'}
+                  </p>
+                </div>
+                
+                <div style={{ 
+                  background: 'rgba(255,255,255,0.05)', 
+                  padding: '16px', 
+                  borderRadius: '12px',
+                  border: '1px solid rgba(255,255,255,0.1)'
+                }}>
+                  <h4 style={{ margin: '0 0 12px 0', color: '#94a3b8', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                    Corretor
+                  </h4>
+                  <p style={{ margin: 0, fontSize: '18px', fontWeight: '600' }}>
+                    {formatNome(selectedItem.corretor?.nome) || 'Não informado'}
+                  </p>
+                  <p style={{ margin: '4px 0 0', color: 'rgba(255,255,255,0.6)', fontSize: '14px' }}>
+                    {selectedItem.tipo_corretor === 'interno' ? 'Corretor Interno' : 'Corretor Externo'}
+                    {selectedItem.corretor?.percentual_corretor && ` • ${selectedItem.corretor.percentual_corretor}%`}
+                  </p>
+                </div>
+                
+                <div style={{ 
+                  background: 'rgba(255,255,255,0.05)', 
+                  padding: '16px', 
+                  borderRadius: '12px',
+                  border: '1px solid rgba(255,255,255,0.1)'
+                }}>
+                  <h4 style={{ margin: '0 0 12px 0', color: '#94a3b8', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                    Cliente
+                  </h4>
+                  <p style={{ margin: 0, fontSize: '18px', fontWeight: '600' }}>
+                    {formatNome(selectedItem.nome_cliente || selectedItem.cliente?.nome) || 'Não informado'}
+                  </p>
+                  <p style={{ margin: '4px 0 0', color: 'rgba(255,255,255,0.6)', fontSize: '14px' }}>
+                    {selectedItem.cliente?.cpf || selectedItem.cliente?.cnpj || 'Documento não informado'}
+                  </p>
+                </div>
+                
+                <div style={{ 
+                  background: 'rgba(255,255,255,0.05)', 
+                  padding: '16px', 
+                  borderRadius: '12px',
+                  border: '1px solid rgba(255,255,255,0.1)'
+                }}>
+                  <h4 style={{ margin: '0 0 12px 0', color: '#94a3b8', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                    Data da Venda
+                  </h4>
+                  <p style={{ margin: 0, fontSize: '18px', fontWeight: '600' }}>
+                    {selectedItem.data_venda ? new Date(selectedItem.data_venda).toLocaleDateString('pt-BR', { 
+                      day: '2-digit', month: 'long', year: 'numeric' 
+                    }) : 'Não informada'}
+                  </p>
+                  <p style={{ margin: '4px 0 0' }}>
+                    <span className={`status-badge ${selectedItem.status || 'pendente'}`} style={{ fontSize: '12px' }}>
+                      {selectedItem.status === 'pago' && 'Comissão Paga'}
+                      {selectedItem.status === 'pendente' && 'Pendente'}
+                      {selectedItem.status === 'em_andamento' && 'Em Andamento'}
+                      {!selectedItem.status && 'Pendente'}
+                    </span>
+                  </p>
+                </div>
+              </div>
+              
+              {/* Valores */}
+              <div style={{ 
+                background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(59, 130, 246, 0.1))',
+                padding: '24px',
+                borderRadius: '12px',
+                marginBottom: '24px',
+                border: '1px solid rgba(16, 185, 129, 0.2)'
+              }}>
+                <h4 style={{ margin: '0 0 16px 0', color: '#10b981', fontSize: '14px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                  <DollarSign size={16} style={{ marginRight: '6px', verticalAlign: 'middle' }} />
+                  Valores da Venda
+                </h4>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
+                  <div>
+                    <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '12px', display: 'block' }}>Valor da Venda</span>
+                    <span style={{ fontSize: '20px', fontWeight: '700' }}>{formatCurrency(selectedItem.valor_venda)}</span>
+                  </div>
+                  <div>
+                    <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '12px', display: 'block' }}>Valor Pro-Soluto</span>
+                    <span style={{ fontSize: '20px', fontWeight: '700' }}>{formatCurrency(selectedItem.valor_pro_soluto || selectedItem.valor_venda)}</span>
+                  </div>
+                  <div>
+                    <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '12px', display: 'block' }}>Comissão Corretor</span>
+                    <span style={{ fontSize: '20px', fontWeight: '700', color: '#10b981' }}>{formatCurrency(selectedItem.comissao_corretor)}</span>
+                  </div>
+                  <div>
+                    <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '12px', display: 'block' }}>Comissão Total</span>
+                    <span style={{ fontSize: '20px', fontWeight: '700', color: '#3b82f6' }}>{formatCurrency(selectedItem.comissao_total)}</span>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Detalhes do Pagamento */}
+              <div style={{ 
+                background: 'rgba(255,255,255,0.05)',
+                padding: '24px',
+                borderRadius: '12px',
+                border: '1px solid rgba(255,255,255,0.1)'
+              }}>
+                <h4 style={{ margin: '0 0 16px 0', color: '#94a3b8', fontSize: '14px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                  <CreditCard size={16} style={{ marginRight: '6px', verticalAlign: 'middle' }} />
+                  Condições de Pagamento
+                </h4>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
+                  <div style={{ padding: '12px', background: 'rgba(0,0,0,0.2)', borderRadius: '8px' }}>
+                    <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '12px', display: 'block' }}>Sinal</span>
+                    <span style={{ fontSize: '16px', fontWeight: '600' }}>
+                      {selectedItem.teve_sinal ? formatCurrency(selectedItem.valor_sinal) : 'Não teve'}
+                    </span>
+                  </div>
+                  <div style={{ padding: '12px', background: 'rgba(0,0,0,0.2)', borderRadius: '8px' }}>
+                    <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '12px', display: 'block' }}>Entrada</span>
+                    <span style={{ fontSize: '16px', fontWeight: '600' }}>
+                      {selectedItem.teve_entrada ? (
+                        selectedItem.parcelou_entrada 
+                          ? `${selectedItem.qtd_parcelas_entrada}x ${formatCurrency(selectedItem.valor_parcela_entrada)}`
+                          : formatCurrency(selectedItem.valor_entrada)
+                      ) : 'Não teve'}
+                    </span>
+                  </div>
+                  <div style={{ padding: '12px', background: 'rgba(0,0,0,0.2)', borderRadius: '8px' }}>
+                    <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '12px', display: 'block' }}>Balão</span>
+                    <span style={{ fontSize: '16px', fontWeight: '600' }}>
+                      {selectedItem.teve_balao === 'sim' ? (
+                        `${selectedItem.qtd_balao || 1}x ${formatCurrency(selectedItem.valor_balao)}`
+                      ) : 'Não teve'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Sienge Info - se tiver */}
+              {selectedItem.sienge_contract_id && (
+                <div style={{ 
+                  marginTop: '16px',
+                  padding: '12px 16px',
+                  background: 'rgba(234, 179, 8, 0.1)',
+                  borderRadius: '8px',
+                  border: '1px solid rgba(234, 179, 8, 0.2)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
+                }}>
+                  <RefreshCw size={16} style={{ color: '#eab308' }} />
+                  <span style={{ color: '#eab308', fontSize: '13px' }}>
+                    Sincronizado do Sienge • Contrato #{selectedItem.sienge_contract_id}
+                    {selectedItem.numero_contrato && ` • Nº ${selectedItem.numero_contrato}`}
+                  </span>
+                </div>
+              )}
+            </div>
+            
+            <div className="modal-footer" style={{ 
+              padding: '16px 24px',
+              borderTop: '1px solid rgba(255,255,255,0.1)',
+              display: 'flex',
+              justifyContent: 'flex-end',
+              gap: '12px'
+            }}>
+              <button 
+                className="btn-secondary"
+                onClick={() => setShowModal(false)}
+              >
+                Fechar
+              </button>
+              <button 
+                className="btn-primary"
+                onClick={() => {
+                  openEditModal(selectedItem)
+                }}
+              >
+                <Edit2 size={16} />
+                Editar Venda
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Modal */}
-      {showModal && (
+      {showModal && modalType !== 'visualizar-venda' && (
         <div className="modal-overlay" onClick={() => setShowModal(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h2>
                 {modalType === 'venda' 
                   ? (selectedItem ? 'Editar Venda' : 'Nova Venda')
+                  : modalType === 'empreendimento'
+                  ? (selectedItem ? 'Editar Empreendimento' : 'Novo Empreendimento')
                   : (selectedItem ? 'Editar Corretor' : 'Novo Corretor')
                 }
               </h2>
@@ -4667,16 +5889,12 @@ const AdminDashboard = () => {
                       onChange={(e) => handleCorretorChange(e.target.value)}
                     >
                       <option value="">Selecione</option>
-                      {[...corretores].sort((a, b) => {
-                        const nomeA = (a.nome || '').toLowerCase()
-                        const nomeB = (b.nome || '').toLowerCase()
-                        return nomeA.localeCompare(nomeB, 'pt-BR')
-                      }).map((c) => {
+                      {corretoresOrdenados.map((c) => {
                         const isAutonomo = !c.empreendimento_id && c.percentual_corretor
                         const percentual = c.percentual_corretor || (c.tipo_corretor === 'interno' ? 2.5 : 4)
                         return (
                           <option key={c.id} value={c.id}>
-                            {c.nome} - {isAutonomo ? 'Autônomo' : (c.tipo_corretor === 'interno' ? 'Interno' : 'Externo')} ({percentual}%)
+                            {formatNome(c.nome)} - {isAutonomo ? 'Autônomo' : (c.tipo_corretor === 'interno' ? 'Interno' : 'Externo')} ({percentual}%)
                           </option>
                         )
                       })}
@@ -4724,7 +5942,7 @@ const AdminDashboard = () => {
                         })()}
                       >
                         <option value="">Selecione o empreendimento</option>
-                        {empreendimentos.map((emp) => (
+                        {[...empreendimentos].sort((a, b) => (a.nome || '').localeCompare(b.nome || '', 'pt-BR')).map((emp) => (
                           <option key={emp.id} value={emp.id}>
                             {emp.nome}
                           </option>
@@ -4747,9 +5965,9 @@ const AdminDashboard = () => {
                         onChange={(e) => setVendaForm({...vendaForm, cliente_id: e.target.value})}
                       >
                         <option value="">Selecione o cliente</option>
-                        {clientes.map((cliente) => (
+                        {[...clientes].sort((a, b) => (a.nome_completo || '').localeCompare(b.nome_completo || '', 'pt-BR')).map((cliente) => (
                           <option key={cliente.id} value={cliente.id}>
-                            {cliente.nome_completo} {cliente.cpf ? `- ${cliente.cpf}` : ''}
+                            {formatNome(cliente.nome_completo)} {cliente.cpf ? `- ${cliente.cpf}` : ''}
                           </option>
                         ))}
                       </select>
@@ -5332,7 +6550,7 @@ const AdminDashboard = () => {
                       >
                         <option value="">Selecione um empreendimento</option>
                         <option value="autonomo">Autônomo</option>
-                        {empreendimentos.map((emp) => (
+                        {[...empreendimentos].sort((a, b) => (a.nome || '').localeCompare(b.nome || '', 'pt-BR')).map((emp) => (
                           <option key={emp.id} value={emp.id}>{emp.nome}</option>
                         ))}
                       </select>

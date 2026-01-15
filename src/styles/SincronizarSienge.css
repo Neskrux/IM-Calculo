@@ -370,6 +370,27 @@
   font-size: 14px;
 }
 
+/* Animação de pulse para indicador ativo */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(1.2);
+  }
+}
+
+/* Polling container */
+.polling-container {
+  transition: all 0.3s ease;
+}
+
+.polling-container:hover {
+  border-color: rgba(255, 255, 255, 0.2) !important;
+}
+
 /* Responsivo */
 @media (max-width: 768px) {
   .sync-buttons {
@@ -378,6 +399,10 @@
 
   .btn-todos {
     grid-column: 1;
+  }
+  
+  .polling-container > div:last-child {
+    grid-template-columns: 1fr !important;
   }
 }
 
