@@ -83,6 +83,8 @@ const AdminDashboard = () => {
     status: 'todos',
     corretor: '',
     empreendimento: '',
+    cliente: '',
+    unidade: '',
     tipo: 'todos',
     dataInicio: '',
     dataFim: '',
@@ -2353,6 +2355,13 @@ const AdminDashboard = () => {
     const nomeB = (b.nome || '').toLowerCase()
     return nomeA.localeCompare(nomeB, 'pt-BR')
   })
+  
+  // Ordenar clientes alfabeticamente
+  const clientesOrdenados = [...clientes].sort((a, b) => {
+    const nomeA = (a.nome_completo || '').toLowerCase()
+    const nomeB = (b.nome_completo || '').toLowerCase()
+    return nomeA.localeCompare(nomeB, 'pt-BR')
+  })
 
   // Ordenar empreendimentos alfabeticamente
   const empreendimentosOrdenados = [...empreendimentos].sort((a, b) => {
@@ -3250,6 +3259,13 @@ const AdminDashboard = () => {
       // Filtro por empreendimento
       const matchEmpreendimento = !filtrosPagamentos.empreendimento || grupo.venda?.empreendimento_id === filtrosPagamentos.empreendimento
       
+      // Filtro por cliente
+      const matchCliente = !filtrosPagamentos.cliente || grupo.venda?.cliente_id === filtrosPagamentos.cliente
+      
+      // Filtro por unidade
+      const matchUnidade = !filtrosPagamentos.unidade || 
+        grupo.venda?.unidade?.toLowerCase().includes(filtrosPagamentos.unidade.toLowerCase())
+      
       // Filtro por status (verifica se tem pagamentos com o status)
       const matchStatus = filtrosPagamentos.status === 'todos' || 
         grupo.pagamentos.some(p => p.status === filtrosPagamentos.status)
@@ -3264,7 +3280,7 @@ const AdminDashboard = () => {
         grupo.venda?.empreendimento?.nome?.toLowerCase().includes(filtrosPagamentos.buscaVenda.toLowerCase()) ||
         grupo.venda?.nome_cliente?.toLowerCase().includes(filtrosPagamentos.buscaVenda.toLowerCase())
       
-      return matchCorretor && matchEmpreendimento && matchStatus && matchTipo && matchBusca
+      return matchCorretor && matchEmpreendimento && matchCliente && matchUnidade && matchStatus && matchTipo && matchBusca
     })
     .sort((a, b) => {
     // Ordenar por data da venda mais recente primeiro
@@ -3548,14 +3564,17 @@ const AdminDashboard = () => {
             <TrendingUp size={20} />
             <span>Relatórios</span>
           </button>
-          <button 
-            className={`nav-item ${activeTab === 'sienge' ? 'active' : ''}`}
-            onClick={() => navigate('/admin/sienge')}
-            title="Sincronizar Sienge"
-          >
-            <RefreshCw size={20} />
-            <span>Sincronizar Sienge</span>
-          </button>
+          {/* Sincronizar Sienge - Oculto em produção */}
+          {false && (
+            <button 
+              className={`nav-item ${activeTab === 'sienge' ? 'active' : ''}`}
+              onClick={() => navigate('/admin/sienge')}
+              title="Sincronizar Sienge"
+            >
+              <RefreshCw size={20} />
+              <span>Sincronizar Sienge</span>
+            </button>
+          )}
         </nav>
 
         <div className="sidebar-footer">
@@ -3611,7 +3630,7 @@ const AdminDashboard = () => {
             {activeTab === 'pagamentos' && 'Acompanhamento de Pagamentos'}
             {activeTab === 'clientes' && 'Cadastro de Clientes'}
             {activeTab === 'relatorios' && 'Relatórios'}
-            {activeTab === 'sienge' && 'Sincronização Sienge'}
+            {false && activeTab === 'sienge' && 'Sincronização Sienge'}
           </h1>
           <div className="header-actions">
             {activeTab === 'vendas' && (
@@ -4533,6 +4552,32 @@ const AdminDashboard = () => {
                 </div>
                 
                 <div className="filter-item">
+                  <label className="filter-label">Cliente</label>
+                  <select 
+                    value={filtrosPagamentos.cliente} 
+                    onChange={(e) => setFiltrosPagamentos({...filtrosPagamentos, cliente: e.target.value})}
+                    className="filter-select"
+                  >
+                    <option value="">Todos</option>
+                    {clientesOrdenados.map(c => (
+                      <option key={c.id} value={c.id}>{formatNome(c.nome_completo)}</option>
+                    ))}
+                  </select>
+                </div>
+                
+                <div className="filter-item">
+                  <label className="filter-label">Unidade</label>
+                  <input 
+                    type="text"
+                    placeholder="Ex: 101, 202..."
+                    value={filtrosPagamentos.unidade}
+                    onChange={(e) => setFiltrosPagamentos({...filtrosPagamentos, unidade: e.target.value})}
+                    className="filter-input-date"
+                    style={{ color: '#fff' }}
+                  />
+                </div>
+                
+                <div className="filter-item">
                   <label className="filter-label">Data Início</label>
                   <input 
                     type="date"
@@ -4560,6 +4605,8 @@ const AdminDashboard = () => {
                     status: 'todos',
                     corretor: '',
                     empreendimento: '',
+                    cliente: '',
+                    unidade: '',
                     tipo: 'todos',
                     dataInicio: '',
                     dataFim: '',
@@ -4700,6 +4747,10 @@ const AdminDashboard = () => {
                           <div className="venda-subtitulo">
                             <User size={14} />
                             <span>{grupo.venda?.corretor?.nome || 'Corretor'}</span>
+                            <span className="separator">•</span>
+                            <span>{grupo.venda?.cliente?.nome || grupo.venda?.nome_cliente || 'Cliente'}</span>
+                            <span className="separator">•</span>
+                            <span>Unidade: {grupo.venda?.unidade || '-'}</span>
                             <span className="separator">•</span>
                             <span>{grupo.pagamentos.length} parcelas</span>
                           </div>
@@ -5165,7 +5216,7 @@ const AdminDashboard = () => {
           </div>
         )}
 
-        {activeTab === 'sienge' && (
+        {false && activeTab === 'sienge' && (
           <div className="content-section">
             <SincronizarSiengeV2 />
           </div>

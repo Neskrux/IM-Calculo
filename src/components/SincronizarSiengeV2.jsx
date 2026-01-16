@@ -16,6 +16,9 @@ import '../styles/SincronizarSienge.css'
 // Intervalo de polling: 1 hora em milissegundos
 const POLLING_INTERVAL = 60 * 60 * 1000 // 1 hora
 
+// MODO PRODUÇÃO: Desabilitar sincronização
+const MODO_PRODUCAO = true
+
 const SincronizarSiengeV2 = () => {
   const [sincronizando, setSincronizando] = useState(false)
   const [progresso, setProgresso] = useState(null)
@@ -144,6 +147,10 @@ const SincronizarSiengeV2 = () => {
   }
   
   const executarBackfillConjuges = async () => {
+    if (MODO_PRODUCAO) {
+      alert('Backfill desabilitado em modo produção')
+      return
+    }
     if (!confirm('Isso irá criar cônjuges a partir dos clientes já sincronizados.\n\nDeseja continuar?')) {
       return
     }
@@ -178,6 +185,10 @@ const SincronizarSiengeV2 = () => {
   }
   
   const executarBackfillUnidades = async () => {
+    if (MODO_PRODUCAO) {
+      alert('Backfill desabilitado em modo produção')
+      return
+    }
     if (!confirm('Isso irá buscar unidades do Sienge e criar na tabela.\n\nDeseja continuar?')) {
       return
     }
@@ -224,6 +235,10 @@ const SincronizarSiengeV2 = () => {
   }
 
   const executarSincronizacao = async () => {
+    if (MODO_PRODUCAO) {
+      alert('Sincronização desabilitada em modo produção')
+      return
+    }
     setSincronizando(true)
     setErro(null)
     setResultado(null)
@@ -347,6 +362,29 @@ const SincronizarSiengeV2 = () => {
         <h2>Sincronização Sienge V2</h2>
         <p className="subtitle">RAW-first + Sync sem Auth (sem rate limit)</p>
       </div>
+      
+      {MODO_PRODUCAO && (
+        <div style={{
+          background: 'rgba(239, 68, 68, 0.1)',
+          border: '1px solid rgba(239, 68, 68, 0.3)',
+          borderRadius: '12px',
+          padding: '16px 20px',
+          marginBottom: '20px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '12px'
+        }}>
+          <AlertCircle size={24} color="#ef4444" />
+          <div>
+            <div style={{ fontWeight: '600', color: '#ef4444', marginBottom: '4px' }}>
+              Modo Produção - Sincronização Desabilitada
+            </div>
+            <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: '13px' }}>
+              As funcionalidades de sincronização estão temporariamente desabilitadas para produção.
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Status da Sincronização Automática */}
       <div className="polling-container" style={{
