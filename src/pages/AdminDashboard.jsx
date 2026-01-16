@@ -72,11 +72,10 @@ const AdminDashboard = () => {
     corretor: '',
     empreendimento: '',
     status: 'todos',
-    bloco: '',
+    cliente: '',
+    unidade: '',
     dataInicio: '',
-    dataFim: '',
-    valorMin: '',
-    valorMax: ''
+    dataFim: ''
   })
   
   // Filtros para Pagamentos
@@ -3442,8 +3441,12 @@ const AdminDashboard = () => {
     // Filtro por status
     const matchStatus = filtrosVendas.status === 'todos' || venda.status === filtrosVendas.status
     
-    // Filtro por bloco
-    const matchBloco = !filtrosVendas.bloco || (venda.bloco && venda.bloco.toUpperCase() === filtrosVendas.bloco.toUpperCase())
+    // Filtro por cliente
+    const matchCliente = !filtrosVendas.cliente || venda.cliente_id === filtrosVendas.cliente
+    
+    // Filtro por unidade
+    const matchUnidade = !filtrosVendas.unidade || 
+      (venda.unidade && venda.unidade.toLowerCase().includes(filtrosVendas.unidade.toLowerCase()))
     
     // Filtro por data
     const matchData = (() => {
@@ -3458,15 +3461,7 @@ const AdminDashboard = () => {
       return true
     })()
     
-    // Filtro por valor
-    const matchValor = (() => {
-      const valorVenda = parseFloat(venda.valor_venda) || 0
-      if (filtrosVendas.valorMin && valorVenda < parseFloat(filtrosVendas.valorMin)) return false
-      if (filtrosVendas.valorMax && valorVenda > parseFloat(filtrosVendas.valorMax)) return false
-      return true
-    })()
-    
-    return matchSearch && matchTipo && matchCorretor && matchEmpreendimento && matchStatus && matchBloco && matchData && matchValor
+    return matchSearch && matchTipo && matchCorretor && matchEmpreendimento && matchStatus && matchCliente && matchUnidade && matchData
   }).sort((a, b) => {
     // Ordenar por data mais recente primeiro
     const dataA = new Date(a.data_venda || a.created_at || 0)
@@ -4042,25 +4037,32 @@ const AdminDashboard = () => {
                 </div>
                 
                 <div className="filter-item">
-                  <label className="filter-label">Bloco</label>
+                  <label className="filter-label">Cliente</label>
                   <select 
-                    value={filtrosVendas.bloco} 
-                    onChange={(e) => setFiltrosVendas({...filtrosVendas, bloco: e.target.value})}
+                    value={filtrosVendas.cliente} 
+                    onChange={(e) => setFiltrosVendas({...filtrosVendas, cliente: e.target.value})}
                     className="filter-select"
                   >
                     <option value="">Todos</option>
-                    {(() => {
-                      // Coletar blocos únicos das vendas
-                      const blocosUnicos = [...new Set(vendas
-                        .filter(v => v.bloco && v.bloco.trim() !== '')
-                        .map(v => v.bloco.toUpperCase())
-                        .sort()
-                      )]
-                      return blocosUnicos.map(bloco => (
-                        <option key={bloco} value={bloco}>{bloco}</option>
+                    {[...clientes]
+                      .filter(c => c.nome_completo)
+                      .sort((a, b) => (a.nome_completo || '').localeCompare(b.nome_completo || '', 'pt-BR'))
+                      .map(c => (
+                        <option key={c.id} value={c.id}>{formatNome(c.nome_completo)}</option>
                       ))
-                    })()}
+                    }
                   </select>
+                </div>
+                
+                <div className="filter-item">
+                  <label className="filter-label">Unidade</label>
+                  <input 
+                    type="text"
+                    placeholder="Ex: 101, 202..."
+                    value={filtrosVendas.unidade}
+                    onChange={(e) => setFiltrosVendas({...filtrosVendas, unidade: e.target.value})}
+                    className="filter-input"
+                  />
                 </div>
                 
                 <div className="filter-item">
@@ -4091,11 +4093,10 @@ const AdminDashboard = () => {
                     corretor: '',
                     empreendimento: '',
                     status: 'todos',
-                    bloco: '',
+                    cliente: '',
+                    unidade: '',
                     dataInicio: '',
-                    dataFim: '',
-                    valorMin: '',
-                    valorMax: ''
+                    dataFim: ''
                   })
                   setSearchTerm('')
                   setFilterTipo('todos')
@@ -4111,6 +4112,7 @@ const AdminDashboard = () => {
                 <thead>
                   <tr>
                     <th>Corretor</th>
+                    <th>Cliente</th>
                     <th>Unidade</th>
                     <th>Tipo</th>
                     <th>Valor Venda</th>
@@ -4124,18 +4126,21 @@ const AdminDashboard = () => {
                 <tbody>
                   {loading ? (
                     <tr>
-                      <td colSpan="9" className="loading-cell">
+                      <td colSpan="10" className="loading-cell">
                         <div className="loading-spinner"></div>
                       </td>
                     </tr>
                   ) : filteredVendas.length === 0 ? (
                     <tr>
-                      <td colSpan="9" className="empty-cell">
+                      <td colSpan="10" className="empty-cell">
                         Nenhuma venda encontrada
                       </td>
                     </tr>
                   ) : (
-                    filteredVendas.map((venda) => (
+                    filteredVendas.map((venda) => {
+                      // Buscar cliente da venda
+                      const clienteVenda = clientes.find(c => c.id === venda.cliente_id)
+                      return (
                       <tr key={venda.id}>
                         <td>
                           <div className="corretor-cell">
@@ -4146,10 +4151,13 @@ const AdminDashboard = () => {
                           </div>
                         </td>
                         <td>
-                          <span className="unidade-bloco">
-                            {venda.unidade || venda.bloco ? (
-                              <>{venda.bloco && `Bloco ${venda.bloco}`}{venda.bloco && venda.unidade && ' - '}{venda.unidade && `Un. ${venda.unidade}`}</>
-                            ) : '-'}
+                          <span className="cliente-nome">
+                            {clienteVenda?.nome_completo ? formatNome(clienteVenda.nome_completo) : venda.nome_cliente || '-'}
+                          </span>
+                        </td>
+                        <td>
+                          <span className="unidade-cell">
+                            {venda.unidade || '-'}
                           </span>
                         </td>
                         <td>
@@ -4201,7 +4209,7 @@ const AdminDashboard = () => {
                           </div>
                         </td>
                       </tr>
-                    ))
+                    )})
                   )}
                 </tbody>
               </table>
