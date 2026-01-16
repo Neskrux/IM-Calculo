@@ -142,15 +142,15 @@ const PublicRoute = ({ children }) => {
     return <LoadingScreen showLogout={false} />
   }
 
-         if (user && userProfile) {
-           if (userProfile.tipo === 'admin') {
-             return <Navigate to="/admin" replace />
-           } else if (userProfile.tipo === 'corretor') {
-             return <Navigate to="/corretor" replace />
-           } else if (userProfile.tipo === 'cliente') {
-             return <Navigate to="/cliente" replace />
-           }
-         }
+  if (user && userProfile) {
+    if (userProfile.tipo === 'admin') {
+      return <Navigate to="/admin" replace />
+    } else if (userProfile.tipo === 'corretor') {
+      return <Navigate to="/corretor" replace />
+    } else if (userProfile.tipo === 'cliente') {
+      return <Navigate to="/cliente" replace />
+    }
+  }
 
   return children
 }

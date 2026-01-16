@@ -23,7 +23,7 @@ const EmpreendimentoGaleria = ({ empreendimentoId, onClose }) => {
   const [lightboxOpen, setLightboxOpen] = useState(false)
   const [fotoSelecionada, setFotoSelecionada] = useState(null)
   const [categoriaFiltro, setCategoriaFiltro] = useState('todas')
-  const [categoriaSelecionada, setCategoriaSelecionada] = useState('fachada')
+  const [categoriaSelecionada, setCategoriaSelecionada] = useState('logo')
   const [lightboxIndex, setLightboxIndex] = useState(0)
 
   // Carregar categorias
@@ -44,6 +44,7 @@ const EmpreendimentoGaleria = ({ empreendimentoId, onClose }) => {
       console.error('Erro ao carregar categorias:', error)
       // Fallback para categorias padrão se a tabela não existir
       setCategorias([
+        { id: '0', nome: 'logo', label: 'Logo', cor: '#c9a962' },
         { id: '1', nome: 'fachada', label: 'Fachada', cor: '#3b82f6' },
         { id: '2', nome: 'interior', label: 'Áreas Internas', cor: '#10b981' },
         { id: '3', nome: 'apartamento', label: 'Apartamento Modelo', cor: '#8b5cf6' },
@@ -102,9 +103,9 @@ const EmpreendimentoGaleria = ({ empreendimentoId, onClose }) => {
           continue
         }
 
-        // Validar tamanho (máx 5MB)
-        if (file.size > 5 * 1024 * 1024) {
-          alert(`Arquivo ${file.name} é muito grande (máx 5MB)`)
+        // Validar tamanho (máx 500MB)
+        if (file.size > 500 * 1024 * 1024) {
+          alert(`Arquivo ${file.name} é muito grande (máx 500MB)`)
           continue
         }
 
@@ -307,7 +308,7 @@ const EmpreendimentoGaleria = ({ empreendimentoId, onClose }) => {
             />
           </label>
         </div>
-        <p className="upload-hint">Máximo 5MB por foto. Formatos: JPG, PNG, WEBP</p>
+        <p className="upload-hint">Máximo 500MB por foto. Formatos: JPG, PNG, WEBP</p>
       </div>
 
       {/* Filtro por categoria */}

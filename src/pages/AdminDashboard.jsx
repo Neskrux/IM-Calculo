@@ -221,8 +221,10 @@ const AdminDashboard = () => {
     comissao_total_externo: '7',
     comissao_total_interno: '6',
     cargos_externo: [{ nome_cargo: '', percentual: '' }],
-    cargos_interno: [{ nome_cargo: '', percentual: '' }]
+    cargos_interno: [{ nome_cargo: '', percentual: '' }],
+    logo_url: ''
   })
+  const [uploadingLogo, setUploadingLogo] = useState(false)
 
   // Dados do formulário de venda
   const [vendaForm, setVendaForm] = useState({
@@ -1345,6 +1347,59 @@ const AdminDashboard = () => {
     }
   }
 
+  // Função para upload de logo do empreendimento
+  const handleLogoUpload = async (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    // Validar tipo de arquivo
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/svg+xml']
+    if (!allowedTypes.includes(file.type)) {
+      setMessage({ type: 'error', text: 'Tipo de arquivo não permitido. Use JPG, PNG, WEBP ou SVG.' })
+      return
+    }
+
+    // Validar tamanho (máx 5MB para logos)
+    if (file.size > 5 * 1024 * 1024) {
+      setMessage({ type: 'error', text: 'Arquivo muito grande. Máximo 5MB para logos.' })
+      return
+    }
+
+    setUploadingLogo(true)
+    setMessage({ type: '', text: '' })
+
+    try {
+      // Gerar nome único para o arquivo
+      const fileExt = file.name.split('.').pop()
+      const fileName = `logo_${Date.now()}.${fileExt}`
+      const filePath = `logos/${fileName}`
+
+      // Upload para o bucket empreendimentos-fotos
+      const { error: uploadError } = await supabase.storage
+        .from('empreendimentos-fotos')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: false
+        })
+
+      if (uploadError) throw uploadError
+
+      // Obter URL pública
+      const { data: urlData } = supabase.storage
+        .from('empreendimentos-fotos')
+        .getPublicUrl(filePath)
+
+      setEmpreendimentoForm(prev => ({ ...prev, logo_url: urlData.publicUrl }))
+      setMessage({ type: 'success', text: 'Logo enviada com sucesso!' })
+      setTimeout(() => setMessage({ type: '', text: '' }), 2000)
+    } catch (error) {
+      console.error('Erro ao fazer upload da logo:', error)
+      setMessage({ type: 'error', text: 'Erro ao enviar logo: ' + error.message })
+    } finally {
+      setUploadingLogo(false)
+    }
+  }
+
   // Funções de Empreendimento
   const handleSaveEmpreendimento = async () => {
     if (!empreendimentoForm.nome) {
@@ -1366,7 +1421,8 @@ const AdminDashboard = () => {
             nome: empreendimentoForm.nome,
             descricao: empreendimentoForm.descricao,
             comissao_total_externo: parseFloat(empreendimentoForm.comissao_total_externo) || 7,
-            comissao_total_interno: parseFloat(empreendimentoForm.comissao_total_interno) || 6
+            comissao_total_interno: parseFloat(empreendimentoForm.comissao_total_interno) || 6,
+            logo_url: empreendimentoForm.logo_url || null
           })
           .eq('id', selectedItem.id)
 
@@ -1391,7 +1447,8 @@ const AdminDashboard = () => {
             nome: empreendimentoForm.nome,
             descricao: empreendimentoForm.descricao,
             comissao_total_externo: parseFloat(empreendimentoForm.comissao_total_externo) || 7,
-            comissao_total_interno: parseFloat(empreendimentoForm.comissao_total_interno) || 6
+            comissao_total_interno: parseFloat(empreendimentoForm.comissao_total_interno) || 6,
+            logo_url: empreendimentoForm.logo_url || null
           }])
           .select()
           .single()
@@ -3673,7 +3730,8 @@ const AdminDashboard = () => {
                     comissao_total_externo: '7',
                     comissao_total_interno: '6',
                     cargos_externo: [{ nome_cargo: '', percentual: '' }],
-                    cargos_interno: [{ nome_cargo: '', percentual: '' }]
+                    cargos_interno: [{ nome_cargo: '', percentual: '' }],
+                    logo_url: ''
                   })
                   setSelectedItem(null)
                   setModalType('empreendimento')
@@ -4299,7 +4357,8 @@ const AdminDashboard = () => {
                                 : [{ nome_cargo: '', percentual: '' }],
                               cargos_interno: cargosInt.length > 0 
                                 ? cargosInt.map(c => ({ nome_cargo: c.nome_cargo, percentual: c.percentual?.toString() || '' }))
-                                : [{ nome_cargo: '', percentual: '' }]
+                                : [{ nome_cargo: '', percentual: '' }],
+                              logo_url: emp.logo_url || ''
                             })
                             setModalType('empreendimento')
                             setShowModal(true)
@@ -6788,6 +6847,52 @@ const AdminDashboard = () => {
                       value={empreendimentoForm.descricao}
                       onChange={(e) => setEmpreendimentoForm({...empreendimentoForm, descricao: e.target.value})}
                     />
+                  </div>
+
+                  {/* LOGO DO EMPREENDIMENTO */}
+                  <div className="form-group">
+                    <label>Logo do Empreendimento</label>
+                    <div className="logo-upload-container">
+                      {empreendimentoForm.logo_url ? (
+                        <div className="logo-preview">
+                          <img 
+                            src={empreendimentoForm.logo_url} 
+                            alt="Logo do empreendimento" 
+                            className="logo-preview-img"
+                          />
+                          <button 
+                            type="button" 
+                            className="btn-remove-logo"
+                            onClick={() => setEmpreendimentoForm({...empreendimentoForm, logo_url: ''})}
+                            title="Remover logo"
+                          >
+                            <X size={16} />
+                          </button>
+                        </div>
+                      ) : (
+                        <label className="logo-upload-area">
+                          <input
+                            type="file"
+                            accept="image/jpeg,image/png,image/webp,image/svg+xml"
+                            onChange={handleLogoUpload}
+                            disabled={uploadingLogo}
+                            style={{ display: 'none' }}
+                          />
+                          {uploadingLogo ? (
+                            <div className="upload-loading">
+                              <div className="btn-spinner"></div>
+                              <span>Enviando...</span>
+                            </div>
+                          ) : (
+                            <>
+                              <Upload size={24} />
+                              <span>Clique para enviar a logo</span>
+                              <small>JPG, PNG, WEBP ou SVG (máx 5MB)</small>
+                            </>
+                          )}
+                        </label>
+                      )}
+                    </div>
                   </div>
 
                   {/* SEÇÃO EXTERNO */}
