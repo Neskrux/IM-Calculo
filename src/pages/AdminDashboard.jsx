@@ -131,6 +131,12 @@ const AdminDashboard = () => {
   const [clientes, setClientes] = useState([])
   const [uploadingDoc, setUploadingDoc] = useState(false)
   
+  // Estados para histórico de comissões
+  const [historicoComissoes, setHistoricoComissoes] = useState([])
+  const [showHistoricoModal, setShowHistoricoModal] = useState(false)
+  const [motivoAlteracao, setMotivoAlteracao] = useState('')
+  const [cargosAlterados, setCargosAlterados] = useState([]) // Lista de cargos que tiveram % alterado
+  
   // Estados para relatórios
   const [relatorioFiltros, setRelatorioFiltros] = useState({
     tipo: 'pagamentos', // pagamentos, comissoes, vendas
@@ -402,6 +408,13 @@ const AdminDashboard = () => {
   }
 
   // Calcular comissão detalhada por cargo para um pagamento específico
+  /**
+   * Calcula comissão por cargo para um pagamento específico
+   * 
+   * FÓRMULA CORRETA DO FATOR DE COMISSÃO:
+   *   fatorCargo = (valorVenda × percentualCargo) / proSoluto
+   *   comissaoCargo = valorParcela × fatorCargo
+   */
   const calcularComissaoPorCargoPagamento = (pagamento) => {
     if (!pagamento?.venda_id) return []
     
@@ -418,28 +431,39 @@ const AdminDashboard = () => {
     const cargosDoTipo = emp.cargos.filter(c => c.tipo_corretor === tipoCorretor)
     
     const valorPagamento = parseFloat(pagamento.valor) || 0
+    const valorVenda = parseFloat(venda.valor_venda) || 0
+    const valorProSoluto = parseFloat(venda.valor_pro_soluto) || 0
     
-    // USAR A COMISSÃO JÁ CALCULADA E SALVA NO PAGAMENTO
-    // A comissao_gerada já foi calculada corretamente na importação como: valorParcela * (percentualTotal / 100)
+    // USAR A COMISSÃO JÁ CALCULADA E SALVA NO PAGAMENTO (se disponível e correta)
+    // A comissao_gerada deve ter sido calculada com o FATOR correto
     let comissaoTotalParcela = parseFloat(pagamento.comissao_gerada) || 0
     
-    // Se não houver comissao_gerada salva, calcular usando o percentual total de comissão
-    if (comissaoTotalParcela === 0) {
+    // Se não houver comissao_gerada salva ou se precisa recalcular, usar FATOR CORRETO
+    if (comissaoTotalParcela === 0 && valorVenda > 0 && valorProSoluto > 0) {
       // Calcular percentual total dos cargos
       const percentualTotal = cargosDoTipo.reduce((acc, c) => acc + (parseFloat(c.percentual) || 0), 0)
-      const fatorComissao = percentualTotal / 100
+      // FÓRMULA CORRETA: fator = (valorVenda × percentual) / proSoluto
+      const fatorComissao = (valorVenda * (percentualTotal / 100)) / valorProSoluto
       comissaoTotalParcela = valorPagamento * fatorComissao
     }
     
-    // Calcular percentual total dos cargos para distribuição
+    // Calcular percentual total dos cargos para distribuição proporcional
     const percentualTotal = cargosDoTipo.reduce((acc, c) => acc + (parseFloat(c.percentual) || 0), 0)
     
-    // Distribuir entre os cargos proporcionalmente
+    // Distribuir entre os cargos usando FATOR por cargo
     return cargosDoTipo.map(cargo => {
       const percentualCargo = parseFloat(cargo.percentual) || 0
-      // Proporção deste cargo no total
-      const proporcaoCargo = percentualTotal > 0 ? percentualCargo / percentualTotal : 0
-      const valorComissaoCargo = comissaoTotalParcela * proporcaoCargo
+      
+      let valorComissaoCargo = 0
+      if (valorVenda > 0 && valorProSoluto > 0) {
+        // FÓRMULA CORRETA: fatorCargo = (valorVenda × percentualCargo) / proSoluto
+        const fatorCargo = (valorVenda * (percentualCargo / 100)) / valorProSoluto
+        valorComissaoCargo = valorPagamento * fatorCargo
+      } else {
+        // Fallback: distribuir proporcionalmente a comissão salva
+        const proporcaoCargo = percentualTotal > 0 ? percentualCargo / percentualTotal : 0
+        valorComissaoCargo = comissaoTotalParcela * proporcaoCargo
+      }
       
       return {
         nome_cargo: cargo.nome_cargo,
@@ -875,9 +899,13 @@ const AdminDashboard = () => {
     // Pro-soluto = sinal + entrada + balões
     const valorProSoluto = valorSinal + valorEntradaTotal + valorTotalBalao
     
-    // Fator de comissão = Percentual total de comissão / 100
-    // Ex: 7% -> 0.07, então parcela de R$ 1.000 x 0.07 = R$ 70 de comissão
-    const fatorComissao = comissoesDinamicas.percentualTotal / 100
+    // FÓRMULA CORRETA DO FATOR DE COMISSÃO:
+    // fator = (valorVenda × percentualTotal) / proSoluto
+    // Este fator será aplicado sobre cada parcela para calcular a comissão
+    let fatorComissao = 0
+    if (valorProSoluto > 0 && valorVenda > 0) {
+      fatorComissao = (valorVenda * (comissoesDinamicas.percentualTotal / 100)) / valorProSoluto
+    }
     
     // Calcular comissão do corretor
     const comissaoCorretor = calcularComissaoCorretor(comissoesDinamicas, vendaForm.corretor_id, valorVenda)
@@ -971,7 +999,10 @@ const AdminDashboard = () => {
         .eq('venda_id', vendaId)
       
       // Recriar pagamentos com novos valores
+      // FÓRMULA CORRETA: comissao = parcela × fator
+      // O fator já foi calculado como: (valorVenda × percentual) / proSoluto
       const pagamentos = []
+      const percentualTotal = comissoesDinamicas.percentualTotal
       
       // Sinal
       if (valorSinal > 0) {
@@ -980,7 +1011,9 @@ const AdminDashboard = () => {
           tipo: 'sinal',
           valor: valorSinal,
           data_prevista: vendaForm.data_venda,
-          comissao_gerada: valorSinal * fatorComissao
+          comissao_gerada: valorSinal * fatorComissao,
+          fator_comissao_aplicado: fatorComissao,
+          percentual_comissao_total: percentualTotal
         })
       }
 
@@ -993,7 +1026,9 @@ const AdminDashboard = () => {
             tipo: 'entrada',
             valor: valorEntradaAvista,
             data_prevista: vendaForm.data_venda,
-            comissao_gerada: valorEntradaAvista * fatorComissao
+            comissao_gerada: valorEntradaAvista * fatorComissao,
+            fator_comissao_aplicado: fatorComissao,
+            percentual_comissao_total: percentualTotal
           })
         }
       }
@@ -1024,7 +1059,9 @@ const AdminDashboard = () => {
                 numero_parcela: numeroParcela,
                 valor: valor,
                 data_prevista: dataParcela.toISOString().split('T')[0],
-                comissao_gerada: valor * fatorComissao
+                comissao_gerada: valor * fatorComissao,
+                fator_comissao_aplicado: fatorComissao,
+                percentual_comissao_total: percentualTotal
               })
               numeroParcela++
             }
@@ -1054,7 +1091,9 @@ const AdminDashboard = () => {
                 tipo: 'balao',
                 numero_parcela: numeroBalao,
                 valor: valor,
-                comissao_gerada: valor * fatorComissao
+                comissao_gerada: valor * fatorComissao,
+                fator_comissao_aplicado: fatorComissao,
+                percentual_comissao_total: percentualTotal
               })
               numeroBalao++
             }
@@ -1085,8 +1124,10 @@ const AdminDashboard = () => {
       }
 
       // Criar pagamentos pro-soluto
-      // Fórmula: Comissão da Parcela = Valor da Parcela × Fcom
+      // FÓRMULA CORRETA: comissao = parcela × fator
+      // O fator já foi calculado como: (valorVenda × percentual) / proSoluto
       const pagamentos = []
+      const percentualTotal = comissoesDinamicas.percentualTotal
       
       // Sinal
       if (valorSinal > 0) {
@@ -1095,7 +1136,9 @@ const AdminDashboard = () => {
           tipo: 'sinal',
           valor: valorSinal,
           data_prevista: vendaForm.data_venda,
-          comissao_gerada: valorSinal * fatorComissao
+          comissao_gerada: valorSinal * fatorComissao,
+          fator_comissao_aplicado: fatorComissao,
+          percentual_comissao_total: percentualTotal
         })
       }
 
@@ -1108,7 +1151,9 @@ const AdminDashboard = () => {
             tipo: 'entrada',
             valor: valorEntradaAvista,
             data_prevista: vendaForm.data_venda,
-            comissao_gerada: valorEntradaAvista * fatorComissao
+            comissao_gerada: valorEntradaAvista * fatorComissao,
+            fator_comissao_aplicado: fatorComissao,
+            percentual_comissao_total: percentualTotal
           })
         }
       }
@@ -1139,7 +1184,9 @@ const AdminDashboard = () => {
                 numero_parcela: numeroParcela,
                 valor: valor,
                 data_prevista: dataParcela.toISOString().split('T')[0],
-                comissao_gerada: valor * fatorComissao
+                comissao_gerada: valor * fatorComissao,
+                fator_comissao_aplicado: fatorComissao,
+                percentual_comissao_total: percentualTotal
               })
               numeroParcela++
             }
@@ -1169,7 +1216,9 @@ const AdminDashboard = () => {
                 tipo: 'balao',
                 numero_parcela: numeroBalao,
                 valor: valor,
-                comissao_gerada: valor * fatorComissao
+                comissao_gerada: valor * fatorComissao,
+                fator_comissao_aplicado: fatorComissao,
+                percentual_comissao_total: percentualTotal
               })
               numeroBalao++
             }
@@ -1357,6 +1406,7 @@ const AdminDashboard = () => {
 
     try {
       let empreendimentoId = selectedItem?.id
+      const cargosAntigos = selectedItem?.cargos || []
 
       if (selectedItem) {
         // Atualizar empreendimento existente
@@ -1372,16 +1422,26 @@ const AdminDashboard = () => {
 
         if (error) throw new Error(error.message)
 
-        // Deletar cargos antigos PRIMEIRO
-        const { error: deleteError } = await supabase
-          .from('cargos_empreendimento')
-          .delete()
-          .eq('empreendimento_id', selectedItem.id)
-        
-        if (deleteError) {
-          console.error('Erro ao deletar cargos antigos:', deleteError)
-          throw new Error('Erro ao atualizar cargos: ' + deleteError.message)
-        }
+        // === UPSERT INTELIGENTE COM HISTÓRICO ===
+        // Processar cargos externos
+        const cargosExternoValidos = empreendimentoForm.cargos_externo.filter(c => c.nome_cargo && c.percentual)
+        await processarCargosComHistorico(
+          empreendimentoId, 
+          'externo', 
+          cargosExternoValidos, 
+          cargosAntigos.filter(c => c.tipo_corretor === 'externo'),
+          motivoAlteracao
+        )
+
+        // Processar cargos internos
+        const cargosInternoValidos = empreendimentoForm.cargos_interno.filter(c => c.nome_cargo && c.percentual)
+        await processarCargosComHistorico(
+          empreendimentoId, 
+          'interno', 
+          cargosInternoValidos, 
+          cargosAntigos.filter(c => c.tipo_corretor === 'interno'),
+          motivoAlteracao
+        )
 
       } else {
         // Criar novo empreendimento
@@ -1398,47 +1458,53 @@ const AdminDashboard = () => {
 
         if (error) throw new Error(error.message)
         empreendimentoId = data.id
-      }
 
-      // Inserir cargos EXTERNOS
-      const cargosExternoValidos = empreendimentoForm.cargos_externo.filter(c => c.nome_cargo && c.percentual)
-      if (cargosExternoValidos.length > 0) {
-        const cargosData = cargosExternoValidos.map((cargo, idx) => ({
-          empreendimento_id: empreendimentoId,
-          tipo_corretor: 'externo',
-          nome_cargo: cargo.nome_cargo,
-          percentual: parseFloat(cargo.percentual),
-          ordem: idx
-        }))
+        // Inserir cargos EXTERNOS (novos)
+        const cargosExternoValidos = empreendimentoForm.cargos_externo.filter(c => c.nome_cargo && c.percentual)
+        if (cargosExternoValidos.length > 0) {
+          const cargosData = cargosExternoValidos.map((cargo, idx) => ({
+            empreendimento_id: empreendimentoId,
+            tipo_corretor: 'externo',
+            nome_cargo: cargo.nome_cargo,
+            percentual: parseFloat(cargo.percentual),
+            ordem: idx,
+            ativo: true,
+            vigente_desde: new Date().toISOString().split('T')[0]
+          }))
 
-        const { error: cargosError } = await supabase
-          .from('cargos_empreendimento')
-          .insert(cargosData)
+          const { error: cargosError } = await supabase
+            .from('cargos_empreendimento')
+            .insert(cargosData)
 
-        if (cargosError) throw new Error(cargosError.message)
-      }
+          if (cargosError) throw new Error(cargosError.message)
+        }
 
-      // Inserir cargos INTERNOS
-      const cargosInternoValidos = empreendimentoForm.cargos_interno.filter(c => c.nome_cargo && c.percentual)
-      if (cargosInternoValidos.length > 0) {
-        const cargosData = cargosInternoValidos.map((cargo, idx) => ({
-          empreendimento_id: empreendimentoId,
-          tipo_corretor: 'interno',
-          nome_cargo: cargo.nome_cargo,
-          percentual: parseFloat(cargo.percentual),
-          ordem: idx
-        }))
+        // Inserir cargos INTERNOS (novos)
+        const cargosInternoValidos = empreendimentoForm.cargos_interno.filter(c => c.nome_cargo && c.percentual)
+        if (cargosInternoValidos.length > 0) {
+          const cargosData = cargosInternoValidos.map((cargo, idx) => ({
+            empreendimento_id: empreendimentoId,
+            tipo_corretor: 'interno',
+            nome_cargo: cargo.nome_cargo,
+            percentual: parseFloat(cargo.percentual),
+            ordem: idx,
+            ativo: true,
+            vigente_desde: new Date().toISOString().split('T')[0]
+          }))
 
-        const { error: cargosError } = await supabase
-          .from('cargos_empreendimento')
-          .insert(cargosData)
+          const { error: cargosError } = await supabase
+            .from('cargos_empreendimento')
+            .insert(cargosData)
 
-        if (cargosError) throw new Error(cargosError.message)
+          if (cargosError) throw new Error(cargosError.message)
+        }
       }
 
       setSaving(false)
       setShowModal(false)
       setSelectedItem(null)
+      setMotivoAlteracao('') // Limpar motivo
+      setCargosAlterados([]) // Limpar lista de alterados
       fetchData()
       setMessage({ type: 'success', text: `Empreendimento ${selectedItem ? 'atualizado' : 'criado'} com sucesso!` })
       setTimeout(() => setMessage({ type: '', text: '' }), 3000)
@@ -1447,6 +1513,179 @@ const AdminDashboard = () => {
       setSaving(false)
       setMessage({ type: 'error', text: err.message })
     }
+  }
+
+  /**
+   * Processa cargos com upsert inteligente e histórico
+   * - Atualiza cargos existentes (se % mudou, gera histórico via trigger)
+   * - Cria novos cargos
+   * - Desativa cargos removidos (soft delete)
+   */
+  const processarCargosComHistorico = async (empreendimentoId, tipoCorretor, cargosNovos, cargosAntigos, motivo) => {
+    const userId = perfil?.id || null
+
+    // Mapear cargos antigos por nome para fácil lookup
+    const mapaAntigos = {}
+    cargosAntigos.forEach(c => {
+      mapaAntigos[c.nome_cargo.toLowerCase()] = c
+    })
+
+    // Processar cada cargo novo
+    for (let idx = 0; idx < cargosNovos.length; idx++) {
+      const cargoNovo = cargosNovos[idx]
+      const nomeNormalizado = cargoNovo.nome_cargo.toLowerCase()
+      const cargoAntigo = mapaAntigos[nomeNormalizado]
+
+      if (cargoAntigo) {
+        // Cargo existe - verificar se precisa atualizar
+        const percentualAntigo = parseFloat(cargoAntigo.percentual)
+        const percentualNovo = parseFloat(cargoNovo.percentual)
+
+        if (percentualAntigo !== percentualNovo || !cargoAntigo.ativo) {
+          // Percentual mudou ou cargo estava inativo - ATUALIZAR
+          // O trigger no banco vai gerar o histórico automaticamente
+          const { error } = await supabase
+            .from('cargos_empreendimento')
+            .update({
+              percentual: percentualNovo,
+              ordem: idx,
+              ativo: true,
+              updated_by: userId
+            })
+            .eq('id', cargoAntigo.id)
+
+          if (error) {
+            console.error('Erro ao atualizar cargo:', error)
+            throw new Error(`Erro ao atualizar cargo ${cargoNovo.nome_cargo}: ${error.message}`)
+          }
+
+          // Se tiver motivo, registrar separadamente
+          if (motivo && percentualAntigo !== percentualNovo) {
+            await supabase
+              .from('cargos_empreendimento_historico')
+              .update({ motivo })
+              .eq('cargo_id', cargoAntigo.id)
+              .is('motivo', null)
+              .order('alterado_em', { ascending: false })
+              .limit(1)
+          }
+        }
+
+        // Remover do mapa (cargo processado)
+        delete mapaAntigos[nomeNormalizado]
+
+      } else {
+        // Cargo novo - INSERIR
+        const { error } = await supabase
+          .from('cargos_empreendimento')
+          .insert({
+            empreendimento_id: empreendimentoId,
+            tipo_corretor: tipoCorretor,
+            nome_cargo: cargoNovo.nome_cargo,
+            percentual: parseFloat(cargoNovo.percentual),
+            ordem: idx,
+            ativo: true,
+            vigente_desde: new Date().toISOString().split('T')[0],
+            updated_by: userId
+          })
+
+        if (error) {
+          console.error('Erro ao inserir cargo:', error)
+          throw new Error(`Erro ao criar cargo ${cargoNovo.nome_cargo}: ${error.message}`)
+        }
+      }
+    }
+
+    // Cargos restantes no mapa = foram removidos - SOFT DELETE
+    for (const nomeNormalizado in mapaAntigos) {
+      const cargoRemovido = mapaAntigos[nomeNormalizado]
+      
+      const { error } = await supabase
+        .from('cargos_empreendimento')
+        .update({
+          ativo: false,
+          vigente_ate: new Date().toISOString().split('T')[0],
+          updated_by: userId
+        })
+        .eq('id', cargoRemovido.id)
+
+      if (error) {
+        console.error('Erro ao desativar cargo:', error)
+      }
+    }
+  }
+
+  /**
+   * Buscar histórico de alterações de um empreendimento
+   */
+  const buscarHistoricoComissoes = async (empreendimentoId) => {
+    const { data, error } = await supabase
+      .from('cargos_empreendimento_historico')
+      .select('*')
+      .eq('empreendimento_id', empreendimentoId)
+      .order('alterado_em', { ascending: false })
+      .limit(50)
+
+    if (error) {
+      console.error('Erro ao buscar histórico:', error)
+      return []
+    }
+
+    return data || []
+  }
+
+  /**
+   * Abrir modal de histórico para um empreendimento
+   */
+  const abrirHistoricoEmpreendimento = async (empreendimento) => {
+    const historico = await buscarHistoricoComissoes(empreendimento.id)
+    setHistoricoComissoes(historico)
+    setSelectedItem(empreendimento)
+    setShowHistoricoModal(true)
+  }
+
+  /**
+   * Detectar se algum cargo teve percentual alterado
+   */
+  const detectarAlteracoes = () => {
+    if (!selectedItem?.cargos) return []
+
+    const alterados = []
+    const cargosAntigos = selectedItem.cargos || []
+
+    // Verificar externos
+    empreendimentoForm.cargos_externo.forEach(cargoNovo => {
+      const antigo = cargosAntigos.find(a => 
+        a.nome_cargo.toLowerCase() === cargoNovo.nome_cargo.toLowerCase() && 
+        a.tipo_corretor === 'externo'
+      )
+      if (antigo && parseFloat(antigo.percentual) !== parseFloat(cargoNovo.percentual)) {
+        alterados.push({
+          nome: cargoNovo.nome_cargo,
+          tipo: 'externo',
+          de: antigo.percentual,
+          para: cargoNovo.percentual
+        })
+      }
+    })
+
+    // Verificar internos
+    empreendimentoForm.cargos_interno.forEach(cargoNovo => {
+      const antigo = cargosAntigos.find(a => 
+        a.nome_cargo.toLowerCase() === cargoNovo.nome_cargo.toLowerCase() && 
+        a.tipo_corretor === 'interno'
+      )
+      if (antigo && parseFloat(antigo.percentual) !== parseFloat(cargoNovo.percentual)) {
+        alterados.push({
+          nome: cargoNovo.nome_cargo,
+          tipo: 'interno',
+          de: antigo.percentual,
+          para: cargoNovo.percentual
+        })
+      }
+    })
+
+    return alterados
   }
 
   const handleDeleteEmpreendimento = async (emp) => {
@@ -1613,8 +1852,14 @@ const AdminDashboard = () => {
       : 0
     
     const valorProSoluto = valorSinal + valorEntradaTotal + valorTotalBalao
-    // Fator de comissão = Percentual total / 100
-    const fatorComissao = comissoesDinamicas.percentualTotal / 100
+    
+    // FÓRMULA CORRETA DO FATOR DE COMISSÃO:
+    // fator = (valorVenda × percentualTotal) / proSoluto
+    let fatorComissao = 0
+    if (valorProSoluto > 0 && valorVenda > 0) {
+      fatorComissao = (valorVenda * (comissoesDinamicas.percentualTotal / 100)) / valorProSoluto
+    }
+    const percentualTotal = comissoesDinamicas.percentualTotal
     
     // Calcular e atualizar comissão do corretor na venda se não estiver preenchida
     const comissaoCorretor = calcularComissaoCorretor(comissoesDinamicas, venda.corretor_id, valorVenda)
@@ -1638,7 +1883,9 @@ const AdminDashboard = () => {
         tipo: 'sinal',
         valor: valorSinal,
         data_prevista: venda.data_venda,
-        comissao_gerada: valorSinal * fatorComissao
+        comissao_gerada: valorSinal * fatorComissao,
+        fator_comissao_aplicado: fatorComissao,
+        percentual_comissao_total: percentualTotal
       })
     }
 
@@ -1651,7 +1898,9 @@ const AdminDashboard = () => {
           tipo: 'entrada',
           valor: valorEntradaAvista,
           data_prevista: venda.data_venda,
-          comissao_gerada: valorEntradaAvista * fatorComissao
+          comissao_gerada: valorEntradaAvista * fatorComissao,
+          fator_comissao_aplicado: fatorComissao,
+          percentual_comissao_total: percentualTotal
         })
       }
     }
@@ -1671,7 +1920,9 @@ const AdminDashboard = () => {
           numero_parcela: i,
           valor: valorParcelaEnt,
           data_prevista: dataParcela.toISOString().split('T')[0],
-          comissao_gerada: valorParcelaEnt * fatorComissao
+          comissao_gerada: valorParcelaEnt * fatorComissao,
+          fator_comissao_aplicado: fatorComissao,
+          percentual_comissao_total: percentualTotal
         })
       }
     }
@@ -1686,7 +1937,9 @@ const AdminDashboard = () => {
           tipo: 'balao',
           numero_parcela: i,
           valor: valorBalaoUnit,
-          comissao_gerada: valorBalaoUnit * fatorComissao
+          comissao_gerada: valorBalaoUnit * fatorComissao,
+          fator_comissao_aplicado: fatorComissao,
+          percentual_comissao_total: percentualTotal
         })
       }
     }
@@ -4315,6 +4568,13 @@ const AdminDashboard = () => {
                           <Camera size={14} />
                         </button>
                         <button 
+                          className="action-btn view small"
+                          onClick={() => abrirHistoricoEmpreendimento(emp)}
+                          title="Ver Histórico de Alterações"
+                        >
+                          <Clock size={14} />
+                        </button>
+                        <button 
                           className="action-btn delete small"
                           onClick={() => handleDeleteEmpreendimento(emp)}
                         >
@@ -6891,8 +7151,52 @@ const AdminDashboard = () => {
                       <span>Total Cargos Internos: {empreendimentoForm.cargos_interno.reduce((acc, c) => acc + (parseFloat(c.percentual) || 0), 0).toFixed(2)}%</span>
                     </div>
                   </div>
+
+                  {/* Seção de Alterações Detectadas (só aparece se editando) */}
+                  {selectedItem && detectarAlteracoes().length > 0 && (
+                    <div className="alteracoes-detectadas">
+                      <div className="section-divider warning">
+                        <span>⚠️ Alterações de Percentual Detectadas</span>
+                      </div>
+                      <div className="alteracoes-lista">
+                        {detectarAlteracoes().map((alt, idx) => (
+                          <div key={idx} className="alteracao-item">
+                            <span className="cargo-nome">{alt.nome}</span>
+                            <span className="tipo-badge">{alt.tipo}</span>
+                            <span className="alteracao-valores">
+                              <span className="valor-antigo">{alt.de}%</span>
+                              <span className="seta">→</span>
+                              <span className="valor-novo">{alt.para}%</span>
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="form-group motivo-alteracao">
+                        <label>Motivo da Alteração (opcional, mas recomendado)</label>
+                        <textarea
+                          placeholder="Ex: Ajuste de mercado, correção de erro, renegociação..."
+                          value={motivoAlteracao}
+                          onChange={(e) => setMotivoAlteracao(e.target.value)}
+                          rows={2}
+                        />
+                        <small className="form-hint">
+                          Este registro ficará no histórico para auditoria
+                        </small>
+                      </div>
+                    </div>
+                  )}
                 </div>
                 <div className="modal-footer">
+                  {selectedItem && (
+                    <button 
+                      className="btn-outline" 
+                      onClick={() => abrirHistoricoEmpreendimento(selectedItem)}
+                      style={{ marginRight: 'auto' }}
+                    >
+                      <Clock size={16} />
+                      <span>Ver Histórico</span>
+                    </button>
+                  )}
                   <button className="btn-secondary" onClick={() => setShowModal(false)}>
                     Cancelar
                   </button>
@@ -7453,6 +7757,78 @@ const AdminDashboard = () => {
                 </div>
               </>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Histórico de Comissões */}
+      {showHistoricoModal && selectedItem && (
+        <div className="modal-overlay" onClick={() => setShowHistoricoModal(false)}>
+          <div className="modal-content modal-historico" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>📜 Histórico de Alterações - {selectedItem.nome}</h3>
+              <button className="close-btn" onClick={() => setShowHistoricoModal(false)}>
+                <X size={20} />
+              </button>
+            </div>
+            <div className="modal-body modal-body-scroll">
+              {historicoComissoes.length === 0 ? (
+                <div className="empty-state">
+                  <Clock size={48} />
+                  <p>Nenhuma alteração de percentual registrada</p>
+                  <small>O histórico será criado automaticamente quando percentuais forem alterados</small>
+                </div>
+              ) : (
+                <div className="historico-timeline">
+                  {historicoComissoes.map((item, idx) => (
+                    <div key={idx} className={`historico-item ${item.operacao.toLowerCase()}`}>
+                      <div className="historico-header">
+                        <span className={`operacao-badge ${item.operacao.toLowerCase()}`}>
+                          {item.operacao === 'CREATE' && '➕ Criado'}
+                          {item.operacao === 'UPDATE' && '✏️ Alterado'}
+                          {item.operacao === 'DELETE' && '🗑️ Removido'}
+                          {item.operacao === 'REACTIVATE' && '♻️ Reativado'}
+                        </span>
+                        <span className="historico-data">
+                          {new Date(item.alterado_em).toLocaleDateString('pt-BR', {
+                            day: '2-digit',
+                            month: '2-digit',
+                            year: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}
+                        </span>
+                      </div>
+                      <div className="historico-content">
+                        <span className="cargo-nome">{item.nome_cargo}</span>
+                        <span className={`tipo-badge ${item.tipo_corretor}`}>{item.tipo_corretor}</span>
+                        {item.operacao === 'UPDATE' && (
+                          <span className="alteracao-valores">
+                            <span className="valor-antigo">{item.percentual_anterior}%</span>
+                            <span className="seta">→</span>
+                            <span className="valor-novo">{item.percentual_novo}%</span>
+                          </span>
+                        )}
+                        {item.operacao === 'CREATE' && (
+                          <span className="valor-novo">{item.percentual_novo}%</span>
+                        )}
+                      </div>
+                      {item.motivo && (
+                        <div className="historico-motivo">
+                          <span className="motivo-label">Motivo:</span>
+                          <span className="motivo-texto">{item.motivo}</span>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            <div className="modal-footer">
+              <button className="btn-secondary" onClick={() => setShowHistoricoModal(false)}>
+                Fechar
+              </button>
+            </div>
           </div>
         </div>
       )}
