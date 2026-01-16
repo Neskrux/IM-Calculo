@@ -53,8 +53,10 @@ html {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overflow-x: hidden;
+  overflow-y: hidden;
   width: 100%;
   max-width: 100vw;
+  height: 100%;
 }
 
 body {
@@ -63,8 +65,15 @@ body {
   color: var(--im-text-primary);
   line-height: 1.6;
   overflow-x: hidden;
+  overflow-y: hidden;
   width: 100%;
   max-width: 100vw;
+  height: 100%;
+}
+
+#root {
+  height: 100%;
+  overflow: hidden;
 }
 
 /* Scrollbar Styling */

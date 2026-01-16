@@ -1,7 +1,32 @@
 /* Dashboard Layout - IM Luxury Theme */
+
+/* Scrollbar - Apenas no main-content */
+.main-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.main-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.main-content::-webkit-scrollbar-thumb {
+  background: rgba(201, 169, 98, 0.3);
+  border-radius: 3px;
+}
+
+.main-content::-webkit-scrollbar-thumb:hover {
+  background: rgba(201, 169, 98, 0.5);
+}
+
+/* Firefox scrollbar */
+.main-content {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(201, 169, 98, 0.3) transparent;
+}
+
 .dashboard-container {
   display: flex;
-  min-height: 100vh;
+  height: 100vh;
   background: var(--im-bg-primary, #050a12);
   width: 100%;
   max-width: 100vw;
@@ -10,6 +35,7 @@
   font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  overflow: hidden;
 }
 
 /* Barra de Carregamento Global */
@@ -441,7 +467,7 @@
 .sidebar {
   width: 260px;
   background: linear-gradient(180deg, var(--im-bg-secondary, #0a1628) 0%, var(--im-bg-primary, #050a12) 100%);
-  border-right: 1px solid var(--im-border, rgba(74, 144, 217, 0.15));
+  border-right: 1px solid rgba(201, 169, 98, 0.15);
   border-left: none;
   display: flex;
   flex-direction: column;
@@ -919,7 +945,10 @@
   max-width: calc(100% - 240px);
   box-sizing: border-box;
   overflow-x: hidden;
-  min-height: 100vh;
+  overflow-y: auto;
+  height: 100vh;
+  border: none;
+  outline: none;
 }
 
 .main-content.sidebar-collapsed {

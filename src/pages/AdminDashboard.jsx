@@ -17,6 +17,8 @@ import EmpreendimentoGaleria from '../components/EmpreendimentoGaleria'
 // import CadastrarCorretores from '../components/CadastrarCorretores'
 // import ImportarVendas from '../components/ImportarVendas'
 import '../styles/Dashboard.css'
+import '../styles/EmpreendimentosPage.css'
+import { LayoutGrid, List } from 'lucide-react'
 
 const AdminDashboard = () => {
   const { userProfile, signOut, loading: authLoading } = useAuth()
@@ -105,6 +107,9 @@ const AdminDashboard = () => {
     busca: ''
   })
   
+  // Visualização de Empreendimentos (grid ou lista)
+  const [empViewMode, setEmpViewMode] = useState('grid')
+  
   // Filtros para Clientes
   const [filtrosClientes, setFiltrosClientes] = useState({
     busca: '',
@@ -128,6 +133,7 @@ const AdminDashboard = () => {
   const [cargoExpandido, setCargoExpandido] = useState(null) // Formato: "empreendimentoId-cargoId"
   const [cargosExpandidos, setCargosExpandidos] = useState({}) // Formato: { "empreendimentoId-externo": true, "empreendimentoId-interno": false }
   const [galeriaAberta, setGaleriaAberta] = useState(null) // ID do empreendimento com galeria aberta
+  const [empreendimentoVisualizar, setEmpreendimentoVisualizar] = useState(null) // Empreendimento para visualização detalhada
   const [clientes, setClientes] = useState([])
   const [uploadingDoc, setUploadingDoc] = useState(false)
   
@@ -606,11 +612,34 @@ const AdminDashboard = () => {
         tipoIdPagamento: pagamentosData?.[0]?.venda_id ? typeof pagamentosData[0].venda_id : 'N/A'
       })
 */
-      // Associar cargos aos empreendimentos manualmente
-      const empreendimentosComCargos = (empreendimentosData || []).map(emp => ({
-        ...emp,
-        cargos: (cargosData || []).filter(c => c.empreendimento_id === emp.id)
-      }))
+      // Buscar fotos de fachada para cada empreendimento
+      const { data: fotosData } = await supabase
+        .from('empreendimento_fotos')
+        .select('empreendimento_id, url, categoria, destaque, ordem')
+        .in('categoria', ['fachada', 'logo'])
+        .order('destaque', { ascending: false })
+        .order('ordem', { ascending: true })
+
+      // Associar cargos e fotos aos empreendimentos
+      const empreendimentosComCargos = (empreendimentosData || []).map(emp => {
+        // Buscar foto de fachada (prioridade: destaque > primeira)
+        const fotosFachada = (fotosData || []).filter(f => f.empreendimento_id === emp.id && f.categoria === 'fachada')
+        const fotoFachada = fotosFachada.find(f => f.destaque) || fotosFachada[0]
+        
+        // Buscar logo (se não tiver logo_url no empreendimento)
+        let logoUrl = emp.logo_url
+        if (!logoUrl) {
+          const fotosLogo = (fotosData || []).filter(f => f.empreendimento_id === emp.id && f.categoria === 'logo')
+          logoUrl = fotosLogo[0]?.url || null
+        }
+        
+        return {
+          ...emp,
+          cargos: (cargosData || []).filter(c => c.empreendimento_id === emp.id),
+          fachada_url: fotoFachada?.url || null,
+          logo_url: logoUrl
+        }
+      })
 
       // Associar dados relacionados às vendas manualmente
       const vendasComRelacionamentos = (vendasData || []).map(venda => {
@@ -1507,19 +1536,63 @@ const AdminDashboard = () => {
   }
 
   const handleDeleteEmpreendimento = async (emp) => {
-    if (confirm(`Tem certeza que deseja excluir o empreendimento ${emp.nome}?`)) {
+    // Verificar se há corretores vinculados a este empreendimento
+    const { data: corretoresVinculados, error: errorCheck } = await supabase
+      .from('usuarios')
+      .select('id, nome')
+      .eq('empreendimento_id', emp.id)
+    
+    if (errorCheck) {
+      setMessage({ type: 'error', text: 'Erro ao verificar vínculos: ' + errorCheck.message })
+      return
+    }
+
+    if (corretoresVinculados && corretoresVinculados.length > 0) {
+      const nomes = corretoresVinculados.slice(0, 5).map(c => c.nome).join(', ')
+      const maisTexto = corretoresVinculados.length > 5 ? ` e mais ${corretoresVinculados.length - 5} outros` : ''
+      
+      setMessage({ 
+        type: 'error', 
+        text: `Não é possível excluir "${emp.nome}". Existem ${corretoresVinculados.length} corretor(es) vinculado(s): ${nomes}${maisTexto}. Desvincule os corretores primeiro.`
+      })
+      setTimeout(() => setMessage({ type: '', text: '' }), 8000)
+      return
+    }
+
+    // Verificar se há vendas vinculadas
+    const { data: vendasVinculadas, error: errorVendas } = await supabase
+      .from('vendas')
+      .select('id')
+      .eq('empreendimento_id', emp.id)
+      .limit(1)
+    
+    if (vendasVinculadas && vendasVinculadas.length > 0) {
+      setMessage({ 
+        type: 'error', 
+        text: `Não é possível excluir "${emp.nome}". Existem vendas registradas neste empreendimento.`
+      })
+      setTimeout(() => setMessage({ type: '', text: '' }), 5000)
+      return
+    }
+
+    if (confirm(`Tem certeza que deseja excluir o empreendimento "${emp.nome}"?\n\nEsta ação não pode ser desfeita.`)) {
       const { error } = await supabase
         .from('empreendimentos')
         .delete()
         .eq('id', emp.id)
       
       if (error) {
-        setMessage({ type: 'error', text: 'Erro ao excluir: ' + error.message })
+        // Mensagem mais amigável para erros de FK
+        if (error.message.includes('foreign key') || error.message.includes('violates')) {
+          setMessage({ type: 'error', text: `Não é possível excluir "${emp.nome}". Existem registros vinculados a este empreendimento.` })
+        } else {
+          setMessage({ type: 'error', text: 'Erro ao excluir: ' + error.message })
+        }
         return
       }
       
       fetchData()
-      setMessage({ type: 'success', text: 'Empreendimento excluído!' })
+      setMessage({ type: 'success', text: 'Empreendimento excluído com sucesso!' })
       setTimeout(() => setMessage({ type: '', text: '' }), 3000)
     }
   }
@@ -4243,106 +4316,294 @@ const AdminDashboard = () => {
         )}
 
         {activeTab === 'empreendimentos' && (
-          <div className="content-section">
-            {/* Filtros de Empreendimentos */}
-            <div className="filters-section">
-              <div className="search-box">
+          <div className="empreendimentos-premium">
+            {/* Header com Estatísticas - Minimalista */}
+            <div className="empreendimentos-stats-header">
+              <div className="emp-stat-card">
+                <span className="emp-stat-value">{empreendimentos.length}</span>
+                <span className="emp-stat-label">Empreendimentos</span>
+              </div>
+              <div className="emp-stat-card">
+                <span className="emp-stat-value">
+                  {formatCurrency(vendas.reduce((acc, v) => acc + (parseFloat(v.valor_venda) || 0), 0))}
+                </span>
+                <span className="emp-stat-label">Total em Vendas</span>
+              </div>
+              <div className="emp-stat-card">
+                <span className="emp-stat-value">{vendas.length}</span>
+                <span className="emp-stat-label">Vendas Realizadas</span>
+              </div>
+              <div className="emp-stat-card">
+                <span className="emp-stat-value">{corretores.filter(c => c.tipo !== 'admin').length}</span>
+                <span className="emp-stat-label">Corretores</span>
+              </div>
+            </div>
+
+            {/* Filtros e Toggle de Visualização */}
+            <div className="empreendimentos-filters">
+              <div className="emp-search-box">
                 <Search size={20} />
                 <input 
                   type="text" 
-                  placeholder="Buscar por nome ou descrição..."
+                  placeholder="Buscar empreendimento..."
                   value={filtrosEmpreendimentos.busca}
                   onChange={(e) => setFiltrosEmpreendimentos({...filtrosEmpreendimentos, busca: e.target.value})}
                 />
               </div>
               
-              {filtrosEmpreendimentos.busca && (
-                <button
-                  className="btn-clear-filters"
-                  onClick={() => setFiltrosEmpreendimentos({ busca: '' })}
+              <div className="emp-view-toggle">
+                <button 
+                  className={`emp-view-btn ${empViewMode === 'grid' ? 'active' : ''}`}
+                  onClick={() => setEmpViewMode('grid')}
                 >
-                  <X size={16} />
-                  Limpar Busca
+                  <LayoutGrid size={18} />
+                  Cards
                 </button>
-              )}
+                <button 
+                  className={`emp-view-btn ${empViewMode === 'list' ? 'active' : ''}`}
+                  onClick={() => setEmpViewMode('list')}
+                >
+                  <List size={18} />
+                  Lista
+                </button>
+              </div>
             </div>
 
             {filteredEmpreendimentos.length === 0 ? (
-              <div className="empty-state-box">
-                <Building size={48} />
+              <div className="emp-empty-state">
+                <div className="emp-empty-icon">
+                  <Building size={40} />
+                </div>
                 <h3>{empreendimentos.length === 0 ? 'Nenhum empreendimento cadastrado' : 'Nenhum empreendimento encontrado'}</h3>
-                <p>{empreendimentos.length === 0 ? 'Clique em "Novo Empreendimento" para adicionar' : 'Tente outra busca'}</p>
+                <p>{empreendimentos.length === 0 ? 'Adicione seu primeiro empreendimento para começar' : 'Tente outra busca'}</p>
+                {empreendimentos.length === 0 && (
+                  <button 
+                    className="emp-empty-btn"
+                    onClick={() => {
+                      setEmpreendimentoForm({
+                        nome: '',
+                        descricao: '',
+                        comissao_total_externo: '7',
+                        comissao_total_interno: '6',
+                        cargos_externo: [{ nome_cargo: '', percentual: '' }],
+                        cargos_interno: [{ nome_cargo: '', percentual: '' }],
+                        logo_url: ''
+                      })
+                      setSelectedItem(null)
+                      setModalType('empreendimento')
+                      setShowModal(true)
+                    }}
+                  >
+                    <Plus size={20} />
+                    Novo Empreendimento
+                  </button>
+                )}
+              </div>
+            ) : empViewMode === 'grid' ? (
+              /* Visualização em Grid Premium */
+              <div className="empreendimentos-showcase">
+                {filteredEmpreendimentos.map((emp) => {
+                  const vendasEmp = vendas.filter(v => v.empreendimento_id === emp.id)
+                  const pagamentosEmp = pagamentos.filter(p => vendasEmp.some(v => v.id === p.venda_id))
+                  const totalVendasEmp = vendasEmp.length
+                  const valorTotalVendas = vendasEmp.reduce((acc, v) => acc + (parseFloat(v.valor_venda) || 0), 0)
+                  const comissaoTotal = pagamentosEmp.reduce((acc, p) => acc + (parseFloat(p.comissao_gerada) || 0), 0)
+                  const comissaoPaga = pagamentosEmp.filter(p => p.status === 'pago').reduce((acc, p) => acc + (parseFloat(p.comissao_gerada) || 0), 0)
+                  const comissaoPendente = comissaoTotal - comissaoPaga
+                  
+                  return (
+                    <div key={emp.id} className="emp-premium-card">
+                      {/* Imagem de Fachada */}
+                      <div className="emp-card-image">
+                        {emp.fachada_url ? (
+                          <img src={emp.fachada_url} alt={emp.nome} />
+                        ) : (
+                          <div className="emp-card-image-placeholder">
+                            <Building size={48} />
+                            <span>Sem imagem</span>
+                          </div>
+                        )}
+                        
+                        {/* Logo no canto superior direito */}
+                        {emp.logo_url && emp.logo_url.trim() !== '' && (
+                          <div className="emp-card-logo">
+                            <img 
+                              src={emp.logo_url} 
+                              alt={`Logo ${emp.nome}`}
+                              onError={(e) => {
+                                e.target.parentElement.style.display = 'none'
+                              }}
+                            />
+                          </div>
+                        )}
+                        
+                        {/* Nome do empreendimento - sempre visível */}
+                        <span className="emp-card-name">{emp.nome}</span>
+                        
+                        {/* Badges no canto inferior direito */}
+                        <div className="emp-card-badges">
+                          {emp.sienge_enterprise_id && (
+                            <span className="emp-status-badge sienge">Sienge</span>
+                          )}
+                          <span className="emp-status-badge active">Ativo</span>
+                        </div>
+                      </div>
+                      
+                      {/* Conteúdo do Card */}
+                      <div className="emp-card-content">
+                        {/* Taxas de Comissão */}
+                        <div className="emp-commission-rates">
+                          <div className="emp-rate-box externo">
+                            <span className="emp-rate-label">Externo</span>
+                            <span className="emp-rate-value">{emp.comissao_total_externo || 7}%</span>
+                          </div>
+                          <div className="emp-rate-box interno">
+                            <span className="emp-rate-label">Interno</span>
+                            <span className="emp-rate-value">{emp.comissao_total_interno || 6}%</span>
+                          </div>
+                        </div>
+                        
+                        {/* Estatísticas */}
+                        <div className="emp-card-stats">
+                          <div className="emp-mini-stat">
+                            <span className="emp-mini-stat-label">Vendas</span>
+                            <span className="emp-mini-stat-value">{totalVendasEmp}</span>
+                          </div>
+                          <div className="emp-mini-stat">
+                            <span className="emp-mini-stat-label">Volume</span>
+                            <span className="emp-mini-stat-value gold">{formatCurrency(valorTotalVendas)}</span>
+                          </div>
+                          <div className="emp-mini-stat">
+                            <span className="emp-mini-stat-label">Comissão Paga</span>
+                            <span className="emp-mini-stat-value green">{formatCurrency(comissaoPaga)}</span>
+                          </div>
+                          <div className="emp-mini-stat">
+                            <span className="emp-mini-stat-label">Pendente</span>
+                            <span className="emp-mini-stat-value yellow">{formatCurrency(comissaoPendente)}</span>
+                          </div>
+                        </div>
+                        
+                        {/* Ações */}
+                        <div className="emp-card-actions">
+                          <button 
+                            className="emp-action-btn view"
+                            onClick={() => setEmpreendimentoVisualizar(emp)}
+                            title="Visualizar detalhes"
+                          >
+                            <Eye size={16} />
+                          </button>
+                          <button 
+                            className="emp-action-btn primary"
+                            onClick={() => setGaleriaAberta(emp.id)}
+                          >
+                            <Camera size={16} />
+                            Galeria
+                          </button>
+                          <button 
+                            className="emp-action-btn secondary"
+                            onClick={() => {
+                              const cargosExt = emp.cargos?.filter(c => c.tipo_corretor === 'externo') || []
+                              const cargosInt = emp.cargos?.filter(c => c.tipo_corretor === 'interno') || []
+                              setSelectedItem(emp)
+                              setEmpreendimentoForm({
+                                nome: emp.nome,
+                                descricao: emp.descricao || '',
+                                comissao_total_externo: emp.comissao_total_externo?.toString() || '7',
+                                comissao_total_interno: emp.comissao_total_interno?.toString() || '6',
+                                cargos_externo: cargosExt.length > 0 
+                                  ? cargosExt.map(c => ({ nome_cargo: c.nome_cargo, percentual: c.percentual?.toString() || '' }))
+                                  : [{ nome_cargo: '', percentual: '' }],
+                                cargos_interno: cargosInt.length > 0 
+                                  ? cargosInt.map(c => ({ nome_cargo: c.nome_cargo, percentual: c.percentual?.toString() || '' }))
+                                  : [{ nome_cargo: '', percentual: '' }],
+                                logo_url: emp.logo_url || ''
+                              })
+                              setModalType('empreendimento')
+                              setShowModal(true)
+                            }}
+                          >
+                            <Edit2 size={16} />
+                          </button>
+                          <button 
+                            className="emp-action-btn danger"
+                            onClick={() => handleDeleteEmpreendimento(emp)}
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
               </div>
             ) : (
-              <div className="empreendimentos-grid">
-                {filteredEmpreendimentos.map((emp) => (
-                  <div key={emp.id} className="empreendimento-card">
-                    <div className="empreendimento-header">
-                      <div className="empreendimento-info">
-                        <h3>{emp.nome}</h3>
-                        {emp.sienge_enterprise_id && (
-                          <span style={{ 
-                            fontSize: '10px', 
-                            color: '#10b981', 
-                            background: 'rgba(16, 185, 129, 0.1)',
-                            padding: '2px 6px',
-                            borderRadius: '4px',
-                            marginBottom: '4px',
-                            display: 'inline-block'
-                          }}>
-                            ✓ Sienge #{emp.sienge_enterprise_id}
-                          </span>
+              /* Visualização em Lista */
+              <div className="empreendimentos-list-view">
+                {filteredEmpreendimentos.map((emp) => {
+                  const vendasEmp = vendas.filter(v => v.empreendimento_id === emp.id)
+                  const totalVendasEmp = vendasEmp.length
+                  const valorTotalVendas = vendasEmp.reduce((acc, v) => acc + (parseFloat(v.valor_venda) || 0), 0)
+                  
+                  return (
+                    <div key={emp.id} className="emp-list-item">
+                      <div className="emp-list-thumb">
+                        {emp.fachada_url ? (
+                          <img src={emp.fachada_url} alt={emp.nome} />
+                        ) : emp.logo_url ? (
+                          <img src={emp.logo_url} alt={emp.nome} style={{ objectFit: 'contain', padding: '10px' }} />
+                        ) : (
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
+                            <Building size={32} color="rgba(255,255,255,0.3)" />
+                          </div>
                         )}
-                        <div className="comissoes-totais">
-                          <span className="badge externo">
+                      </div>
+                      
+                      <div className="emp-list-info">
+                        <div className="emp-list-name">
+                          {emp.nome}
+                          {emp.sienge_enterprise_id && (
+                            <span className="emp-status-badge sienge">Sienge</span>
+                          )}
+                        </div>
+                        
+                        <div className="emp-list-rates">
+                          <span className="emp-list-rate externo">
+                            <Percent size={14} />
                             Externo: {emp.comissao_total_externo || 7}%
                           </span>
-                          <span className="badge interno">
+                          <span className="emp-list-rate interno">
+                            <Percent size={14} />
                             Interno: {emp.comissao_total_interno || 6}%
                           </span>
                         </div>
-                        {/* Resumo de Comissões */}
-                        {(() => {
-                          const vendasEmp = vendas.filter(v => v.empreendimento_id === emp.id)
-                          const pagamentosEmp = pagamentos.filter(p => vendasEmp.some(v => v.id === p.venda_id))
-                          const totalVendas = vendasEmp.length
-                          const comissaoTotal = pagamentosEmp.reduce((acc, p) => acc + (parseFloat(p.comissao_gerada) || 0), 0)
-                          const comissaoPaga = pagamentosEmp
-                            .filter(p => p.status === 'pago')
-                            .reduce((acc, p) => acc + (parseFloat(p.comissao_gerada) || 0), 0)
-                          const comissaoPendente = comissaoTotal - comissaoPaga
-                          
-                          return totalVendas > 0 ? (
-                            <div style={{ 
-                              marginTop: '8px', 
-                              padding: '8px', 
-                              background: 'rgba(0,0,0,0.2)', 
-                              borderRadius: '6px',
-                              fontSize: '11px'
-                            }}>
-                              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                                <span style={{ color: 'rgba(255,255,255,0.6)' }}>Vendas:</span>
-                                <span style={{ fontWeight: '600' }}>{totalVendas}</span>
-                              </div>
-                              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                                <span style={{ color: 'rgba(255,255,255,0.6)' }}>Comissão Total:</span>
-                                <span style={{ fontWeight: '600' }}>{formatCurrency(comissaoTotal)}</span>
-                              </div>
-                              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                                <span style={{ color: '#10b981' }}>Paga:</span>
-                                <span style={{ fontWeight: '600', color: '#10b981' }}>{formatCurrency(comissaoPaga)}</span>
-                              </div>
-                              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                <span style={{ color: '#fbbf24' }}>Pendente:</span>
-                                <span style={{ fontWeight: '600', color: '#fbbf24' }}>{formatCurrency(comissaoPendente)}</span>
-                              </div>
-                            </div>
-                          ) : null
-                        })()}
+                        
+                        <div className="emp-list-stats">
+                          <span className="emp-list-stat">
+                            Vendas: <strong>{totalVendasEmp}</strong>
+                          </span>
+                          <span className="emp-list-stat">
+                            Volume: <strong style={{ color: '#c9a962' }}>{formatCurrency(valorTotalVendas)}</strong>
+                          </span>
+                        </div>
                       </div>
-                      <div className="empreendimento-actions">
+                      
+                      <div className="emp-list-actions">
                         <button 
-                          className="action-btn edit small"
+                          className="emp-action-btn view"
+                          onClick={() => setEmpreendimentoVisualizar(emp)}
+                          title="Visualizar"
+                        >
+                          <Eye size={16} />
+                        </button>
+                        <button 
+                          className="emp-action-btn primary"
+                          onClick={() => setGaleriaAberta(emp.id)}
+                          title="Galeria"
+                        >
+                          <Camera size={16} />
+                        </button>
+                        <button 
+                          className="emp-action-btn secondary"
                           onClick={() => {
                             const cargosExt = emp.cargos?.filter(c => c.tipo_corretor === 'externo') || []
                             const cargosInt = emp.cargos?.filter(c => c.tipo_corretor === 'interno') || []
@@ -4364,184 +4625,18 @@ const AdminDashboard = () => {
                             setShowModal(true)
                           }}
                         >
-                          <Edit2 size={14} />
+                          <Edit2 size={16} />
                         </button>
                         <button 
-                          className="action-btn view small"
-                          onClick={() => setGaleriaAberta(emp.id)}
-                          title="Ver Galeria de Fotos"
-                        >
-                          <Camera size={14} />
-                        </button>
-                        <button 
-                          className="action-btn delete small"
+                          className="emp-action-btn danger"
                           onClick={() => handleDeleteEmpreendimento(emp)}
                         >
-                          <Trash2 size={14} />
+                          <Trash2 size={16} />
                         </button>
                       </div>
                     </div>
-                    {emp.descricao && (
-                      <p className="empreendimento-descricao">{emp.descricao}</p>
-                    )}
-                    
-                    {/* Cargos Externos */}
-                    <div className="empreendimento-cargos">
-                      <h4>Cargos Externos</h4>
-                      {emp.cargos?.filter(c => c.tipo_corretor === 'externo').length > 0 && (
-                        <button
-                          className="btn-toggle-cargos"
-                          onClick={() => setCargosExpandidos(prev => ({
-                            ...prev,
-                            [`${emp.id}-externo`]: !prev[`${emp.id}-externo`]
-                          }))}
-                        >
-                          {cargosExpandidos[`${emp.id}-externo`] ? 'Ocultar cargos e taxas' : 'Mostrar cargos e taxas'}
-                          <ChevronDown 
-                            size={16} 
-                            className={cargosExpandidos[`${emp.id}-externo`] ? 'rotated' : ''}
-                          />
-                        </button>
-                      )}
-                      {cargosExpandidos[`${emp.id}-externo`] && emp.cargos?.filter(c => c.tipo_corretor === 'externo').length > 0 ? (
-                        <div className="cargos-list">
-                          {emp.cargos.filter(c => c.tipo_corretor === 'externo').map((cargo, idx) => {
-                            const cargoKey = `${emp.id}-${cargo.id}`
-                            const setor = calcularValoresPorSetor(emp.id).find(s => s.cargo_id === cargo.id)
-                            const isExpanded = cargoExpandido === cargoKey
-                            
-                            return (
-                              <div key={idx}>
-                                <div className="cargo-item">
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1 }}>
-                                    <span>{cargo.nome_cargo}</span>
-                                    <span className="cargo-percent">{cargo.percentual}%</span>
-                                  </div>
-                                  <button
-                                    className="btn-cargo-expand"
-                                    onClick={(e) => {
-                                      e.stopPropagation()
-                                      setCargoExpandido(isExpanded ? null : cargoKey)
-                                    }}
-                                    title={isExpanded ? 'Ocultar detalhes' : 'Mostrar detalhes'}
-                                  >
-                                    {isExpanded ? <X size={14} /> : <Plus size={14} />}
-                                  </button>
-                                </div>
-                                {isExpanded && (
-                                  <div className="cargo-detalhes">
-                                    {setor ? (
-                                      <>
-                                        <div className="cargo-detalhe-row">
-                                          <span className="cargo-detalhe-label">Total:</span>
-                                          <span className="cargo-detalhe-valor">{formatCurrency(setor.valorTotal)}</span>
-                                        </div>
-                                        <div className="cargo-detalhe-row">
-                                          <span className="cargo-detalhe-label">Pago:</span>
-                                          <span className="cargo-detalhe-valor pago">
-                                            {formatCurrency(setor.valorPago)} <span className="cargo-detalhe-porcentagem">({setor.percentualPago}%)</span>
-                                          </span>
-                                        </div>
-                                        <div className="cargo-detalhe-row">
-                                          <span className="cargo-detalhe-label">Pendente:</span>
-                                          <span className="cargo-detalhe-valor pendente">{formatCurrency(setor.valorPendente)}</span>
-                                        </div>
-                                      </>
-                                    ) : (
-                                      <div className="cargo-detalhe-row" style={{ color: '#8b949e', fontSize: '11px', fontStyle: 'italic' }}>
-                                        Nenhuma venda registrada para este cargo
-                                      </div>
-                                    )}
-                                  </div>
-                                )}
-                              </div>
-                            )
-                          })}
-                        </div>
-                      ) : emp.cargos?.filter(c => c.tipo_corretor === 'externo').length === 0 ? (
-                        <p className="no-cargos">Nenhum cargo externo</p>
-                      ) : null}
-                    </div>
-
-                    {/* Cargos Internos */}
-                    <div className="empreendimento-cargos">
-                      <h4>Cargos Internos</h4>
-                      {emp.cargos?.filter(c => c.tipo_corretor === 'interno').length > 0 && (
-                        <button
-                          className="btn-toggle-cargos"
-                          onClick={() => setCargosExpandidos(prev => ({
-                            ...prev,
-                            [`${emp.id}-interno`]: !prev[`${emp.id}-interno`]
-                          }))}
-                        >
-                          {cargosExpandidos[`${emp.id}-interno`] ? 'Ocultar cargos e taxas' : 'Mostrar cargos e taxas'}
-                          <ChevronDown 
-                            size={16} 
-                            className={cargosExpandidos[`${emp.id}-interno`] ? 'rotated' : ''}
-                          />
-                        </button>
-                      )}
-                      {cargosExpandidos[`${emp.id}-interno`] && emp.cargos?.filter(c => c.tipo_corretor === 'interno').length > 0 ? (
-                        <div className="cargos-list">
-                          {emp.cargos.filter(c => c.tipo_corretor === 'interno').map((cargo, idx) => {
-                            const cargoKey = `${emp.id}-${cargo.id}`
-                            const setor = calcularValoresPorSetor(emp.id).find(s => s.cargo_id === cargo.id)
-                            const isExpanded = cargoExpandido === cargoKey
-                            
-                            return (
-                              <div key={idx}>
-                                <div className="cargo-item interno">
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1 }}>
-                                    <span>{cargo.nome_cargo}</span>
-                                    <span className="cargo-percent">{cargo.percentual}%</span>
-                                  </div>
-                                  <button
-                                    className="btn-cargo-expand"
-                                    onClick={(e) => {
-                                      e.stopPropagation()
-                                      setCargoExpandido(isExpanded ? null : cargoKey)
-                                    }}
-                                    title={isExpanded ? 'Ocultar detalhes' : 'Mostrar detalhes'}
-                                  >
-                                    {isExpanded ? <X size={14} /> : <Plus size={14} />}
-                                  </button>
-                                </div>
-                                {isExpanded && (
-                                  <div className="cargo-detalhes">
-                                    {setor ? (
-                                      <>
-                                        <div className="cargo-detalhe-row">
-                                          <span className="cargo-detalhe-label">Total:</span>
-                                          <span className="cargo-detalhe-valor">{formatCurrency(setor.valorTotal)}</span>
-                                        </div>
-                                        <div className="cargo-detalhe-row">
-                                          <span className="cargo-detalhe-label">Pago:</span>
-                                          <span className="cargo-detalhe-valor pago">
-                                            {formatCurrency(setor.valorPago)} <span className="cargo-detalhe-porcentagem">({setor.percentualPago}%)</span>
-                                          </span>
-                                        </div>
-                                        <div className="cargo-detalhe-row">
-                                          <span className="cargo-detalhe-label">Pendente:</span>
-                                          <span className="cargo-detalhe-valor pendente">{formatCurrency(setor.valorPendente)}</span>
-                                        </div>
-                                      </>
-                                    ) : (
-                                      <div className="cargo-detalhe-row" style={{ color: '#8b949e', fontSize: '11px', fontStyle: 'italic' }}>
-                                        Nenhuma venda registrada para este cargo
-                                      </div>
-                                    )}
-                                  </div>
-                                )}
-                              </div>
-                            )
-                          })}
-                        </div>
-                      ) : emp.cargos?.filter(c => c.tipo_corretor === 'interno').length === 0 ? (
-                        <p className="no-cargos">Nenhum cargo interno</p>
-                      ) : null}
-                    </div>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             )}
             
@@ -4553,6 +4648,207 @@ const AdminDashboard = () => {
                     empreendimentoId={galeriaAberta}
                     onClose={() => setGaleriaAberta(null)}
                   />
+                </div>
+              </div>
+            )}
+
+            {/* Modal de Visualização do Empreendimento */}
+            {empreendimentoVisualizar && (
+              <div className="modal-overlay" onClick={() => setEmpreendimentoVisualizar(null)}>
+                <div className="modal-content emp-view-modal" onClick={(e) => e.stopPropagation()}>
+                  <button 
+                    className="modal-close-btn"
+                    onClick={() => setEmpreendimentoVisualizar(null)}
+                  >
+                    <X size={24} />
+                  </button>
+                  
+                  {/* Header com Fachada */}
+                  <div className="emp-view-header">
+                    {empreendimentoVisualizar.fachada_url ? (
+                      <img 
+                        src={empreendimentoVisualizar.fachada_url} 
+                        alt={empreendimentoVisualizar.nome}
+                        className="emp-view-fachada"
+                      />
+                    ) : (
+                      <div className="emp-view-no-image">
+                        <Building size={80} />
+                        <span>Sem imagem de fachada</span>
+                      </div>
+                    )}
+                    <div className="emp-view-header-overlay">
+                      {empreendimentoVisualizar.logo_url && (
+                        <img 
+                          src={empreendimentoVisualizar.logo_url} 
+                          alt={`Logo ${empreendimentoVisualizar.nome}`}
+                          className="emp-view-logo"
+                        />
+                      )}
+                      <h2 className="emp-view-title">{empreendimentoVisualizar.nome}</h2>
+                      <div className="emp-view-badges">
+                        {empreendimentoVisualizar.sienge_enterprise_id && (
+                          <span className="emp-badge sienge">Integrado Sienge</span>
+                        )}
+                        <span className="emp-badge active">Ativo</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Conteúdo */}
+                  <div className="emp-view-content">
+                    {/* Descrição */}
+                    {empreendimentoVisualizar.descricao && (
+                      <div className="emp-view-section">
+                        <h3>Descrição</h3>
+                        <p>{empreendimentoVisualizar.descricao}</p>
+                      </div>
+                    )}
+
+                    {/* Comissões */}
+                    <div className="emp-view-section">
+                      <h3>Comissões</h3>
+                      <div className="emp-view-comissoes">
+                        <div className="emp-view-comissao-box">
+                          <span className="label">Corretor Externo</span>
+                          <span className="value">{empreendimentoVisualizar.comissao_total_externo || 7}%</span>
+                        </div>
+                        <div className="emp-view-comissao-box">
+                          <span className="label">Corretor Interno</span>
+                          <span className="value green">{empreendimentoVisualizar.comissao_total_interno || 6}%</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Cargos */}
+                    {empreendimentoVisualizar.cargos && empreendimentoVisualizar.cargos.length > 0 && (
+                      <div className="emp-view-section">
+                        <h3>Distribuição de Comissões por Cargo</h3>
+                        <div className="emp-view-cargos-grid">
+                          <div className="emp-view-cargos-col">
+                            <h4>Externos</h4>
+                            {empreendimentoVisualizar.cargos
+                              .filter(c => c.tipo_corretor === 'externo')
+                              .map((cargo, idx) => (
+                                <div key={idx} className="emp-view-cargo-item">
+                                  <span>{cargo.nome_cargo}</span>
+                                  <span className="cargo-percent">{cargo.percentual}%</span>
+                                </div>
+                              ))}
+                          </div>
+                          <div className="emp-view-cargos-col">
+                            <h4>Internos</h4>
+                            {empreendimentoVisualizar.cargos
+                              .filter(c => c.tipo_corretor === 'interno')
+                              .map((cargo, idx) => (
+                                <div key={idx} className="emp-view-cargo-item">
+                                  <span>{cargo.nome_cargo}</span>
+                                  <span className="cargo-percent green">{cargo.percentual}%</span>
+                                </div>
+                              ))}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Estatísticas */}
+                    <div className="emp-view-section">
+                      <h3>Estatísticas</h3>
+                      {(() => {
+                        const vendasEmp = vendas.filter(v => v.empreendimento_id === empreendimentoVisualizar.id)
+                        const totalVendas = vendasEmp.length
+                        const valorTotal = vendasEmp.reduce((acc, v) => acc + (parseFloat(v.valor_venda) || 0), 0)
+                        const comissaoPaga = vendasEmp.reduce((acc, v) => acc + (parseFloat(v.comissao_paga) || 0), 0)
+                        const comissaoPendente = vendasEmp.reduce((acc, v) => {
+                          const comissaoTotal = (parseFloat(v.valor_venda) || 0) * ((parseFloat(v.comissao_percentual) || 0) / 100)
+                          return acc + (comissaoTotal - (parseFloat(v.comissao_paga) || 0))
+                        }, 0)
+                        const corretoresEmp = [...new Set(vendasEmp.map(v => v.corretor_id))].length
+
+                        return (
+                          <div className="emp-view-stats">
+                            <div className="emp-view-stat">
+                              <TrendingUp size={20} />
+                              <div>
+                                <span className="stat-value">{totalVendas}</span>
+                                <span className="stat-label">Vendas</span>
+                              </div>
+                            </div>
+                            <div className="emp-view-stat">
+                              <DollarSign size={20} />
+                              <div>
+                                <span className="stat-value">{formatCurrency(valorTotal)}</span>
+                                <span className="stat-label">Volume Total</span>
+                              </div>
+                            </div>
+                            <div className="emp-view-stat">
+                              <CheckCircle size={20} />
+                              <div>
+                                <span className="stat-value green">{formatCurrency(comissaoPaga)}</span>
+                                <span className="stat-label">Comissão Paga</span>
+                              </div>
+                            </div>
+                            <div className="emp-view-stat">
+                              <Clock size={20} />
+                              <div>
+                                <span className="stat-value yellow">{formatCurrency(comissaoPendente)}</span>
+                                <span className="stat-label">Comissão Pendente</span>
+                              </div>
+                            </div>
+                            <div className="emp-view-stat">
+                              <Users size={20} />
+                              <div>
+                                <span className="stat-value">{corretoresEmp}</span>
+                                <span className="stat-label">Corretores</span>
+                              </div>
+                            </div>
+                          </div>
+                        )
+                      })()}
+                    </div>
+                  </div>
+
+                  {/* Footer com ações */}
+                  <div className="emp-view-footer">
+                    <button 
+                      className="emp-view-btn secondary"
+                      onClick={() => {
+                        setEmpreendimentoVisualizar(null)
+                        setGaleriaAberta(empreendimentoVisualizar.id)
+                      }}
+                    >
+                      <Camera size={18} />
+                      Ver Galeria
+                    </button>
+                    <button 
+                      className="emp-view-btn primary"
+                      onClick={() => {
+                        const emp = empreendimentoVisualizar
+                        const cargosExt = emp.cargos?.filter(c => c.tipo_corretor === 'externo') || []
+                        const cargosInt = emp.cargos?.filter(c => c.tipo_corretor === 'interno') || []
+                        setSelectedItem(emp)
+                        setEmpreendimentoForm({
+                          nome: emp.nome,
+                          descricao: emp.descricao || '',
+                          comissao_total_externo: emp.comissao_total_externo?.toString() || '7',
+                          comissao_total_interno: emp.comissao_total_interno?.toString() || '6',
+                          cargos_externo: cargosExt.length > 0 
+                            ? cargosExt.map(c => ({ nome_cargo: c.nome_cargo, percentual: c.percentual?.toString() || '' }))
+                            : [{ nome_cargo: '', percentual: '' }],
+                          cargos_interno: cargosInt.length > 0 
+                            ? cargosInt.map(c => ({ nome_cargo: c.nome_cargo, percentual: c.percentual?.toString() || '' }))
+                            : [{ nome_cargo: '', percentual: '' }],
+                          logo_url: emp.logo_url || ''
+                        })
+                        setEmpreendimentoVisualizar(null)
+                        setModalType('empreendimento')
+                        setShowModal(true)
+                      }}
+                    >
+                      <Edit2 size={18} />
+                      Editar
+                    </button>
+                  </div>
                 </div>
               </div>
             )}
