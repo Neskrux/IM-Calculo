@@ -3211,44 +3211,62 @@ const AdminDashboard = () => {
   })
   
   // Filtrar pagamentos
-  const filteredPagamentos = listaVendasComPagamentos.filter(grupo => {
-    // Filtro por corretor
-    const matchCorretor = !filtrosPagamentos.corretor || grupo.venda?.corretor_id === filtrosPagamentos.corretor
-    
-    // Filtro por empreendimento
-    const matchEmpreendimento = !filtrosPagamentos.empreendimento || grupo.venda?.empreendimento_id === filtrosPagamentos.empreendimento
-    
-    // Filtro por status (verifica se tem pagamentos com o status)
-    const matchStatus = filtrosPagamentos.status === 'todos' || 
-      grupo.pagamentos.some(p => p.status === filtrosPagamentos.status)
-    
-    // Filtro por tipo de pagamento
-    const matchTipo = filtrosPagamentos.tipo === 'todos' || 
-      grupo.pagamentos.some(p => p.tipo === filtrosPagamentos.tipo)
-    
-    // Filtro por data
-    const matchData = (() => {
-      if (!filtrosPagamentos.dataInicio && !filtrosPagamentos.dataFim) return true
-      return grupo.pagamentos.some(pag => {
-        const dataPag = new Date(pag.data_prevista)
-        if (filtrosPagamentos.dataInicio && dataPag < new Date(filtrosPagamentos.dataInicio)) return false
-        if (filtrosPagamentos.dataFim) {
-          const dataFim = new Date(filtrosPagamentos.dataFim)
-          dataFim.setHours(23, 59, 59, 999)
-          if (dataPag > dataFim) return false
-        }
-        return true
-      })
-    })()
-    
-    // Busca por venda
-    const matchBusca = !filtrosPagamentos.buscaVenda ||
-      grupo.venda?.corretor?.nome?.toLowerCase().includes(filtrosPagamentos.buscaVenda.toLowerCase()) ||
-      grupo.venda?.empreendimento?.nome?.toLowerCase().includes(filtrosPagamentos.buscaVenda.toLowerCase()) ||
-      grupo.venda?.nome_cliente?.toLowerCase().includes(filtrosPagamentos.buscaVenda.toLowerCase())
-    
-    return matchCorretor && matchEmpreendimento && matchStatus && matchTipo && matchData && matchBusca
-  }).sort((a, b) => {
+  const filteredPagamentos = listaVendasComPagamentos
+    .map(grupo => {
+      // Primeiro, filtrar pagamentos por data
+      let pagamentosFiltrados = grupo.pagamentos
+      if (filtrosPagamentos.dataInicio || filtrosPagamentos.dataFim) {
+        pagamentosFiltrados = grupo.pagamentos.filter(pag => {
+          const dataPag = new Date(pag.data_prevista)
+          if (filtrosPagamentos.dataInicio) {
+            const dataInicio = new Date(filtrosPagamentos.dataInicio)
+            dataInicio.setHours(0, 0, 0, 0)
+            if (dataPag < dataInicio) return false
+          }
+          if (filtrosPagamentos.dataFim) {
+            const dataFim = new Date(filtrosPagamentos.dataFim)
+            dataFim.setHours(23, 59, 59, 999)
+            if (dataPag > dataFim) return false
+          }
+          return true
+        })
+      }
+      
+      // Retornar grupo com pagamentos filtrados e totais recalculados
+      const novoTotalValor = pagamentosFiltrados.reduce((sum, p) => sum + (parseFloat(p.valor) || 0), 0)
+      return {
+        ...grupo,
+        pagamentos: pagamentosFiltrados,
+        totalValor: novoTotalValor
+      }
+    })
+    .filter(grupo => {
+      // Agora filtrar os grupos que não têm pagamentos após o filtro de data
+      if (grupo.pagamentos.length === 0) return false
+      
+      // Filtro por corretor
+      const matchCorretor = !filtrosPagamentos.corretor || grupo.venda?.corretor_id === filtrosPagamentos.corretor
+      
+      // Filtro por empreendimento
+      const matchEmpreendimento = !filtrosPagamentos.empreendimento || grupo.venda?.empreendimento_id === filtrosPagamentos.empreendimento
+      
+      // Filtro por status (verifica se tem pagamentos com o status)
+      const matchStatus = filtrosPagamentos.status === 'todos' || 
+        grupo.pagamentos.some(p => p.status === filtrosPagamentos.status)
+      
+      // Filtro por tipo de pagamento
+      const matchTipo = filtrosPagamentos.tipo === 'todos' || 
+        grupo.pagamentos.some(p => p.tipo === filtrosPagamentos.tipo)
+      
+      // Busca por venda
+      const matchBusca = !filtrosPagamentos.buscaVenda ||
+        grupo.venda?.corretor?.nome?.toLowerCase().includes(filtrosPagamentos.buscaVenda.toLowerCase()) ||
+        grupo.venda?.empreendimento?.nome?.toLowerCase().includes(filtrosPagamentos.buscaVenda.toLowerCase()) ||
+        grupo.venda?.nome_cliente?.toLowerCase().includes(filtrosPagamentos.buscaVenda.toLowerCase())
+      
+      return matchCorretor && matchEmpreendimento && matchStatus && matchTipo && matchBusca
+    })
+    .sort((a, b) => {
     // Ordenar por data da venda mais recente primeiro
     const dataA = new Date(a.venda?.data_venda || a.venda?.created_at || 0)
     const dataB = new Date(b.venda?.data_venda || b.venda?.created_at || 0)
@@ -4612,12 +4630,12 @@ const AdminDashboard = () => {
               </div>
             ) : (
               <>
-                {/* Resumo */}
+                {/* Resumo - Usar filteredPagamentos para refletir os filtros */}
                 <div className="pagamentos-resumo">
                   <div className="resumo-card">
                     <span className="resumo-label">Comissão Pendente</span>
                     <span className="resumo-valor pendente">
-                      {formatCurrency(listaVendasComPagamentos.reduce((acc, grupo) => {
+                      {formatCurrency(filteredPagamentos.reduce((acc, grupo) => {
                         // Calcular comissão pendente considerando valores já pagos
                         return acc + grupo.pagamentos.reduce((sum, pag) => {
                           if (pag.status === 'pendente') {
@@ -4633,19 +4651,26 @@ const AdminDashboard = () => {
                   <div className="resumo-card">
                     <span className="resumo-label">Comissão Paga</span>
                     <span className="resumo-valor pago">
-                      {formatCurrency(listaVendasComPagamentos.reduce((acc, grupo) => {
-                        const comissaoTotal = parseFloat(grupo.venda?.comissao_total) || 0
-                        const totalParcelas = grupo.totalValor
-                        const parcelasPagas = grupo.pagamentos.filter(p => p.status === 'pago').reduce((a, p) => a + (parseFloat(p.valor) || 0), 0)
-                        return totalParcelas > 0 ? acc + (comissaoTotal * parcelasPagas / totalParcelas) : acc
+                      {formatCurrency(filteredPagamentos.reduce((acc, grupo) => {
+                        // Calcular comissão paga baseada nos pagamentos filtrados
+                        return acc + grupo.pagamentos
+                          .filter(p => p.status === 'pago')
+                          .reduce((sum, pag) => {
+                            const comissaoParcela = parseFloat(pag.comissao_gerada) || 0
+                            const valorJaPago = parseFloat(pag.valor_ja_pago) || 0
+                            return sum + (comissaoParcela - valorJaPago)
+                          }, 0)
                       }, 0))}
                     </span>
                   </div>
                   <div className="resumo-card">
                     <span className="resumo-label">Comissão Total</span>
                     <span className="resumo-valor">
-                      {formatCurrency(listaVendasComPagamentos.reduce((acc, grupo) => {
-                        return acc + (parseFloat(grupo.venda?.comissao_total) || 0)
+                      {formatCurrency(filteredPagamentos.reduce((acc, grupo) => {
+                        // Calcular comissão total baseada nos pagamentos filtrados
+                        return acc + grupo.pagamentos.reduce((sum, pag) => {
+                          return sum + (parseFloat(pag.comissao_gerada) || 0)
+                        }, 0)
                       }, 0))}
                     </span>
                   </div>
