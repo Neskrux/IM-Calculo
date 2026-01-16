@@ -8,6 +8,8 @@ import {
   getLastSyncDate,
   setLastSyncDate
 } from '../services/sienge/syncOrchestrator'
+import { backfillConjuges } from '../services/sienge/backfillConjuges'
+import { backfillUnidades } from '../services/sienge/backfillUnidades'
 import { RefreshCw, CheckCircle, XCircle, AlertCircle, Database, Users, FileText, TrendingUp, Clock, Zap } from 'lucide-react'
 import '../styles/SincronizarSienge.css'
 
@@ -138,6 +140,74 @@ const SincronizarSiengeV2 = () => {
       setVendasPendentes(pendentes.slice(0, 10)) // Mostrar apenas 10
     } catch (error) {
       console.error('Erro ao carregar estatísticas:', error)
+    }
+  }
+  
+  const executarBackfillConjuges = async () => {
+    if (!confirm('Isso irá criar cônjuges a partir dos clientes já sincronizados.\n\nDeseja continuar?')) {
+      return
+    }
+    
+    setSincronizando(true)
+    setErro(null)
+    setProgresso(null)
+    adicionarLog('👫 Iniciando backfill de cônjuges...', 'info')
+    
+    try {
+      const resultado = await backfillConjuges({
+        dryRun: false,
+        onProgress: (info) => {
+          setProgresso(info)
+          adicionarLog(`${info.current}/${info.total} - ${info.item}`, 'info')
+        }
+      })
+      
+      adicionarLog(`✅ Backfill concluído: ${resultado.criados} criados, ${resultado.jaExistentes} já existiam`, 'success')
+      
+      // Atualizar estatísticas
+      await carregarEstatisticas()
+      
+    } catch (error) {
+      console.error('Erro no backfill de cônjuges:', error)
+      adicionarLog(`❌ Erro: ${error.message}`, 'error')
+      setErro(error.message)
+    } finally {
+      setSincronizando(false)
+      setProgresso(null)
+    }
+  }
+  
+  const executarBackfillUnidades = async () => {
+    if (!confirm('Isso irá buscar unidades do Sienge e criar na tabela.\n\nDeseja continuar?')) {
+      return
+    }
+    
+    setSincronizando(true)
+    setErro(null)
+    setProgresso(null)
+    adicionarLog('🏠 Iniciando backfill de unidades...', 'info')
+    
+    try {
+      const resultado = await backfillUnidades({
+        dryRun: false,
+        onProgress: (info) => {
+          setProgresso(info)
+          adicionarLog(`${info.current}/${info.total} - ${info.item}`, 'info')
+        }
+      })
+      
+      adicionarLog(`✅ Backfill concluído: ${resultado.criadas} criadas, ${resultado.jaExistentes} já existiam`, 'success')
+      
+      // Atualizar estatísticas
+      await carregarEstatisticas()
+      
+    } catch (error) {
+      console.error('Erro no backfill de unidades:', error)
+      adicionarLog(`❌ Erro: ${error.message}`, 'error')
+      setErro(error.message)
+    } finally {
+      setSincronizando(false)
+      setProgresso(null)
     }
   }
 
@@ -503,6 +573,42 @@ const SincronizarSiengeV2 = () => {
         >
           <TrendingUp size={18} />
           Atualizar Estatísticas
+        </button>
+      </div>
+      
+      {/* Botões de Backfill */}
+      <div style={{ 
+        display: 'flex', 
+        gap: '12px', 
+        marginBottom: '20px',
+        flexWrap: 'wrap'
+      }}>
+        <button
+          onClick={executarBackfillConjuges}
+          disabled={sincronizando}
+          className="btn-sync"
+          style={{ 
+            background: 'linear-gradient(135deg, #8b5cf6, #7c3aed)',
+            fontSize: '14px'
+          }}
+          title="Cria cônjuges a partir dos clientes já sincronizados"
+        >
+          <Users size={18} />
+          Backfill Cônjuges
+        </button>
+        
+        <button
+          onClick={executarBackfillUnidades}
+          disabled={sincronizando}
+          className="btn-sync"
+          style={{ 
+            background: 'linear-gradient(135deg, #06b6d4, #0891b2)',
+            fontSize: '14px'
+          }}
+          title="Busca e cria unidades dos empreendimentos do Sienge"
+        >
+          <Database size={18} />
+          Backfill Unidades
         </button>
       </div>
 
