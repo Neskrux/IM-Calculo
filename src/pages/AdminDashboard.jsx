@@ -13,6 +13,7 @@ import logo from '../imgs/logo.png'
 import Ticker from '../components/Ticker'
 import HomeDashboard from './HomeDashboard'
 import SincronizarSiengeV2 from '../components/SincronizarSiengeV2'
+import EmpreendimentoGaleria from '../components/EmpreendimentoGaleria'
 // import CadastrarCorretores from '../components/CadastrarCorretores'
 // import ImportarVendas from '../components/ImportarVendas'
 import '../styles/Dashboard.css'
@@ -126,6 +127,7 @@ const AdminDashboard = () => {
   // const [mostrarImportarVendas, setMostrarImportarVendas] = useState(false)
   const [cargoExpandido, setCargoExpandido] = useState(null) // Formato: "empreendimentoId-cargoId"
   const [cargosExpandidos, setCargosExpandidos] = useState({}) // Formato: { "empreendimentoId-externo": true, "empreendimentoId-interno": false }
+  const [galeriaAberta, setGaleriaAberta] = useState(null) // ID do empreendimento com galeria aberta
   const [clientes, setClientes] = useState([])
   const [uploadingDoc, setUploadingDoc] = useState(false)
   
@@ -4306,6 +4308,13 @@ const AdminDashboard = () => {
                           <Edit2 size={14} />
                         </button>
                         <button 
+                          className="action-btn view small"
+                          onClick={() => setGaleriaAberta(emp.id)}
+                          title="Ver Galeria de Fotos"
+                        >
+                          <Camera size={14} />
+                        </button>
+                        <button 
                           className="action-btn delete small"
                           onClick={() => handleDeleteEmpreendimento(emp)}
                         >
@@ -4474,6 +4483,18 @@ const AdminDashboard = () => {
                     </div>
                   </div>
                 ))}
+              </div>
+            )}
+            
+            {/* Modal de Galeria */}
+            {galeriaAberta && (
+              <div className="modal-overlay" onClick={() => setGaleriaAberta(null)}>
+                <div className="modal-content galeria-modal" onClick={(e) => e.stopPropagation()}>
+                  <EmpreendimentoGaleria 
+                    empreendimentoId={galeriaAberta}
+                    onClose={() => setGaleriaAberta(null)}
+                  />
+                </div>
               </div>
             )}
           </div>
