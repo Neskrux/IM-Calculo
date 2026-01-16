@@ -215,8 +215,18 @@ const mapearPaymentConditions = (paymentConditions) => {
 
 /**
  * Cria registros em pagamentos_prosoluto a partir das condições mapeadas
+ * 
+ * FÓRMULA CORRETA DO FATOR DE COMISSÃO:
+ *   fator = (valor_venda × percentual_total) / pro_soluto
+ *   comissao = parcela × fator
+ * 
+ * @param {string} vendaId - ID da venda
+ * @param {Array} condicoesProsoluto - Condições de pagamento mapeadas
+ * @param {number} fatorComissao - Fator já calculado: (valorVenda × percentual) / proSoluto
+ * @param {string} dataVenda - Data da venda
+ * @param {number} percentualTotal - Percentual total de comissão (ex: 7)
  */
-const criarPagamentosProsoluto = async (vendaId, condicoesProsoluto, fatorComissao, dataVenda) => {
+const criarPagamentosProsoluto = async (vendaId, condicoesProsoluto, fatorComissao, dataVenda, percentualTotal = null) => {
   if (!vendaId || !condicoesProsoluto || condicoesProsoluto.length === 0) {
     return 0
   }
@@ -242,10 +252,11 @@ const criarPagamentosProsoluto = async (vendaId, condicoesProsoluto, fatorComiss
         dataVencimento = data.toISOString().split('T')[0]
       } else if (dataVenda) {
         // Fallback: usa data da venda
-        dataVencimento = dataVenda
+        dataVenda = dataVenda
       }
 
-      // Calcular comissão gerada
+      // FÓRMULA CORRETA: comissão = parcela × fator
+      // O fator já foi calculado como: (valorVenda × percentual) / proSoluto
       const comissaoGerada = valorParcela * (fatorComissao || 0)
 
       pagamentos.push({
@@ -255,7 +266,9 @@ const criarPagamentosProsoluto = async (vendaId, condicoesProsoluto, fatorComiss
         valor: valorParcela,
         data_prevista: dataVencimento,
         status: 'pendente',
-        comissao_gerada: comissaoGerada
+        comissao_gerada: comissaoGerada,
+        fator_comissao_aplicado: fatorComissao || null,
+        percentual_comissao_total: percentualTotal || null
       })
     }
   }
@@ -288,11 +301,18 @@ const criarPagamentosProsoluto = async (vendaId, condicoesProsoluto, fatorComiss
 }
 
 /**
- * Busca fator de comissão do empreendimento
+ * Busca percentual de comissão do empreendimento
+ * 
+ * IMPORTANTE: Esta função retorna o PERCENTUAL (ex: 7), não o fator!
+ * O FATOR deve ser calculado como: (valorVenda × percentual) / proSoluto
+ * 
+ * @param {string} empreendimentoId - ID do empreendimento
+ * @param {string} tipoCorretor - 'externo' ou 'interno'
+ * @returns {number} Percentual de comissão (ex: 7 para 7%)
  */
-const getFatorComissaoEmpreendimento = async (empreendimentoId, tipoCorretor = 'externo') => {
+const getPercentualComissaoEmpreendimento = async (empreendimentoId, tipoCorretor = 'externo') => {
   if (!empreendimentoId) {
-    return 0.07 // Default 7%
+    return 7 // Default 7%
   }
 
   const { data: emp } = await supabase
@@ -302,14 +322,44 @@ const getFatorComissaoEmpreendimento = async (empreendimentoId, tipoCorretor = '
     .maybeSingle()
 
   if (!emp) {
-    return 0.07 // Default 7%
+    return 7 // Default 7%
   }
 
   const percentual = tipoCorretor === 'interno' 
     ? (emp.comissao_total_interno || 6) 
     : (emp.comissao_total_externo || 7)
 
-  return percentual / 100 // Converter para fator (ex: 7% → 0.07)
+  return percentual // Retorna percentual (ex: 7), NÃO fator
+}
+
+/**
+ * Calcula o FATOR DE COMISSÃO usando a fórmula correta
+ * 
+ * FÓRMULA: fator = (valorVenda × percentual) / proSoluto
+ * 
+ * @param {number} valorVenda - Valor total da venda
+ * @param {number} percentual - Percentual de comissão (ex: 7 para 7%)
+ * @param {number} valorProSoluto - Valor total do pro-soluto
+ * @returns {number} Fator de comissão (ex: 0.2932 para 29,32%)
+ */
+const calcularFatorComissao = (valorVenda, percentual, valorProSoluto) => {
+  if (!valorVenda || !valorProSoluto || valorProSoluto === 0) {
+    return 0
+  }
+  
+  // FÓRMULA CORRETA: (valor_venda × percentual%) / pro_soluto
+  const fator = (valorVenda * (percentual / 100)) / valorProSoluto
+  
+  return fator
+}
+
+/**
+ * @deprecated Use getPercentualComissaoEmpreendimento + calcularFatorComissao
+ * Mantido para compatibilidade, mas retorna o fator calculado incorretamente
+ */
+const getFatorComissaoEmpreendimento = async (empreendimentoId, tipoCorretor = 'externo') => {
+  const percentual = await getPercentualComissaoEmpreendimento(empreendimentoId, tipoCorretor)
+  return percentual / 100 // ATENÇÃO: Este é o percentual/100, NÃO o fator correto!
 }
 
 /**
@@ -555,21 +605,31 @@ export const syncVendasFromRaw = async (options = {}) => {
           )
         }
 
-        // Buscar fator de comissão do empreendimento
-        const fatorComissao = await getFatorComissaoEmpreendimento(empreendimentoId, tipoCorretor)
-
         // ===== MAPEAR paymentConditions =====
         const paymentData = mapearPaymentConditions(contract.paymentConditions)
+        
+        // Buscar PERCENTUAL de comissão do empreendimento
+        const percentualComissao = await getPercentualComissaoEmpreendimento(empreendimentoId, tipoCorretor)
+        
+        // Calcular FATOR usando a fórmula correta:
+        // FATOR = (valorVenda × percentual) / proSoluto
+        const valorVenda = parseFloat(contract.amount) || 0
+        const valorProSoluto = paymentData.valor_pro_soluto || 0
+        const fatorComissao = calcularFatorComissao(valorVenda, percentualComissao, valorProSoluto)
+        
         paymentData.fator_comissao = fatorComissao
+        paymentData.percentual_comissao = percentualComissao
 
         // Log de debug para verificar mapeamento
         if (i < 3) { // Mostrar apenas os 3 primeiros
           console.log(`\n📋 [DEBUG] Contrato ${contract.id} (${contract.number}):`)
+          console.log(`   Valor Venda: R$ ${valorVenda.toFixed(2)}`)
           console.log(`   Sinal: ${paymentData.teve_sinal ? 'R$ ' + paymentData.valor_sinal : 'Não'}`)
           console.log(`   Entrada: ${paymentData.teve_entrada ? (paymentData.parcelou_entrada ? paymentData.qtd_parcelas_entrada + 'x R$ ' + paymentData.valor_parcela_entrada?.toFixed(2) : 'R$ ' + paymentData.valor_entrada) : 'Não'}`)
           console.log(`   Balão: ${paymentData.teve_balao === 'sim' ? paymentData.qtd_balao + 'x R$ ' + paymentData.valor_balao?.toFixed(2) : 'Não'}`)
           console.log(`   Pro-soluto: R$ ${paymentData.valor_pro_soluto?.toFixed(2)}`)
-          console.log(`   Fator comissão: ${(fatorComissao * 100).toFixed(2)}%`)
+          console.log(`   Percentual comissão: ${percentualComissao}%`)
+          console.log(`   FATOR comissão: ${(fatorComissao * 100).toFixed(2)}% (${valorVenda} × ${percentualComissao}% / ${valorProSoluto})`)
         }
 
         // Mapear dados da venda
@@ -648,7 +708,8 @@ export const syncVendasFromRaw = async (options = {}) => {
             vendaId,
             paymentData._condicoes_prosoluto,
             fatorComissao,
-            vendaData.data_venda
+            vendaData.data_venda,
+            percentualComissao // Passar percentual para auditoria
           )
           stats.pagamentosCriados += qtdPagamentos
         }
