@@ -1166,6 +1166,7 @@
 }
 
 .filter-select,
+.filter-input,
 .filter-input-date {
   padding: 10px 14px;
   background: var(--im-bg-primary, #050a12);
@@ -1180,21 +1181,17 @@
   box-sizing: border-box;
 }
 
-.filter-select {
-  cursor: pointer;
+.filter-input::placeholder {
+  color: var(--im-text-muted, #64748b);
+  opacity: 0.8;
 }
 
-.filter-select:hover,
+.filter-input:hover,
 .filter-input-date:hover {
   border-color: rgba(74, 144, 217, 0.3);
 }
 
-.filter-select:focus,
-.filter-input-date:focus {
-  border-color: rgba(74, 144, 217, 0.5);
-  box-shadow: 0 0 0 3px rgba(74, 144, 217, 0.1);
-}
-
+.filter-input:focus,
 .filter-select option {
   background: var(--im-bg-secondary, #0a1628);
   color: #fff;
