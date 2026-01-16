@@ -60,6 +60,15 @@ export {
   setLastSyncDate
 } from './syncOrchestrator'
 
+// Backfills
+export {
+  backfillConjuges
+} from './backfillConjuges'
+
+export {
+  backfillUnidades
+} from './backfillUnidades'
+
 // Cliente Sienge (funções de baixo nível)
 export {
   getCustomers,
