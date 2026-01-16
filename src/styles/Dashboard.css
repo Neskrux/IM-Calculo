@@ -3026,6 +3026,15 @@
   overflow-y: auto;
 }
 
+/* Modal específico para galeria */
+.modal-content.galeria-modal {
+  max-width: 95vw;
+  width: 100%;
+  background: transparent;
+  border: none;
+  padding: 0;
+}
+
 .modal-header {
   display: flex;
   justify-content: space-between;
