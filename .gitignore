@@ -1,22 +1,38 @@
 # Dependencies
 node_modules/
-
-# Build
 dist/
+build/
 
 # Environment variables
 .env
 .env.local
-.env.*.local
+.env.production
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Arquivos de teste e dados brutos do Sienge
+test-*.js
+*-raw-data.json
+creditors-raw-data.json
+customers-raw-data.json
+contracts-raw-data.json
+creditors-corretores-only.json
 
 # IDE
 .vscode/
 .idea/
+*.swp
+*.swo
+*~
 
 # OS
 .DS_Store
 Thumbs.db
 
-# Logs
-*.log
-npm-debug.log*
+# Temporary files
+*.tmp
+*.temp
