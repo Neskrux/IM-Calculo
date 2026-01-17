@@ -2906,24 +2906,46 @@ const AdminDashboard = () => {
       
       // Para cada venda
       dadosFiltrados.forEach((grupo, idx) => {
-        // Verificar se precisa nova página
-        if (yPosition > 250) {
+        const venda = grupo.venda
+        
+        // Calcular altura estimada que esta venda vai ocupar:
+        // - Cabeçalho da venda: 18px
+        // - Linha cliente/corretor: 10px
+        // - Gap: 14px
+        // - Cabeçalho da tabela: ~10px
+        // - Cada linha da tabela: ~8px
+        // - Espaçamento após tabela: ~15px
+        const numParcelas = grupo.pagamentos.length
+        const alturaEstimada = 18 + 10 + 14 + 10 + (numParcelas * 8) + 15
+        
+        // Margem de segurança: garantir que toda a venda caiba
+        // Altura útil da página = 297 - margem inferior (20)
+        const alturaDisponivel = 277 - yPosition
+        
+        // Se não cabe, pula para nova página ANTES de começar a venda
+        if (alturaEstimada > alturaDisponivel && yPosition > 55) {
           doc.addPage()
           yPosition = 20
         }
-        
-        const venda = grupo.venda
         const corretor = venda?.corretor?.nome || venda?.nome_corretor || 'N/A'
         const empreendimento = venda?.empreendimento?.nome || 'N/A'
         const unidade = venda?.unidade || venda?.numero_unidade || '-'
-        const bloco = venda?.bloco || venda?.numero_bloco || '-'
         const cliente = venda?.nome_cliente || venda?.cliente?.nome_completo || venda?.cliente?.nome || 'Cliente não informado'
         const dataVenda = venda?.data_venda ? new Date(venda.data_venda).toLocaleDateString('pt-BR') : (venda?.data_emissao ? new Date(venda.data_emissao).toLocaleDateString('pt-BR') : '-')
         const valorVenda = parseFloat(venda?.valor_venda) || parseFloat(venda?.valor_venda_total) || 0
         
-        // Calcular comissão da venda - usar percentual do corretor se filtrado
+        // Calcular comissão da venda - filtrar por cargo ou percentual do corretor
         let comissaoVenda = 0
-        if (percentualCorretorTotais !== null) {
+        if (relatorioFiltros.cargoId) {
+          // Se tem filtro por cargo, calcular apenas comissão daquele cargo
+          grupo.pagamentos.forEach(pag => {
+            const comissoesCargo = calcularComissaoPorCargoPagamento(pag)
+            const cargoEncontrado = comissoesCargo.find(c => c.nome_cargo === relatorioFiltros.cargoId)
+            if (cargoEncontrado) {
+              comissaoVenda += cargoEncontrado.valor
+            }
+          })
+        } else if (percentualCorretorTotais !== null) {
           // Recalcular usando percentual do corretor
           comissaoVenda = grupo.pagamentos.reduce((acc, p) => {
             const valorParcela = parseFloat(p.valor) || 0
@@ -2943,7 +2965,7 @@ const AdminDashboard = () => {
         doc.text(`${empreendimento}`, 18, yPosition + 6)
         doc.setFontSize(9)
         doc.setFont('helvetica', 'normal')
-        doc.text(`Bloco: ${bloco} | Unidade: ${unidade} | Data: ${dataVenda}`, 18, yPosition + 13)
+        doc.text(`Unidade: ${unidade} | Data: ${dataVenda}`, 18, yPosition + 13)
         
         // Valores à direita
         doc.setFontSize(9)
@@ -3000,15 +3022,35 @@ const AdminDashboard = () => {
           // Formatar percentual com 2 casas decimais
           const percentualComissao = percentualUsado.toFixed(2)
           
-          // Formatar tipo de pagamento
-          const tipoFormatado = {
-            'sinal': 'Sinal',
-            'entrada': 'Entrada',
-            'parcela_entrada': 'Parc. Entrada',
-            'balao': 'Balão',
-            'financiamento': 'Financ.',
-            'mensal': 'Mensal'
-          }[pag.tipo_pagamento || pag.tipo] || (pag.tipo_pagamento || pag.tipo || '-').charAt(0).toUpperCase() + (pag.tipo_pagamento || pag.tipo || '').slice(1)
+          // Formatar tipo de pagamento - PRIORIDADE: pag.tipo (campo correto do banco)
+          const tipoPagamento = pag.tipo || pag.tipo_pagamento || 'parcela'
+          const numeroParcela = pag.numero_parcela || ''
+          
+          // Mapear tipo para exibição legível
+          let tipoFormatado = ''
+          switch (tipoPagamento) {
+            case 'sinal':
+              tipoFormatado = 'Sinal'
+              break
+            case 'entrada':
+              tipoFormatado = 'Entrada'
+              break
+            case 'parcela_entrada':
+              tipoFormatado = numeroParcela ? `Parcela ${numeroParcela}` : 'Parc. Entrada'
+              break
+            case 'balao':
+              tipoFormatado = numeroParcela ? `Balão ${numeroParcela}` : 'Balão'
+              break
+            case 'financiamento':
+              tipoFormatado = 'Financ.'
+              break
+            case 'mensal':
+              tipoFormatado = numeroParcela ? `Mensal ${numeroParcela}` : 'Mensal'
+              break
+            default:
+              // Capitalizar primeira letra
+              tipoFormatado = tipoPagamento.charAt(0).toUpperCase() + tipoPagamento.slice(1).replace('_', ' ')
+          }
           
           return [
             tipoFormatado,
@@ -3020,6 +3062,9 @@ const AdminDashboard = () => {
           ]
         })
         
+        // Largura total disponível = pageWidth - 28 (margem 14 de cada lado)
+        const larguraTotal = pageWidth - 28
+        
         autoTable(doc, {
           startY: yPosition,
           head: [['Tipo', 'Data', 'Valor Parcela', 'Status', '% Comissão', 'Comissão']],
@@ -3029,24 +3074,32 @@ const AdminDashboard = () => {
             fillColor: corSecundaria,
             textColor: 255,
             fontStyle: 'bold',
-            fontSize: 9
+            fontSize: 8,
+            cellPadding: 3
           },
           bodyStyles: {
             fontSize: 8,
-            textColor: corTexto
+            textColor: corTexto,
+            cellPadding: 2.5
           },
           alternateRowStyles: {
             fillColor: [248, 250, 252]
           },
+          // Colunas proporcionais à largura total
           columnStyles: {
-            0: { cellWidth: 25 },
-            1: { cellWidth: 25 },
-            2: { cellWidth: 35, halign: 'right' },
-            3: { cellWidth: 22, halign: 'center' },
-            4: { cellWidth: 25, halign: 'center' },
-            5: { cellWidth: 35, halign: 'right' }
+            0: { cellWidth: larguraTotal * 0.16 },  // Tipo ~16%
+            1: { cellWidth: larguraTotal * 0.14 },  // Data ~14%
+            2: { cellWidth: larguraTotal * 0.20, halign: 'right' },  // Valor Parcela ~20%
+            3: { cellWidth: larguraTotal * 0.12, halign: 'center' }, // Status ~12%
+            4: { cellWidth: larguraTotal * 0.16, halign: 'center' }, // % Comissão ~16%
+            5: { cellWidth: larguraTotal * 0.22, halign: 'right' }   // Comissão ~22%
           },
-          margin: { left: 14, right: 14 }
+          margin: { left: 14, right: 14 },
+          tableWidth: larguraTotal,
+          // IMPORTANTE: Evitar quebra de página no meio da tabela
+          rowPageBreak: 'avoid',
+          // Se a tabela não couber, mostrar cabeçalho novamente na nova página
+          showHead: 'everyPage'
         })
         
         yPosition = doc.lastAutoTable.finalY + 10
@@ -3054,8 +3107,16 @@ const AdminDashboard = () => {
       
       // RESUMO EXECUTIVO FINAL (especialmente útil quando filtrado por corretor)
       if (dadosFiltrados.length > 0) {
-        // Verificar se precisa nova página
-        if (yPosition > 220) {
+        // Calcular altura estimada do resumo executivo:
+        // - Título: 10px + margem
+        // - Tabela de stats (6 linhas): ~80px
+        // - Empreendimentos (se houver): ~25px
+        // - Margem de segurança: 20px
+        const alturaResumoEstimada = 10 + 15 + 80 + 25 + 20 // ~150px
+        
+        // Verificar se o resumo completo cabe na página atual
+        const alturaDisponivelResumo = 277 - yPosition
+        if (alturaResumoEstimada > alturaDisponivelResumo) {
           doc.addPage()
           yPosition = 20
         }
@@ -3156,8 +3217,18 @@ const AdminDashboard = () => {
         })
         
         if (parcelasPendentes.length > 0) {
-          // Verificar se precisa nova página
-          if (yPosition > 180) {
+          // Calcular altura estimada da seção de previsibilidade:
+          // - Título: 10px
+          // - Cada mês na tabela: ~8px
+          // - Margem: 20px
+          const mesesUnicos = [...new Set(parcelasPendentes.map(p => 
+            `${p.data.getFullYear()}-${String(p.data.getMonth() + 1).padStart(2, '0')}`
+          ))].length
+          const alturaPrevisibilidade = 10 + 15 + (Math.min(mesesUnicos, 12) * 8) + 30
+          
+          // Verificar se cabe na página atual
+          const alturaDisponivelPrev = 277 - yPosition
+          if (alturaPrevisibilidade > alturaDisponivelPrev) {
             doc.addPage()
             yPosition = 20
           }
