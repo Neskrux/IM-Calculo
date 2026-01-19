@@ -1,0 +1,93 @@
+/* ================================================
+   SITE INTRO - Cortina Minimalista
+   ================================================ */
+
+.site-intro {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  background: #0a0a0a;
+  overflow: hidden;
+}
+
+.site-intro.fadeout {
+  animation: fadeOut 0.7s ease forwards;
+}
+
+@keyframes fadeOut {
+  to {
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+
+/* ================================================
+   CORTINAS
+   ================================================ */
+
+.curtain {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 50%;
+  background: #000;
+  z-index: 2;
+  transition: transform 1.6s cubic-bezier(0.77, 0, 0.175, 1);
+}
+
+.curtain-left {
+  left: 0;
+}
+
+.curtain-right {
+  right: 0;
+}
+
+.site-intro.opening .curtain-left,
+.site-intro.open .curtain-left {
+  transform: translateX(-100%);
+}
+
+.site-intro.opening .curtain-right,
+.site-intro.open .curtain-right {
+  transform: translateX(100%);
+}
+
+/* ================================================
+   BRASÃO
+   ================================================ */
+
+.intro-center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+}
+
+.intro-brasao {
+  width: 280px;
+  height: auto;
+  filter: brightness(0) invert(1);
+  opacity: 0;
+  transform: scale(0.95);
+  transition: opacity 0.8s ease, transform 0.8s ease;
+  transition-delay: 0.5s;
+}
+
+.site-intro.opening .intro-brasao,
+.site-intro.open .intro-brasao {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* ================================================
+   RESPONSIVO
+   ================================================ */
+
+@media (max-width: 768px) {
+  .intro-brasao {
+    width: 200px;
+  }
+}

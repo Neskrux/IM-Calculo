@@ -778,7 +778,7 @@ const ImportarClientes = ({ clientes = [] }) => {
                 background: 'rgba(59, 130, 246, 0.1)', 
                 border: '1px solid rgba(59, 130, 246, 0.3)', 
                 borderRadius: '6px',
-                color: '#60a5fa'
+                color: '#c9a962'
               }}>
                 ⚠️ Modo completo ativado: Todas as {dadosPreview.length} linhas serão importadas
               </div>

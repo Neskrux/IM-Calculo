@@ -149,7 +149,7 @@ const HomeDashboard = ({
     if (total === 0) {
       return [
         { tipo: 'Corretor Externo', valor: 0, cor: '#4ade80' },
-        { tipo: 'Corretor Interno', valor: 0, cor: '#60a5fa' }
+        { tipo: 'Corretor Interno', valor: 0, cor: '#c9a962' }
       ]
     }
 
@@ -162,7 +162,7 @@ const HomeDashboard = ({
       { 
         tipo: 'Corretor Interno', 
         valor: Math.round((interno / total) * 100), 
-        cor: '#60a5fa' 
+        cor: '#c9a962' 
       }
     ]
   }, [vendas])

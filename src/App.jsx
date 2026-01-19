@@ -1,5 +1,5 @@
 import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { supabase } from './lib/supabase'
 import Login from './pages/Login'
@@ -7,6 +7,8 @@ import AdminDashboard from './pages/AdminDashboard'
 import CorretorDashboard from './pages/CorretorDashboard'
 import ClienteDashboard from './pages/ClienteDashboard'
 import HomeDashboard from './pages/HomeDashboard'
+import SiteIntro from './components/SiteIntro'
+import LoginTransition from './components/LoginTransition'
 import './App.css'
 
 // Componente de Loading com botão de sair
@@ -137,20 +139,28 @@ const ProtectedRoute = ({ children, requiredRole }) => {
 const PublicRoute = ({ children }) => {
   const { user, userProfile, loading } = useAuth()
 
+  // Verificar se há transição de login em andamento (via sessionStorage)
+  const loginTransitionActive = sessionStorage.getItem('im-login-transition')
+  
+  // Se há transição ativa, não fazer nada - deixar o App mostrar a transição
+  if (loginTransitionActive) {
+    return children
+  }
+
   // Não mostrar loading na página de login - deixa renderizar o formulário
   if (loading) {
     return <LoadingScreen showLogout={false} />
   }
 
-         if (user && userProfile) {
-           if (userProfile.tipo === 'admin') {
-             return <Navigate to="/admin" replace />
-           } else if (userProfile.tipo === 'corretor') {
-             return <Navigate to="/corretor" replace />
-           } else if (userProfile.tipo === 'cliente') {
-             return <Navigate to="/cliente" replace />
-           }
-         }
+  if (user && userProfile) {
+    if (userProfile.tipo === 'admin') {
+      return <Navigate to="/admin" replace />
+    } else if (userProfile.tipo === 'corretor') {
+      return <Navigate to="/corretor" replace />
+    } else if (userProfile.tipo === 'cliente') {
+      return <Navigate to="/cliente" replace />
+    }
+  }
 
   return children
 }
@@ -318,12 +328,61 @@ function AppRoutes() {
 }
 
 function App() {
+  const [showIntro, setShowIntro] = useState(() => {
+    const hasSeenIntro = sessionStorage.getItem('im-intro-seen')
+    return !hasSeenIntro
+  })
+  
+  const [showLoginTransition, setShowLoginTransition] = useState(null)
+
+  const handleIntroComplete = () => {
+    sessionStorage.setItem('im-intro-seen', 'true')
+    setShowIntro(false)
+  }
+  
+  const handleLoginTransitionComplete = () => {
+    setShowLoginTransition(null)
+  }
+
+  // Verificar se há transição pendente (polling)
+  useEffect(() => {
+    const checkTransition = () => {
+      const transitionData = sessionStorage.getItem('im-login-transition')
+      if (transitionData) {
+        try {
+          const data = JSON.parse(transitionData)
+          if (!showLoginTransition) {
+            console.log('🎬 App: Detectou transição!', data)
+            setShowLoginTransition(data)
+          }
+        } catch (e) {
+          // Formato antigo (string 'true')
+          sessionStorage.removeItem('im-login-transition')
+        }
+      }
+    }
+    
+    // Verificar imediatamente e a cada 50ms
+    checkTransition()
+    const interval = setInterval(checkTransition, 50)
+    return () => clearInterval(interval)
+  }, [showLoginTransition])
+
   return (
-    <Router>
-      <AuthProvider>
-        <AppRoutes />
-      </AuthProvider>
-    </Router>
+    <>
+      {showIntro && <SiteIntro onComplete={handleIntroComplete} />}
+      {showLoginTransition && (
+        <LoginTransition 
+          redirectUrl={showLoginTransition.redirectUrl} 
+          onComplete={handleLoginTransitionComplete}
+        />
+      )}
+      <Router>
+        <AuthProvider>
+          <AppRoutes />
+        </AuthProvider>
+      </Router>
+    </>
   )
 }
 

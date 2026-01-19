@@ -491,7 +491,7 @@ const CadastrarCorretores = () => {
                 border: '1px solid rgba(59, 130, 246, 0.3)'
               }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                  <span style={{ fontWeight: '600', color: '#3b82f6' }}>
+                  <span style={{ fontWeight: '600', color: '#c9a962' }}>
                     {progresso.corretorAtual || 'Iniciando...'}
                   </span>
                   <span style={{ color: '#64748b' }}>
@@ -508,7 +508,7 @@ const CadastrarCorretores = () => {
                   <div style={{
                     width: `${progresso.total > 0 ? (progresso.atual / progresso.total) * 100 : 0}%`,
                     height: '100%',
-                    background: '#3b82f6',
+                    background: '#c9a962',
                     transition: 'width 0.3s ease',
                     borderRadius: '4px'
                   }} />
