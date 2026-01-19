@@ -694,9 +694,6 @@ const ImportarVendas = ({ corretores = [], empreendimentos = [], clientes = [] }
             detalheLinha.avisos.push(`Valor pro-soluto (${valorProSoluto.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}) excede o valor da venda (${valorVenda.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}).`)
           }
 
-          // Fator pro-soluto (quanto do valor da venda é pro-soluto)
-          const fatorProSoluto = valorProSoluto > 0 && valorVenda > 0 ? valorProSoluto / valorVenda : 0
-
           // 9. Calcular comissões
           const tipoCorretor = corretor.tipo_corretor || 'externo'
           const comissoesDinamicas = calcularComissoesDinamicas(valorVenda, empreendimento.id, tipoCorretor)
@@ -705,9 +702,13 @@ const ImportarVendas = ({ corretores = [], empreendimentos = [], clientes = [] }
             throw new Error(`Nenhum cargo de comissão encontrado para o empreendimento "${empreendimento.nome}" e tipo de corretor "${tipoCorretor}". Configure os cargos no empreendimento primeiro.`)
           }
 
-          // Fator de comissão = percentual total de comissão / 100
-          // Ex: 7% -> 0.07, então parcela de R$ 1.000 x 0.07 = R$ 70 de comissão
-          const fatorComissao = comissoesDinamicas.percentualTotal / 100
+          // FÓRMULA CORRETA DO FATOR DE COMISSÃO:
+          // fator = (valorVenda × percentualTotal) / proSoluto
+          let fatorComissao = 0
+          if (valorProSoluto > 0 && valorVenda > 0) {
+            fatorComissao = (valorVenda * (comissoesDinamicas.percentualTotal / 100)) / valorProSoluto
+          }
+          const percentualTotal = comissoesDinamicas.percentualTotal
 
           // 10. Calcular comissão do corretor
           const cargoCorretor = comissoesDinamicas.cargos.find(c => 
@@ -755,7 +756,7 @@ const ImportarVendas = ({ corretores = [], empreendimentos = [], clientes = [] }
             qtd_balao: qtdBalao || null,
             valor_balao: valorBalao || null, // VALOR BALÃO → valor_balao
             valor_pro_soluto: valorProSoluto || null,
-            fator_comissao: fatorProSoluto || null, // Fator pro-soluto (valorProSoluto / valorVenda)
+            fator_comissao: fatorComissao || null, // Fator correto: (valorVenda × percentual) / proSoluto
             comissao_total: comissoesDinamicas.total,
             comissao_corretor: comissaoCorretor,
             primeiro_vencimento: primeiroVencimento,
@@ -795,6 +796,8 @@ const ImportarVendas = ({ corretores = [], empreendimentos = [], clientes = [] }
           }
 
           // ========== CRIAR PAGAMENTOS PRO-SOLUTO ==========
+          // FÓRMULA CORRETA: comissao = parcela × fator
+          // O fator já foi calculado como: (valorVenda × percentual) / proSoluto
           // Só criar pagamentos se houver valor_pro_soluto > 0
           if (valorProSoluto > 0) {
             const pagamentos = []
@@ -806,7 +809,9 @@ const ImportarVendas = ({ corretores = [], empreendimentos = [], clientes = [] }
                 tipo: 'sinal',
                 valor: valorSinal,
                 data_prevista: dataVenda,
-                comissao_gerada: valorSinal * fatorComissao
+                comissao_gerada: valorSinal * fatorComissao,
+                fator_comissao_aplicado: fatorComissao,
+                percentual_comissao_total: percentualTotal
               })
             }
 
@@ -817,7 +822,9 @@ const ImportarVendas = ({ corretores = [], empreendimentos = [], clientes = [] }
                 tipo: 'entrada',
                 valor: valorEntradaAvista,
                 data_prevista: dataVenda,
-                comissao_gerada: valorEntradaAvista * fatorComissao
+                comissao_gerada: valorEntradaAvista * fatorComissao,
+                fator_comissao_aplicado: fatorComissao,
+                percentual_comissao_total: percentualTotal
               })
             }
 
@@ -834,7 +841,9 @@ const ImportarVendas = ({ corretores = [], empreendimentos = [], clientes = [] }
                   numero_parcela: p,
                   valor: valorParcela,
                   data_prevista: dataParcela.toISOString().split('T')[0],
-                  comissao_gerada: valorParcela * fatorComissao
+                  comissao_gerada: valorParcela * fatorComissao,
+                  fator_comissao_aplicado: fatorComissao,
+                  percentual_comissao_total: percentualTotal
                 })
               }
             }
@@ -855,7 +864,9 @@ const ImportarVendas = ({ corretores = [], empreendimentos = [], clientes = [] }
                   numero_parcela: b,
                   valor: valorBalao,
                   data_prevista: dataBalao.toISOString().split('T')[0],
-                  comissao_gerada: valorBalao * fatorComissao
+                  comissao_gerada: valorBalao * fatorComissao,
+                  fator_comissao_aplicado: fatorComissao,
+                  percentual_comissao_total: percentualTotal
                 })
               }
             }
