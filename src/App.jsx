@@ -8,21 +8,10 @@ import CorretorDashboard from './pages/CorretorDashboard'
 import ClienteDashboard from './pages/ClienteDashboard'
 import HomeDashboard from './pages/HomeDashboard'
 import SiteIntro from './components/SiteIntro'
-import LoginTransition from './components/LoginTransition'
 import './App.css'
-
-// Verificar se há transição de login ativa (função global)
-const isLoginTransitionActive = () => {
-  return !!sessionStorage.getItem('im-login-transition')
-}
 
 // Componente de Loading com botão de sair
 const LoadingScreen = ({ showLogout = false }) => {
-  // NUNCA mostrar loading se há transição ativa
-  if (isLoginTransitionActive()) {
-    return null
-  }
-
   const handleForceLogout = async () => {
     await supabase.auth.signOut()
     const keysToRemove = []
@@ -67,17 +56,13 @@ const LoadingScreen = ({ showLogout = false }) => {
 const ProtectedRoute = ({ children, requiredRole }) => {
   const { user, userProfile, loading } = useAuth()
 
-  // Verificar se acabou de ter uma transição
-  const transitionJustComplete = sessionStorage.getItem('im-transition-complete')
-
-  // NUNCA mostrar loading se há transição ativa ou acabou de completar
-  if (loading && !isLoginTransitionActive() && !transitionJustComplete) {
-    return <LoadingScreen showLogout={true} />
+  // Se a transição de login está ativa, não mostrar nada - deixar a intro aparecer
+  if (sessionStorage.getItem('im-login-transition')) {
+    return null
   }
 
-  // Se há transição ativa, não redirecionar - deixar a intro rodar
-  if (isLoginTransitionActive()) {
-    return null // Retorna nada, a intro está sendo mostrada pelo App
+  if (loading) {
+    return <LoadingScreen showLogout={true} />
   }
 
   if (!user) {
@@ -154,8 +139,8 @@ const ProtectedRoute = ({ children, requiredRole }) => {
 const PublicRoute = ({ children }) => {
   const { user, userProfile, loading } = useAuth()
 
-  // Se há transição ativa, deixar mostrar o children (login) enquanto a intro roda
-  if (isLoginTransitionActive()) {
+  // Se a transição de login está ativa, NÃO redirecionar - deixar a intro aparecer
+  if (sessionStorage.getItem('im-login-transition')) {
     return children
   }
 
@@ -180,11 +165,6 @@ const PublicRoute = ({ children }) => {
 const DashboardRedirect = () => {
   const { userProfile, loading, user } = useAuth()
   const navigate = useNavigate()
-
-  // Se há transição ativa, não mostrar nada
-  if (isLoginTransitionActive()) {
-    return null
-  }
 
   if (loading) {
     return <LoadingScreen showLogout={true} />
@@ -236,6 +216,7 @@ const DashboardRedirect = () => {
 
   return <HomeDashboard />
 }
+
 
 function AppRoutes() {
   return (
@@ -343,71 +324,23 @@ function AppRoutes() {
 }
 
 function App() {
-  // Verificar intro inicial
+  // Verificar intro inicial do site
   const [showIntro, setShowIntro] = useState(() => {
     const hasSeenIntro = sessionStorage.getItem('im-intro-seen')
     return !hasSeenIntro
-  })
-  
-  // Verificar transição de login (já no carregamento inicial!)
-  const [showLoginTransition, setShowLoginTransition] = useState(() => {
-    const transitionData = sessionStorage.getItem('im-login-transition')
-    if (transitionData) {
-      try {
-        return JSON.parse(transitionData)
-      } catch (e) {
-        sessionStorage.removeItem('im-login-transition')
-        return null
-      }
-    }
-    return null
   })
 
   const handleIntroComplete = () => {
     sessionStorage.setItem('im-intro-seen', 'true')
     setShowIntro(false)
   }
-  
-  const handleLoginTransitionComplete = () => {
-    setShowLoginTransition(null)
-  }
 
-  // Polling para detectar transição (caso seja setada depois do carregamento)
-  useEffect(() => {
-    if (showLoginTransition) return
-    
-    const checkTransition = () => {
-      const transitionData = sessionStorage.getItem('im-login-transition')
-      if (transitionData) {
-        try {
-          const data = JSON.parse(transitionData)
-          setShowLoginTransition(data)
-        } catch (e) {
-          sessionStorage.removeItem('im-login-transition')
-        }
-      }
-    }
-    
-    const interval = setInterval(checkTransition, 50)
-    return () => clearInterval(interval)
-  }, [showLoginTransition])
-
-  // PRIORIDADE 1: Intro inicial do site
+  // Intro inicial do site (primeira visita)
   if (showIntro) {
     return <SiteIntro onComplete={handleIntroComplete} />
   }
 
-  // PRIORIDADE 2: Transição de login (intro após logar)
-  if (showLoginTransition) {
-    return (
-      <LoginTransition 
-        redirectUrl={showLoginTransition.redirectUrl} 
-        onComplete={handleLoginTransitionComplete}
-      />
-    )
-  }
-
-  // PRIORIDADE 3: App normal
+  // App normal
   return (
     <Router>
       <AuthProvider>

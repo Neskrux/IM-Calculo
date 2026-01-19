@@ -26,12 +26,6 @@ const AdminDashboard = () => {
   const navigate = useNavigate()
   const location = useLocation()
   
-  // VERIFICAÇÃO PRIORITÁRIA: Se há transição de login, não renderizar NADA
-  // (após hooks para não violar regras do React)
-  if (sessionStorage.getItem('im-login-transition')) {
-    return null
-  }
-  
   // Função de logout local para garantir funcionamento
   const handleLogout = async () => {
     try {
@@ -483,11 +477,6 @@ const AdminDashboard = () => {
 
   // Carregar dados apenas quando o perfil estiver pronto e for admin
   useEffect(() => {
-    // NÃO executar se há transição de login ativa
-    if (sessionStorage.getItem('im-login-transition')) {
-      return
-    }
-    
     if (!authLoading && userProfile && userProfile.tipo === 'admin' && !dataLoadedRef.current) {
       dataLoadedRef.current = true // Marca ANTES de chamar para evitar duplicação
       console.log('✅ Condições atendidas, chamando fetchData...')
@@ -4071,23 +4060,10 @@ const AdminDashboard = () => {
     return tickerData
   }
 
-  // Verificar se acabou de ter uma transição (para não mostrar loading imediatamente)
-  const transitionJustComplete = sessionStorage.getItem('im-transition-complete')
-  
-  // Limpar a flag após um tempo
-  useEffect(() => {
-    if (transitionJustComplete) {
-      const timer = setTimeout(() => {
-        sessionStorage.removeItem('im-transition-complete')
-      }, 2000) // Limpar após 2 segundos
-      return () => clearTimeout(timer)
-    }
-  }, [transitionJustComplete])
-
   return (
     <div className="dashboard-container">
-      {/* Barra de Carregamento Global - Não mostrar se acabou de ter transição */}
-      {(loading || authLoading) && !transitionJustComplete && (
+      {/* Barra de Carregamento Global */}
+      {(loading || authLoading) && (
         <div className="global-loading-overlay">
           <div className="global-loading-content">
             <div className="loading-spinner-large"></div>
