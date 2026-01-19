@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { supabase } from '../lib/supabase'
 import { Mail, Lock, ArrowRight, AlertCircle, ChevronLeft, ChevronRight, Building2, Palette } from 'lucide-react'
 import logo from '../imgs/logo.png'
+import LoginTransition from '../components/LoginTransition'
 import '../styles/Login.css'
 
 const Login = () => {
@@ -12,6 +13,8 @@ const Login = () => {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [focusedField, setFocusedField] = useState(null)
+  const [showTransition, setShowTransition] = useState(false)
+  const [redirectUrl, setRedirectUrl] = useState(null)
   const { signIn } = useAuth()
   const navigate = useNavigate()
 
@@ -150,8 +153,11 @@ const Login = () => {
     setError('')
     setLoading(true)
 
+    // IMPORTANTE: Marcar transição ANTES de fazer login para evitar redirecionamento automático
+    sessionStorage.setItem('im-login-transition', 'true')
+
     try {
-      // Primeiro validar credenciais sem fazer login completo
+      // Fazer login
       const { data, error: signInError } = await supabase.auth.signInWithPassword({
         email,
         password
@@ -190,12 +196,14 @@ const Login = () => {
           }
         }
         
+        sessionStorage.removeItem('im-login-transition') // Limpar flag em caso de erro
         setError(errorMessage)
         setLoading(false)
         return
       }
 
       if (!data) {
+        sessionStorage.removeItem('im-login-transition') // Limpar flag em caso de erro
         setError('Erro ao fazer login. Tente novamente.')
         setLoading(false)
         return
@@ -218,15 +226,13 @@ const Login = () => {
         url = '/cliente/dashboard'
       }
       
-      // Salvar dados da transição no sessionStorage
-      const transitionData = JSON.stringify({ redirectUrl: url })
-      sessionStorage.setItem('im-login-transition', transitionData)
-      
-      // Redirecionar para a URL - a página vai recarregar e App.jsx vai mostrar a intro
-      window.location.href = url
+      // Mostrar a transição diretamente aqui
+      setRedirectUrl(url)
+      setShowTransition(true)
       return
       
     } catch (err) {
+      sessionStorage.removeItem('im-login-transition') // Limpar flag em caso de erro
       console.error('Erro inesperado no login:', err)
       setError('Erro inesperado ao fazer login. Tente novamente.')
       setLoading(false)
@@ -237,6 +243,26 @@ const Login = () => {
 
   const toggleTheme = () => {
     setTheme(prev => prev === 'gold' ? 'blue' : 'gold')
+  }
+
+  // Callback quando a transição terminar
+  const handleTransitionComplete = () => {
+    // Limpar flag de transição
+    sessionStorage.removeItem('im-login-transition')
+    
+    // Redirecionar usando window.location para forçar um carregamento limpo
+    if (redirectUrl) {
+      window.location.href = redirectUrl
+    }
+  }
+
+  // Se a transição está ativa, mostrar apenas a intro
+  if (showTransition) {
+    return (
+      <LoginTransition 
+        onComplete={handleTransitionComplete}
+      />
+    )
   }
 
   return (

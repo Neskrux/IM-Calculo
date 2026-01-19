@@ -811,11 +811,6 @@ const CorretorDashboard = () => {
     }
   }, [tab, navigate, location.pathname])
 
-  // Se há transição de login ativa, não renderizar nada
-  if (sessionStorage.getItem('im-login-transition')) {
-    return null
-  }
-
   return (
     <div className="dashboard-container">
       {/* Sidebar Overlay for Mobile */}

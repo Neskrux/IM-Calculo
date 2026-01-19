@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import brasao from '../imgs/brasao.png'
 import './SiteIntro.css' // Usa o mesmo CSS da SiteIntro!
 
-const LoginTransition = ({ onComplete, redirectUrl }) => {
+const LoginTransition = ({ onComplete }) => {
   const [phase, setPhase] = useState('closed') // closed, opening, open, fadeout
 
   useEffect(() => {
@@ -17,17 +17,7 @@ const LoginTransition = ({ onComplete, redirectUrl }) => {
     const timeouts = timeline.map(({ phase: p, delay }) => 
       setTimeout(() => {
         if (p === 'complete') {
-          // Limpar flag de transição ativa
-          sessionStorage.removeItem('im-login-transition')
-          
-          // Marcar que a transição acabou mas ainda não chegou no dashboard
-          // Isso evita que o dashboard mostre loading imediatamente
-          sessionStorage.setItem('im-transition-complete', 'true')
-          
-          // Redirecionar para o dashboard
-          if (redirectUrl) {
-            window.location.href = redirectUrl
-          }
+          // Chamar callback de conclusão
           onComplete?.()
         } else {
           setPhase(p)
@@ -36,7 +26,7 @@ const LoginTransition = ({ onComplete, redirectUrl }) => {
     )
 
     return () => timeouts.forEach(clearTimeout)
-  }, [onComplete, redirectUrl])
+  }, [onComplete])
 
   // Usa exatamente o mesmo JSX da SiteIntro
   return (
