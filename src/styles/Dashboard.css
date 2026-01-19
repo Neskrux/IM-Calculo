@@ -2842,6 +2842,10 @@
   color: var(--im-success, #10b981);
 }
 
+.resumo-valor.comissao {
+  color: #c9a962;
+}
+
 .venda-info-cell {
   display: flex;
   flex-direction: column;
@@ -3714,6 +3718,30 @@
 .parcela-status {
   display: flex;
   align-items: center;
+}
+
+.parcela-comissao-corretor {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  padding: 6px 12px;
+  background: rgba(201, 169, 98, 0.1);
+  border-radius: 6px;
+  border: 1px solid rgba(201, 169, 98, 0.2);
+}
+
+.parcela-comissao-corretor .comissao-label {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.5);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.parcela-comissao-corretor .comissao-valor {
+  font-size: 14px;
+  font-weight: 600;
+  color: #c9a962;
 }
 
 .status-pill {

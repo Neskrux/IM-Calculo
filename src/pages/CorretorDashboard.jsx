@@ -10,8 +10,10 @@ import {
   Building, MapPin, CreditCard, Users, FileText, Eye, Phone, Mail,
   Home, Percent, CalendarDays, BanknoteIcon, TrendingDown, ArrowUpRight,
   Plus, UserPlus, Send, ClipboardList, CheckCircle2, XCircle, AlertCircle,
-  Camera
+  Camera, Search
 } from 'lucide-react'
+import { jsPDF } from 'jspdf'
+import autoTable from 'jspdf-autotable'
 import logo from '../imgs/logo.png'
 import Ticker from '../components/Ticker'
 import '../styles/Dashboard.css'
@@ -57,6 +59,36 @@ const CorretorDashboard = () => {
   const [loadingClientes, setLoadingClientes] = useState(false)
   const [selectedEmpreendimento, setSelectedEmpreendimento] = useState(null)
   const [selectedCliente, setSelectedCliente] = useState(null)
+  const [buscaEmpreendimento, setBuscaEmpreendimento] = useState('')
+  const [pagamentoVendaExpandida, setPagamentoVendaExpandida] = useState(null)
+  const [filtrosPagamentos, setFiltrosPagamentos] = useState({
+    status: 'todos',
+    tipo: 'todos',
+    empreendimento: '',
+    dataInicio: '',
+    dataFim: '',
+    busca: ''
+  })
+  const [filtrosClientes, setFiltrosClientes] = useState({
+    busca: '',
+    ordenar: 'nome',
+    empreendimento: ''
+  })
+  const [filtrosVendas, setFiltrosVendas] = useState({
+    busca: '',
+    status: 'todos',
+    empreendimento: '',
+    periodo: 'todos',
+    dataInicio: '',
+    dataFim: ''
+  })
+  const [relatorioFiltros, setRelatorioFiltros] = useState({
+    empreendimento: '',
+    status: 'todos',
+    dataInicio: '',
+    dataFim: ''
+  })
+  const [gerandoPdf, setGerandoPdf] = useState(false)
   
   // Estados para solicitações
   const [minhasSolicitacoes, setMinhasSolicitacoes] = useState([])
@@ -208,11 +240,14 @@ const CorretorDashboard = () => {
       const clientesComVendas = (data || []).map(cliente => {
         const vendasCliente = vendas.filter(v => v.cliente_id === cliente.id)
         const totalVendas = vendasCliente.reduce((acc, v) => acc + (parseFloat(v.valor_venda) || 0), 0)
+        const totalComissao = vendasCliente.reduce((acc, v) => acc + (parseFloat(v.comissao_corretor) || 0), 0)
         return {
           ...cliente,
           vendas: vendasCliente,
           total_vendas: totalVendas,
-          qtd_vendas: vendasCliente.length
+          total_comissao: totalComissao,
+          qtd_vendas: vendasCliente.length,
+          empreendimentos_ids: [...new Set(vendasCliente.map(v => v.empreendimento_id).filter(Boolean))]
         }
       })
 
@@ -308,22 +343,33 @@ const CorretorDashboard = () => {
       // Validar e normalizar os dados
       const vendasValidadas = (data || []).map(venda => {
         const valorVenda = parseFloat(venda.valor_venda) || 0
-        let comissaoCorretor = venda.comissao_corretor
+        const valorProSoluto = parseFloat(venda.valor_pro_soluto) || 0
+        let comissaoCorretor = parseFloat(venda.comissao_corretor) || 0
         
-        // Se comissao_corretor for null, undefined ou string vazia, calcular
-        if (comissaoCorretor === null || comissaoCorretor === undefined || comissaoCorretor === '') {
-          const percentual = userProfile?.percentual_corretor || 
-            (userProfile?.tipo_corretor === 'interno' ? 2.5 : 3.5)
-          comissaoCorretor = (valorVenda * percentual) / 100
-        } else {
-          // Converter para número se for string
-          comissaoCorretor = parseFloat(comissaoCorretor) || 0
+        // Percentual do corretor
+        const percentualCorretor = userProfile?.percentual_corretor || 
+          (userProfile?.tipo_corretor === 'interno' ? 2.5 : 4)
+        
+        // Se comissao_corretor for 0, calcular usando a fórmula correta
+        // COMISSÃO DO CORRETOR = Valor da Venda × Percentual do Corretor / 100
+        if (!comissaoCorretor || comissaoCorretor === 0) {
+          comissaoCorretor = (valorVenda * percentualCorretor) / 100
+        }
+        
+        // Calcular o fator de comissão do corretor para uso nas parcelas
+        // FATOR = (Valor da Venda × Percentual) / Pro-Soluto
+        let fatorComissaoCorretor = venda.fator_comissao || 0
+        if (valorProSoluto > 0) {
+          fatorComissaoCorretor = (valorVenda * (percentualCorretor / 100)) / valorProSoluto
         }
 
         return {
           ...venda,
           valor_venda: valorVenda,
+          valor_pro_soluto: valorProSoluto,
           comissao_corretor: comissaoCorretor,
+          fator_comissao_corretor: fatorComissaoCorretor,
+          percentual_corretor: percentualCorretor,
           status: venda.status || 'pendente',
           empreendimento_nome: venda.empreendimento_id ? empreendimentosMap[venda.empreendimento_id] : null,
           cliente_nome: venda.cliente_id ? clientesMap[venda.cliente_id] : null
@@ -544,6 +590,328 @@ const CorretorDashboard = () => {
     }
   }, [periodo, vendas.length, filteredVendas.length])
 
+  // Filtrar pagamentos
+  const filteredMeusPagamentos = meusPagamentos.filter(pag => {
+    // Filtro por status
+    if (filtrosPagamentos.status !== 'todos' && pag.status !== filtrosPagamentos.status) {
+      return false
+    }
+    // Filtro por tipo
+    if (filtrosPagamentos.tipo !== 'todos' && pag.tipo !== filtrosPagamentos.tipo) {
+      return false
+    }
+    // Filtro por empreendimento
+    if (filtrosPagamentos.empreendimento && pag.empreendimento_nome !== filtrosPagamentos.empreendimento) {
+      return false
+    }
+    // Filtro por data
+    if (filtrosPagamentos.dataInicio && pag.data_prevista) {
+      if (new Date(pag.data_prevista) < new Date(filtrosPagamentos.dataInicio)) {
+        return false
+      }
+    }
+    if (filtrosPagamentos.dataFim && pag.data_prevista) {
+      if (new Date(pag.data_prevista) > new Date(filtrosPagamentos.dataFim)) {
+        return false
+      }
+    }
+    // Filtro por busca
+    if (filtrosPagamentos.busca) {
+      const busca = filtrosPagamentos.busca.toLowerCase()
+      const matchCliente = pag.cliente_nome?.toLowerCase().includes(busca)
+      const matchEmpreendimento = pag.empreendimento_nome?.toLowerCase().includes(busca)
+      if (!matchCliente && !matchEmpreendimento) {
+        return false
+      }
+    }
+    return true
+  })
+
+  // Agrupar pagamentos por venda
+  const filteredPagamentosAgrupados = Object.values(
+    filteredMeusPagamentos.reduce((acc, pag) => {
+      const vendaId = pag.venda_id
+      if (!acc[vendaId]) {
+        acc[vendaId] = {
+          venda_id: vendaId,
+          cliente_nome: pag.cliente_nome,
+          empreendimento_nome: pag.empreendimento_nome,
+          unidade: pag.unidade,
+          pagamentos: [],
+          totalValor: 0
+        }
+      }
+      acc[vendaId].pagamentos.push(pag)
+      acc[vendaId].totalValor += parseFloat(pag.valor) || 0
+      return acc
+    }, {})
+  ).sort((a, b) => {
+    // Ordenar por data do primeiro pagamento (mais recente primeiro)
+    const dataA = a.pagamentos[0]?.data_prevista || ''
+    const dataB = b.pagamentos[0]?.data_prevista || ''
+    return dataB.localeCompare(dataA)
+  })
+
+  // Filtrar e ordenar clientes
+  const filteredMeusClientes = meusClientes
+    .filter(cliente => {
+      // Filtro por busca
+      if (filtrosClientes.busca) {
+        const busca = filtrosClientes.busca.toLowerCase()
+        const matchNome = cliente.nome_completo?.toLowerCase().includes(busca)
+        const matchCpf = cliente.cpf?.toLowerCase().includes(busca)
+        const matchTelefone = cliente.telefone?.toLowerCase().includes(busca)
+        const matchEmail = cliente.email?.toLowerCase().includes(busca)
+        if (!matchNome && !matchCpf && !matchTelefone && !matchEmail) {
+          return false
+        }
+      }
+      // Filtro por empreendimento
+      if (filtrosClientes.empreendimento) {
+        if (!cliente.empreendimentos_ids?.includes(filtrosClientes.empreendimento)) {
+          return false
+        }
+      }
+      return true
+    })
+    .sort((a, b) => {
+      switch (filtrosClientes.ordenar) {
+        case 'nome':
+          return (a.nome_completo || '').localeCompare(b.nome_completo || '', 'pt-BR')
+        case 'nome_desc':
+          return (b.nome_completo || '').localeCompare(a.nome_completo || '', 'pt-BR')
+        case 'vendas':
+          return (b.qtd_vendas || 0) - (a.qtd_vendas || 0)
+        case 'valor':
+          return (b.total_vendas || 0) - (a.total_vendas || 0)
+        default:
+          return 0
+      }
+    })
+
+  // Filtrar vendas
+  const filteredMinhasVendas = vendas.filter(venda => {
+    // Filtro por busca
+    if (filtrosVendas.busca) {
+      const busca = filtrosVendas.busca.toLowerCase()
+      const matchCliente = venda.cliente_nome?.toLowerCase().includes(busca)
+      const matchEmpreendimento = venda.empreendimento_nome?.toLowerCase().includes(busca)
+      const matchUnidade = venda.unidade?.toLowerCase().includes(busca)
+      const matchBloco = venda.bloco?.toLowerCase().includes(busca)
+      if (!matchCliente && !matchEmpreendimento && !matchUnidade && !matchBloco) {
+        return false
+      }
+    }
+    // Filtro por status
+    if (filtrosVendas.status !== 'todos' && venda.status !== filtrosVendas.status) {
+      return false
+    }
+    // Filtro por empreendimento
+    if (filtrosVendas.empreendimento && venda.empreendimento_nome !== filtrosVendas.empreendimento) {
+      return false
+    }
+    // Filtro por período
+    if (filtrosVendas.periodo !== 'todos') {
+      const dataVenda = new Date(venda.data_venda)
+      const hoje = new Date()
+      if (filtrosVendas.periodo === 'mes') {
+        const mesmoMes = dataVenda.getMonth() === hoje.getMonth() && 
+                         dataVenda.getFullYear() === hoje.getFullYear()
+        if (!mesmoMes) return false
+      }
+      if (filtrosVendas.periodo === 'ano') {
+        const mesmoAno = dataVenda.getFullYear() === hoje.getFullYear()
+        if (!mesmoAno) return false
+      }
+    }
+    // Filtro por data início
+    if (filtrosVendas.dataInicio && venda.data_venda) {
+      if (new Date(venda.data_venda) < new Date(filtrosVendas.dataInicio)) {
+        return false
+      }
+    }
+    // Filtro por data fim
+    if (filtrosVendas.dataFim && venda.data_venda) {
+      if (new Date(venda.data_venda) > new Date(filtrosVendas.dataFim)) {
+        return false
+      }
+    }
+    return true
+  })
+
+  // Funções de totais filtrados
+  const getFilteredTotalVendas = () => {
+    return filteredMinhasVendas.reduce((acc, v) => acc + (parseFloat(v.valor_venda) || 0), 0)
+  }
+
+  const getFilteredTotalComissao = () => {
+    return filteredMinhasVendas.reduce((acc, v) => acc + (parseFloat(v.comissao_corretor) || 0), 0)
+  }
+
+  const getFilteredComissaoPendente = () => {
+    return filteredMinhasVendas.filter(v => v.status === 'pendente')
+      .reduce((acc, v) => acc + (parseFloat(v.comissao_corretor) || 0), 0)
+  }
+
+  const getFilteredComissaoPaga = () => {
+    return filteredMinhasVendas.filter(v => v.status === 'pago')
+      .reduce((acc, v) => acc + (parseFloat(v.comissao_corretor) || 0), 0)
+  }
+
+  // Gerar relatório PDF do corretor
+  const gerarMeuRelatorioPDF = async () => {
+    setGerandoPdf(true)
+    try {
+      // Filtrar vendas baseado nos filtros do relatório
+      let vendasFiltradas = [...vendas]
+      
+      if (relatorioFiltros.empreendimento) {
+        vendasFiltradas = vendasFiltradas.filter(v => v.empreendimento_nome === relatorioFiltros.empreendimento)
+      }
+      if (relatorioFiltros.status !== 'todos') {
+        vendasFiltradas = vendasFiltradas.filter(v => v.status === relatorioFiltros.status)
+      }
+      if (relatorioFiltros.dataInicio) {
+        vendasFiltradas = vendasFiltradas.filter(v => new Date(v.data_venda) >= new Date(relatorioFiltros.dataInicio))
+      }
+      if (relatorioFiltros.dataFim) {
+        vendasFiltradas = vendasFiltradas.filter(v => new Date(v.data_venda) <= new Date(relatorioFiltros.dataFim))
+      }
+
+      // Calcular totais
+      const totalVendas = vendasFiltradas.length
+      const valorTotalVendas = vendasFiltradas.reduce((acc, v) => acc + (parseFloat(v.valor_venda) || 0), 0)
+      const comissaoTotal = vendasFiltradas.reduce((acc, v) => acc + (parseFloat(v.comissao_corretor) || 0), 0)
+      const comissaoPaga = vendasFiltradas.filter(v => v.status === 'pago').reduce((acc, v) => acc + (parseFloat(v.comissao_corretor) || 0), 0)
+      const comissaoPendente = comissaoTotal - comissaoPaga
+
+      // Criar PDF
+      const doc = new jsPDF()
+      const cores = {
+        dourado: [201, 169, 98],
+        douradoEscuro: [161, 129, 58],
+        preto: [15, 15, 15],
+        branco: [255, 255, 255],
+        cinzaClaro: [245, 245, 245],
+        verde: [16, 185, 129],
+        vermelho: [239, 68, 68],
+        amarelo: [234, 179, 8]
+      }
+
+      // Header
+      doc.setFillColor(...cores.preto)
+      doc.rect(0, 0, 210, 35, 'F')
+      doc.setFillColor(...cores.dourado)
+      doc.rect(0, 35, 210, 2, 'F')
+      
+      doc.setTextColor(...cores.dourado)
+      doc.setFontSize(20)
+      doc.setFont('helvetica', 'bold')
+      doc.text('RELATORIO DE COMISSOES', 105, 18, { align: 'center' })
+      
+      doc.setTextColor(...cores.branco)
+      doc.setFontSize(12)
+      doc.setFont('helvetica', 'normal')
+      doc.text(capitalizeName(userProfile?.nome || 'Corretor'), 105, 28, { align: 'center' })
+
+      // Data do relatório
+      doc.setTextColor(...cores.dourado)
+      doc.setFontSize(10)
+      doc.text(`Gerado em: ${new Date().toLocaleDateString('pt-BR')} as ${new Date().toLocaleTimeString('pt-BR')}`, 105, 45, { align: 'center' })
+
+      // Resumo
+      let yPos = 60
+      doc.setFillColor(...cores.preto)
+      doc.roundedRect(14, yPos - 5, 182, 35, 3, 3, 'F')
+      
+      doc.setTextColor(...cores.branco)
+      doc.setFontSize(10)
+      doc.text('Total Vendas', 35, yPos + 5)
+      doc.text('Volume', 75, yPos + 5)
+      doc.text('Comissao Total', 115, yPos + 5)
+      doc.text('Recebido', 160, yPos + 5)
+      
+      doc.setTextColor(...cores.dourado)
+      doc.setFontSize(14)
+      doc.setFont('helvetica', 'bold')
+      doc.text(String(totalVendas), 35, yPos + 18)
+      doc.text(formatCurrency(valorTotalVendas), 75, yPos + 18)
+      doc.text(formatCurrency(comissaoTotal), 115, yPos + 18)
+      doc.setTextColor(...cores.verde)
+      doc.text(formatCurrency(comissaoPaga), 160, yPos + 18)
+
+      // Tabela de vendas
+      yPos = 105
+      doc.setTextColor(...cores.preto)
+      doc.setFontSize(14)
+      doc.setFont('helvetica', 'bold')
+      doc.text('Detalhamento das Vendas', 14, yPos)
+
+      const tableData = vendasFiltradas.map(v => [
+        new Date(v.data_venda).toLocaleDateString('pt-BR'),
+        v.empreendimento_nome || '-',
+        v.unidade || '-',
+        capitalizeName(v.cliente_nome) || '-',
+        formatCurrency(v.valor_venda),
+        formatCurrency(v.comissao_corretor),
+        v.status === 'pago' ? 'Pago' : 'Pendente'
+      ])
+
+      autoTable(doc, {
+        startY: yPos + 10,
+        head: [['Data', 'Empreendimento', 'Unidade', 'Cliente', 'Valor', 'Comissao', 'Status']],
+        body: tableData,
+        headStyles: {
+          fillColor: cores.dourado,
+          textColor: cores.preto,
+          fontStyle: 'bold',
+          fontSize: 9
+        },
+        bodyStyles: {
+          textColor: cores.preto,
+          fontSize: 8
+        },
+        alternateRowStyles: {
+          fillColor: cores.cinzaClaro
+        },
+        columnStyles: {
+          0: { cellWidth: 22 },
+          1: { cellWidth: 35 },
+          2: { cellWidth: 18 },
+          3: { cellWidth: 35 },
+          4: { cellWidth: 25 },
+          5: { cellWidth: 25 },
+          6: { cellWidth: 20 }
+        }
+      })
+
+      // Footer
+      const pageCount = doc.getNumberOfPages()
+      for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i)
+        doc.setFillColor(...cores.preto)
+        doc.rect(0, 282, 210, 15, 'F')
+        doc.setFillColor(...cores.dourado)
+        doc.rect(0, 282, 210, 1, 'F')
+        
+        doc.setTextColor(...cores.dourado)
+        doc.setFontSize(8)
+        doc.text('IM Incorporadora - Relatorio de Comissoes', 14, 290)
+        doc.text(`Pagina ${i} de ${pageCount}`, 196, 290, { align: 'right' })
+      }
+
+      // Salvar
+      const nomeArquivo = `Relatorio_${userProfile?.nome?.replace(/\s+/g, '_') || 'Corretor'}_${new Date().toISOString().split('T')[0]}.pdf`
+      doc.save(nomeArquivo)
+
+    } catch (error) {
+      console.error('Erro ao gerar PDF:', error)
+      alert('Erro ao gerar relatorio. Tente novamente.')
+    } finally {
+      setGerandoPdf(false)
+    }
+  }
+
   const getTotalVendas = () => {
     return filteredVendas.reduce((acc, v) => acc + (parseFloat(v.valor_venda) || 0), 0)
   }
@@ -607,13 +975,30 @@ const CorretorDashboard = () => {
   }
 
   // Calcular comissão proporcional do corretor para uma parcela
+  // FÓRMULA: COMISSÃO DA PARCELA = Valor da Parcela × Fator do Corretor
+  // Onde: FATOR = (Valor da Venda × Percentual do Corretor) / Pro-Soluto
   const calcularComissaoProporcional = (pagamento, venda) => {
-    const valorTotalVenda = parseFloat(venda.valor_venda) || 0
     const valorParcela = parseFloat(pagamento.valor) || 0
+    const valorVenda = parseFloat(venda.valor_venda) || 0
+    const valorProSoluto = parseFloat(venda.valor_pro_soluto) || 0
+    
+    // Se tem fator calculado na venda, usar
+    if (venda.fator_comissao_corretor && venda.fator_comissao_corretor > 0) {
+      return valorParcela * venda.fator_comissao_corretor
+    }
+    
+    // Calcular fator dinamicamente
+    if (valorProSoluto > 0 && valorVenda > 0) {
+      const percentualCorretor = venda.percentual_corretor || 
+        (userProfile?.percentual_corretor || (userProfile?.tipo_corretor === 'interno' ? 2.5 : 4))
+      const fatorCorretor = (valorVenda * (percentualCorretor / 100)) / valorProSoluto
+      return valorParcela * fatorCorretor
+    }
+    
+    // Fallback: proporção simples se não tiver pro-soluto
     const comissaoTotalCorretor = parseFloat(venda.comissao_corretor) || 0
-
-    if (valorTotalVenda === 0) return 0
-    return (comissaoTotalCorretor * valorParcela) / valorTotalVenda
+    if (valorVenda === 0) return 0
+    return (comissaoTotalCorretor * valorParcela) / valorVenda
   }
 
   // Agrupar pagamentos por tipo
@@ -1040,94 +1425,137 @@ const CorretorDashboard = () => {
 
           {/* Vendas Tab */}
           {activeTab === 'vendas' && (
-      <section className="vendas-section">
-        <div className="section-header-corretor">
-          <div className="period-filter">
-            <button 
-              className={periodo === 'todos' ? 'active' : ''} 
-              onClick={() => setPeriodo('todos')}
-            >
-              Todas
-            </button>
-            <button 
-              className={periodo === 'mes' ? 'active' : ''} 
-              onClick={() => setPeriodo('mes')}
-            >
-              Este Mês
-            </button>
-            <button 
-              className={periodo === 'ano' ? 'active' : ''} 
-              onClick={() => setPeriodo('ano')}
-            >
-              Este Ano
-            </button>
-          </div>
-        </div>
+            <div className="content-section">
+              {/* Filtros */}
+              <div className="filters-section">
+                <div className="search-box">
+                  <Search size={20} />
+                  <input 
+                    type="text" 
+                    placeholder="Buscar por cliente, empreendimento, unidade..."
+                    value={filtrosVendas.busca}
+                    onChange={(e) => setFiltrosVendas({...filtrosVendas, busca: e.target.value})}
+                  />
+                </div>
+                
+                {/* Filtros em Grid */}
+                <div className="filters-grid">
+                  <div className="filter-item">
+                    <label className="filter-label">Status</label>
+                    <select 
+                      value={filtrosVendas.status} 
+                      onChange={(e) => setFiltrosVendas({...filtrosVendas, status: e.target.value})}
+                      className="filter-select"
+                    >
+                      <option value="todos">Todos</option>
+                      <option value="pendente">Pendente</option>
+                      <option value="pago">Pago</option>
+                    </select>
+                  </div>
+                  
+                  <div className="filter-item">
+                    <label className="filter-label">Empreendimento</label>
+                    <select 
+                      value={filtrosVendas.empreendimento} 
+                      onChange={(e) => setFiltrosVendas({...filtrosVendas, empreendimento: e.target.value})}
+                      className="filter-select"
+                    >
+                      <option value="">Todos</option>
+                      {[...new Set(vendas.map(v => v.empreendimento_nome).filter(Boolean))].sort().map(emp => (
+                        <option key={emp} value={emp}>{emp}</option>
+                      ))}
+                    </select>
+                  </div>
+                  
+                  <div className="filter-item">
+                    <label className="filter-label">Período</label>
+                    <select 
+                      value={filtrosVendas.periodo} 
+                      onChange={(e) => setFiltrosVendas({...filtrosVendas, periodo: e.target.value})}
+                      className="filter-select"
+                    >
+                      <option value="todos">Todos</option>
+                      <option value="mes">Este Mês</option>
+                      <option value="ano">Este Ano</option>
+                    </select>
+                  </div>
+                  
+                  <div className="filter-item">
+                    <label className="filter-label">Data Início</label>
+                    <input 
+                      type="date"
+                      value={filtrosVendas.dataInicio}
+                      onChange={(e) => setFiltrosVendas({...filtrosVendas, dataInicio: e.target.value})}
+                      className="filter-input-date"
+                    />
+                  </div>
+                  
+                  <div className="filter-item">
+                    <label className="filter-label">Data Fim</label>
+                    <input 
+                      type="date"
+                      value={filtrosVendas.dataFim}
+                      onChange={(e) => setFiltrosVendas({...filtrosVendas, dataFim: e.target.value})}
+                      className="filter-input-date"
+                    />
+                  </div>
+                </div>
+                
+                <button
+                  className="btn-clear-filters"
+                  onClick={() => {
+                    setFiltrosVendas({
+                      busca: '',
+                      status: 'todos',
+                      empreendimento: '',
+                      periodo: 'todos',
+                      dataInicio: '',
+                      dataFim: ''
+                    })
+                  }}
+                >
+                  <X size={16} />
+                  Limpar Filtros
+                </button>
+              </div>
 
-        {loading ? (
-          <div className="loading-container">
-            <div className="loading-spinner-large"></div>
-            <p>Carregando suas vendas...</p>
-          </div>
+              {loading ? (
+                <div className="loading-state">
+                  <div className="loading-spinner"></div>
+                  <p>Carregando suas vendas...</p>
+                </div>
               ) : (
                 <>
                   {/* Resumo de Comissões */}
-                  <div className="stats-section" style={{ marginBottom: '32px' }}>
-                    <div className="stat-card-corretor primary">
-                      <div className="stat-card-icon">
-                        <Wallet size={28} />
-                      </div>
-                      <div className="stat-card-content">
-                        <span className="stat-card-label">Total a Receber</span>
-                        <span className="stat-card-value">{formatCurrency(getTotalComissao())}</span>
-                      </div>
-                      <div className="stat-card-decoration"></div>
+                  <div className="pagamentos-resumo">
+                    <div className="resumo-card">
+                      <span className="resumo-label">Total a Receber</span>
+                      <span className="resumo-valor">{formatCurrency(getFilteredTotalComissao())}</span>
                     </div>
-
-                    <div className="stat-card-corretor success">
-                      <div className="stat-card-icon">
-                        <CheckCircle size={28} />
-                      </div>
-                      <div className="stat-card-content">
-                        <span className="stat-card-label">Comissão Paga</span>
-                        <span className="stat-card-value">{formatCurrency(getComissaoPaga())}</span>
-                      </div>
-                      <div className="stat-card-decoration"></div>
+                    <div className="resumo-card">
+                      <span className="resumo-label">Comissão Paga</span>
+                      <span className="resumo-valor pago">{formatCurrency(getFilteredComissaoPaga())}</span>
                     </div>
-
-                    <div className="stat-card-corretor warning">
-                      <div className="stat-card-icon">
-                        <Clock size={28} />
-                      </div>
-                      <div className="stat-card-content">
-                        <span className="stat-card-label">Pendente</span>
-                        <span className="stat-card-value">{formatCurrency(getComissaoPendente())}</span>
-                      </div>
-                      <div className="stat-card-decoration"></div>
+                    <div className="resumo-card">
+                      <span className="resumo-label">Pendente</span>
+                      <span className="resumo-valor pendente">{formatCurrency(getFilteredComissaoPendente())}</span>
                     </div>
-
-                    <div className="stat-card-corretor info">
-                      <div className="stat-card-icon">
-                        <Target size={28} />
-                      </div>
-                      <div className="stat-card-content">
-                        <span className="stat-card-label">Total em Vendas</span>
-                        <span className="stat-card-value">{formatCurrency(getTotalVendas())}</span>
-                      </div>
-                      <div className="stat-card-decoration"></div>
+                    <div className="resumo-card">
+                      <span className="resumo-label">Total em Vendas</span>
+                      <span className="resumo-valor comissao">{formatCurrency(getFilteredTotalVendas())}</span>
                     </div>
                   </div>
 
                   {/* Lista de Vendas */}
-                  {filteredVendas.length === 0 ? (
-          <div className="empty-state">
-            <DollarSign size={48} />
-            <h3>Nenhuma venda encontrada</h3>
-            <p>Suas vendas aparecerão aqui quando forem registradas</p>
-          </div>
-        ) : (
-          <div className="vendas-list">
-            {filteredVendas.map((venda) => (
+                  {filteredMinhasVendas.length === 0 ? (
+                    <div className="empty-state-box">
+                      <DollarSign size={48} />
+                      <h3>Nenhuma venda encontrada</h3>
+                      <p>Não há vendas que correspondam aos filtros selecionados</p>
+                    </div>
+                  ) : (
+                    <div className="vendas-list">
+                      {filteredMinhasVendas.map((venda) => (
               <div key={venda.id} className="venda-card">
                 <div className="venda-main">
                   <div className="venda-info">
@@ -1334,25 +1762,119 @@ const CorretorDashboard = () => {
                             </div>
                           )}
               </div>
-            ))}
-          </div>
+                      ))}
+                    </div>
                   )}
                 </>
-        )}
-      </section>
+              )}
+            </div>
           )}
 
-          {/* Relatórios Tab */}
           {/* Meus Pagamentos Tab */}
           {activeTab === 'pagamentos' && (
-            <section className="pagamentos-section">
+            <div className="content-section">
+              {/* Filtros de Pagamentos */}
+              <div className="filters-section">
+                <div className="search-box">
+                  <Search size={20} />
+                  <input 
+                    type="text" 
+                    placeholder="Buscar por cliente, empreendimento..."
+                    value={filtrosPagamentos.busca}
+                    onChange={(e) => setFiltrosPagamentos({...filtrosPagamentos, busca: e.target.value})}
+                  />
+                </div>
+                
+                {/* Filtros em Grid */}
+                <div className="filters-grid">
+                  <div className="filter-item">
+                    <label className="filter-label">Status</label>
+                    <select 
+                      value={filtrosPagamentos.status} 
+                      onChange={(e) => setFiltrosPagamentos({...filtrosPagamentos, status: e.target.value})}
+                      className="filter-select"
+                    >
+                      <option value="todos">Todos</option>
+                      <option value="pendente">Pendente</option>
+                      <option value="pago">Pago</option>
+                    </select>
+                  </div>
+                  
+                  <div className="filter-item">
+                    <label className="filter-label">Tipo de Pagamento</label>
+                    <select 
+                      value={filtrosPagamentos.tipo} 
+                      onChange={(e) => setFiltrosPagamentos({...filtrosPagamentos, tipo: e.target.value})}
+                      className="filter-select"
+                    >
+                      <option value="todos">Todos</option>
+                      <option value="sinal">Sinal</option>
+                      <option value="entrada">Entrada</option>
+                      <option value="parcela_entrada">Parcela Entrada</option>
+                      <option value="balao">Balão</option>
+                    </select>
+                  </div>
+                  
+                  <div className="filter-item">
+                    <label className="filter-label">Empreendimento</label>
+                    <select 
+                      value={filtrosPagamentos.empreendimento} 
+                      onChange={(e) => setFiltrosPagamentos({...filtrosPagamentos, empreendimento: e.target.value})}
+                      className="filter-select"
+                    >
+                      <option value="">Todos</option>
+                      {[...new Set(meusPagamentos.map(p => p.empreendimento_nome).filter(Boolean))].sort().map(emp => (
+                        <option key={emp} value={emp}>{emp}</option>
+                      ))}
+                    </select>
+                  </div>
+                  
+                  <div className="filter-item">
+                    <label className="filter-label">Data Início</label>
+                    <input 
+                      type="date"
+                      value={filtrosPagamentos.dataInicio}
+                      onChange={(e) => setFiltrosPagamentos({...filtrosPagamentos, dataInicio: e.target.value})}
+                      className="filter-input-date"
+                    />
+                  </div>
+                  
+                  <div className="filter-item">
+                    <label className="filter-label">Data Fim</label>
+                    <input 
+                      type="date"
+                      value={filtrosPagamentos.dataFim}
+                      onChange={(e) => setFiltrosPagamentos({...filtrosPagamentos, dataFim: e.target.value})}
+                      className="filter-input-date"
+                    />
+                  </div>
+                </div>
+                
+                <button
+                  className="btn-clear-filters"
+                  onClick={() => {
+                    setFiltrosPagamentos({
+                      status: 'todos',
+                      tipo: 'todos',
+                      empreendimento: '',
+                      dataInicio: '',
+                      dataFim: '',
+                      busca: ''
+                    })
+                  }}
+                >
+                  <X size={16} />
+                  Limpar Filtros
+                </button>
+              </div>
+
               {loadingPagamentos ? (
                 <div className="loading-state">
                   <div className="loading-spinner"></div>
                   <p>Carregando pagamentos...</p>
                 </div>
               ) : meusPagamentos.length === 0 ? (
-                <div className="empty-state">
+                <div className="empty-state-box">
                   <CreditCard size={48} />
                   <h3>Nenhum pagamento encontrado</h3>
                   <p>Seus pagamentos aparecerão aqui quando houver vendas registradas</p>
@@ -1362,111 +1884,219 @@ const CorretorDashboard = () => {
                   {/* Resumo de Pagamentos */}
                   <div className="pagamentos-resumo">
                     <div className="resumo-card">
-                      <div className="resumo-icon success">
-                        <CheckCircle size={24} />
-                      </div>
-                      <div className="resumo-info">
-                        <span className="resumo-label">Pagos</span>
-                        <span className="resumo-value success">
-                          {formatCurrency(meusPagamentos.filter(p => p.status === 'pago').reduce((acc, p) => {
-                            const venda = vendas.find(v => v.id === p.venda_id)
-                            if (!venda) return acc
-                            const proporcao = (parseFloat(p.valor) || 0) / (parseFloat(venda.valor_venda) || 1)
-                            return acc + (proporcao * (parseFloat(venda.comissao_corretor) || 0))
-                          }, 0))}
-                        </span>
-                      </div>
+                      <span className="resumo-label">Comissão Pendente</span>
+                      <span className="resumo-valor pendente">
+                        {formatCurrency(filteredMeusPagamentos.filter(p => p.status === 'pendente').reduce((acc, p) => {
+                          const venda = vendas.find(v => v.id === p.venda_id)
+                          if (!venda) return acc
+                          return acc + calcularComissaoProporcional(p, venda)
+                        }, 0))}
+                      </span>
                     </div>
                     <div className="resumo-card">
-                      <div className="resumo-icon warning">
-                        <Clock size={24} />
-                      </div>
-                      <div className="resumo-info">
-                        <span className="resumo-label">Pendentes</span>
-                        <span className="resumo-value warning">
-                          {formatCurrency(meusPagamentos.filter(p => p.status === 'pendente').reduce((acc, p) => {
-                            const venda = vendas.find(v => v.id === p.venda_id)
-                            if (!venda) return acc
-                            const proporcao = (parseFloat(p.valor) || 0) / (parseFloat(venda.valor_venda) || 1)
-                            return acc + (proporcao * (parseFloat(venda.comissao_corretor) || 0))
-                          }, 0))}
-                        </span>
-                      </div>
+                      <span className="resumo-label">Comissão Paga</span>
+                      <span className="resumo-valor pago">
+                        {formatCurrency(filteredMeusPagamentos.filter(p => p.status === 'pago').reduce((acc, p) => {
+                          const venda = vendas.find(v => v.id === p.venda_id)
+                          if (!venda) return acc
+                          return acc + calcularComissaoProporcional(p, venda)
+                        }, 0))}
+                      </span>
                     </div>
                     <div className="resumo-card">
-                      <div className="resumo-icon info">
-                        <CalendarDays size={24} />
-                      </div>
-                      <div className="resumo-info">
-                        <span className="resumo-label">Total Parcelas</span>
-                        <span className="resumo-value">{meusPagamentos.length}</span>
-                      </div>
+                      <span className="resumo-label">Comissão Total</span>
+                      <span className="resumo-valor">
+                        {formatCurrency(filteredMeusPagamentos.reduce((acc, p) => {
+                          const venda = vendas.find(v => v.id === p.venda_id)
+                          if (!venda) return acc
+                          return acc + calcularComissaoProporcional(p, venda)
+                        }, 0))}
+                      </span>
                     </div>
                   </div>
 
-                  {/* Lista de Pagamentos */}
-                  <div className="pagamentos-lista">
-                    <table className="data-table">
-                      <thead>
-                        <tr>
-                          <th>Cliente</th>
-                          <th>Empreendimento</th>
-                          <th>Tipo</th>
-                          <th>Valor Parcela</th>
-                          <th>Minha Comissão</th>
-                          <th>Vencimento</th>
-                          <th>Status</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {meusPagamentos.map(pagamento => {
-                          const venda = vendas.find(v => v.id === pagamento.venda_id)
-                          const proporcao = venda ? (parseFloat(pagamento.valor) || 0) / (parseFloat(venda.valor_venda) || 1) : 0
-                          const minhaComissao = venda ? proporcao * (parseFloat(venda.comissao_corretor) || 0) : 0
-                          
-                          return (
-                            <tr key={pagamento.id}>
-                              <td>{pagamento.cliente_nome}</td>
-                              <td>{pagamento.empreendimento_nome}</td>
-                              <td>
-                                <span className={`badge-tipo ${pagamento.tipo}`}>
-                                  {pagamento.tipo === 'sinal' && 'Sinal'}
-                                  {pagamento.tipo === 'entrada' && 'Entrada'}
-                                  {pagamento.tipo === 'parcela_entrada' && `Parcela ${pagamento.numero_parcela || ''}`}
-                                  {pagamento.tipo === 'balao' && `Balão ${pagamento.numero_parcela || ''}`}
-                                  {pagamento.tipo === 'comissao_integral' && '✨ Integral'}
-                                </span>
-                              </td>
-                              <td>{formatCurrency(pagamento.valor)}</td>
-                              <td className="comissao-cell">{formatCurrency(minhaComissao)}</td>
-                              <td>{pagamento.data_prevista ? new Date(pagamento.data_prevista).toLocaleDateString('pt-BR') : '-'}</td>
-                              <td>
-                                <span className={`status-badge ${pagamento.status}`}>
-                                  {pagamento.status === 'pago' && <><CheckCircle size={12} /> Pago</>}
-                                  {pagamento.status === 'pendente' && <><Clock size={12} /> Pendente</>}
-                                </span>
-                              </td>
-                            </tr>
-                          )
-                        })}
-                      </tbody>
-                    </table>
+                  {/* Vendas Agrupadas */}
+                  <div className="vendas-pagamentos-lista">
+                    {filteredPagamentosAgrupados.length === 0 ? (
+                      <div className="empty-state-box">
+                        <CreditCard size={48} />
+                        <h3>Nenhum pagamento encontrado</h3>
+                        <p>Não há pagamentos que correspondam aos filtros selecionados</p>
+                      </div>
+                    ) : (
+                      filteredPagamentosAgrupados.map((grupo) => {
+                        const venda = vendas.find(v => v.id === grupo.venda_id)
+                        const totalComissao = grupo.pagamentos.reduce((acc, p) => {
+                          return acc + (venda ? calcularComissaoProporcional(p, venda) : 0)
+                        }, 0)
+                        const comissaoPaga = grupo.pagamentos.filter(p => p.status === 'pago').reduce((acc, p) => {
+                          return acc + (venda ? calcularComissaoProporcional(p, venda) : 0)
+                        }, 0)
+                        const comissaoPendente = totalComissao - comissaoPaga
+
+                        return (
+                          <div key={grupo.venda_id} className="venda-pagamento-card">
+                            {/* Header da Venda - Clicável */}
+                            <div 
+                              className={`venda-pagamento-header ${pagamentoVendaExpandida === grupo.venda_id ? 'expanded' : ''}`}
+                              onClick={() => setPagamentoVendaExpandida(pagamentoVendaExpandida === grupo.venda_id ? null : grupo.venda_id)}
+                            >
+                              <div className="venda-info">
+                                <div className="venda-titulo">
+                                  <Building size={18} />
+                                  <strong>{grupo.empreendimento_nome || 'Empreendimento'}</strong>
+                                </div>
+                                <div className="venda-subtitulo">
+                                  <User size={14} />
+                                  <span>{grupo.cliente_nome || 'Cliente'}</span>
+                                  <span className="separator">•</span>
+                                  <span>Unidade: {grupo.unidade || '-'}</span>
+                                  <span className="separator">•</span>
+                                  <span>{grupo.pagamentos.length} parcelas</span>
+                                </div>
+                              </div>
+                              <div className="venda-valores">
+                                <div className="valor-item">
+                                  <span className="valor-label">Pro-Soluto</span>
+                                  <span className="valor-number">{formatCurrency(grupo.totalValor)}</span>
+                                </div>
+                                <div className="valor-item">
+                                  <span className="valor-label">Minha Comissão</span>
+                                  <span className="valor-number comissao">{formatCurrency(totalComissao)}</span>
+                                </div>
+                                <div className="valor-item">
+                                  <span className="valor-label">Recebido</span>
+                                  <span className="valor-number pago">{formatCurrency(comissaoPaga)}</span>
+                                </div>
+                                <div className="valor-item">
+                                  <span className="valor-label">Pendente</span>
+                                  <span className="valor-number pendente">{formatCurrency(comissaoPendente)}</span>
+                                </div>
+                              </div>
+                              <div className="header-actions-pagamento">
+                                <div className="expand-icon">
+                                  <ChevronDown size={20} className={pagamentoVendaExpandida === grupo.venda_id ? 'rotated' : ''} />
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Lista de Parcelas - Expandível */}
+                            {pagamentoVendaExpandida === grupo.venda_id && (
+                              <div className="venda-pagamento-body">
+                                {grupo.pagamentos
+                                  .sort((a, b) => {
+                                    const ordem = { sinal: 0, entrada: 1, parcela_entrada: 2, balao: 3, comissao_integral: 4 }
+                                    if (ordem[a.tipo] !== ordem[b.tipo]) return (ordem[a.tipo] || 5) - (ordem[b.tipo] || 5)
+                                    return (a.numero_parcela || 0) - (b.numero_parcela || 0)
+                                  })
+                                  .map((pag) => {
+                                    const minhaComissao = venda ? calcularComissaoProporcional(pag, venda) : 0
+                                    
+                                    return (
+                                      <div key={pag.id} className={`parcela-row ${pag.status === 'pago' ? 'pago' : ''}`}>
+                                        <div className="parcela-main">
+                                          <div className="parcela-tipo">
+                                            {pag.tipo === 'sinal' && 'Sinal'}
+                                            {pag.tipo === 'entrada' && 'Entrada'}
+                                            {pag.tipo === 'parcela_entrada' && `Parcela ${pag.numero_parcela}`}
+                                            {pag.tipo === 'balao' && `Balão ${pag.numero_parcela || ''}`}
+                                            {pag.tipo === 'comissao_integral' && '✨ Comissão Integral'}
+                                          </div>
+                                          <div className="parcela-data">{pag.data_prevista ? new Date(pag.data_prevista).toLocaleDateString('pt-BR') : '-'}</div>
+                                          <div className="parcela-valor">{formatCurrency(pag.valor)}</div>
+                                          <div className="parcela-comissao-corretor">
+                                            <span className="comissao-label">Minha Comissão:</span>
+                                            <span className="comissao-valor">{formatCurrency(minhaComissao)}</span>
+                                          </div>
+                                          <div className="parcela-status">
+                                            <span className={`status-pill ${pag.status}`}>
+                                              {pag.status === 'pago' ? 'Pago' : 'Pendente'}
+                                            </span>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    )
+                                  })}
+                              </div>
+                            )}
+                          </div>
+                        )
+                      })
+                    )}
                   </div>
                 </>
               )}
-            </section>
+            </div>
           )}
 
           {/* Meus Clientes Tab */}
           {activeTab === 'clientes' && (
-            <section className="clientes-section">
+            <div className="content-section">
+              {/* Filtros */}
+              <div className="filters-section">
+                <div className="search-box">
+                  <Search size={20} />
+                  <input 
+                    type="text" 
+                    placeholder="Buscar por nome, CPF, telefone ou email..."
+                    value={filtrosClientes.busca}
+                    onChange={(e) => setFiltrosClientes({...filtrosClientes, busca: e.target.value})}
+                  />
+                </div>
+                
+                {/* Filtros em Grid */}
+                <div className="filters-grid">
+                  <div className="filter-item">
+                    <label className="filter-label">Ordenar por</label>
+                    <select 
+                      value={filtrosClientes.ordenar} 
+                      onChange={(e) => setFiltrosClientes({...filtrosClientes, ordenar: e.target.value})}
+                      className="filter-select"
+                    >
+                      <option value="nome">Nome (A-Z)</option>
+                      <option value="nome_desc">Nome (Z-A)</option>
+                      <option value="vendas">Mais Vendas</option>
+                      <option value="valor">Maior Volume</option>
+                    </select>
+                  </div>
+                  
+                  <div className="filter-item">
+                    <label className="filter-label">Empreendimento</label>
+                    <select 
+                      value={filtrosClientes.empreendimento} 
+                      onChange={(e) => setFiltrosClientes({...filtrosClientes, empreendimento: e.target.value})}
+                      className="filter-select"
+                    >
+                      <option value="">Todos</option>
+                      {empreendimentos.map(emp => (
+                        <option key={emp.id} value={emp.id}>{emp.nome}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+                
+                <button
+                  className="btn-clear-filters"
+                  onClick={() => {
+                    setFiltrosClientes({
+                      busca: '',
+                      ordenar: 'nome',
+                      empreendimento: ''
+                    })
+                  }}
+                >
+                  <X size={16} />
+                  Limpar Filtros
+                </button>
+              </div>
+
               {loadingClientes ? (
                 <div className="loading-state">
                   <div className="loading-spinner"></div>
                   <p>Carregando clientes...</p>
                 </div>
               ) : meusClientes.length === 0 ? (
-                <div className="empty-state">
+                <div className="empty-state-box">
                   <Users size={48} />
                   <h3>Nenhum cliente encontrado</h3>
                   <p>Seus clientes aparecerão aqui quando houver vendas registradas</p>
@@ -1474,293 +2104,478 @@ const CorretorDashboard = () => {
               ) : (
                 <>
                   {/* Resumo de Clientes */}
-                  <div className="clientes-resumo">
+                  <div className="pagamentos-resumo">
                     <div className="resumo-card">
-                      <div className="resumo-icon primary">
-                        <Users size={24} />
-                      </div>
-                      <div className="resumo-info">
-                        <span className="resumo-label">Total Clientes</span>
-                        <span className="resumo-value">{meusClientes.length}</span>
-                      </div>
+                      <span className="resumo-label">Total de Clientes</span>
+                      <span className="resumo-valor">{filteredMeusClientes.length}</span>
                     </div>
                     <div className="resumo-card">
-                      <div className="resumo-icon success">
-                        <DollarSign size={24} />
-                      </div>
-                      <div className="resumo-info">
-                        <span className="resumo-label">Volume de Vendas</span>
-                        <span className="resumo-value success">
-                          {formatCurrency(meusClientes.reduce((acc, c) => acc + c.total_vendas, 0))}
-                        </span>
-                      </div>
+                      <span className="resumo-label">Volume de Vendas</span>
+                      <span className="resumo-valor pago">
+                        {formatCurrency(filteredMeusClientes.reduce((acc, c) => acc + c.total_vendas, 0))}
+                      </span>
+                    </div>
+                    <div className="resumo-card">
+                      <span className="resumo-label">Minha Comissão</span>
+                      <span className="resumo-valor comissao">
+                        {formatCurrency(filteredMeusClientes.reduce((acc, c) => acc + c.total_comissao, 0))}
+                      </span>
                     </div>
                   </div>
 
                   {/* Lista de Clientes */}
-                  <div className="clientes-grid">
-                    {meusClientes.map(cliente => (
-                      <div key={cliente.id} className="cliente-card">
-                        <div className="cliente-header">
-                          <div className="cliente-avatar">
-                            <User size={24} />
-                          </div>
-                          <div className="cliente-info">
-                            <h3>{capitalizeName(cliente.nome_completo)}</h3>
-                            <span className="cliente-cpf">{cliente.cpf || 'CPF não informado'}</span>
-                          </div>
-                        </div>
-                        
-                        <div className="cliente-contato">
-                          {cliente.telefone && (
-                            <div className="contato-item">
-                              <Phone size={14} />
-                              <span>{cliente.telefone}</span>
+                  {filteredMeusClientes.length === 0 ? (
+                    <div className="empty-state-box">
+                      <Users size={48} />
+                      <h3>Nenhum cliente encontrado</h3>
+                      <p>Não há clientes que correspondam aos filtros selecionados</p>
+                    </div>
+                  ) : (
+                    <div className="clientes-grid">
+                      {filteredMeusClientes.map(cliente => (
+                        <div key={cliente.id} className="cliente-card">
+                          <div className="cliente-header">
+                            <div className="cliente-avatar">
+                              <User size={24} />
                             </div>
-                          )}
-                          {cliente.email && (
-                            <div className="contato-item">
-                              <Mail size={14} />
-                              <span>{cliente.email}</span>
+                            <div className="cliente-info">
+                              <h3>{capitalizeName(cliente.nome_completo)}</h3>
+                              <span className="cliente-cpf">{cliente.cpf || 'CPF não informado'}</span>
                             </div>
-                          )}
-                        </div>
-
-                        <div className="cliente-stats">
-                          <div className="stat-mini">
-                            <span className="stat-mini-label">Vendas</span>
-                            <span className="stat-mini-value">{cliente.qtd_vendas}</span>
                           </div>
-                          <div className="stat-mini">
-                            <span className="stat-mini-label">Total</span>
-                            <span className="stat-mini-value success">{formatCurrency(cliente.total_vendas)}</span>
+                          
+                          <div className="cliente-contato">
+                            {cliente.telefone && (
+                              <div className="contato-item">
+                                <Phone size={14} />
+                                <span>{cliente.telefone}</span>
+                              </div>
+                            )}
+                            {cliente.email && (
+                              <div className="contato-item">
+                                <Mail size={14} />
+                                <span>{cliente.email}</span>
+                              </div>
+                            )}
                           </div>
-                        </div>
 
-                        <button 
-                          className="btn-ver-detalhes"
-                          onClick={() => setSelectedCliente(cliente)}
-                        >
-                          <Eye size={16} />
-                          Ver Detalhes
-                        </button>
-                      </div>
-                    ))}
-                  </div>
+                          <div className="cliente-stats">
+                            <div className="stat-mini">
+                              <span className="stat-mini-label">Vendas</span>
+                              <span className="stat-mini-value">{cliente.qtd_vendas}</span>
+                            </div>
+                            <div className="stat-mini">
+                              <span className="stat-mini-label">Volume</span>
+                              <span className="stat-mini-value success">{formatCurrency(cliente.total_vendas)}</span>
+                            </div>
+                            <div className="stat-mini">
+                              <span className="stat-mini-label">Comissão</span>
+                              <span className="stat-mini-value gold">{formatCurrency(cliente.total_comissao)}</span>
+                            </div>
+                          </div>
+
+                          <button 
+                            className="btn-ver-detalhes"
+                            onClick={() => setSelectedCliente(cliente)}
+                          >
+                            <Eye size={16} />
+                            Ver Detalhes
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </>
               )}
-            </section>
+            </div>
           )}
 
           {/* Empreendimentos Tab */}
           {activeTab === 'empreendimentos' && (
-            <section className="empreendimentos-section">
+            <div className="empreendimentos-premium">
+              {/* Header com Estatísticas - Minimalista */}
+              <div className="empreendimentos-stats-header">
+                <div className="emp-stat-card">
+                  <span className="emp-stat-value">{empreendimentos.length}</span>
+                  <span className="emp-stat-label">Empreendimentos</span>
+                </div>
+                <div className="emp-stat-card">
+                  <span className="emp-stat-value">
+                    {formatCurrency(vendas.reduce((acc, v) => acc + (parseFloat(v.valor_venda) || 0), 0))}
+                  </span>
+                  <span className="emp-stat-label">Minhas Vendas</span>
+                </div>
+                <div className="emp-stat-card">
+                  <span className="emp-stat-value">{vendas.length}</span>
+                  <span className="emp-stat-label">Total Vendas</span>
+                </div>
+                <div className="emp-stat-card">
+                  <span className="emp-stat-value">{formatCurrency(getTotalComissao())}</span>
+                  <span className="emp-stat-label">Minha Comissão</span>
+                </div>
+              </div>
+
+              {/* Filtros */}
+              <div className="empreendimentos-filters">
+                <div className="emp-search-box">
+                  <Search size={20} />
+                  <input 
+                    type="text" 
+                    placeholder="Buscar empreendimento..."
+                    value={buscaEmpreendimento}
+                    onChange={(e) => setBuscaEmpreendimento(e.target.value)}
+                  />
+                </div>
+              </div>
+
               {loadingEmpreendimentos ? (
                 <div className="loading-state">
                   <div className="loading-spinner"></div>
                   <p>Carregando empreendimentos...</p>
                 </div>
-              ) : empreendimentos.length === 0 ? (
-                <div className="empty-state">
-                  <Building size={48} />
-                  <h3>Nenhum empreendimento encontrado</h3>
-                  <p>Os empreendimentos disponíveis aparecerão aqui</p>
+              ) : empreendimentos.filter(emp => 
+                  !buscaEmpreendimento || 
+                  emp.nome?.toLowerCase().includes(buscaEmpreendimento.toLowerCase())
+                ).length === 0 ? (
+                <div className="emp-empty-state">
+                  <div className="emp-empty-icon">
+                    <Building size={40} />
+                  </div>
+                  <h3>{empreendimentos.length === 0 ? 'Nenhum empreendimento disponível' : 'Nenhum empreendimento encontrado'}</h3>
+                  <p>{empreendimentos.length === 0 ? 'Os empreendimentos aparecerão aqui' : 'Tente outra busca'}</p>
                 </div>
               ) : (
-                <div className="emp-cards-grid">
-                  {empreendimentos.map(emp => {
-                    // Calcular estatísticas do empreendimento
-                    const vendasEmp = vendas.filter(v => v.empreendimento_id === emp.id)
-                    const totalVendasEmp = vendasEmp.length
-                    const valorTotalVendas = vendasEmp.reduce((acc, v) => acc + (parseFloat(v.valor_venda) || 0), 0)
-                    
-                    return (
-                      <div key={emp.id} className="emp-card-premium">
-                        {/* Imagem de Fachada */}
-                        <div className="emp-card-image">
-                          {emp.foto_fachada ? (
-                            <img src={emp.foto_fachada} alt={emp.nome} />
-                          ) : (
-                            <div className="emp-placeholder">
-                              <Building size={48} />
-                            </div>
-                          )}
-                          {emp.logo_url && (
-                            <img src={emp.logo_url} alt="Logo" className="emp-logo-overlay" />
-                          )}
-                          <div className="emp-card-overlay">
-                            <h3 className="emp-card-title">{emp.nome}</h3>
+                /* Visualização em Grid Premium */
+                <div className="empreendimentos-showcase">
+                  {empreendimentos
+                    .filter(emp => 
+                      !buscaEmpreendimento || 
+                      emp.nome?.toLowerCase().includes(buscaEmpreendimento.toLowerCase())
+                    )
+                    .map((emp) => {
+                      // Calcular estatísticas das minhas vendas neste empreendimento
+                      const vendasEmp = vendas.filter(v => v.empreendimento_id === emp.id)
+                      const totalVendasEmp = vendasEmp.length
+                      const valorTotalVendas = vendasEmp.reduce((acc, v) => acc + (parseFloat(v.valor_venda) || 0), 0)
+                      const comissaoTotal = vendasEmp.reduce((acc, v) => acc + (parseFloat(v.comissao_corretor) || 0), 0)
+                      const comissaoPaga = vendasEmp.filter(v => v.status === 'pago').reduce((acc, v) => acc + (parseFloat(v.comissao_corretor) || 0), 0)
+                      const comissaoPendente = comissaoTotal - comissaoPaga
+                      
+                      return (
+                        <div key={emp.id} className="emp-premium-card">
+                          {/* Imagem de Fachada */}
+                          <div className="emp-card-image">
+                            {emp.foto_fachada ? (
+                              <img src={emp.foto_fachada} alt={emp.nome} />
+                            ) : (
+                              <div className="emp-card-image-placeholder">
+                                <Building size={48} />
+                                <span>Sem imagem</span>
+                              </div>
+                            )}
+                            
+                            {/* Logo no canto superior direito */}
+                            {emp.logo_url && emp.logo_url.trim() !== '' && (
+                              <div className="emp-card-logo">
+                                <img 
+                                  src={emp.logo_url} 
+                                  alt={`Logo ${emp.nome}`}
+                                  onError={(e) => {
+                                    e.target.parentElement.style.display = 'none'
+                                  }}
+                                />
+                              </div>
+                            )}
+                            
+                            {/* Nome do empreendimento - sempre visível */}
+                            <span className="emp-card-name">{emp.nome}</span>
+                            
+                            {/* Badges no canto inferior direito */}
                             <div className="emp-card-badges">
                               {emp.sienge_enterprise_id && (
-                                <span className="emp-badge sienge">SIENGE</span>
+                                <span className="emp-status-badge sienge">Sienge</span>
                               )}
-                              <span className="emp-badge ativo">ATIVO</span>
+                              <span className="emp-status-badge active">Ativo</span>
+                            </div>
+                          </div>
+                          
+                          {/* Conteúdo do Card */}
+                          <div className="emp-card-content">
+                            {/* Unidades */}
+                            <div className="emp-commission-rates">
+                              <div className="emp-rate-box unidades">
+                                <span className="emp-rate-label">Nº Unidades</span>
+                                <span className="emp-rate-value">{emp.total_unidades || 0}</span>
+                              </div>
+                              <div className="emp-rate-box vendidas">
+                                <span className="emp-rate-label">Vendidas</span>
+                                <span className="emp-rate-value">{totalVendasEmp}</span>
+                              </div>
+                            </div>
+                            
+                            {/* Progresso da Obra */}
+                            <div className="emp-progress-section">
+                              <div className="emp-progress-header">
+                                <span className="emp-progress-label">Progresso da Obra</span>
+                                <span className="emp-progress-value">{emp.progresso_obra || 0}%</span>
+                              </div>
+                              <div className="emp-progress-bar">
+                                <div 
+                                  className="emp-progress-fill"
+                                  style={{ width: `${emp.progresso_obra || 0}%` }}
+                                />
+                              </div>
+                            </div>
+                            
+                            {/* Estatísticas */}
+                            <div className="emp-card-stats">
+                              <div className="emp-mini-stat">
+                                <span className="emp-mini-stat-label">Minhas Vendas</span>
+                                <span className="emp-mini-stat-value">{totalVendasEmp}</span>
+                              </div>
+                              <div className="emp-mini-stat">
+                                <span className="emp-mini-stat-label">Volume</span>
+                                <span className="emp-mini-stat-value gold">{formatCurrency(valorTotalVendas)}</span>
+                              </div>
+                              <div className="emp-mini-stat">
+                                <span className="emp-mini-stat-label">Comissão Paga</span>
+                                <span className="emp-mini-stat-value green">{formatCurrency(comissaoPaga)}</span>
+                              </div>
+                              <div className="emp-mini-stat">
+                                <span className="emp-mini-stat-label">Pendente</span>
+                                <span className="emp-mini-stat-value yellow">{formatCurrency(comissaoPendente)}</span>
+                              </div>
+                            </div>
+                            
+                            {/* Ações - Apenas visualizar */}
+                            <div className="emp-card-actions">
+                              <button 
+                                className="emp-action-btn view full"
+                                onClick={() => setSelectedEmpreendimento(emp)}
+                                title="Visualizar detalhes"
+                              >
+                                <Eye size={16} />
+                                Visualizar
+                              </button>
                             </div>
                           </div>
                         </div>
-                        
-                        {/* Conteúdo do Card */}
-                        <div className="emp-card-content">
-                          {/* Unidades */}
-                          <div className="emp-commission-rates">
-                            <div className="emp-rate-box unidades">
-                              <span className="emp-rate-label">Nº Unidades</span>
-                              <span className="emp-rate-value">{emp.total_unidades || 0}</span>
-                            </div>
-                            <div className="emp-rate-box vendidas">
-                              <span className="emp-rate-label">Vendidas</span>
-                              <span className="emp-rate-value">{totalVendasEmp}</span>
-                            </div>
+                      )
+                    })}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Relatórios Tab */}
+          {activeTab === 'relatorios' && (
+            <div className="content-section">
+              {/* Gerador de Relatórios */}
+              <div className="relatorio-gerador">
+                <div className="gerador-header">
+                  <FileText size={24} />
+                  <div>
+                    <h3>Gerar Relatório em PDF</h3>
+                    <p>Selecione os filtros e gere um relatório das suas comissões</p>
+                  </div>
+                </div>
+
+                <div className="gerador-filtros">
+                  <div className="filtro-grupo">
+                    <label><Building size={14} /> Empreendimento</label>
+                    <select
+                      value={relatorioFiltros.empreendimento}
+                      onChange={(e) => setRelatorioFiltros({...relatorioFiltros, empreendimento: e.target.value})}
+                    >
+                      <option value="">Todos os empreendimentos</option>
+                      {[...new Set(vendas.map(v => v.empreendimento_nome).filter(Boolean))].sort().map(emp => (
+                        <option key={emp} value={emp}>{emp}</option>
+                      ))}
+                    </select>
+                  </div>
+                  
+                  <div className="filtro-grupo">
+                    <label>Status</label>
+                    <select
+                      value={relatorioFiltros.status}
+                      onChange={(e) => setRelatorioFiltros({...relatorioFiltros, status: e.target.value})}
+                    >
+                      <option value="todos">Todos</option>
+                      <option value="pendente">Pendentes</option>
+                      <option value="pago">Pagos</option>
+                    </select>
+                  </div>
+                  
+                  <div className="filtro-grupo">
+                    <label>Data Início</label>
+                    <input
+                      type="date"
+                      value={relatorioFiltros.dataInicio}
+                      onChange={(e) => setRelatorioFiltros({...relatorioFiltros, dataInicio: e.target.value})}
+                    />
+                  </div>
+                  
+                  <div className="filtro-grupo">
+                    <label>Data Fim</label>
+                    <input
+                      type="date"
+                      value={relatorioFiltros.dataFim}
+                      onChange={(e) => setRelatorioFiltros({...relatorioFiltros, dataFim: e.target.value})}
+                    />
+                  </div>
+                </div>
+                
+                {/* Botão Limpar Filtros */}
+                {(relatorioFiltros.empreendimento || relatorioFiltros.status !== 'todos' || relatorioFiltros.dataInicio || relatorioFiltros.dataFim) && (
+                  <button
+                    className="btn-clear-filters"
+                    onClick={() => {
+                      setRelatorioFiltros({
+                        empreendimento: '',
+                        status: 'todos',
+                        dataInicio: '',
+                        dataFim: ''
+                      })
+                    }}
+                    style={{ marginBottom: '16px' }}
+                  >
+                    <X size={16} />
+                    Limpar Filtros
+                  </button>
+                )}
+                
+                <button 
+                  className="btn-gerar-pdf"
+                  onClick={gerarMeuRelatorioPDF}
+                  disabled={gerandoPdf}
+                >
+                  {gerandoPdf ? (
+                    <>
+                      <Clock size={20} className="spinning" />
+                      Gerando...
+                    </>
+                  ) : (
+                    <>
+                      <FileText size={20} />
+                      Gerar Meu Relatório PDF
+                    </>
+                  )}
+                </button>
+              </div>
+              
+              {/* Resumo Rápido */}
+              <div className="relatorio-resumo">
+                <h3>Resumo Geral</h3>
+                <div className="resumo-cards">
+                  <div className="resumo-card-item">
+                    <span className="resumo-titulo">Total de Vendas</span>
+                    <span className="resumo-numero">{vendas.length}</span>
+                  </div>
+                  <div className="resumo-card-item">
+                    <span className="resumo-titulo">Comissão Total</span>
+                    <span className="resumo-numero verde">{formatCurrency(getTotalComissao())}</span>
+                  </div>
+                  <div className="resumo-card-item">
+                    <span className="resumo-titulo">Comissão Recebida</span>
+                    <span className="resumo-numero azul">{formatCurrency(getComissaoPaga())}</span>
+                  </div>
+                  <div className="resumo-card-item">
+                    <span className="resumo-titulo">Comissão Pendente</span>
+                    <span className="resumo-numero amarelo">{formatCurrency(getComissaoPendente())}</span>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Comissão por Empreendimento */}
+              <div className="relatorio-beneficiarios">
+                <h3 style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+                  <Building size={20} />
+                  Comissão por Empreendimento
+                </h3>
+                
+                <div className="beneficiarios-lista">
+                  {empreendimentos.filter(emp => 
+                    vendas.some(v => v.empreendimento_id === emp.id)
+                  ).map(emp => {
+                    const vendasEmp = vendas.filter(v => v.empreendimento_id === emp.id)
+                    const totalVendasEmp = vendasEmp.length
+                    const valorTotalVendas = vendasEmp.reduce((acc, v) => acc + (parseFloat(v.valor_venda) || 0), 0)
+                    const comissaoTotal = vendasEmp.reduce((acc, v) => acc + (parseFloat(v.comissao_corretor) || 0), 0)
+                    const comissaoPaga = vendasEmp.filter(v => v.status === 'pago').reduce((acc, v) => acc + (parseFloat(v.comissao_corretor) || 0), 0)
+                    const comissaoPendente = comissaoTotal - comissaoPaga
+
+                    return (
+                      <div key={emp.id} className="beneficiario-card">
+                        <div className="beneficiario-header">
+                          <Building size={18} />
+                          <strong>{emp.nome}</strong>
+                        </div>
+                        <div className="beneficiario-stats">
+                          <div className="stat-item">
+                            <span className="stat-label">Vendas</span>
+                            <span className="stat-value">{totalVendasEmp}</span>
                           </div>
-                          
-                          {/* Progresso da Obra */}
-                          <div className="emp-progress-section">
-                            <div className="emp-progress-header">
-                              <span className="emp-progress-label">Progresso da Obra</span>
-                              <span className="emp-progress-value">{emp.progresso_obra || 0}%</span>
-                            </div>
-                            <div className="emp-progress-bar">
-                              <div 
-                                className="emp-progress-fill"
-                                style={{ width: `${emp.progresso_obra || 0}%` }}
-                              />
-                            </div>
+                          <div className="stat-item">
+                            <span className="stat-label">Volume</span>
+                            <span className="stat-value">{formatCurrency(valorTotalVendas)}</span>
                           </div>
-                          
-                          {/* Estatísticas */}
-                          <div className="emp-card-stats">
-                            <div className="emp-mini-stat">
-                              <span className="emp-mini-stat-label">Minhas Vendas</span>
-                              <span className="emp-mini-stat-value">{totalVendasEmp}</span>
-                            </div>
-                            <div className="emp-mini-stat">
-                              <span className="emp-mini-stat-label">Volume</span>
-                              <span className="emp-mini-stat-value gold">{formatCurrency(valorTotalVendas)}</span>
-                            </div>
+                          <div className="stat-item">
+                            <span className="stat-label">Comissão</span>
+                            <span className="stat-value gold">{formatCurrency(comissaoTotal)}</span>
                           </div>
-                          
-                          {/* Ações */}
-                          <div className="emp-card-actions">
-                            <button 
-                              className="emp-action-btn view"
-                              onClick={() => setSelectedEmpreendimento(emp)}
-                              title="Visualizar detalhes"
-                            >
-                              <Eye size={16} />
-                            </button>
+                          <div className="stat-item">
+                            <span className="stat-label">Recebido</span>
+                            <span className="stat-value verde">{formatCurrency(comissaoPaga)}</span>
+                          </div>
+                          <div className="stat-item">
+                            <span className="stat-label">Pendente</span>
+                            <span className="stat-value amarelo">{formatCurrency(comissaoPendente)}</span>
                           </div>
                         </div>
                       </div>
                     )
                   })}
                 </div>
-              )}
-            </section>
-          )}
-
-          {/* Relatórios Tab */}
-          {activeTab === 'relatorios' && (
-            <section className="relatorios-section">
-              {/* Resumo Geral */}
-              <div className="relatorios-resumo">
-                <h3>Resumo do Período</h3>
-                <div className="resumo-grid">
-                  <div className="resumo-card large">
-                    <div className="resumo-icon primary">
-                      <BarChart3 size={28} />
-                    </div>
-                    <div className="resumo-info">
-                      <span className="resumo-label">Total de Vendas</span>
-                      <span className="resumo-value large">{filteredVendas.length}</span>
-                    </div>
-                  </div>
-                  <div className="resumo-card large">
-                    <div className="resumo-icon success">
-                      <DollarSign size={28} />
-                    </div>
-                    <div className="resumo-info">
-                      <span className="resumo-label">Volume Total</span>
-                      <span className="resumo-value large success">{formatCurrency(getTotalVendas())}</span>
-                    </div>
-                  </div>
-                  <div className="resumo-card large">
-                    <div className="resumo-icon warning">
-                      <Wallet size={28} />
-                    </div>
-                    <div className="resumo-info">
-                      <span className="resumo-label">Comissão Total</span>
-                      <span className="resumo-value large warning">{formatCurrency(getTotalComissao())}</span>
-                    </div>
-                  </div>
-                  <div className="resumo-card large">
-                    <div className="resumo-icon info">
-                      <Percent size={28} />
-                    </div>
-                    <div className="resumo-info">
-                      <span className="resumo-label">Meu Percentual</span>
-                      <span className="resumo-value large">{percentualCorretor}%</span>
-                    </div>
-                  </div>
-                </div>
               </div>
-
-              {/* Vendas por Status */}
-              <div className="relatorios-status">
-                <h3>Vendas por Status</h3>
-                <div className="status-grid">
-                  <div className="status-card">
-                    <div className="status-header">
-                      <CheckCircle size={20} className="success" />
-                      <span>Pagas</span>
-                    </div>
-                    <div className="status-value">{filteredVendas.filter(v => v.status === 'pago').length}</div>
-                    <div className="status-amount success">{formatCurrency(getComissaoPaga())}</div>
-                  </div>
-                  <div className="status-card">
-                    <div className="status-header">
-                      <Clock size={20} className="warning" />
-                      <span>Pendentes</span>
-                    </div>
-                    <div className="status-value">{filteredVendas.filter(v => v.status === 'pendente').length}</div>
-                    <div className="status-amount warning">{formatCurrency(getComissaoPendente())}</div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Vendas Recentes */}
-              <div className="relatorios-vendas">
+              
+              {/* Últimas Vendas */}
+              <div className="relatorios-vendas" style={{ marginTop: '24px' }}>
                 <h3>Últimas Vendas</h3>
-                <table className="data-table">
-                  <thead>
-                    <tr>
-                      <th>Data</th>
-                      <th>Cliente</th>
-                      <th>Empreendimento</th>
-                      <th>Valor</th>
-                      <th>Comissão</th>
-                      <th>Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredVendas.slice(0, 10).map(venda => (
-                      <tr key={venda.id}>
-                        <td>{new Date(venda.data_venda).toLocaleDateString('pt-BR')}</td>
-                        <td>{capitalizeName(venda.cliente_nome) || 'N/A'}</td>
-                        <td>{venda.empreendimento_nome || 'N/A'}</td>
-                        <td>{formatCurrency(venda.valor_venda)}</td>
-                        <td className="comissao-cell">{formatCurrency(venda.comissao_corretor)}</td>
-                        <td>
-                          <span className={`status-badge ${venda.status}`}>
-                            {venda.status === 'pago' && <><CheckCircle size={12} /> Pago</>}
-                            {venda.status === 'pendente' && <><Clock size={12} /> Pendente</>}
-                          </span>
-                        </td>
+                <div className="table-container">
+                  <table className="data-table">
+                    <thead>
+                      <tr>
+                        <th>Data</th>
+                        <th>Cliente</th>
+                        <th>Empreendimento</th>
+                        <th>Unidade</th>
+                        <th>Valor</th>
+                        <th>Comissão</th>
+                        <th>Status</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {vendas.slice(0, 10).map(venda => (
+                        <tr key={venda.id}>
+                          <td>{new Date(venda.data_venda).toLocaleDateString('pt-BR')}</td>
+                          <td>{capitalizeName(venda.cliente_nome) || 'N/A'}</td>
+                          <td>{venda.empreendimento_nome || 'N/A'}</td>
+                          <td>{venda.unidade || '-'}</td>
+                          <td>{formatCurrency(venda.valor_venda)}</td>
+                          <td className="comissao-cell">{formatCurrency(venda.comissao_corretor)}</td>
+                          <td>
+                            <span className={`status-badge ${venda.status}`}>
+                              {venda.status === 'pago' && <><CheckCircle size={12} /> Pago</>}
+                              {venda.status === 'pendente' && <><Clock size={12} /> Pendente</>}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
-            </section>
+            </div>
           )}
 
           {/* Solicitações Tab */}

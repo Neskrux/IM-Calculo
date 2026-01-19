@@ -4109,6 +4109,10 @@
   color: #10b981;
 }
 
+.stat-mini-value.gold {
+  color: #c9a962;
+}
+
 .btn-ver-detalhes {
   width: 100%;
   display: flex;
