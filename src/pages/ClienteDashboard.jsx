@@ -515,6 +515,11 @@ const ClienteDashboard = () => {
     })
   }
 
+  // Se há transição de login ativa, não renderizar nada
+  if (sessionStorage.getItem('im-login-transition')) {
+    return null
+  }
+
   if (loading && !cliente) {
     return (
       <div className="loading-screen">

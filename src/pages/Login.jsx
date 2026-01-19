@@ -218,12 +218,13 @@ const Login = () => {
         url = '/cliente/dashboard'
       }
       
-      // Salvar dados da transição no sessionStorage (App.jsx vai detectar e mostrar)
+      // Salvar dados da transição no sessionStorage
       const transitionData = JSON.stringify({ redirectUrl: url })
-      console.log('🎬 Login: Salvando transição', transitionData)
       sessionStorage.setItem('im-login-transition', transitionData)
       
-      setLoading(false)
+      // Redirecionar para a URL - a página vai recarregar e App.jsx vai mostrar a intro
+      window.location.href = url
+      return
       
     } catch (err) {
       console.error('Erro inesperado no login:', err)

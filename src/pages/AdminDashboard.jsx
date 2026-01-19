@@ -128,6 +128,7 @@ const AdminDashboard = () => {
   const [formConfirmarPagamento, setFormConfirmarPagamento] = useState({
     valorPersonalizado: ''
   })
+  const [confirmandoPagamento, setConfirmandoPagamento] = useState(false)
   // const [mostrarCadastroMassa, setMostrarCadastroMassa] = useState(false)
   // const [mostrarImportarVendas, setMostrarImportarVendas] = useState(false)
   const [cargoExpandido, setCargoExpandido] = useState(null) // Formato: "empreendimentoId-cargoId"
@@ -1758,8 +1759,10 @@ const AdminDashboard = () => {
 
   // Confirmar pagamento pro-soluto com valores personalizados
   const processarConfirmarPagamento = async () => {
-    if (!pagamentoParaConfirmar) return
+    if (!pagamentoParaConfirmar || confirmandoPagamento) return
 
+    setConfirmandoPagamento(true)
+    
     try {
       // Atualizar pagamento - apenas status e data
       // O valor personalizado será usado apenas para cálculo, não será salvo no banco
@@ -1777,6 +1780,7 @@ const AdminDashboard = () => {
       
       if (error) {
         setMessage({ type: 'error', text: 'Erro ao confirmar: ' + error.message })
+        setConfirmandoPagamento(false)
         return
       }
       
@@ -1797,12 +1801,14 @@ const AdminDashboard = () => {
       
       setShowModalConfirmarPagamento(false)
       setPagamentoParaConfirmar(null)
+      setConfirmandoPagamento(false)
       fetchData()
       setMessage({ type: 'success', text: 'Pagamento confirmado!' })
       setTimeout(() => setMessage({ type: '', text: '' }), 3000)
     } catch (error) {
       console.error('Erro ao processar confirmação:', error)
       setMessage({ type: 'error', text: 'Erro ao confirmar pagamento' })
+      setConfirmandoPagamento(false)
     }
   }
 
@@ -3878,6 +3884,12 @@ const AdminDashboard = () => {
     return tickerData
   }
 
+  // Verificar se há transição de login ativa - se sim, não renderizar NADA
+  const loginTransitionActive = sessionStorage.getItem('im-login-transition')
+  if (loginTransitionActive) {
+    return null
+  }
+
   return (
     <div className="dashboard-container">
       {/* Barra de Carregamento Global */}
@@ -5774,14 +5786,23 @@ const AdminDashboard = () => {
                           <button
                             className="btn-secondary"
                             onClick={() => setShowModalConfirmarPagamento(false)}
+                            disabled={confirmandoPagamento}
                           >
                             Cancelar
                           </button>
                           <button
                             className="btn-primary"
                             onClick={processarConfirmarPagamento}
+                            disabled={confirmandoPagamento}
                           >
-                            Confirmar Pagamento
+                            {confirmandoPagamento ? (
+                              <>
+                                <span className="btn-spinner"></span>
+                                Confirmando...
+                              </>
+                            ) : (
+                              'Confirmar Pagamento'
+                            )}
                           </button>
                         </div>
                       </div>

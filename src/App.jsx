@@ -11,11 +11,20 @@ import SiteIntro from './components/SiteIntro'
 import LoginTransition from './components/LoginTransition'
 import './App.css'
 
+// Verificar se há transição de login ativa (função global)
+const isLoginTransitionActive = () => {
+  return !!sessionStorage.getItem('im-login-transition')
+}
+
 // Componente de Loading com botão de sair
 const LoadingScreen = ({ showLogout = false }) => {
+  // NUNCA mostrar loading se há transição ativa
+  if (isLoginTransitionActive()) {
+    return null
+  }
+
   const handleForceLogout = async () => {
     await supabase.auth.signOut()
-    // Limpar todo storage do Supabase
     const keysToRemove = []
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i)
@@ -58,8 +67,14 @@ const LoadingScreen = ({ showLogout = false }) => {
 const ProtectedRoute = ({ children, requiredRole }) => {
   const { user, userProfile, loading } = useAuth()
 
-  if (loading) {
+  // NUNCA mostrar loading se há transição ativa
+  if (loading && !isLoginTransitionActive()) {
     return <LoadingScreen showLogout={true} />
+  }
+
+  // Se há transição ativa, não redirecionar - deixar a intro rodar
+  if (isLoginTransitionActive()) {
+    return null // Retorna nada, a intro está sendo mostrada pelo App
   }
 
   if (!user) {
@@ -68,9 +83,6 @@ const ProtectedRoute = ({ children, requiredRole }) => {
 
   // Se não tem perfil cadastrado
   if (!userProfile) {
-    // Detectar tipo de usuário baseado no email ou contexto
-    const userTipo = 'corretor' // ou detectar dinamicamente
-    
     return (
       <div className="loading-screen">
         <div className="loading-content">
@@ -122,15 +134,15 @@ const ProtectedRoute = ({ children, requiredRole }) => {
     )
   }
 
-         if (requiredRole && userProfile?.tipo !== requiredRole) {
-           if (userProfile?.tipo === 'admin') {
-             return <Navigate to="/admin" replace />
-           } else if (userProfile?.tipo === 'corretor') {
-             return <Navigate to="/corretor" replace />
-           } else if (userProfile?.tipo === 'cliente') {
-             return <Navigate to="/cliente" replace />
-           }
-         }
+  if (requiredRole && userProfile?.tipo !== requiredRole) {
+    if (userProfile?.tipo === 'admin') {
+      return <Navigate to="/admin" replace />
+    } else if (userProfile?.tipo === 'corretor') {
+      return <Navigate to="/corretor" replace />
+    } else if (userProfile?.tipo === 'cliente') {
+      return <Navigate to="/cliente" replace />
+    }
+  }
 
   return children
 }
@@ -139,15 +151,11 @@ const ProtectedRoute = ({ children, requiredRole }) => {
 const PublicRoute = ({ children }) => {
   const { user, userProfile, loading } = useAuth()
 
-  // Verificar se há transição de login em andamento (via sessionStorage)
-  const loginTransitionActive = sessionStorage.getItem('im-login-transition')
-  
-  // Se há transição ativa, não fazer nada - deixar o App mostrar a transição
-  if (loginTransitionActive) {
+  // Se há transição ativa, deixar mostrar o children (login) enquanto a intro roda
+  if (isLoginTransitionActive()) {
     return children
   }
 
-  // Não mostrar loading na página de login - deixa renderizar o formulário
   if (loading) {
     return <LoadingScreen showLogout={false} />
   }
@@ -169,6 +177,11 @@ const PublicRoute = ({ children }) => {
 const DashboardRedirect = () => {
   const { userProfile, loading, user } = useAuth()
   const navigate = useNavigate()
+
+  // Se há transição ativa, não mostrar nada
+  if (isLoginTransitionActive()) {
+    return null
+  }
 
   if (loading) {
     return <LoadingScreen showLogout={true} />
@@ -205,20 +218,19 @@ const DashboardRedirect = () => {
     )
   }
 
-        // Redirecionar baseado no tipo de usuário
-        useEffect(() => {
-          if (userProfile) {
-            if (userProfile.tipo === 'admin') {
-              navigate('/admin/dashboard', { replace: true })
-            } else if (userProfile.tipo === 'corretor') {
-              navigate('/corretor', { replace: true })
-            } else if (userProfile.tipo === 'cliente') {
-              navigate('/cliente', { replace: true })
-            }
-          }
-        }, [userProfile, navigate])
+  // Redirecionar baseado no tipo de usuário
+  useEffect(() => {
+    if (userProfile) {
+      if (userProfile.tipo === 'admin') {
+        navigate('/admin/dashboard', { replace: true })
+      } else if (userProfile.tipo === 'corretor') {
+        navigate('/corretor', { replace: true })
+      } else if (userProfile.tipo === 'cliente') {
+        navigate('/cliente', { replace: true })
+      }
+    }
+  }, [userProfile, navigate])
 
-  // Mostrar HomeDashboard enquanto redireciona
   return <HomeDashboard />
 }
 
@@ -328,12 +340,25 @@ function AppRoutes() {
 }
 
 function App() {
+  // Verificar intro inicial
   const [showIntro, setShowIntro] = useState(() => {
     const hasSeenIntro = sessionStorage.getItem('im-intro-seen')
     return !hasSeenIntro
   })
   
-  const [showLoginTransition, setShowLoginTransition] = useState(null)
+  // Verificar transição de login (já no carregamento inicial!)
+  const [showLoginTransition, setShowLoginTransition] = useState(() => {
+    const transitionData = sessionStorage.getItem('im-login-transition')
+    if (transitionData) {
+      try {
+        return JSON.parse(transitionData)
+      } catch (e) {
+        sessionStorage.removeItem('im-login-transition')
+        return null
+      }
+    }
+    return null
+  })
 
   const handleIntroComplete = () => {
     sessionStorage.setItem('im-intro-seen', 'true')
@@ -344,45 +369,48 @@ function App() {
     setShowLoginTransition(null)
   }
 
-  // Verificar se há transição pendente (polling)
+  // Polling para detectar transição (caso seja setada depois do carregamento)
   useEffect(() => {
+    if (showLoginTransition) return
+    
     const checkTransition = () => {
       const transitionData = sessionStorage.getItem('im-login-transition')
       if (transitionData) {
         try {
           const data = JSON.parse(transitionData)
-          if (!showLoginTransition) {
-            console.log('🎬 App: Detectou transição!', data)
-            setShowLoginTransition(data)
-          }
+          setShowLoginTransition(data)
         } catch (e) {
-          // Formato antigo (string 'true')
           sessionStorage.removeItem('im-login-transition')
         }
       }
     }
     
-    // Verificar imediatamente e a cada 50ms
-    checkTransition()
     const interval = setInterval(checkTransition, 50)
     return () => clearInterval(interval)
   }, [showLoginTransition])
 
+  // PRIORIDADE 1: Intro inicial do site
+  if (showIntro) {
+    return <SiteIntro onComplete={handleIntroComplete} />
+  }
+
+  // PRIORIDADE 2: Transição de login (intro após logar)
+  if (showLoginTransition) {
+    return (
+      <LoginTransition 
+        redirectUrl={showLoginTransition.redirectUrl} 
+        onComplete={handleLoginTransitionComplete}
+      />
+    )
+  }
+
+  // PRIORIDADE 3: App normal
   return (
-    <>
-      {showIntro && <SiteIntro onComplete={handleIntroComplete} />}
-      {showLoginTransition && (
-        <LoginTransition 
-          redirectUrl={showLoginTransition.redirectUrl} 
-          onComplete={handleLoginTransitionComplete}
-        />
-      )}
-      <Router>
-        <AuthProvider>
-          <AppRoutes />
-        </AuthProvider>
-      </Router>
-    </>
+    <Router>
+      <AuthProvider>
+        <AppRoutes />
+      </AuthProvider>
+    </Router>
   )
 }
 
