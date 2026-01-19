@@ -7,7 +7,7 @@ import autoTable from 'jspdf-autotable'
 import { 
   Users, DollarSign, TrendingUp, Plus, Edit2, Trash2, 
   Search, Filter, LogOut, Menu, X, ChevronDown, Save, Eye,
-  Calculator, Calendar, User, Briefcase, CheckCircle, Clock, UserPlus, Mail, Lock, Percent, Building, PlusCircle, CreditCard, Check, Upload, FileText, Trash, UserCircle, Phone, MapPin, Camera, Download, FileDown, LayoutDashboard, ChevronLeft, ChevronRight, PanelLeftClose, PanelLeft, AlertCircle, RefreshCw
+  Calculator, Calendar, User, Briefcase, CheckCircle, Clock, UserPlus, Mail, Lock, Percent, Building, PlusCircle, CreditCard, Check, Upload, FileText, Trash, UserCircle, Phone, MapPin, Camera, Download, FileDown, LayoutDashboard, ChevronLeft, ChevronRight, PanelLeftClose, PanelLeft, AlertCircle, RefreshCw, ClipboardList, CheckCircle2, XCircle, MessageSquare
 } from 'lucide-react'
 import logo from '../imgs/logo.png'
 import Ticker from '../components/Ticker'
@@ -137,6 +137,13 @@ const AdminDashboard = () => {
   const [clientes, setClientes] = useState([])
   const [uploadingDoc, setUploadingDoc] = useState(false)
   
+  // Estados para solicitações
+  const [solicitacoes, setSolicitacoes] = useState([])
+  const [loadingSolicitacoes, setLoadingSolicitacoes] = useState(false)
+  const [filtroSolicitacao, setFiltroSolicitacao] = useState('pendente') // pendente, aprovado, reprovado, todos
+  const [solicitacaoSelecionada, setSolicitacaoSelecionada] = useState(null)
+  const [respostaAdmin, setRespostaAdmin] = useState('')
+  
   // Estados para relatórios
   const [relatorioFiltros, setRelatorioFiltros] = useState({
     tipo: 'pagamentos', // pagamentos, comissoes, vendas
@@ -224,11 +231,13 @@ const AdminDashboard = () => {
   const [empreendimentoForm, setEmpreendimentoForm] = useState({
     nome: '',
     descricao: '',
+    total_unidades: '',
     comissao_total_externo: '7',
     comissao_total_interno: '6',
     cargos_externo: [{ nome_cargo: '', percentual: '' }],
     cargos_interno: [{ nome_cargo: '', percentual: '' }],
-    logo_url: ''
+    logo_url: '',
+    progresso_obra: '0'
   })
   const [uploadingLogo, setUploadingLogo] = useState(false)
 
@@ -469,6 +478,8 @@ const AdminDashboard = () => {
       dataLoadedRef.current = true // Marca ANTES de chamar para evitar duplicação
       console.log('✅ Condições atendidas, chamando fetchData...')
       fetchData()
+      // Carregar solicitações para mostrar badge na navegação
+      fetchSolicitacoes()
     }
   }, [authLoading, userProfile])
 
@@ -740,6 +751,141 @@ const AdminDashboard = () => {
     } finally {
       setLoading(false)
      // console.log('🏁 fetchData finalizado')
+    }
+  }
+
+  // Função para buscar solicitações
+  const fetchSolicitacoes = async () => {
+    setLoadingSolicitacoes(true)
+    try {
+      let query = supabase
+        .from('solicitacoes')
+        .select(`
+          *,
+          corretor:corretor_id(id, nome, email),
+          admin:admin_id(id, nome)
+        `)
+        .order('created_at', { ascending: false })
+      
+      if (filtroSolicitacao !== 'todos') {
+        query = query.eq('status', filtroSolicitacao)
+      }
+      
+      const { data, error } = await query
+      
+      if (error) throw error
+      setSolicitacoes(data || [])
+    } catch (error) {
+      console.error('Erro ao buscar solicitações:', error)
+    } finally {
+      setLoadingSolicitacoes(false)
+    }
+  }
+
+  // Carregar solicitações quando mudar o filtro ou aba
+  useEffect(() => {
+    if (activeTab === 'solicitacoes') {
+      fetchSolicitacoes()
+    }
+  }, [activeTab, filtroSolicitacao])
+
+  // Função para aprovar solicitação
+  const handleAprovarSolicitacao = async (solicitacao) => {
+    try {
+      setLoading(true)
+      
+      // Processar a solicitação baseado no tipo
+      if (solicitacao.tipo === 'venda') {
+        // Criar a venda
+        const dadosVenda = solicitacao.dados
+        const { error: vendaError } = await supabase
+          .from('vendas')
+          .insert([{
+            corretor_id: dadosVenda.corretor_id,
+            empreendimento_id: dadosVenda.empreendimento_id,
+            cliente_id: dadosVenda.cliente_id,
+            unidade: dadosVenda.unidade,
+            bloco: dadosVenda.bloco,
+            valor_venda: dadosVenda.valor_venda,
+            data_venda: dadosVenda.data_venda,
+            status: 'pendente',
+            nome_cliente: dadosVenda.nome_cliente
+          }])
+        
+        if (vendaError) throw vendaError
+      } else if (solicitacao.tipo === 'cliente') {
+        // Criar o cliente
+        const dadosCliente = solicitacao.dados
+        const { error: clienteError } = await supabase
+          .from('clientes')
+          .insert([{
+            nome_completo: dadosCliente.nome_completo,
+            cpf: dadosCliente.cpf,
+            email: dadosCliente.email,
+            telefone: dadosCliente.telefone,
+            endereco: dadosCliente.endereco
+          }])
+        
+        if (clienteError) throw clienteError
+      }
+      
+      // Atualizar status da solicitação
+      const { error: updateError } = await supabase
+        .from('solicitacoes')
+        .update({
+          status: 'aprovado',
+          admin_id: userProfile.id,
+          resposta_admin: respostaAdmin || 'Solicitação aprovada',
+          data_resposta: new Date().toISOString()
+        })
+        .eq('id', solicitacao.id)
+      
+      if (updateError) throw updateError
+      
+      setMessage({ type: 'success', text: 'Solicitação aprovada com sucesso!' })
+      setSolicitacaoSelecionada(null)
+      setRespostaAdmin('')
+      fetchSolicitacoes()
+      fetchData() // Recarregar dados principais
+    } catch (error) {
+      console.error('Erro ao aprovar solicitação:', error)
+      setMessage({ type: 'error', text: 'Erro ao aprovar: ' + error.message })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Função para reprovar solicitação
+  const handleReprovarSolicitacao = async (solicitacao) => {
+    if (!respostaAdmin.trim()) {
+      setMessage({ type: 'error', text: 'Por favor, informe o motivo da reprovação' })
+      return
+    }
+    
+    try {
+      setLoading(true)
+      
+      const { error } = await supabase
+        .from('solicitacoes')
+        .update({
+          status: 'reprovado',
+          admin_id: userProfile.id,
+          resposta_admin: respostaAdmin,
+          data_resposta: new Date().toISOString()
+        })
+        .eq('id', solicitacao.id)
+      
+      if (error) throw error
+      
+      setMessage({ type: 'success', text: 'Solicitação reprovada' })
+      setSolicitacaoSelecionada(null)
+      setRespostaAdmin('')
+      fetchSolicitacoes()
+    } catch (error) {
+      console.error('Erro ao reprovar solicitação:', error)
+      setMessage({ type: 'error', text: 'Erro ao reprovar: ' + error.message })
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -1449,9 +1595,11 @@ const AdminDashboard = () => {
           .update({
             nome: empreendimentoForm.nome,
             descricao: empreendimentoForm.descricao,
+            total_unidades: empreendimentoForm.total_unidades ? parseInt(empreendimentoForm.total_unidades) : null,
             comissao_total_externo: parseFloat(empreendimentoForm.comissao_total_externo) || 7,
             comissao_total_interno: parseFloat(empreendimentoForm.comissao_total_interno) || 6,
-            logo_url: empreendimentoForm.logo_url || null
+            logo_url: empreendimentoForm.logo_url || null,
+            progresso_obra: parseInt(empreendimentoForm.progresso_obra) || 0
           })
           .eq('id', selectedItem.id)
 
@@ -1475,9 +1623,11 @@ const AdminDashboard = () => {
           .insert([{
             nome: empreendimentoForm.nome,
             descricao: empreendimentoForm.descricao,
+            total_unidades: empreendimentoForm.total_unidades ? parseInt(empreendimentoForm.total_unidades) : null,
             comissao_total_externo: parseFloat(empreendimentoForm.comissao_total_externo) || 7,
             comissao_total_interno: parseFloat(empreendimentoForm.comissao_total_interno) || 6,
-            logo_url: empreendimentoForm.logo_url || null
+            logo_url: empreendimentoForm.logo_url || null,
+            progresso_obra: parseInt(empreendimentoForm.progresso_obra) || 0
           }])
           .select()
           .single()
@@ -3532,11 +3682,15 @@ const AdminDashboard = () => {
       const matchTipo = filtrosPagamentos.tipo === 'todos' || 
         grupo.pagamentos.some(p => p.tipo === filtrosPagamentos.tipo)
       
-      // Busca por venda
+      // Busca por venda (inclui cliente por nome ou nome_cliente)
+      const buscaLower = filtrosPagamentos.buscaVenda?.toLowerCase() || ''
+      const clienteDaVenda = grupo.venda?.cliente_id ? clientes.find(c => c.id === grupo.venda.cliente_id) : null
       const matchBusca = !filtrosPagamentos.buscaVenda ||
-        grupo.venda?.corretor?.nome?.toLowerCase().includes(filtrosPagamentos.buscaVenda.toLowerCase()) ||
-        grupo.venda?.empreendimento?.nome?.toLowerCase().includes(filtrosPagamentos.buscaVenda.toLowerCase()) ||
-        grupo.venda?.nome_cliente?.toLowerCase().includes(filtrosPagamentos.buscaVenda.toLowerCase())
+        grupo.venda?.corretor?.nome?.toLowerCase().includes(buscaLower) ||
+        grupo.venda?.empreendimento?.nome?.toLowerCase().includes(buscaLower) ||
+        grupo.venda?.nome_cliente?.toLowerCase().includes(buscaLower) ||
+        clienteDaVenda?.nome_completo?.toLowerCase().includes(buscaLower) ||
+        clienteDaVenda?.cpf?.toLowerCase().includes(buscaLower)
       
       return matchCorretor && matchEmpreendimento && matchCliente && matchUnidade && matchStatus && matchTipo && matchBusca
     })
@@ -3822,6 +3976,17 @@ const AdminDashboard = () => {
             <TrendingUp size={20} />
             <span>Relatórios</span>
           </button>
+          <button 
+            className={`nav-item ${activeTab === 'solicitacoes' ? 'active' : ''}`}
+            onClick={() => navigate('/admin/solicitacoes')}
+            title="Solicitações"
+          >
+            <ClipboardList size={20} />
+            <span>Solicitações</span>
+            {solicitacoes.filter(s => s.status === 'pendente').length > 0 && (
+              <span className="nav-badge">{solicitacoes.filter(s => s.status === 'pendente').length}</span>
+            )}
+          </button>
           {/* Sincronizar Sienge - Oculto em produção */}
           {false && (
             <button 
@@ -3888,6 +4053,7 @@ const AdminDashboard = () => {
             {activeTab === 'pagamentos' && 'Acompanhamento de Pagamentos'}
             {activeTab === 'clientes' && 'Cadastro de Clientes'}
             {activeTab === 'relatorios' && 'Relatórios'}
+            {activeTab === 'solicitacoes' && 'Solicitações'}
             {false && activeTab === 'sienge' && 'Sincronização Sienge'}
           </h1>
           <div className="header-actions">
@@ -3926,11 +4092,13 @@ const AdminDashboard = () => {
                   setEmpreendimentoForm({
                     nome: '',
                     descricao: '',
+                    total_unidades: '',
                     comissao_total_externo: '7',
                     comissao_total_interno: '6',
                     cargos_externo: [{ nome_cargo: '', percentual: '' }],
                     cargos_interno: [{ nome_cargo: '', percentual: '' }],
-                    logo_url: ''
+                    logo_url: '',
+                    progresso_obra: '0'
                   })
                   setSelectedItem(null)
                   setModalType('empreendimento')
@@ -4520,11 +4688,13 @@ const AdminDashboard = () => {
                       setEmpreendimentoForm({
                         nome: '',
                         descricao: '',
+                        total_unidades: '',
                         comissao_total_externo: '7',
                         comissao_total_interno: '6',
                         cargos_externo: [{ nome_cargo: '', percentual: '' }],
                         cargos_interno: [{ nome_cargo: '', percentual: '' }],
-                        logo_url: ''
+                        logo_url: '',
+                        progresso_obra: '0'
                       })
                       setSelectedItem(null)
                       setModalType('empreendimento')
@@ -4588,15 +4758,29 @@ const AdminDashboard = () => {
                       
                       {/* Conteúdo do Card */}
                       <div className="emp-card-content">
-                        {/* Taxas de Comissão */}
+                        {/* Unidades */}
                         <div className="emp-commission-rates">
-                          <div className="emp-rate-box externo">
-                            <span className="emp-rate-label">Externo</span>
-                            <span className="emp-rate-value">{emp.comissao_total_externo || 7}%</span>
+                          <div className="emp-rate-box unidades">
+                            <span className="emp-rate-label">Nº Unidades</span>
+                            <span className="emp-rate-value">{emp.total_unidades || 0}</span>
                           </div>
-                          <div className="emp-rate-box interno">
-                            <span className="emp-rate-label">Interno</span>
-                            <span className="emp-rate-value">{emp.comissao_total_interno || 6}%</span>
+                          <div className="emp-rate-box vendidas">
+                            <span className="emp-rate-label">Vendidas</span>
+                            <span className="emp-rate-value">{totalVendasEmp}</span>
+                          </div>
+                        </div>
+                        
+                        {/* Progresso da Obra */}
+                        <div className="emp-progress-section">
+                          <div className="emp-progress-header">
+                            <span className="emp-progress-label">Progresso da Obra</span>
+                            <span className="emp-progress-value">{emp.progresso_obra || 0}%</span>
+                          </div>
+                          <div className="emp-progress-bar">
+                            <div 
+                              className="emp-progress-fill"
+                              style={{ width: `${emp.progresso_obra || 0}%` }}
+                            />
                           </div>
                         </div>
                         
@@ -4645,6 +4829,7 @@ const AdminDashboard = () => {
                               setEmpreendimentoForm({
                                 nome: emp.nome,
                                 descricao: emp.descricao || '',
+                                total_unidades: emp.total_unidades?.toString() || '',
                                 comissao_total_externo: emp.comissao_total_externo?.toString() || '7',
                                 comissao_total_interno: emp.comissao_total_interno?.toString() || '6',
                                 cargos_externo: cargosExt.length > 0 
@@ -4653,7 +4838,8 @@ const AdminDashboard = () => {
                                 cargos_interno: cargosInt.length > 0 
                                   ? cargosInt.map(c => ({ nome_cargo: c.nome_cargo, percentual: c.percentual?.toString() || '' }))
                                   : [{ nome_cargo: '', percentual: '' }],
-                                logo_url: emp.logo_url || ''
+                                logo_url: emp.logo_url || '',
+                                progresso_obra: emp.progresso_obra?.toString() || '0'
                               })
                               setModalType('empreendimento')
                               setShowModal(true)
@@ -4748,6 +4934,7 @@ const AdminDashboard = () => {
                             setEmpreendimentoForm({
                               nome: emp.nome,
                               descricao: emp.descricao || '',
+                              total_unidades: emp.total_unidades?.toString() || '',
                               comissao_total_externo: emp.comissao_total_externo?.toString() || '7',
                               comissao_total_interno: emp.comissao_total_interno?.toString() || '6',
                               cargos_externo: cargosExt.length > 0 
@@ -4756,7 +4943,8 @@ const AdminDashboard = () => {
                               cargos_interno: cargosInt.length > 0 
                                 ? cargosInt.map(c => ({ nome_cargo: c.nome_cargo, percentual: c.percentual?.toString() || '' }))
                                 : [{ nome_cargo: '', percentual: '' }],
-                              logo_url: emp.logo_url || ''
+                              logo_url: emp.logo_url || '',
+                              progresso_obra: emp.progresso_obra?.toString() || '0'
                             })
                             setModalType('empreendimento')
                             setShowModal(true)
@@ -4841,6 +5029,21 @@ const AdminDashboard = () => {
                         <p>{empreendimentoVisualizar.descricao}</p>
                       </div>
                     )}
+
+                    {/* Unidades */}
+                    <div className="emp-view-section">
+                      <h3>Unidades</h3>
+                      <div className="emp-view-comissoes">
+                        <div className="emp-view-comissao-box">
+                          <span className="label">Total de Unidades</span>
+                          <span className="value">{empreendimentoVisualizar.total_unidades || 0}</span>
+                        </div>
+                        <div className="emp-view-comissao-box">
+                          <span className="label">Unidades Vendidas</span>
+                          <span className="value green">{vendas.filter(v => v.empreendimento_id === empreendimentoVisualizar.id).length}</span>
+                        </div>
+                      </div>
+                    </div>
 
                     {/* Comissões */}
                     <div className="emp-view-section">
@@ -4967,6 +5170,7 @@ const AdminDashboard = () => {
                         setEmpreendimentoForm({
                           nome: emp.nome,
                           descricao: emp.descricao || '',
+                          total_unidades: emp.total_unidades?.toString() || '',
                           comissao_total_externo: emp.comissao_total_externo?.toString() || '7',
                           comissao_total_interno: emp.comissao_total_interno?.toString() || '6',
                           cargos_externo: cargosExt.length > 0 
@@ -4975,7 +5179,8 @@ const AdminDashboard = () => {
                           cargos_interno: cargosInt.length > 0 
                             ? cargosInt.map(c => ({ nome_cargo: c.nome_cargo, percentual: c.percentual?.toString() || '' }))
                             : [{ nome_cargo: '', percentual: '' }],
-                          logo_url: emp.logo_url || ''
+                          logo_url: emp.logo_url || '',
+                          progresso_obra: emp.progresso_obra?.toString() || '0'
                         })
                         setEmpreendimentoVisualizar(null)
                         setModalType('empreendimento')
@@ -6241,7 +6446,318 @@ const AdminDashboard = () => {
             </div>
           </div>
         )}
+
+        {/* ================================================
+            ABA DE SOLICITAÇÕES
+            ================================================ */}
+        {activeTab === 'solicitacoes' && (
+          <div className="content-section">
+            {/* Filtros */}
+            <div className="solicitacoes-header">
+              <div className="solicitacoes-filtros">
+                <button 
+                  className={`filtro-btn ${filtroSolicitacao === 'pendente' ? 'active' : ''}`}
+                  onClick={() => setFiltroSolicitacao('pendente')}
+                >
+                  <Clock size={16} />
+                  Pendentes
+                  {solicitacoes.filter(s => s.status === 'pendente').length > 0 && (
+                    <span className="filtro-count">{solicitacoes.filter(s => s.status === 'pendente').length}</span>
+                  )}
+                </button>
+                <button 
+                  className={`filtro-btn ${filtroSolicitacao === 'aprovado' ? 'active' : ''}`}
+                  onClick={() => setFiltroSolicitacao('aprovado')}
+                >
+                  <CheckCircle2 size={16} />
+                  Aprovadas
+                </button>
+                <button 
+                  className={`filtro-btn ${filtroSolicitacao === 'reprovado' ? 'active' : ''}`}
+                  onClick={() => setFiltroSolicitacao('reprovado')}
+                >
+                  <XCircle size={16} />
+                  Reprovadas
+                </button>
+                <button 
+                  className={`filtro-btn ${filtroSolicitacao === 'todos' ? 'active' : ''}`}
+                  onClick={() => setFiltroSolicitacao('todos')}
+                >
+                  <ClipboardList size={16} />
+                  Todas
+                </button>
+              </div>
+            </div>
+
+            {/* Lista de Solicitações */}
+            {loadingSolicitacoes ? (
+              <div className="loading-container">
+                <div className="loading-spinner"></div>
+                <p>Carregando solicitações...</p>
+              </div>
+            ) : solicitacoes.length === 0 ? (
+              <div className="empty-state-box">
+                <ClipboardList size={48} />
+                <h3>Nenhuma solicitação {filtroSolicitacao !== 'todos' ? filtroSolicitacao : ''}</h3>
+                <p>As solicitações dos corretores aparecerão aqui</p>
+              </div>
+            ) : (
+              <div className="solicitacoes-grid">
+                {solicitacoes.map(solicitacao => (
+                  <div 
+                    key={solicitacao.id} 
+                    className={`solicitacao-card ${solicitacao.status}`}
+                    onClick={() => setSolicitacaoSelecionada(solicitacao)}
+                  >
+                    <div className="solicitacao-header">
+                      <div className="solicitacao-tipo">
+                        {solicitacao.tipo === 'venda' && <DollarSign size={18} />}
+                        {solicitacao.tipo === 'cliente' && <UserPlus size={18} />}
+                        <span>
+                          {solicitacao.tipo === 'venda' && 'Nova Venda'}
+                          {solicitacao.tipo === 'cliente' && 'Novo Cliente'}
+                        </span>
+                      </div>
+                      <span className={`solicitacao-status ${solicitacao.status}`}>
+                        {solicitacao.status === 'pendente' && 'Pendente'}
+                        {solicitacao.status === 'aprovado' && 'Aprovada'}
+                        {solicitacao.status === 'reprovado' && 'Reprovada'}
+                      </span>
+                    </div>
+                    
+                    <div className="solicitacao-corretor">
+                      <div className="corretor-avatar">
+                        {solicitacao.corretor?.nome?.charAt(0) || 'C'}
+                      </div>
+                      <div className="corretor-info">
+                        <span className="corretor-nome">{solicitacao.corretor?.nome || 'Corretor'}</span>
+                        <span className="corretor-email">{solicitacao.corretor?.email}</span>
+                      </div>
+                    </div>
+                    
+                    <div className="solicitacao-resumo">
+                      {solicitacao.tipo === 'venda' && (
+                        <>
+                          <div className="resumo-item">
+                            <span className="label">Cliente:</span>
+                            <span className="value">{solicitacao.dados?.nome_cliente || '-'}</span>
+                          </div>
+                          <div className="resumo-item">
+                            <span className="label">Valor:</span>
+                            <span className="value gold">{formatCurrency(solicitacao.dados?.valor_venda || 0)}</span>
+                          </div>
+                        </>
+                      )}
+                      {solicitacao.tipo === 'cliente' && (
+                        <>
+                          <div className="resumo-item">
+                            <span className="label">Nome:</span>
+                            <span className="value">{solicitacao.dados?.nome_completo || '-'}</span>
+                          </div>
+                          <div className="resumo-item">
+                            <span className="label">CPF:</span>
+                            <span className="value">{solicitacao.dados?.cpf || '-'}</span>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                    
+                    <div className="solicitacao-footer">
+                      <span className="solicitacao-data">
+                        <Calendar size={12} />
+                        {new Date(solicitacao.created_at).toLocaleDateString('pt-BR', {
+                          day: '2-digit',
+                          month: 'short',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </span>
+                      {solicitacao.status === 'pendente' && (
+                        <button className="btn-ver-detalhes">
+                          Ver detalhes
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </main>
+
+      {/* Modal de Detalhes da Solicitação */}
+      {solicitacaoSelecionada && (
+        <div className="modal-overlay" onClick={() => { setSolicitacaoSelecionada(null); setRespostaAdmin(''); }}>
+          <div className="modal-content solicitacao-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>
+                {solicitacaoSelecionada.tipo === 'venda' && <DollarSign size={20} />}
+                {solicitacaoSelecionada.tipo === 'cliente' && <UserPlus size={20} />}
+                {solicitacaoSelecionada.tipo === 'venda' && 'Solicitação de Nova Venda'}
+                {solicitacaoSelecionada.tipo === 'cliente' && 'Solicitação de Novo Cliente'}
+              </h2>
+              <button className="modal-close" onClick={() => { setSolicitacaoSelecionada(null); setRespostaAdmin(''); }}>
+                <X size={20} />
+              </button>
+            </div>
+            
+            <div className="modal-body">
+              {/* Info do Corretor */}
+              <div className="solicitacao-info-section">
+                <h4>Solicitante</h4>
+                <div className="info-row">
+                  <div className="corretor-avatar large">{solicitacaoSelecionada.corretor?.nome?.charAt(0) || 'C'}</div>
+                  <div>
+                    <p className="nome">{solicitacaoSelecionada.corretor?.nome}</p>
+                    <p className="email">{solicitacaoSelecionada.corretor?.email}</p>
+                  </div>
+                </div>
+                <p className="data-solicitacao">
+                  Solicitado em {new Date(solicitacaoSelecionada.created_at).toLocaleDateString('pt-BR', {
+                    day: '2-digit',
+                    month: 'long',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                  })}
+                </p>
+              </div>
+              
+              {/* Dados da Solicitação */}
+              <div className="solicitacao-info-section">
+                <h4>Dados da Solicitação</h4>
+                
+                {solicitacaoSelecionada.tipo === 'venda' && (
+                  <div className="dados-grid">
+                    <div className="dado-item">
+                      <span className="label">Cliente</span>
+                      <span className="value">{solicitacaoSelecionada.dados?.nome_cliente || '-'}</span>
+                    </div>
+                    <div className="dado-item">
+                      <span className="label">Empreendimento</span>
+                      <span className="value">
+                        {empreendimentos.find(e => e.id === solicitacaoSelecionada.dados?.empreendimento_id)?.nome || '-'}
+                      </span>
+                    </div>
+                    <div className="dado-item">
+                      <span className="label">Unidade</span>
+                      <span className="value">{solicitacaoSelecionada.dados?.unidade || '-'}</span>
+                    </div>
+                    <div className="dado-item">
+                      <span className="label">Bloco</span>
+                      <span className="value">{solicitacaoSelecionada.dados?.bloco || '-'}</span>
+                    </div>
+                    <div className="dado-item destaque">
+                      <span className="label">Valor da Venda</span>
+                      <span className="value gold">{formatCurrency(solicitacaoSelecionada.dados?.valor_venda || 0)}</span>
+                    </div>
+                    <div className="dado-item">
+                      <span className="label">Data da Venda</span>
+                      <span className="value">
+                        {solicitacaoSelecionada.dados?.data_venda 
+                          ? new Date(solicitacaoSelecionada.dados.data_venda).toLocaleDateString('pt-BR')
+                          : '-'}
+                      </span>
+                    </div>
+                  </div>
+                )}
+                
+                {solicitacaoSelecionada.tipo === 'cliente' && (
+                  <div className="dados-grid">
+                    <div className="dado-item">
+                      <span className="label">Nome Completo</span>
+                      <span className="value">{solicitacaoSelecionada.dados?.nome_completo || '-'}</span>
+                    </div>
+                    <div className="dado-item">
+                      <span className="label">CPF</span>
+                      <span className="value">{solicitacaoSelecionada.dados?.cpf || '-'}</span>
+                    </div>
+                    <div className="dado-item">
+                      <span className="label">Email</span>
+                      <span className="value">{solicitacaoSelecionada.dados?.email || '-'}</span>
+                    </div>
+                    <div className="dado-item">
+                      <span className="label">Telefone</span>
+                      <span className="value">{solicitacaoSelecionada.dados?.telefone || '-'}</span>
+                    </div>
+                    <div className="dado-item full">
+                      <span className="label">Endereço</span>
+                      <span className="value">{solicitacaoSelecionada.dados?.endereco || '-'}</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+              
+              {/* Resposta (se já respondida) */}
+              {solicitacaoSelecionada.status !== 'pendente' && (
+                <div className="solicitacao-info-section resposta">
+                  <h4>
+                    {solicitacaoSelecionada.status === 'aprovado' ? (
+                      <><CheckCircle2 size={16} className="icon-success" /> Aprovada</>
+                    ) : (
+                      <><XCircle size={16} className="icon-error" /> Reprovada</>
+                    )}
+                  </h4>
+                  <p className="resposta-texto">{solicitacaoSelecionada.resposta_admin}</p>
+                  <p className="resposta-info">
+                    Por {solicitacaoSelecionada.admin?.nome || 'Admin'} em{' '}
+                    {solicitacaoSelecionada.data_resposta 
+                      ? new Date(solicitacaoSelecionada.data_resposta).toLocaleDateString('pt-BR', {
+                          day: '2-digit',
+                          month: 'long',
+                          year: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })
+                      : '-'}
+                  </p>
+                </div>
+              )}
+              
+              {/* Área de Resposta (se pendente) */}
+              {solicitacaoSelecionada.status === 'pendente' && (
+                <div className="solicitacao-resposta-area">
+                  <div className="form-group">
+                    <label>
+                      <MessageSquare size={14} />
+                      Observação / Motivo (obrigatório para reprovação)
+                    </label>
+                    <textarea
+                      value={respostaAdmin}
+                      onChange={(e) => setRespostaAdmin(e.target.value)}
+                      placeholder="Digite uma observação ou o motivo da reprovação..."
+                      rows={3}
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+            
+            {/* Ações */}
+            {solicitacaoSelecionada.status === 'pendente' && (
+              <div className="modal-footer solicitacao-acoes">
+                <button 
+                  className="btn-reprovar"
+                  onClick={() => handleReprovarSolicitacao(solicitacaoSelecionada)}
+                  disabled={loading}
+                >
+                  <XCircle size={18} />
+                  Reprovar
+                </button>
+                <button 
+                  className="btn-aprovar"
+                  onClick={() => handleAprovarSolicitacao(solicitacaoSelecionada)}
+                  disabled={loading}
+                >
+                  <CheckCircle2 size={18} />
+                  Aprovar
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Modal de Visualização de Venda */}
       {showModal && modalType === 'visualizar-venda' && selectedItem && (
@@ -7295,6 +7811,44 @@ const AdminDashboard = () => {
                       value={empreendimentoForm.descricao}
                       onChange={(e) => setEmpreendimentoForm({...empreendimentoForm, descricao: e.target.value})}
                     />
+                  </div>
+
+                  {/* TOTAL DE UNIDADES */}
+                  <div className="form-group">
+                    <label>Total de Unidades</label>
+                    <input
+                      type="number"
+                      placeholder="Ex: 120"
+                      min="0"
+                      value={empreendimentoForm.total_unidades}
+                      onChange={(e) => setEmpreendimentoForm({...empreendimentoForm, total_unidades: e.target.value})}
+                    />
+                  </div>
+
+                  {/* PROGRESSO DA OBRA */}
+                  <div className="form-group">
+                    <label>Progresso da Obra: {empreendimentoForm.progresso_obra}%</label>
+                    <div className="progress-input-container">
+                      <input
+                        type="range"
+                        min="0"
+                        max="100"
+                        value={empreendimentoForm.progresso_obra}
+                        onChange={(e) => setEmpreendimentoForm({...empreendimentoForm, progresso_obra: e.target.value})}
+                        className="progress-slider"
+                      />
+                      <div className="progress-bar-preview">
+                        <div 
+                          className="progress-bar-fill"
+                          style={{ width: `${empreendimentoForm.progresso_obra}%` }}
+                        />
+                      </div>
+                      <div className="progress-labels">
+                        <span>0%</span>
+                        <span>50%</span>
+                        <span>100%</span>
+                      </div>
+                    </div>
                   </div>
 
                   {/* LOGO DO EMPREENDIMENTO */}

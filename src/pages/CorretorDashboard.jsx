@@ -8,12 +8,15 @@ import {
   Wallet, Target, Award, BarChart3,
   LayoutDashboard, Menu, X, ChevronLeft, ChevronRight, ChevronDown,
   Building, MapPin, CreditCard, Users, FileText, Eye, Phone, Mail,
-  Home, Percent, CalendarDays, BanknoteIcon, TrendingDown, ArrowUpRight
+  Home, Percent, CalendarDays, BanknoteIcon, TrendingDown, ArrowUpRight,
+  Plus, UserPlus, Send, ClipboardList, CheckCircle2, XCircle, AlertCircle,
+  Camera
 } from 'lucide-react'
 import logo from '../imgs/logo.png'
 import Ticker from '../components/Ticker'
 import '../styles/Dashboard.css'
 import '../styles/CorretorDashboard.css'
+import '../styles/EmpreendimentosPage.css'
 
 const CorretorDashboard = () => {
   const { user, userProfile, signOut } = useAuth()
@@ -54,10 +57,40 @@ const CorretorDashboard = () => {
   const [loadingClientes, setLoadingClientes] = useState(false)
   const [selectedEmpreendimento, setSelectedEmpreendimento] = useState(null)
   const [selectedCliente, setSelectedCliente] = useState(null)
+  
+  // Estados para solicitações
+  const [minhasSolicitacoes, setMinhasSolicitacoes] = useState([])
+  const [loadingSolicitacoes, setLoadingSolicitacoes] = useState(false)
+  const [showNovaVendaModal, setShowNovaVendaModal] = useState(false)
+  const [showNovoClienteModal, setShowNovoClienteModal] = useState(false)
+  const [message, setMessage] = useState({ type: '', text: '' })
+  const [todosClientes, setTodosClientes] = useState([])
+  
+  // Form de nova venda
+  const [novaVendaForm, setNovaVendaForm] = useState({
+    empreendimento_id: '',
+    cliente_id: '',
+    nome_cliente: '',
+    unidade: '',
+    bloco: '',
+    valor_venda: '',
+    data_venda: new Date().toISOString().split('T')[0]
+  })
+  
+  // Form de novo cliente
+  const [novoClienteForm, setNovoClienteForm] = useState({
+    nome_completo: '',
+    cpf: '',
+    email: '',
+    telefone: '',
+    endereco: ''
+  })
 
   useEffect(() => {
     if (user) {
       fetchVendas()
+      // Carregar solicitações para mostrar badge
+      fetchMinhasSolicitacoes()
     }
   }, [user])
 
@@ -69,7 +102,7 @@ const CorretorDashboard = () => {
 
   // Carregar dados quando mudar de aba
   useEffect(() => {
-    if (activeTab === 'empreendimentos' && empreendimentos.length === 0) {
+    if ((activeTab === 'empreendimentos' || activeTab === 'solicitacoes') && empreendimentos.length === 0) {
       fetchEmpreendimentos()
     }
     if (activeTab === 'pagamentos' && meusPagamentos.length === 0 && vendas.length > 0) {
@@ -237,11 +270,11 @@ const CorretorDashboard = () => {
     setLoading(true)
     
     try {
-      const { data, error } = await supabase
-        .from('vendas')
-        .select('*')
-        .eq('corretor_id', user.id)
-        .order('data_venda', { ascending: false })
+    const { data, error } = await supabase
+      .from('vendas')
+      .select('*')
+      .eq('corretor_id', user.id)
+      .order('data_venda', { ascending: false })
 
       if (error) {
         console.error('❌ Erro ao buscar vendas:', error)
@@ -301,6 +334,153 @@ const CorretorDashboard = () => {
     } catch (error) {
       console.error('❌ Erro crítico ao buscar vendas:', error)
       setVendas([])
+    } finally {
+    setLoading(false)
+    }
+  }
+
+  // Função para buscar minhas solicitações
+  const fetchMinhasSolicitacoes = async () => {
+    setLoadingSolicitacoes(true)
+    try {
+      const { data, error } = await supabase
+        .from('solicitacoes')
+        .select('*')
+        .eq('corretor_id', user.id)
+        .order('created_at', { ascending: false })
+      
+      if (error) throw error
+      setMinhasSolicitacoes(data || [])
+    } catch (error) {
+      console.error('Erro ao buscar solicitações:', error)
+    } finally {
+      setLoadingSolicitacoes(false)
+    }
+  }
+
+  // Função para buscar todos os clientes (para o select de nova venda)
+  const fetchTodosClientes = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('clientes')
+        .select('id, nome_completo, cpf')
+        .order('nome_completo')
+      
+      if (error) throw error
+      setTodosClientes(data || [])
+    } catch (error) {
+      console.error('Erro ao buscar clientes:', error)
+    }
+  }
+
+  // Carregar solicitações quando acessar a aba
+  useEffect(() => {
+    if (activeTab === 'solicitacoes' && user) {
+      fetchMinhasSolicitacoes()
+      fetchTodosClientes()
+    }
+  }, [activeTab, user])
+
+  // Limpar mensagem após 5 segundos
+  useEffect(() => {
+    if (message.text) {
+      const timer = setTimeout(() => {
+        setMessage({ type: '', text: '' })
+      }, 5000)
+      return () => clearTimeout(timer)
+    }
+  }, [message])
+
+  // Função para enviar solicitação de nova venda
+  const handleEnviarSolicitacaoVenda = async (e) => {
+    e.preventDefault()
+    
+    if (!novaVendaForm.empreendimento_id || !novaVendaForm.valor_venda) {
+      setMessage({ type: 'error', text: 'Preencha os campos obrigatórios' })
+      return
+    }
+    
+    try {
+      setLoading(true)
+      
+      // Buscar nome do cliente se selecionado
+      let nomeCliente = novaVendaForm.nome_cliente
+      if (novaVendaForm.cliente_id) {
+        const cliente = todosClientes.find(c => c.id === novaVendaForm.cliente_id)
+        if (cliente) nomeCliente = cliente.nome_completo
+      }
+      
+      const { error } = await supabase
+        .from('solicitacoes')
+        .insert([{
+          corretor_id: user.id,
+          tipo: 'venda',
+          status: 'pendente',
+          dados: {
+            ...novaVendaForm,
+            corretor_id: user.id,
+            nome_cliente: nomeCliente
+          }
+        }])
+      
+      if (error) throw error
+      
+      setMessage({ type: 'success', text: 'Solicitação de venda enviada! Aguarde aprovação do admin.' })
+      setShowNovaVendaModal(false)
+      setNovaVendaForm({
+        empreendimento_id: '',
+        cliente_id: '',
+        nome_cliente: '',
+        unidade: '',
+        bloco: '',
+        valor_venda: '',
+        data_venda: new Date().toISOString().split('T')[0]
+      })
+      fetchMinhasSolicitacoes()
+    } catch (error) {
+      console.error('Erro ao enviar solicitação:', error)
+      setMessage({ type: 'error', text: 'Erro ao enviar solicitação: ' + error.message })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Função para enviar solicitação de novo cliente
+  const handleEnviarSolicitacaoCliente = async (e) => {
+    e.preventDefault()
+    
+    if (!novoClienteForm.nome_completo || !novoClienteForm.cpf) {
+      setMessage({ type: 'error', text: 'Nome e CPF são obrigatórios' })
+      return
+    }
+    
+    try {
+      setLoading(true)
+      
+      const { error } = await supabase
+        .from('solicitacoes')
+        .insert([{
+          corretor_id: user.id,
+          tipo: 'cliente',
+          status: 'pendente',
+          dados: novoClienteForm
+        }])
+      
+      if (error) throw error
+      
+      setMessage({ type: 'success', text: 'Solicitação de cliente enviada! Aguarde aprovação do admin.' })
+      setShowNovoClienteModal(false)
+      setNovoClienteForm({
+        nome_completo: '',
+        cpf: '',
+        email: '',
+        telefone: '',
+        endereco: ''
+      })
+      fetchMinhasSolicitacoes()
+    } catch (error) {
+      console.error('Erro ao enviar solicitação:', error)
+      setMessage({ type: 'error', text: 'Erro ao enviar solicitação: ' + error.message })
     } finally {
       setLoading(false)
     }
@@ -701,6 +881,17 @@ const CorretorDashboard = () => {
             <FileText size={20} />
             <span>Relatórios</span>
           </button>
+          <button 
+            className={`nav-item ${activeTab === 'solicitacoes' ? 'active' : ''}`}
+            onClick={() => navigate('/corretor/solicitacoes')}
+            title="Solicitações"
+          >
+            <ClipboardList size={20} />
+            <span>Solicitações</span>
+            {minhasSolicitacoes.filter(s => s.status === 'pendente').length > 0 && (
+              <span className="nav-badge pendente">{minhasSolicitacoes.filter(s => s.status === 'pendente').length}</span>
+            )}
+          </button>
         </nav>
 
         <div className="sidebar-footer">
@@ -720,7 +911,7 @@ const CorretorDashboard = () => {
               <span className="user-role">
                 {userProfile?.tipo_corretor === 'interno' ? 'Interno' : 'Externo'}
               </span>
-            </div>
+          </div>
           </div>
           <button className="logout-btn" onClick={signOut} title="Sair">
             <LogOut size={20} />
@@ -746,26 +937,27 @@ const CorretorDashboard = () => {
             {activeTab === 'clientes' && 'Meus Clientes'}
             {activeTab === 'empreendimentos' && 'Empreendimentos'}
             {activeTab === 'relatorios' && 'Relatórios'}
+            {activeTab === 'solicitacoes' && 'Minhas Solicitações'}
           </h1>
-        </header>
+      </header>
 
         {/* Content Section */}
         <div className="content-section">
           {/* Dashboard Tab */}
           {activeTab === 'dashboard' && (
             <>
-              {/* Welcome Section */}
-              <section className="welcome-section">
-                <div className="welcome-content">
+      {/* Welcome Section */}
+      <section className="welcome-section">
+        <div className="welcome-content">
                   <h1>Bem-vindo, {capitalizeName(userProfile?.nome?.split(' ')[0] || 'Corretor')}</h1>
-                  <p>Acompanhe suas vendas e comissões</p>
-                </div>
-                <div className="tipo-badge">
-                  <span className={`badge-large ${userProfile?.tipo_corretor || 'externo'}`}>
+          <p>Acompanhe suas vendas e comissões</p>
+        </div>
+        <div className="tipo-badge">
+          <span className={`badge-large ${userProfile?.tipo_corretor || 'externo'}`}>
                     {userProfile?.tipo_corretor === 'interno' ? 'Interno' : 'Externo'}
-                  </span>
-                </div>
-              </section>
+          </span>
+        </div>
+      </section>
 
       {/* Stats Cards */}
       <section className="stats-section">
@@ -849,35 +1041,35 @@ const CorretorDashboard = () => {
 
           {/* Vendas Tab */}
           {activeTab === 'vendas' && (
-            <section className="vendas-section">
-              <div className="section-header-corretor">
-                <div className="period-filter">
-                  <button 
-                    className={periodo === 'todos' ? 'active' : ''} 
-                    onClick={() => setPeriodo('todos')}
-                  >
-                    Todas
-                  </button>
-                  <button 
-                    className={periodo === 'mes' ? 'active' : ''} 
-                    onClick={() => setPeriodo('mes')}
-                  >
-                    Este Mês
-                  </button>
-                  <button 
-                    className={periodo === 'ano' ? 'active' : ''} 
-                    onClick={() => setPeriodo('ano')}
-                  >
-                    Este Ano
-                  </button>
-                </div>
-              </div>
+      <section className="vendas-section">
+        <div className="section-header-corretor">
+          <div className="period-filter">
+            <button 
+              className={periodo === 'todos' ? 'active' : ''} 
+              onClick={() => setPeriodo('todos')}
+            >
+              Todas
+            </button>
+            <button 
+              className={periodo === 'mes' ? 'active' : ''} 
+              onClick={() => setPeriodo('mes')}
+            >
+              Este Mês
+            </button>
+            <button 
+              className={periodo === 'ano' ? 'active' : ''} 
+              onClick={() => setPeriodo('ano')}
+            >
+              Este Ano
+            </button>
+          </div>
+        </div>
 
-              {loading ? (
-                <div className="loading-container">
-                  <div className="loading-spinner-large"></div>
-                  <p>Carregando suas vendas...</p>
-                </div>
+        {loading ? (
+          <div className="loading-container">
+            <div className="loading-spinner-large"></div>
+            <p>Carregando suas vendas...</p>
+          </div>
               ) : (
                 <>
                   {/* Resumo de Comissões */}
@@ -929,17 +1121,17 @@ const CorretorDashboard = () => {
 
                   {/* Lista de Vendas */}
                   {filteredVendas.length === 0 ? (
-                    <div className="empty-state">
-                      <DollarSign size={48} />
-                      <h3>Nenhuma venda encontrada</h3>
-                      <p>Suas vendas aparecerão aqui quando forem registradas</p>
-                    </div>
-                  ) : (
-                    <div className="vendas-list">
-                      {filteredVendas.map((venda) => (
-                        <div key={venda.id} className="venda-card">
-                          <div className="venda-main">
-                            <div className="venda-info">
+          <div className="empty-state">
+            <DollarSign size={48} />
+            <h3>Nenhuma venda encontrada</h3>
+            <p>Suas vendas aparecerão aqui quando forem registradas</p>
+          </div>
+        ) : (
+          <div className="vendas-list">
+            {filteredVendas.map((venda) => (
+              <div key={venda.id} className="venda-card">
+                <div className="venda-main">
+                  <div className="venda-info">
                               <h4>
                                 {(() => {
                                   // Montar título: Unidade Bloco Nome Cliente
@@ -968,7 +1160,7 @@ const CorretorDashboard = () => {
                                   return partes.join(' • ')
                                 })()}
                               </h4>
-                              <div className="venda-meta">
+                    <div className="venda-meta">
                                 {venda.empreendimento_nome && (
                                   <span className="venda-empreendimento">
                                     <Building size={12} />
@@ -985,25 +1177,25 @@ const CorretorDashboard = () => {
                                     {venda.andar && venda.andar}
                                   </span>
                                 )}
-                                <span className="venda-date">
-                                  <Calendar size={14} />
-                                  {new Date(venda.data_venda).toLocaleDateString('pt-BR')}
-                                </span>
-                                <span className={`status-tag ${venda.status}`}>
-                                  {venda.status === 'pago' ? (
-                                    <>
-                                      <CheckCircle size={12} />
-                                      Pago
-                                    </>
-                                  ) : (
-                                    <>
-                                      <Clock size={12} />
-                                      Pendente
-                                    </>
-                                  )}
-                                </span>
-                              </div>
-                            </div>
+                      <span className="venda-date">
+                        <Calendar size={14} />
+                        {new Date(venda.data_venda).toLocaleDateString('pt-BR')}
+                      </span>
+                      <span className={`status-tag ${venda.status}`}>
+                        {venda.status === 'pago' ? (
+                          <>
+                            <CheckCircle size={12} />
+                            Pago
+                          </>
+                        ) : (
+                          <>
+                            <Clock size={12} />
+                            Pendente
+                          </>
+                        )}
+                      </span>
+                    </div>
+                  </div>
                             
                             {/* Botão Ver mais */}
                             <div className="venda-expand-btn-wrapper">
@@ -1019,17 +1211,17 @@ const CorretorDashboard = () => {
                               </button>
                             </div>
 
-                            <div className="venda-values">
-                              <div className="venda-valor">
-                                <span className="label">Valor da Venda</span>
-                                <span className="value">{formatCurrency(venda.valor_venda)}</span>
-                              </div>
-                              <div className="venda-comissao">
+                  <div className="venda-values">
+                    <div className="venda-valor">
+                      <span className="label">Valor da Venda</span>
+                      <span className="value">{formatCurrency(venda.valor_venda)}</span>
+                    </div>
+                    <div className="venda-comissao">
                                 <span className="label">Sua Comissão ({percentualCorretor}%)</span>
-                                <span className="value highlight">{formatCurrency(venda.comissao_corretor)}</span>
-                              </div>
-                            </div>
-                          </div>
+                      <span className="value highlight">{formatCurrency(venda.comissao_corretor)}</span>
+                    </div>
+                  </div>
+                </div>
 
                           {/* Seção expandida com detalhes dos pagamentos */}
                           {vendaExpandida === venda.id && (
@@ -1141,13 +1333,13 @@ const CorretorDashboard = () => {
                               )}
                             </div>
                           )}
-                        </div>
-                      ))}
-                    </div>
+              </div>
+            ))}
+          </div>
                   )}
                 </>
-              )}
-            </section>
+        )}
+      </section>
           )}
 
           {/* Relatórios Tab */}
@@ -1374,51 +1566,92 @@ const CorretorDashboard = () => {
                   <p>Os empreendimentos disponíveis aparecerão aqui</p>
                 </div>
               ) : (
-                <div className="empreendimentos-grid">
-                  {empreendimentos.map(emp => (
-                    <div key={emp.id} className="empreendimento-card-corretor">
-                      <div className="emp-card-image">
-                        {emp.foto_fachada ? (
-                          <img src={emp.foto_fachada} alt={emp.nome} />
-                        ) : (
-                          <div className="emp-placeholder">
-                            <Building size={48} />
-                          </div>
-                        )}
-                        {emp.logo_url && (
-                          <img src={emp.logo_url} alt="Logo" className="emp-logo-overlay" />
-                        )}
-                      </div>
-                      <div className="emp-card-content">
-                        <h3>{emp.nome}</h3>
-                        {emp.endereco && (
-                          <div className="emp-endereco">
-                            <MapPin size={14} />
-                            <span>{emp.endereco}</span>
-                          </div>
-                        )}
-                        <div className="emp-stats">
-                          <div className="emp-stat">
-                            <Home size={14} />
-                            <span>{emp.total_unidades || 0} unidades</span>
-                          </div>
-                          {emp.percentual_comissao && (
-                            <div className="emp-stat">
-                              <Percent size={14} />
-                              <span>{emp.percentual_comissao}% comissão</span>
+                <div className="emp-cards-grid">
+                  {empreendimentos.map(emp => {
+                    // Calcular estatísticas do empreendimento
+                    const vendasEmp = vendas.filter(v => v.empreendimento_id === emp.id)
+                    const totalVendasEmp = vendasEmp.length
+                    const valorTotalVendas = vendasEmp.reduce((acc, v) => acc + (parseFloat(v.valor_venda) || 0), 0)
+                    
+                    return (
+                      <div key={emp.id} className="emp-card-premium">
+                        {/* Imagem de Fachada */}
+                        <div className="emp-card-image">
+                          {emp.foto_fachada ? (
+                            <img src={emp.foto_fachada} alt={emp.nome} />
+                          ) : (
+                            <div className="emp-placeholder">
+                              <Building size={48} />
                             </div>
                           )}
+                          {emp.logo_url && (
+                            <img src={emp.logo_url} alt="Logo" className="emp-logo-overlay" />
+                          )}
+                          <div className="emp-card-overlay">
+                            <h3 className="emp-card-title">{emp.nome}</h3>
+                            <div className="emp-card-badges">
+                              {emp.sienge_enterprise_id && (
+                                <span className="emp-badge sienge">SIENGE</span>
+                              )}
+                              <span className="emp-badge ativo">ATIVO</span>
+                            </div>
+                          </div>
                         </div>
-                        <button 
-                          className="btn-ver-detalhes"
-                          onClick={() => setSelectedEmpreendimento(emp)}
-                        >
-                          <Eye size={16} />
-                          Ver Detalhes
-                        </button>
+                        
+                        {/* Conteúdo do Card */}
+                        <div className="emp-card-content">
+                          {/* Unidades */}
+                          <div className="emp-commission-rates">
+                            <div className="emp-rate-box unidades">
+                              <span className="emp-rate-label">Nº Unidades</span>
+                              <span className="emp-rate-value">{emp.total_unidades || 0}</span>
+                            </div>
+                            <div className="emp-rate-box vendidas">
+                              <span className="emp-rate-label">Vendidas</span>
+                              <span className="emp-rate-value">{totalVendasEmp}</span>
+                            </div>
+                          </div>
+                          
+                          {/* Progresso da Obra */}
+                          <div className="emp-progress-section">
+                            <div className="emp-progress-header">
+                              <span className="emp-progress-label">Progresso da Obra</span>
+                              <span className="emp-progress-value">{emp.progresso_obra || 0}%</span>
+                            </div>
+                            <div className="emp-progress-bar">
+                              <div 
+                                className="emp-progress-fill"
+                                style={{ width: `${emp.progresso_obra || 0}%` }}
+                              />
+                            </div>
+                          </div>
+                          
+                          {/* Estatísticas */}
+                          <div className="emp-card-stats">
+                            <div className="emp-mini-stat">
+                              <span className="emp-mini-stat-label">Minhas Vendas</span>
+                              <span className="emp-mini-stat-value">{totalVendasEmp}</span>
+                            </div>
+                            <div className="emp-mini-stat">
+                              <span className="emp-mini-stat-label">Volume</span>
+                              <span className="emp-mini-stat-value gold">{formatCurrency(valorTotalVendas)}</span>
+                            </div>
+                          </div>
+                          
+                          {/* Ações */}
+                          <div className="emp-card-actions">
+                            <button 
+                              className="emp-action-btn view"
+                              onClick={() => setSelectedEmpreendimento(emp)}
+                              title="Visualizar detalhes"
+                            >
+                              <Eye size={16} />
+                            </button>
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    )
+                  })}
                 </div>
               )}
             </section>
@@ -1528,7 +1761,312 @@ const CorretorDashboard = () => {
               </div>
             </section>
           )}
+
+          {/* Solicitações Tab */}
+          {activeTab === 'solicitacoes' && (
+            <section className="solicitacoes-section">
+              {/* Mensagem de feedback */}
+              {message.text && (
+                <div className={`message-alert ${message.type}`}>
+                  {message.type === 'success' ? <CheckCircle2 size={18} /> : <AlertCircle size={18} />}
+                  {message.text}
+                </div>
+              )}
+              
+              {/* Ações */}
+              <div className="solicitacoes-acoes-header">
+                <h3>Registrar Nova Solicitação</h3>
+                <div className="acoes-btns">
+                  <button 
+                    className="btn-nova-solicitacao venda"
+                    onClick={() => setShowNovaVendaModal(true)}
+                  >
+                    <DollarSign size={18} />
+                    Registrar Venda
+                  </button>
+                  <button 
+                    className="btn-nova-solicitacao cliente"
+                    onClick={() => setShowNovoClienteModal(true)}
+                  >
+                    <UserPlus size={18} />
+                    Cadastrar Cliente
+                  </button>
+                </div>
+              </div>
+
+              {/* Lista de Minhas Solicitações */}
+              <div className="minhas-solicitacoes">
+                <h3>Minhas Solicitações</h3>
+                
+                {loadingSolicitacoes ? (
+                  <div className="loading-container">
+                    <div className="loading-spinner"></div>
+                    <p>Carregando...</p>
+                  </div>
+                ) : minhasSolicitacoes.length === 0 ? (
+                  <div className="empty-state-box">
+                    <ClipboardList size={48} />
+                    <h3>Nenhuma solicitação</h3>
+                    <p>Suas solicitações de vendas e clientes aparecerão aqui</p>
+                  </div>
+                ) : (
+                  <div className="solicitacoes-lista">
+                    {minhasSolicitacoes.map(sol => (
+                      <div key={sol.id} className={`solicitacao-item ${sol.status}`}>
+                        <div className="sol-icon">
+                          {sol.tipo === 'venda' ? <DollarSign size={20} /> : <UserPlus size={20} />}
+                        </div>
+                        <div className="sol-info">
+                          <div className="sol-tipo">
+                            {sol.tipo === 'venda' ? 'Venda' : 'Cliente'}
+                          </div>
+                          <div className="sol-dados">
+                            {sol.tipo === 'venda' ? (
+                              <>
+                                <span>{sol.dados?.nome_cliente || 'Cliente não informado'}</span>
+                                <span className="sol-valor">{formatCurrency(sol.dados?.valor_venda || 0)}</span>
+                              </>
+                            ) : (
+                              <>
+                                <span>{sol.dados?.nome_completo || 'Nome não informado'}</span>
+                                <span className="sol-cpf">{sol.dados?.cpf || ''}</span>
+                              </>
+                            )}
+                          </div>
+                          <div className="sol-data">
+                            {new Date(sol.created_at).toLocaleDateString('pt-BR', {
+                              day: '2-digit',
+                              month: 'short',
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })}
+                          </div>
+                        </div>
+                        <div className="sol-status-container">
+                          <span className={`sol-status ${sol.status}`}>
+                            {sol.status === 'pendente' && <><Clock size={14} /> Aguardando</>}
+                            {sol.status === 'aprovado' && <><CheckCircle2 size={14} /> Aprovada</>}
+                            {sol.status === 'reprovado' && <><XCircle size={14} /> Reprovada</>}
+                          </span>
+                          {sol.resposta_admin && (
+                            <p className="sol-resposta">{sol.resposta_admin}</p>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </section>
+          )}
         </div>
+
+        {/* Modal Nova Venda */}
+        {showNovaVendaModal && (
+          <div className="modal-overlay" onClick={() => setShowNovaVendaModal(false)}>
+            <div className="modal-content" onClick={e => e.stopPropagation()}>
+              <div className="modal-header">
+                <h2><DollarSign size={20} /> Solicitar Registro de Venda</h2>
+                <button className="close-btn" onClick={() => setShowNovaVendaModal(false)}>
+                  <X size={20} />
+                </button>
+              </div>
+              <form onSubmit={handleEnviarSolicitacaoVenda}>
+                <div className="modal-body">
+                  <p className="modal-info">
+                    <AlertCircle size={16} />
+                    Sua solicitação será enviada para aprovação do administrador
+                  </p>
+                  
+                  <div className="form-group">
+                    <label>Empreendimento *</label>
+                    <select
+                      value={novaVendaForm.empreendimento_id}
+                      onChange={(e) => setNovaVendaForm({...novaVendaForm, empreendimento_id: e.target.value})}
+                      required
+                    >
+                      <option value="">Selecione...</option>
+                      {empreendimentos.map(emp => (
+                        <option key={emp.id} value={emp.id}>{emp.nome}</option>
+                      ))}
+                    </select>
+                  </div>
+                  
+                  <div className="form-group">
+                    <label>Cliente</label>
+                    <select
+                      value={novaVendaForm.cliente_id}
+                      onChange={(e) => {
+                        const clienteId = e.target.value
+                        const cliente = todosClientes.find(c => c.id === clienteId)
+                        setNovaVendaForm({
+                          ...novaVendaForm, 
+                          cliente_id: clienteId,
+                          nome_cliente: cliente ? cliente.nome_completo : ''
+                        })
+                      }}
+                    >
+                      <option value="">Selecione ou digite abaixo...</option>
+                      {todosClientes.map(cliente => (
+                        <option key={cliente.id} value={cliente.id}>
+                          {cliente.nome_completo} - {cliente.cpf}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  
+                  <div className="form-group">
+                    <label>Nome do Cliente (se não cadastrado)</label>
+                    <input
+                      type="text"
+                      value={novaVendaForm.nome_cliente}
+                      onChange={(e) => setNovaVendaForm({...novaVendaForm, nome_cliente: e.target.value})}
+                      placeholder="Nome completo do cliente"
+                    />
+                  </div>
+                  
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label>Unidade</label>
+                      <input
+                        type="text"
+                        value={novaVendaForm.unidade}
+                        onChange={(e) => setNovaVendaForm({...novaVendaForm, unidade: e.target.value})}
+                        placeholder="Ex: 101"
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>Bloco</label>
+                      <input
+                        type="text"
+                        value={novaVendaForm.bloco}
+                        onChange={(e) => setNovaVendaForm({...novaVendaForm, bloco: e.target.value})}
+                        placeholder="Ex: A"
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label>Valor da Venda *</label>
+                      <input
+                        type="number"
+                        value={novaVendaForm.valor_venda}
+                        onChange={(e) => setNovaVendaForm({...novaVendaForm, valor_venda: e.target.value})}
+                        placeholder="0,00"
+                        step="0.01"
+                        required
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>Data da Venda</label>
+                      <input
+                        type="date"
+                        value={novaVendaForm.data_venda}
+                        onChange={(e) => setNovaVendaForm({...novaVendaForm, data_venda: e.target.value})}
+                      />
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="modal-footer">
+                  <button type="button" className="btn-secondary" onClick={() => setShowNovaVendaModal(false)}>
+                    Cancelar
+                  </button>
+                  <button type="submit" className="btn-primary" disabled={loading}>
+                    <Send size={16} />
+                    {loading ? 'Enviando...' : 'Enviar Solicitação'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* Modal Novo Cliente */}
+        {showNovoClienteModal && (
+          <div className="modal-overlay" onClick={() => setShowNovoClienteModal(false)}>
+            <div className="modal-content" onClick={e => e.stopPropagation()}>
+              <div className="modal-header">
+                <h2><UserPlus size={20} /> Solicitar Cadastro de Cliente</h2>
+                <button className="close-btn" onClick={() => setShowNovoClienteModal(false)}>
+                  <X size={20} />
+                </button>
+              </div>
+              <form onSubmit={handleEnviarSolicitacaoCliente}>
+                <div className="modal-body">
+                  <p className="modal-info">
+                    <AlertCircle size={16} />
+                    Sua solicitação será enviada para aprovação do administrador
+                  </p>
+                  
+                  <div className="form-group">
+                    <label>Nome Completo *</label>
+                    <input
+                      type="text"
+                      value={novoClienteForm.nome_completo}
+                      onChange={(e) => setNovoClienteForm({...novoClienteForm, nome_completo: e.target.value})}
+                      placeholder="Nome completo"
+                      required
+                    />
+                  </div>
+                  
+                  <div className="form-group">
+                    <label>CPF *</label>
+                    <input
+                      type="text"
+                      value={novoClienteForm.cpf}
+                      onChange={(e) => setNovoClienteForm({...novoClienteForm, cpf: e.target.value})}
+                      placeholder="000.000.000-00"
+                      required
+                    />
+                  </div>
+                  
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label>Email</label>
+                      <input
+                        type="email"
+                        value={novoClienteForm.email}
+                        onChange={(e) => setNovoClienteForm({...novoClienteForm, email: e.target.value})}
+                        placeholder="email@exemplo.com"
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>Telefone</label>
+                      <input
+                        type="tel"
+                        value={novoClienteForm.telefone}
+                        onChange={(e) => setNovoClienteForm({...novoClienteForm, telefone: e.target.value})}
+                        placeholder="(00) 00000-0000"
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="form-group">
+                    <label>Endereço</label>
+                    <input
+                      type="text"
+                      value={novoClienteForm.endereco}
+                      onChange={(e) => setNovoClienteForm({...novoClienteForm, endereco: e.target.value})}
+                      placeholder="Endereço completo"
+                    />
+                  </div>
+                </div>
+                
+                <div className="modal-footer">
+                  <button type="button" className="btn-secondary" onClick={() => setShowNovoClienteModal(false)}>
+                    Cancelar
+                  </button>
+                  <button type="submit" className="btn-primary" disabled={loading}>
+                    <Send size={16} />
+                    {loading ? 'Enviando...' : 'Enviar Solicitação'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
 
         {/* Modal Cliente Detalhes */}
         {selectedCliente && (
@@ -1587,60 +2125,118 @@ const CorretorDashboard = () => {
         )}
 
         {/* Modal Empreendimento Detalhes */}
-        {selectedEmpreendimento && (
-          <div className="modal-overlay" onClick={() => setSelectedEmpreendimento(null)}>
-            <div className="modal-content modal-large" onClick={e => e.stopPropagation()}>
-              <div className="modal-header">
-                <h2>{selectedEmpreendimento.nome}</h2>
-                <button className="close-btn" onClick={() => setSelectedEmpreendimento(null)}>
-                  <X size={20} />
-                </button>
-              </div>
-              <div className="modal-body">
-                {selectedEmpreendimento.foto_fachada && (
-                  <div className="emp-modal-image">
-                    <img src={selectedEmpreendimento.foto_fachada} alt={selectedEmpreendimento.nome} />
-                  </div>
-                )}
-
-                <div className="emp-modal-info">
-                  {selectedEmpreendimento.endereco && (
-                    <div className="info-row">
-                      <MapPin size={16} />
-                      <span>{selectedEmpreendimento.endereco}</span>
+        {selectedEmpreendimento && (() => {
+          const vendasEmp = vendas.filter(v => v.empreendimento_id === selectedEmpreendimento.id)
+          const totalVendasEmp = vendasEmp.length
+          const valorTotalVendas = vendasEmp.reduce((acc, v) => acc + (parseFloat(v.valor_venda) || 0), 0)
+          const comissaoTotal = vendasEmp.reduce((acc, v) => acc + (parseFloat(v.comissao_corretor) || 0), 0)
+          
+          return (
+            <div className="modal-overlay" onClick={() => setSelectedEmpreendimento(null)}>
+              <div className="modal-content modal-large emp-view-modal" onClick={e => e.stopPropagation()}>
+                {/* Header com Imagem */}
+                <div className="emp-view-header">
+                  {selectedEmpreendimento.foto_fachada ? (
+                    <img 
+                      src={selectedEmpreendimento.foto_fachada} 
+                      alt={selectedEmpreendimento.nome}
+                      className="emp-view-fachada"
+                    />
+                  ) : (
+                    <div className="emp-view-placeholder">
+                      <Building size={80} />
                     </div>
                   )}
-                  
-                  <div className="emp-modal-stats">
-                    <div className="emp-modal-stat">
-                      <Home size={20} />
-                      <div>
-                        <span className="stat-label">Total de Unidades</span>
-                        <span className="stat-value">{selectedEmpreendimento.total_unidades || 0}</span>
-                      </div>
-                    </div>
-                    {selectedEmpreendimento.percentual_comissao && (
-                      <div className="emp-modal-stat">
-                        <Percent size={20} />
-                        <div>
-                          <span className="stat-label">Comissão</span>
-                          <span className="stat-value">{selectedEmpreendimento.percentual_comissao}%</span>
-                        </div>
-                      </div>
+                  <div className="emp-view-header-overlay">
+                    {selectedEmpreendimento.logo_url && (
+                      <img 
+                        src={selectedEmpreendimento.logo_url} 
+                        alt={`Logo ${selectedEmpreendimento.nome}`}
+                        className="emp-view-logo"
+                      />
                     )}
+                    <h2 className="emp-view-title">{selectedEmpreendimento.nome}</h2>
+                    <div className="emp-view-badges">
+                      {selectedEmpreendimento.sienge_enterprise_id && (
+                        <span className="emp-badge sienge">SIENGE</span>
+                      )}
+                      <span className="emp-badge ativo">ATIVO</span>
+                    </div>
                   </div>
+                  <button className="emp-view-close" onClick={() => setSelectedEmpreendimento(null)}>
+                    <X size={24} />
+                  </button>
+                </div>
 
+                {/* Conteúdo */}
+                <div className="emp-view-content">
+                  {/* Descrição */}
                   {selectedEmpreendimento.descricao && (
-                    <div className="emp-modal-descricao">
-                      <h4>Descrição</h4>
+                    <div className="emp-view-section">
+                      <h3>Sobre o Empreendimento</h3>
                       <p>{selectedEmpreendimento.descricao}</p>
                     </div>
                   )}
+
+                  {/* Unidades */}
+                  <div className="emp-view-section">
+                    <h3>Unidades</h3>
+                    <div className="emp-view-comissoes">
+                      <div className="emp-view-comissao-box">
+                        <span className="label">Total de Unidades</span>
+                        <span className="value">{selectedEmpreendimento.total_unidades || 0}</span>
+                      </div>
+                      <div className="emp-view-comissao-box">
+                        <span className="label">Unidades Vendidas</span>
+                        <span className="value green">{totalVendasEmp}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Progresso da Obra */}
+                  <div className="emp-view-section">
+                    <h3>Progresso da Obra</h3>
+                    <div className="emp-progress-bar large">
+                      <div 
+                        className="emp-progress-fill"
+                        style={{ width: `${selectedEmpreendimento.progresso_obra || 0}%` }}
+                      />
+                    </div>
+                    <span className="emp-progress-text">{selectedEmpreendimento.progresso_obra || 0}% concluído</span>
+                  </div>
+
+                  {/* Minhas Estatísticas */}
+                  <div className="emp-view-section">
+                    <h3>Minhas Estatísticas</h3>
+                    <div className="emp-view-stats-grid">
+                      <div className="emp-view-stat-card">
+                        <span className="stat-icon"><DollarSign size={24} /></span>
+                        <div className="stat-info">
+                          <span className="stat-value gold">{totalVendasEmp}</span>
+                          <span className="stat-label">Vendas Realizadas</span>
+                        </div>
+                      </div>
+                      <div className="emp-view-stat-card">
+                        <span className="stat-icon"><TrendingUp size={24} /></span>
+                        <div className="stat-info">
+                          <span className="stat-value">{formatCurrency(valorTotalVendas)}</span>
+                          <span className="stat-label">Volume de Vendas</span>
+                        </div>
+                      </div>
+                      <div className="emp-view-stat-card">
+                        <span className="stat-icon"><Wallet size={24} /></span>
+                        <div className="stat-info">
+                          <span className="stat-value green">{formatCurrency(comissaoTotal)}</span>
+                          <span className="stat-label">Minha Comissão</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        )}
+          )
+        })()}
       </main>
     </div>
   )

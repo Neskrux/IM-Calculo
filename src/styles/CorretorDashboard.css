@@ -4543,6 +4543,267 @@
   max-width: 300px;
 }
 
+/* =============================================
+   SOLICITAÇÕES - CORRETOR
+   ============================================= */
+
+.solicitacoes-section {
+  padding: 0;
+}
+
+.message-alert {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 18px;
+  border-radius: 10px;
+  margin-bottom: 20px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.message-alert.success {
+  background: rgba(16, 185, 129, 0.15);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  color: #10b981;
+}
+
+.message-alert.error {
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #ef4444;
+}
+
+.solicitacoes-acoes-header {
+  background: var(--bg-card);
+  border: 1px solid var(--border-default);
+  border-radius: 16px;
+  padding: 24px;
+  margin-bottom: 24px;
+}
+
+.solicitacoes-acoes-header h3 {
+  margin: 0 0 16px;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.acoes-btns {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.btn-nova-solicitacao {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 24px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  border: none;
+}
+
+.btn-nova-solicitacao.venda {
+  background: linear-gradient(135deg, var(--accent-primary), #8b7355);
+  color: #0a0a0a;
+}
+
+.btn-nova-solicitacao.venda:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 20px rgba(201, 169, 98, 0.4);
+}
+
+.btn-nova-solicitacao.cliente {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-muted);
+  color: var(--accent-primary);
+}
+
+.btn-nova-solicitacao.cliente:hover {
+  background: rgba(201, 169, 98, 0.1);
+  border-color: var(--accent-primary);
+}
+
+.minhas-solicitacoes {
+  background: var(--bg-card);
+  border: 1px solid var(--border-default);
+  border-radius: 16px;
+  padding: 24px;
+}
+
+.minhas-solicitacoes h3 {
+  margin: 0 0 20px;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.solicitacoes-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.solicitacao-item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.solicitacao-item::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  border-radius: 12px 0 0 12px;
+  background: var(--accent-yellow);
+}
+
+.solicitacao-item.aprovado::before {
+  background: #10b981;
+}
+
+.solicitacao-item.reprovado::before {
+  background: #ef4444;
+}
+
+.solicitacao-item:hover {
+  border-color: var(--border-muted);
+}
+
+.sol-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  background: rgba(201, 169, 98, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent-primary);
+  flex-shrink: 0;
+}
+
+.sol-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.sol-tipo {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--accent-primary);
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.sol-dados {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.sol-dados span {
+  font-size: 14px;
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.sol-valor {
+  color: var(--accent-primary) !important;
+  font-weight: 700 !important;
+}
+
+.sol-cpf {
+  color: var(--text-muted) !important;
+  font-size: 13px !important;
+}
+
+.sol-data {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+.sol-status-container {
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.sol-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.sol-status.pendente {
+  background: rgba(245, 158, 11, 0.15);
+  color: #f59e0b;
+}
+
+.sol-status.aprovado {
+  background: rgba(16, 185, 129, 0.15);
+  color: #10b981;
+}
+
+.sol-status.reprovado {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+}
+
+.sol-resposta {
+  margin: 8px 0 0;
+  font-size: 12px;
+  color: var(--text-secondary);
+  max-width: 200px;
+  line-height: 1.4;
+}
+
+/* Modal Info */
+.modal-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  background: rgba(201, 169, 98, 0.1);
+  border: 1px solid rgba(201, 169, 98, 0.2);
+  border-radius: 8px;
+  color: var(--accent-primary);
+  font-size: 13px;
+  margin-bottom: 20px;
+}
+
+/* Form Row */
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+/* Badge pendente na nav */
+.nav-badge.pendente {
+  background: var(--accent-yellow);
+  color: #0a0a0a;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .clientes-grid,
@@ -4561,5 +4822,29 @@
 
   .modal-large {
     max-width: 100%;
+  }
+
+  .acoes-btns {
+    flex-direction: column;
+  }
+
+  .btn-nova-solicitacao {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+
+  .solicitacao-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .sol-status-container {
+    text-align: left;
+    width: 100%;
   }
 }

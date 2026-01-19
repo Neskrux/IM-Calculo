@@ -375,6 +375,85 @@
   color: #34d399;
 }
 
+.emp-rate-box.unidades .emp-rate-value {
+  color: var(--emp-gold);
+}
+
+.emp-rate-box.vendidas .emp-rate-value {
+  color: #34d399;
+}
+
+/* ================================================
+   PROGRESSO DA OBRA
+   ================================================ */
+
+.emp-progress-section {
+  margin-bottom: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--emp-border);
+}
+
+.emp-progress-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.emp-progress-label {
+  font-size: 11px;
+  color: var(--emp-text-subtle);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 500;
+}
+
+.emp-progress-value {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--emp-gold);
+}
+
+.emp-progress-bar {
+  height: 6px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.emp-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--emp-gold) 0%, #d4b982 100%);
+  border-radius: 3px;
+  transition: width 0.5s ease;
+  position: relative;
+}
+
+.emp-progress-fill::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.2) 50%,
+    transparent 100%
+  );
+  animation: progressShine 2s infinite;
+}
+
+@keyframes progressShine {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
 /* Estatísticas - Grid Limpo */
 .emp-card-stats {
   display: grid;
@@ -1089,6 +1168,71 @@
   background: rgba(201, 169, 98, 0.15);
 }
 
+/* Grid de Estatísticas */
+.emp-view-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.emp-view-stat-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+}
+
+.emp-view-stat-card .stat-icon {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(201, 169, 98, 0.1);
+  border-radius: 10px;
+  color: #c9a962;
+}
+
+.emp-view-stat-card .stat-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.emp-view-stat-card .stat-value {
+  font-size: 18px;
+  font-weight: 700;
+  color: #f5f5f5;
+}
+
+.emp-view-stat-card .stat-value.gold {
+  color: #c9a962;
+}
+
+.emp-view-stat-card .stat-value.green {
+  color: #34d399;
+}
+
+.emp-view-stat-card .stat-label {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+/* Barra de Progresso Grande */
+.emp-progress-bar.large {
+  height: 12px;
+  border-radius: 6px;
+  margin-bottom: 8px;
+}
+
+.emp-progress-text {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.6);
+}
+
 /* Responsividade do Modal */
 @media (max-width: 768px) {
   .emp-view-modal {
@@ -1114,6 +1258,10 @@
   
   .emp-view-stats {
     grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .emp-view-stats-grid {
+    grid-template-columns: 1fr;
   }
   
   .emp-view-footer {

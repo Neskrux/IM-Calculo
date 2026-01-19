@@ -201,8 +201,28 @@ const Login = () => {
         return
       }
 
-      // Login bem sucedido!
-      // O redirect acontece automaticamente pelo AuthContext/App.jsx
+      // Login bem sucedido! Buscar tipo do usuário para redirecionar
+      const { data: userProfile } = await supabase
+        .from('usuarios')
+        .select('tipo')
+        .eq('id', data.user.id)
+        .maybeSingle()
+      
+      // Determinar URL de redirecionamento
+      let url = '/dashboard'
+      if (userProfile?.tipo === 'admin') {
+        url = '/admin/dashboard'
+      } else if (userProfile?.tipo === 'corretor') {
+        url = '/corretor/dashboard'
+      } else if (userProfile?.tipo === 'cliente') {
+        url = '/cliente/dashboard'
+      }
+      
+      // Salvar dados da transição no sessionStorage (App.jsx vai detectar e mostrar)
+      const transitionData = JSON.stringify({ redirectUrl: url })
+      console.log('🎬 Login: Salvando transição', transitionData)
+      sessionStorage.setItem('im-login-transition', transitionData)
+      
       setLoading(false)
       
     } catch (err) {
@@ -376,9 +396,7 @@ const Login = () => {
 
         {/* Footer */}
         <div className="login-footer">
-          <span>© 2024 IM Incorporadora</span>
-          <span className="separator">•</span>
-          <span>Todos os direitos reservados</span>
+          <span>Desenvolvido por IM Tecnologia @ 2025</span>
         </div>
       </div>
 
