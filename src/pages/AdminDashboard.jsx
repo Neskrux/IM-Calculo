@@ -17,6 +17,8 @@ import EmpreendimentoGaleria from '../components/EmpreendimentoGaleria'
 // import CadastrarCorretores from '../components/CadastrarCorretores'
 // import ImportarVendas from '../components/ImportarVendas'
 import '../styles/Dashboard.css'
+import '../styles/EmpreendimentosPage.css'
+import { LayoutGrid, List } from 'lucide-react'
 
 const AdminDashboard = () => {
   const { userProfile, signOut, loading: authLoading } = useAuth()
@@ -72,10 +74,11 @@ const AdminDashboard = () => {
     corretor: '',
     empreendimento: '',
     status: 'todos',
-    cliente: '',
-    unidade: '',
+    bloco: '',
     dataInicio: '',
-    dataFim: ''
+    dataFim: '',
+    valorMin: '',
+    valorMax: ''
   })
   
   // Filtros para Pagamentos
@@ -104,6 +107,9 @@ const AdminDashboard = () => {
     busca: ''
   })
   
+  // Visualização de Empreendimentos (grid ou lista)
+  const [empViewMode, setEmpViewMode] = useState('grid')
+  
   // Filtros para Clientes
   const [filtrosClientes, setFiltrosClientes] = useState({
     busca: '',
@@ -127,14 +133,9 @@ const AdminDashboard = () => {
   const [cargoExpandido, setCargoExpandido] = useState(null) // Formato: "empreendimentoId-cargoId"
   const [cargosExpandidos, setCargosExpandidos] = useState({}) // Formato: { "empreendimentoId-externo": true, "empreendimentoId-interno": false }
   const [galeriaAberta, setGaleriaAberta] = useState(null) // ID do empreendimento com galeria aberta
+  const [empreendimentoVisualizar, setEmpreendimentoVisualizar] = useState(null) // Empreendimento para visualização detalhada
   const [clientes, setClientes] = useState([])
   const [uploadingDoc, setUploadingDoc] = useState(false)
-  
-  // Estados para histórico de comissões
-  const [historicoComissoes, setHistoricoComissoes] = useState([])
-  const [showHistoricoModal, setShowHistoricoModal] = useState(false)
-  const [motivoAlteracao, setMotivoAlteracao] = useState('')
-  const [cargosAlterados, setCargosAlterados] = useState([]) // Lista de cargos que tiveram % alterado
   
   // Estados para relatórios
   const [relatorioFiltros, setRelatorioFiltros] = useState({
@@ -409,13 +410,6 @@ const AdminDashboard = () => {
   }
 
   // Calcular comissão detalhada por cargo para um pagamento específico
-  /**
-   * Calcula comissão por cargo para um pagamento específico
-   * 
-   * FÓRMULA CORRETA DO FATOR DE COMISSÃO:
-   *   fatorCargo = (valorVenda × percentualCargo) / proSoluto
-   *   comissaoCargo = valorParcela × fatorCargo
-   */
   const calcularComissaoPorCargoPagamento = (pagamento) => {
     if (!pagamento?.venda_id) return []
     
@@ -432,39 +426,28 @@ const AdminDashboard = () => {
     const cargosDoTipo = emp.cargos.filter(c => c.tipo_corretor === tipoCorretor)
     
     const valorPagamento = parseFloat(pagamento.valor) || 0
-    const valorVenda = parseFloat(venda.valor_venda) || 0
-    const valorProSoluto = parseFloat(venda.valor_pro_soluto) || 0
     
-    // USAR A COMISSÃO JÁ CALCULADA E SALVA NO PAGAMENTO (se disponível e correta)
-    // A comissao_gerada deve ter sido calculada com o FATOR correto
+    // USAR A COMISSÃO JÁ CALCULADA E SALVA NO PAGAMENTO
+    // A comissao_gerada já foi calculada corretamente na importação como: valorParcela * (percentualTotal / 100)
     let comissaoTotalParcela = parseFloat(pagamento.comissao_gerada) || 0
     
-    // Se não houver comissao_gerada salva ou se precisa recalcular, usar FATOR CORRETO
-    if (comissaoTotalParcela === 0 && valorVenda > 0 && valorProSoluto > 0) {
+    // Se não houver comissao_gerada salva, calcular usando o percentual total de comissão
+    if (comissaoTotalParcela === 0) {
       // Calcular percentual total dos cargos
       const percentualTotal = cargosDoTipo.reduce((acc, c) => acc + (parseFloat(c.percentual) || 0), 0)
-      // FÓRMULA CORRETA: fator = (valorVenda × percentual) / proSoluto
-      const fatorComissao = (valorVenda * (percentualTotal / 100)) / valorProSoluto
+      const fatorComissao = percentualTotal / 100
       comissaoTotalParcela = valorPagamento * fatorComissao
     }
     
-    // Calcular percentual total dos cargos para distribuição proporcional
+    // Calcular percentual total dos cargos para distribuição
     const percentualTotal = cargosDoTipo.reduce((acc, c) => acc + (parseFloat(c.percentual) || 0), 0)
     
-    // Distribuir entre os cargos usando FATOR por cargo
+    // Distribuir entre os cargos proporcionalmente
     return cargosDoTipo.map(cargo => {
       const percentualCargo = parseFloat(cargo.percentual) || 0
-      
-      let valorComissaoCargo = 0
-      if (valorVenda > 0 && valorProSoluto > 0) {
-        // FÓRMULA CORRETA: fatorCargo = (valorVenda × percentualCargo) / proSoluto
-        const fatorCargo = (valorVenda * (percentualCargo / 100)) / valorProSoluto
-        valorComissaoCargo = valorPagamento * fatorCargo
-      } else {
-        // Fallback: distribuir proporcionalmente a comissão salva
-        const proporcaoCargo = percentualTotal > 0 ? percentualCargo / percentualTotal : 0
-        valorComissaoCargo = comissaoTotalParcela * proporcaoCargo
-      }
+      // Proporção deste cargo no total
+      const proporcaoCargo = percentualTotal > 0 ? percentualCargo / percentualTotal : 0
+      const valorComissaoCargo = comissaoTotalParcela * proporcaoCargo
       
       return {
         nome_cargo: cargo.nome_cargo,
@@ -629,11 +612,34 @@ const AdminDashboard = () => {
         tipoIdPagamento: pagamentosData?.[0]?.venda_id ? typeof pagamentosData[0].venda_id : 'N/A'
       })
 */
-      // Associar cargos aos empreendimentos manualmente
-      const empreendimentosComCargos = (empreendimentosData || []).map(emp => ({
-        ...emp,
-        cargos: (cargosData || []).filter(c => c.empreendimento_id === emp.id)
-      }))
+      // Buscar fotos de fachada para cada empreendimento
+      const { data: fotosData } = await supabase
+        .from('empreendimento_fotos')
+        .select('empreendimento_id, url, categoria, destaque, ordem')
+        .in('categoria', ['fachada', 'logo'])
+        .order('destaque', { ascending: false })
+        .order('ordem', { ascending: true })
+
+      // Associar cargos e fotos aos empreendimentos
+      const empreendimentosComCargos = (empreendimentosData || []).map(emp => {
+        // Buscar foto de fachada (prioridade: destaque > primeira)
+        const fotosFachada = (fotosData || []).filter(f => f.empreendimento_id === emp.id && f.categoria === 'fachada')
+        const fotoFachada = fotosFachada.find(f => f.destaque) || fotosFachada[0]
+        
+        // Buscar logo (se não tiver logo_url no empreendimento)
+        let logoUrl = emp.logo_url
+        if (!logoUrl) {
+          const fotosLogo = (fotosData || []).filter(f => f.empreendimento_id === emp.id && f.categoria === 'logo')
+          logoUrl = fotosLogo[0]?.url || null
+        }
+        
+        return {
+          ...emp,
+          cargos: (cargosData || []).filter(c => c.empreendimento_id === emp.id),
+          fachada_url: fotoFachada?.url || null,
+          logo_url: logoUrl
+        }
+      })
 
       // Associar dados relacionados às vendas manualmente
       const vendasComRelacionamentos = (vendasData || []).map(venda => {
@@ -900,13 +906,9 @@ const AdminDashboard = () => {
     // Pro-soluto = sinal + entrada + balões
     const valorProSoluto = valorSinal + valorEntradaTotal + valorTotalBalao
     
-    // FÓRMULA CORRETA DO FATOR DE COMISSÃO:
-    // fator = (valorVenda × percentualTotal) / proSoluto
-    // Este fator será aplicado sobre cada parcela para calcular a comissão
-    let fatorComissao = 0
-    if (valorProSoluto > 0 && valorVenda > 0) {
-      fatorComissao = (valorVenda * (comissoesDinamicas.percentualTotal / 100)) / valorProSoluto
-    }
+    // Fator de comissão = Percentual total de comissão / 100
+    // Ex: 7% -> 0.07, então parcela de R$ 1.000 x 0.07 = R$ 70 de comissão
+    const fatorComissao = comissoesDinamicas.percentualTotal / 100
     
     // Calcular comissão do corretor
     const comissaoCorretor = calcularComissaoCorretor(comissoesDinamicas, vendaForm.corretor_id, valorVenda)
@@ -1000,10 +1002,7 @@ const AdminDashboard = () => {
         .eq('venda_id', vendaId)
       
       // Recriar pagamentos com novos valores
-      // FÓRMULA CORRETA: comissao = parcela × fator
-      // O fator já foi calculado como: (valorVenda × percentual) / proSoluto
       const pagamentos = []
-      const percentualTotal = comissoesDinamicas.percentualTotal
       
       // Sinal
       if (valorSinal > 0) {
@@ -1012,9 +1011,7 @@ const AdminDashboard = () => {
           tipo: 'sinal',
           valor: valorSinal,
           data_prevista: vendaForm.data_venda,
-          comissao_gerada: valorSinal * fatorComissao,
-          fator_comissao_aplicado: fatorComissao,
-          percentual_comissao_total: percentualTotal
+          comissao_gerada: valorSinal * fatorComissao
         })
       }
 
@@ -1027,9 +1024,7 @@ const AdminDashboard = () => {
             tipo: 'entrada',
             valor: valorEntradaAvista,
             data_prevista: vendaForm.data_venda,
-            comissao_gerada: valorEntradaAvista * fatorComissao,
-            fator_comissao_aplicado: fatorComissao,
-            percentual_comissao_total: percentualTotal
+            comissao_gerada: valorEntradaAvista * fatorComissao
           })
         }
       }
@@ -1060,9 +1055,7 @@ const AdminDashboard = () => {
                 numero_parcela: numeroParcela,
                 valor: valor,
                 data_prevista: dataParcela.toISOString().split('T')[0],
-                comissao_gerada: valor * fatorComissao,
-                fator_comissao_aplicado: fatorComissao,
-                percentual_comissao_total: percentualTotal
+                comissao_gerada: valor * fatorComissao
               })
               numeroParcela++
             }
@@ -1092,9 +1085,7 @@ const AdminDashboard = () => {
                 tipo: 'balao',
                 numero_parcela: numeroBalao,
                 valor: valor,
-                comissao_gerada: valor * fatorComissao,
-                fator_comissao_aplicado: fatorComissao,
-                percentual_comissao_total: percentualTotal
+                comissao_gerada: valor * fatorComissao
               })
               numeroBalao++
             }
@@ -1125,10 +1116,8 @@ const AdminDashboard = () => {
       }
 
       // Criar pagamentos pro-soluto
-      // FÓRMULA CORRETA: comissao = parcela × fator
-      // O fator já foi calculado como: (valorVenda × percentual) / proSoluto
+      // Fórmula: Comissão da Parcela = Valor da Parcela × Fcom
       const pagamentos = []
-      const percentualTotal = comissoesDinamicas.percentualTotal
       
       // Sinal
       if (valorSinal > 0) {
@@ -1137,9 +1126,7 @@ const AdminDashboard = () => {
           tipo: 'sinal',
           valor: valorSinal,
           data_prevista: vendaForm.data_venda,
-          comissao_gerada: valorSinal * fatorComissao,
-          fator_comissao_aplicado: fatorComissao,
-          percentual_comissao_total: percentualTotal
+          comissao_gerada: valorSinal * fatorComissao
         })
       }
 
@@ -1152,9 +1139,7 @@ const AdminDashboard = () => {
             tipo: 'entrada',
             valor: valorEntradaAvista,
             data_prevista: vendaForm.data_venda,
-            comissao_gerada: valorEntradaAvista * fatorComissao,
-            fator_comissao_aplicado: fatorComissao,
-            percentual_comissao_total: percentualTotal
+            comissao_gerada: valorEntradaAvista * fatorComissao
           })
         }
       }
@@ -1185,9 +1170,7 @@ const AdminDashboard = () => {
                 numero_parcela: numeroParcela,
                 valor: valor,
                 data_prevista: dataParcela.toISOString().split('T')[0],
-                comissao_gerada: valor * fatorComissao,
-                fator_comissao_aplicado: fatorComissao,
-                percentual_comissao_total: percentualTotal
+                comissao_gerada: valor * fatorComissao
               })
               numeroParcela++
             }
@@ -1217,9 +1200,7 @@ const AdminDashboard = () => {
                 tipo: 'balao',
                 numero_parcela: numeroBalao,
                 valor: valor,
-                comissao_gerada: valor * fatorComissao,
-                fator_comissao_aplicado: fatorComissao,
-                percentual_comissao_total: percentualTotal
+                comissao_gerada: valor * fatorComissao
               })
               numeroBalao++
             }
@@ -1460,7 +1441,6 @@ const AdminDashboard = () => {
 
     try {
       let empreendimentoId = selectedItem?.id
-      const cargosAntigos = selectedItem?.cargos || []
 
       if (selectedItem) {
         // Atualizar empreendimento existente
@@ -1477,26 +1457,16 @@ const AdminDashboard = () => {
 
         if (error) throw new Error(error.message)
 
-        // === UPSERT INTELIGENTE COM HISTÓRICO ===
-        // Processar cargos externos
-        const cargosExternoValidos = empreendimentoForm.cargos_externo.filter(c => c.nome_cargo && c.percentual)
-        await processarCargosComHistorico(
-          empreendimentoId, 
-          'externo', 
-          cargosExternoValidos, 
-          cargosAntigos.filter(c => c.tipo_corretor === 'externo'),
-          motivoAlteracao
-        )
-
-        // Processar cargos internos
-        const cargosInternoValidos = empreendimentoForm.cargos_interno.filter(c => c.nome_cargo && c.percentual)
-        await processarCargosComHistorico(
-          empreendimentoId, 
-          'interno', 
-          cargosInternoValidos, 
-          cargosAntigos.filter(c => c.tipo_corretor === 'interno'),
-          motivoAlteracao
-        )
+        // Deletar cargos antigos PRIMEIRO
+        const { error: deleteError } = await supabase
+          .from('cargos_empreendimento')
+          .delete()
+          .eq('empreendimento_id', selectedItem.id)
+        
+        if (deleteError) {
+          console.error('Erro ao deletar cargos antigos:', deleteError)
+          throw new Error('Erro ao atualizar cargos: ' + deleteError.message)
+        }
 
       } else {
         // Criar novo empreendimento
@@ -1514,53 +1484,47 @@ const AdminDashboard = () => {
 
         if (error) throw new Error(error.message)
         empreendimentoId = data.id
+      }
 
-        // Inserir cargos EXTERNOS (novos)
-        const cargosExternoValidos = empreendimentoForm.cargos_externo.filter(c => c.nome_cargo && c.percentual)
-        if (cargosExternoValidos.length > 0) {
-          const cargosData = cargosExternoValidos.map((cargo, idx) => ({
-            empreendimento_id: empreendimentoId,
-            tipo_corretor: 'externo',
-            nome_cargo: cargo.nome_cargo,
-            percentual: parseFloat(cargo.percentual),
-            ordem: idx,
-            ativo: true,
-            vigente_desde: new Date().toISOString().split('T')[0]
-          }))
+      // Inserir cargos EXTERNOS
+      const cargosExternoValidos = empreendimentoForm.cargos_externo.filter(c => c.nome_cargo && c.percentual)
+      if (cargosExternoValidos.length > 0) {
+        const cargosData = cargosExternoValidos.map((cargo, idx) => ({
+          empreendimento_id: empreendimentoId,
+          tipo_corretor: 'externo',
+          nome_cargo: cargo.nome_cargo,
+          percentual: parseFloat(cargo.percentual),
+          ordem: idx
+        }))
 
-          const { error: cargosError } = await supabase
-            .from('cargos_empreendimento')
-            .insert(cargosData)
+        const { error: cargosError } = await supabase
+          .from('cargos_empreendimento')
+          .insert(cargosData)
 
-          if (cargosError) throw new Error(cargosError.message)
-        }
+        if (cargosError) throw new Error(cargosError.message)
+      }
 
-        // Inserir cargos INTERNOS (novos)
-        const cargosInternoValidos = empreendimentoForm.cargos_interno.filter(c => c.nome_cargo && c.percentual)
-        if (cargosInternoValidos.length > 0) {
-          const cargosData = cargosInternoValidos.map((cargo, idx) => ({
-            empreendimento_id: empreendimentoId,
-            tipo_corretor: 'interno',
-            nome_cargo: cargo.nome_cargo,
-            percentual: parseFloat(cargo.percentual),
-            ordem: idx,
-            ativo: true,
-            vigente_desde: new Date().toISOString().split('T')[0]
-          }))
+      // Inserir cargos INTERNOS
+      const cargosInternoValidos = empreendimentoForm.cargos_interno.filter(c => c.nome_cargo && c.percentual)
+      if (cargosInternoValidos.length > 0) {
+        const cargosData = cargosInternoValidos.map((cargo, idx) => ({
+          empreendimento_id: empreendimentoId,
+          tipo_corretor: 'interno',
+          nome_cargo: cargo.nome_cargo,
+          percentual: parseFloat(cargo.percentual),
+          ordem: idx
+        }))
 
-          const { error: cargosError } = await supabase
-            .from('cargos_empreendimento')
-            .insert(cargosData)
+        const { error: cargosError } = await supabase
+          .from('cargos_empreendimento')
+          .insert(cargosData)
 
-          if (cargosError) throw new Error(cargosError.message)
-        }
+        if (cargosError) throw new Error(cargosError.message)
       }
 
       setSaving(false)
       setShowModal(false)
       setSelectedItem(null)
-      setMotivoAlteracao('') // Limpar motivo
-      setCargosAlterados([]) // Limpar lista de alterados
       fetchData()
       setMessage({ type: 'success', text: `Empreendimento ${selectedItem ? 'atualizado' : 'criado'} com sucesso!` })
       setTimeout(() => setMessage({ type: '', text: '' }), 3000)
@@ -1571,193 +1535,64 @@ const AdminDashboard = () => {
     }
   }
 
-  /**
-   * Processa cargos com upsert inteligente e histórico
-   * - Atualiza cargos existentes (se % mudou, gera histórico via trigger)
-   * - Cria novos cargos
-   * - Desativa cargos removidos (soft delete)
-   */
-  const processarCargosComHistorico = async (empreendimentoId, tipoCorretor, cargosNovos, cargosAntigos, motivo) => {
-    const userId = perfil?.id || null
-
-    // Mapear cargos antigos por nome para fácil lookup
-    const mapaAntigos = {}
-    cargosAntigos.forEach(c => {
-      mapaAntigos[c.nome_cargo.toLowerCase()] = c
-    })
-
-    // Processar cada cargo novo
-    for (let idx = 0; idx < cargosNovos.length; idx++) {
-      const cargoNovo = cargosNovos[idx]
-      const nomeNormalizado = cargoNovo.nome_cargo.toLowerCase()
-      const cargoAntigo = mapaAntigos[nomeNormalizado]
-
-      if (cargoAntigo) {
-        // Cargo existe - verificar se precisa atualizar
-        const percentualAntigo = parseFloat(cargoAntigo.percentual)
-        const percentualNovo = parseFloat(cargoNovo.percentual)
-
-        if (percentualAntigo !== percentualNovo || !cargoAntigo.ativo) {
-          // Percentual mudou ou cargo estava inativo - ATUALIZAR
-          // O trigger no banco vai gerar o histórico automaticamente
-          const { error } = await supabase
-            .from('cargos_empreendimento')
-            .update({
-              percentual: percentualNovo,
-              ordem: idx,
-              ativo: true,
-              updated_by: userId
-            })
-            .eq('id', cargoAntigo.id)
-
-          if (error) {
-            console.error('Erro ao atualizar cargo:', error)
-            throw new Error(`Erro ao atualizar cargo ${cargoNovo.nome_cargo}: ${error.message}`)
-          }
-
-          // Se tiver motivo, registrar separadamente
-          if (motivo && percentualAntigo !== percentualNovo) {
-            await supabase
-              .from('cargos_empreendimento_historico')
-              .update({ motivo })
-              .eq('cargo_id', cargoAntigo.id)
-              .is('motivo', null)
-              .order('alterado_em', { ascending: false })
-              .limit(1)
-          }
-        }
-
-        // Remover do mapa (cargo processado)
-        delete mapaAntigos[nomeNormalizado]
-
-      } else {
-        // Cargo novo - INSERIR
-        const { error } = await supabase
-          .from('cargos_empreendimento')
-          .insert({
-            empreendimento_id: empreendimentoId,
-            tipo_corretor: tipoCorretor,
-            nome_cargo: cargoNovo.nome_cargo,
-            percentual: parseFloat(cargoNovo.percentual),
-            ordem: idx,
-            ativo: true,
-            vigente_desde: new Date().toISOString().split('T')[0],
-            updated_by: userId
-          })
-
-        if (error) {
-          console.error('Erro ao inserir cargo:', error)
-          throw new Error(`Erro ao criar cargo ${cargoNovo.nome_cargo}: ${error.message}`)
-        }
-      }
-    }
-
-    // Cargos restantes no mapa = foram removidos - SOFT DELETE
-    for (const nomeNormalizado in mapaAntigos) {
-      const cargoRemovido = mapaAntigos[nomeNormalizado]
-      
-      const { error } = await supabase
-        .from('cargos_empreendimento')
-        .update({
-          ativo: false,
-          vigente_ate: new Date().toISOString().split('T')[0],
-          updated_by: userId
-        })
-        .eq('id', cargoRemovido.id)
-
-      if (error) {
-        console.error('Erro ao desativar cargo:', error)
-      }
-    }
-  }
-
-  /**
-   * Buscar histórico de alterações de um empreendimento
-   */
-  const buscarHistoricoComissoes = async (empreendimentoId) => {
-    const { data, error } = await supabase
-      .from('cargos_empreendimento_historico')
-      .select('*')
-      .eq('empreendimento_id', empreendimentoId)
-      .order('alterado_em', { ascending: false })
-      .limit(50)
-
-    if (error) {
-      console.error('Erro ao buscar histórico:', error)
-      return []
-    }
-
-    return data || []
-  }
-
-  /**
-   * Abrir modal de histórico para um empreendimento
-   */
-  const abrirHistoricoEmpreendimento = async (empreendimento) => {
-    const historico = await buscarHistoricoComissoes(empreendimento.id)
-    setHistoricoComissoes(historico)
-    setSelectedItem(empreendimento)
-    setShowHistoricoModal(true)
-  }
-
-  /**
-   * Detectar se algum cargo teve percentual alterado
-   */
-  const detectarAlteracoes = () => {
-    if (!selectedItem?.cargos) return []
-
-    const alterados = []
-    const cargosAntigos = selectedItem.cargos || []
-
-    // Verificar externos
-    empreendimentoForm.cargos_externo.forEach(cargoNovo => {
-      const antigo = cargosAntigos.find(a => 
-        a.nome_cargo.toLowerCase() === cargoNovo.nome_cargo.toLowerCase() && 
-        a.tipo_corretor === 'externo'
-      )
-      if (antigo && parseFloat(antigo.percentual) !== parseFloat(cargoNovo.percentual)) {
-        alterados.push({
-          nome: cargoNovo.nome_cargo,
-          tipo: 'externo',
-          de: antigo.percentual,
-          para: cargoNovo.percentual
-        })
-      }
-    })
-
-    // Verificar internos
-    empreendimentoForm.cargos_interno.forEach(cargoNovo => {
-      const antigo = cargosAntigos.find(a => 
-        a.nome_cargo.toLowerCase() === cargoNovo.nome_cargo.toLowerCase() && 
-        a.tipo_corretor === 'interno'
-      )
-      if (antigo && parseFloat(antigo.percentual) !== parseFloat(cargoNovo.percentual)) {
-        alterados.push({
-          nome: cargoNovo.nome_cargo,
-          tipo: 'interno',
-          de: antigo.percentual,
-          para: cargoNovo.percentual
-        })
-      }
-    })
-
-    return alterados
-  }
-
   const handleDeleteEmpreendimento = async (emp) => {
-    if (confirm(`Tem certeza que deseja excluir o empreendimento ${emp.nome}?`)) {
+    // Verificar se há corretores vinculados a este empreendimento
+    const { data: corretoresVinculados, error: errorCheck } = await supabase
+      .from('usuarios')
+      .select('id, nome')
+      .eq('empreendimento_id', emp.id)
+    
+    if (errorCheck) {
+      setMessage({ type: 'error', text: 'Erro ao verificar vínculos: ' + errorCheck.message })
+      return
+    }
+
+    if (corretoresVinculados && corretoresVinculados.length > 0) {
+      const nomes = corretoresVinculados.slice(0, 5).map(c => c.nome).join(', ')
+      const maisTexto = corretoresVinculados.length > 5 ? ` e mais ${corretoresVinculados.length - 5} outros` : ''
+      
+      setMessage({ 
+        type: 'error', 
+        text: `Não é possível excluir "${emp.nome}". Existem ${corretoresVinculados.length} corretor(es) vinculado(s): ${nomes}${maisTexto}. Desvincule os corretores primeiro.`
+      })
+      setTimeout(() => setMessage({ type: '', text: '' }), 8000)
+      return
+    }
+
+    // Verificar se há vendas vinculadas
+    const { data: vendasVinculadas, error: errorVendas } = await supabase
+      .from('vendas')
+      .select('id')
+      .eq('empreendimento_id', emp.id)
+      .limit(1)
+    
+    if (vendasVinculadas && vendasVinculadas.length > 0) {
+      setMessage({ 
+        type: 'error', 
+        text: `Não é possível excluir "${emp.nome}". Existem vendas registradas neste empreendimento.`
+      })
+      setTimeout(() => setMessage({ type: '', text: '' }), 5000)
+      return
+    }
+
+    if (confirm(`Tem certeza que deseja excluir o empreendimento "${emp.nome}"?\n\nEsta ação não pode ser desfeita.`)) {
       const { error } = await supabase
         .from('empreendimentos')
         .delete()
         .eq('id', emp.id)
       
       if (error) {
-        setMessage({ type: 'error', text: 'Erro ao excluir: ' + error.message })
+        // Mensagem mais amigável para erros de FK
+        if (error.message.includes('foreign key') || error.message.includes('violates')) {
+          setMessage({ type: 'error', text: `Não é possível excluir "${emp.nome}". Existem registros vinculados a este empreendimento.` })
+        } else {
+          setMessage({ type: 'error', text: 'Erro ao excluir: ' + error.message })
+        }
         return
       }
       
       fetchData()
-      setMessage({ type: 'success', text: 'Empreendimento excluído!' })
+      setMessage({ type: 'success', text: 'Empreendimento excluído com sucesso!' })
       setTimeout(() => setMessage({ type: '', text: '' }), 3000)
     }
   }
@@ -1908,14 +1743,8 @@ const AdminDashboard = () => {
       : 0
     
     const valorProSoluto = valorSinal + valorEntradaTotal + valorTotalBalao
-    
-    // FÓRMULA CORRETA DO FATOR DE COMISSÃO:
-    // fator = (valorVenda × percentualTotal) / proSoluto
-    let fatorComissao = 0
-    if (valorProSoluto > 0 && valorVenda > 0) {
-      fatorComissao = (valorVenda * (comissoesDinamicas.percentualTotal / 100)) / valorProSoluto
-    }
-    const percentualTotal = comissoesDinamicas.percentualTotal
+    // Fator de comissão = Percentual total / 100
+    const fatorComissao = comissoesDinamicas.percentualTotal / 100
     
     // Calcular e atualizar comissão do corretor na venda se não estiver preenchida
     const comissaoCorretor = calcularComissaoCorretor(comissoesDinamicas, venda.corretor_id, valorVenda)
@@ -1939,9 +1768,7 @@ const AdminDashboard = () => {
         tipo: 'sinal',
         valor: valorSinal,
         data_prevista: venda.data_venda,
-        comissao_gerada: valorSinal * fatorComissao,
-        fator_comissao_aplicado: fatorComissao,
-        percentual_comissao_total: percentualTotal
+        comissao_gerada: valorSinal * fatorComissao
       })
     }
 
@@ -1954,9 +1781,7 @@ const AdminDashboard = () => {
           tipo: 'entrada',
           valor: valorEntradaAvista,
           data_prevista: venda.data_venda,
-          comissao_gerada: valorEntradaAvista * fatorComissao,
-          fator_comissao_aplicado: fatorComissao,
-          percentual_comissao_total: percentualTotal
+          comissao_gerada: valorEntradaAvista * fatorComissao
         })
       }
     }
@@ -1976,9 +1801,7 @@ const AdminDashboard = () => {
           numero_parcela: i,
           valor: valorParcelaEnt,
           data_prevista: dataParcela.toISOString().split('T')[0],
-          comissao_gerada: valorParcelaEnt * fatorComissao,
-          fator_comissao_aplicado: fatorComissao,
-          percentual_comissao_total: percentualTotal
+          comissao_gerada: valorParcelaEnt * fatorComissao
         })
       }
     }
@@ -1993,9 +1816,7 @@ const AdminDashboard = () => {
           tipo: 'balao',
           numero_parcela: i,
           valor: valorBalaoUnit,
-          comissao_gerada: valorBalaoUnit * fatorComissao,
-          fator_comissao_aplicado: fatorComissao,
-          percentual_comissao_total: percentualTotal
+          comissao_gerada: valorBalaoUnit * fatorComissao
         })
       }
     }
@@ -2963,46 +2784,24 @@ const AdminDashboard = () => {
       
       // Para cada venda
       dadosFiltrados.forEach((grupo, idx) => {
-        const venda = grupo.venda
-        
-        // Calcular altura estimada que esta venda vai ocupar:
-        // - Cabeçalho da venda: 18px
-        // - Linha cliente/corretor: 10px
-        // - Gap: 14px
-        // - Cabeçalho da tabela: ~10px
-        // - Cada linha da tabela: ~8px
-        // - Espaçamento após tabela: ~15px
-        const numParcelas = grupo.pagamentos.length
-        const alturaEstimada = 18 + 10 + 14 + 10 + (numParcelas * 8) + 15
-        
-        // Margem de segurança: garantir que toda a venda caiba
-        // Altura útil da página = 297 - margem inferior (20)
-        const alturaDisponivel = 277 - yPosition
-        
-        // Se não cabe, pula para nova página ANTES de começar a venda
-        if (alturaEstimada > alturaDisponivel && yPosition > 55) {
+        // Verificar se precisa nova página
+        if (yPosition > 250) {
           doc.addPage()
           yPosition = 20
         }
+        
+        const venda = grupo.venda
         const corretor = venda?.corretor?.nome || venda?.nome_corretor || 'N/A'
         const empreendimento = venda?.empreendimento?.nome || 'N/A'
         const unidade = venda?.unidade || venda?.numero_unidade || '-'
+        const bloco = venda?.bloco || venda?.numero_bloco || '-'
         const cliente = venda?.nome_cliente || venda?.cliente?.nome_completo || venda?.cliente?.nome || 'Cliente não informado'
         const dataVenda = venda?.data_venda ? new Date(venda.data_venda).toLocaleDateString('pt-BR') : (venda?.data_emissao ? new Date(venda.data_emissao).toLocaleDateString('pt-BR') : '-')
         const valorVenda = parseFloat(venda?.valor_venda) || parseFloat(venda?.valor_venda_total) || 0
         
-        // Calcular comissão da venda - filtrar por cargo ou percentual do corretor
+        // Calcular comissão da venda - usar percentual do corretor se filtrado
         let comissaoVenda = 0
-        if (relatorioFiltros.cargoId) {
-          // Se tem filtro por cargo, calcular apenas comissão daquele cargo
-          grupo.pagamentos.forEach(pag => {
-            const comissoesCargo = calcularComissaoPorCargoPagamento(pag)
-            const cargoEncontrado = comissoesCargo.find(c => c.nome_cargo === relatorioFiltros.cargoId)
-            if (cargoEncontrado) {
-              comissaoVenda += cargoEncontrado.valor
-            }
-          })
-        } else if (percentualCorretorTotais !== null) {
+        if (percentualCorretorTotais !== null) {
           // Recalcular usando percentual do corretor
           comissaoVenda = grupo.pagamentos.reduce((acc, p) => {
             const valorParcela = parseFloat(p.valor) || 0
@@ -3022,7 +2821,7 @@ const AdminDashboard = () => {
         doc.text(`${empreendimento}`, 18, yPosition + 6)
         doc.setFontSize(9)
         doc.setFont('helvetica', 'normal')
-        doc.text(`Unidade: ${unidade} | Data: ${dataVenda}`, 18, yPosition + 13)
+        doc.text(`Bloco: ${bloco} | Unidade: ${unidade} | Data: ${dataVenda}`, 18, yPosition + 13)
         
         // Valores à direita
         doc.setFontSize(9)
@@ -3079,35 +2878,15 @@ const AdminDashboard = () => {
           // Formatar percentual com 2 casas decimais
           const percentualComissao = percentualUsado.toFixed(2)
           
-          // Formatar tipo de pagamento - PRIORIDADE: pag.tipo (campo correto do banco)
-          const tipoPagamento = pag.tipo || pag.tipo_pagamento || 'parcela'
-          const numeroParcela = pag.numero_parcela || ''
-          
-          // Mapear tipo para exibição legível
-          let tipoFormatado = ''
-          switch (tipoPagamento) {
-            case 'sinal':
-              tipoFormatado = 'Sinal'
-              break
-            case 'entrada':
-              tipoFormatado = 'Entrada'
-              break
-            case 'parcela_entrada':
-              tipoFormatado = numeroParcela ? `Parcela ${numeroParcela}` : 'Parc. Entrada'
-              break
-            case 'balao':
-              tipoFormatado = numeroParcela ? `Balão ${numeroParcela}` : 'Balão'
-              break
-            case 'financiamento':
-              tipoFormatado = 'Financ.'
-              break
-            case 'mensal':
-              tipoFormatado = numeroParcela ? `Mensal ${numeroParcela}` : 'Mensal'
-              break
-            default:
-              // Capitalizar primeira letra
-              tipoFormatado = tipoPagamento.charAt(0).toUpperCase() + tipoPagamento.slice(1).replace('_', ' ')
-          }
+          // Formatar tipo de pagamento
+          const tipoFormatado = {
+            'sinal': 'Sinal',
+            'entrada': 'Entrada',
+            'parcela_entrada': 'Parc. Entrada',
+            'balao': 'Balão',
+            'financiamento': 'Financ.',
+            'mensal': 'Mensal'
+          }[pag.tipo_pagamento || pag.tipo] || (pag.tipo_pagamento || pag.tipo || '-').charAt(0).toUpperCase() + (pag.tipo_pagamento || pag.tipo || '').slice(1)
           
           return [
             tipoFormatado,
@@ -3119,9 +2898,6 @@ const AdminDashboard = () => {
           ]
         })
         
-        // Largura total disponível = pageWidth - 28 (margem 14 de cada lado)
-        const larguraTotal = pageWidth - 28
-        
         autoTable(doc, {
           startY: yPosition,
           head: [['Tipo', 'Data', 'Valor Parcela', 'Status', '% Comissão', 'Comissão']],
@@ -3131,32 +2907,24 @@ const AdminDashboard = () => {
             fillColor: corSecundaria,
             textColor: 255,
             fontStyle: 'bold',
-            fontSize: 8,
-            cellPadding: 3
+            fontSize: 9
           },
           bodyStyles: {
             fontSize: 8,
-            textColor: corTexto,
-            cellPadding: 2.5
+            textColor: corTexto
           },
           alternateRowStyles: {
             fillColor: [248, 250, 252]
           },
-          // Colunas proporcionais à largura total
           columnStyles: {
-            0: { cellWidth: larguraTotal * 0.16 },  // Tipo ~16%
-            1: { cellWidth: larguraTotal * 0.14 },  // Data ~14%
-            2: { cellWidth: larguraTotal * 0.20, halign: 'right' },  // Valor Parcela ~20%
-            3: { cellWidth: larguraTotal * 0.12, halign: 'center' }, // Status ~12%
-            4: { cellWidth: larguraTotal * 0.16, halign: 'center' }, // % Comissão ~16%
-            5: { cellWidth: larguraTotal * 0.22, halign: 'right' }   // Comissão ~22%
+            0: { cellWidth: 25 },
+            1: { cellWidth: 25 },
+            2: { cellWidth: 35, halign: 'right' },
+            3: { cellWidth: 22, halign: 'center' },
+            4: { cellWidth: 25, halign: 'center' },
+            5: { cellWidth: 35, halign: 'right' }
           },
-          margin: { left: 14, right: 14 },
-          tableWidth: larguraTotal,
-          // IMPORTANTE: Evitar quebra de página no meio da tabela
-          rowPageBreak: 'avoid',
-          // Se a tabela não couber, mostrar cabeçalho novamente na nova página
-          showHead: 'everyPage'
+          margin: { left: 14, right: 14 }
         })
         
         yPosition = doc.lastAutoTable.finalY + 10
@@ -3164,16 +2932,8 @@ const AdminDashboard = () => {
       
       // RESUMO EXECUTIVO FINAL (especialmente útil quando filtrado por corretor)
       if (dadosFiltrados.length > 0) {
-        // Calcular altura estimada do resumo executivo:
-        // - Título: 10px + margem
-        // - Tabela de stats (6 linhas): ~80px
-        // - Empreendimentos (se houver): ~25px
-        // - Margem de segurança: 20px
-        const alturaResumoEstimada = 10 + 15 + 80 + 25 + 20 // ~150px
-        
-        // Verificar se o resumo completo cabe na página atual
-        const alturaDisponivelResumo = 277 - yPosition
-        if (alturaResumoEstimada > alturaDisponivelResumo) {
+        // Verificar se precisa nova página
+        if (yPosition > 220) {
           doc.addPage()
           yPosition = 20
         }
@@ -3274,18 +3034,8 @@ const AdminDashboard = () => {
         })
         
         if (parcelasPendentes.length > 0) {
-          // Calcular altura estimada da seção de previsibilidade:
-          // - Título: 10px
-          // - Cada mês na tabela: ~8px
-          // - Margem: 20px
-          const mesesUnicos = [...new Set(parcelasPendentes.map(p => 
-            `${p.data.getFullYear()}-${String(p.data.getMonth() + 1).padStart(2, '0')}`
-          ))].length
-          const alturaPrevisibilidade = 10 + 15 + (Math.min(mesesUnicos, 12) * 8) + 30
-          
-          // Verificar se cabe na página atual
-          const alturaDisponivelPrev = 277 - yPosition
-          if (alturaPrevisibilidade > alturaDisponivelPrev) {
+          // Verificar se precisa nova página
+          if (yPosition > 180) {
             doc.addPage()
             yPosition = 20
           }
@@ -3569,12 +3319,8 @@ const AdminDashboard = () => {
     // Filtro por status
     const matchStatus = filtrosVendas.status === 'todos' || venda.status === filtrosVendas.status
     
-    // Filtro por cliente
-    const matchCliente = !filtrosVendas.cliente || venda.cliente_id === filtrosVendas.cliente
-    
-    // Filtro por unidade
-    const matchUnidade = !filtrosVendas.unidade || 
-      (venda.unidade && venda.unidade.toLowerCase().includes(filtrosVendas.unidade.toLowerCase()))
+    // Filtro por bloco
+    const matchBloco = !filtrosVendas.bloco || (venda.bloco && venda.bloco.toUpperCase() === filtrosVendas.bloco.toUpperCase())
     
     // Filtro por data
     const matchData = (() => {
@@ -3589,7 +3335,15 @@ const AdminDashboard = () => {
       return true
     })()
     
-    return matchSearch && matchTipo && matchCorretor && matchEmpreendimento && matchStatus && matchCliente && matchUnidade && matchData
+    // Filtro por valor
+    const matchValor = (() => {
+      const valorVenda = parseFloat(venda.valor_venda) || 0
+      if (filtrosVendas.valorMin && valorVenda < parseFloat(filtrosVendas.valorMin)) return false
+      if (filtrosVendas.valorMax && valorVenda > parseFloat(filtrosVendas.valorMax)) return false
+      return true
+    })()
+    
+    return matchSearch && matchTipo && matchCorretor && matchEmpreendimento && matchStatus && matchBloco && matchData && matchValor
   }).sort((a, b) => {
     // Ordenar por data mais recente primeiro
     const dataA = new Date(a.data_venda || a.created_at || 0)
@@ -4166,32 +3920,25 @@ const AdminDashboard = () => {
                 </div>
                 
                 <div className="filter-item">
-                  <label className="filter-label">Cliente</label>
+                  <label className="filter-label">Bloco</label>
                   <select 
-                    value={filtrosVendas.cliente} 
-                    onChange={(e) => setFiltrosVendas({...filtrosVendas, cliente: e.target.value})}
+                    value={filtrosVendas.bloco} 
+                    onChange={(e) => setFiltrosVendas({...filtrosVendas, bloco: e.target.value})}
                     className="filter-select"
                   >
                     <option value="">Todos</option>
-                    {[...clientes]
-                      .filter(c => c.nome_completo)
-                      .sort((a, b) => (a.nome_completo || '').localeCompare(b.nome_completo || '', 'pt-BR'))
-                      .map(c => (
-                        <option key={c.id} value={c.id}>{formatNome(c.nome_completo)}</option>
+                    {(() => {
+                      // Coletar blocos únicos das vendas
+                      const blocosUnicos = [...new Set(vendas
+                        .filter(v => v.bloco && v.bloco.trim() !== '')
+                        .map(v => v.bloco.toUpperCase())
+                        .sort()
+                      )]
+                      return blocosUnicos.map(bloco => (
+                        <option key={bloco} value={bloco}>{bloco}</option>
                       ))
-                    }
+                    })()}
                   </select>
-                </div>
-                
-                <div className="filter-item">
-                  <label className="filter-label">Unidade</label>
-                  <input 
-                    type="text"
-                    placeholder="Ex: 101, 202..."
-                    value={filtrosVendas.unidade}
-                    onChange={(e) => setFiltrosVendas({...filtrosVendas, unidade: e.target.value})}
-                    className="filter-input"
-                  />
                 </div>
                 
                 <div className="filter-item">
@@ -4222,10 +3969,11 @@ const AdminDashboard = () => {
                     corretor: '',
                     empreendimento: '',
                     status: 'todos',
-                    cliente: '',
-                    unidade: '',
+                    bloco: '',
                     dataInicio: '',
-                    dataFim: ''
+                    dataFim: '',
+                    valorMin: '',
+                    valorMax: ''
                   })
                   setSearchTerm('')
                   setFilterTipo('todos')
@@ -4241,7 +3989,6 @@ const AdminDashboard = () => {
                 <thead>
                   <tr>
                     <th>Corretor</th>
-                    <th>Cliente</th>
                     <th>Unidade</th>
                     <th>Tipo</th>
                     <th>Valor Venda</th>
@@ -4255,21 +4002,18 @@ const AdminDashboard = () => {
                 <tbody>
                   {loading ? (
                     <tr>
-                      <td colSpan="10" className="loading-cell">
+                      <td colSpan="9" className="loading-cell">
                         <div className="loading-spinner"></div>
                       </td>
                     </tr>
                   ) : filteredVendas.length === 0 ? (
                     <tr>
-                      <td colSpan="10" className="empty-cell">
+                      <td colSpan="9" className="empty-cell">
                         Nenhuma venda encontrada
                       </td>
                     </tr>
                   ) : (
-                    filteredVendas.map((venda) => {
-                      // Buscar cliente da venda
-                      const clienteVenda = clientes.find(c => c.id === venda.cliente_id)
-                      return (
+                    filteredVendas.map((venda) => (
                       <tr key={venda.id}>
                         <td>
                           <div className="corretor-cell">
@@ -4280,13 +4024,10 @@ const AdminDashboard = () => {
                           </div>
                         </td>
                         <td>
-                          <span className="cliente-nome">
-                            {clienteVenda?.nome_completo ? formatNome(clienteVenda.nome_completo) : venda.nome_cliente || '-'}
-                          </span>
-                        </td>
-                        <td>
-                          <span className="unidade-cell">
-                            {venda.unidade || '-'}
+                          <span className="unidade-bloco">
+                            {venda.unidade || venda.bloco ? (
+                              <>{venda.bloco && `Bloco ${venda.bloco}`}{venda.bloco && venda.unidade && ' - '}{venda.unidade && `Un. ${venda.unidade}`}</>
+                            ) : '-'}
                           </span>
                         </td>
                         <td>
@@ -4338,7 +4079,7 @@ const AdminDashboard = () => {
                           </div>
                         </td>
                       </tr>
-                    )})
+                    ))
                   )}
                 </tbody>
               </table>
@@ -4575,106 +4316,294 @@ const AdminDashboard = () => {
         )}
 
         {activeTab === 'empreendimentos' && (
-          <div className="content-section">
-            {/* Filtros de Empreendimentos */}
-            <div className="filters-section">
-              <div className="search-box">
+          <div className="empreendimentos-premium">
+            {/* Header com Estatísticas - Minimalista */}
+            <div className="empreendimentos-stats-header">
+              <div className="emp-stat-card">
+                <span className="emp-stat-value">{empreendimentos.length}</span>
+                <span className="emp-stat-label">Empreendimentos</span>
+              </div>
+              <div className="emp-stat-card">
+                <span className="emp-stat-value">
+                  {formatCurrency(vendas.reduce((acc, v) => acc + (parseFloat(v.valor_venda) || 0), 0))}
+                </span>
+                <span className="emp-stat-label">Total em Vendas</span>
+              </div>
+              <div className="emp-stat-card">
+                <span className="emp-stat-value">{vendas.length}</span>
+                <span className="emp-stat-label">Vendas Realizadas</span>
+              </div>
+              <div className="emp-stat-card">
+                <span className="emp-stat-value">{corretores.filter(c => c.tipo !== 'admin').length}</span>
+                <span className="emp-stat-label">Corretores</span>
+              </div>
+            </div>
+
+            {/* Filtros e Toggle de Visualização */}
+            <div className="empreendimentos-filters">
+              <div className="emp-search-box">
                 <Search size={20} />
                 <input 
                   type="text" 
-                  placeholder="Buscar por nome ou descrição..."
+                  placeholder="Buscar empreendimento..."
                   value={filtrosEmpreendimentos.busca}
                   onChange={(e) => setFiltrosEmpreendimentos({...filtrosEmpreendimentos, busca: e.target.value})}
                 />
               </div>
               
-              {filtrosEmpreendimentos.busca && (
-                <button
-                  className="btn-clear-filters"
-                  onClick={() => setFiltrosEmpreendimentos({ busca: '' })}
+              <div className="emp-view-toggle">
+                <button 
+                  className={`emp-view-btn ${empViewMode === 'grid' ? 'active' : ''}`}
+                  onClick={() => setEmpViewMode('grid')}
                 >
-                  <X size={16} />
-                  Limpar Busca
+                  <LayoutGrid size={18} />
+                  Cards
                 </button>
-              )}
+                <button 
+                  className={`emp-view-btn ${empViewMode === 'list' ? 'active' : ''}`}
+                  onClick={() => setEmpViewMode('list')}
+                >
+                  <List size={18} />
+                  Lista
+                </button>
+              </div>
             </div>
 
             {filteredEmpreendimentos.length === 0 ? (
-              <div className="empty-state-box">
-                <Building size={48} />
+              <div className="emp-empty-state">
+                <div className="emp-empty-icon">
+                  <Building size={40} />
+                </div>
                 <h3>{empreendimentos.length === 0 ? 'Nenhum empreendimento cadastrado' : 'Nenhum empreendimento encontrado'}</h3>
-                <p>{empreendimentos.length === 0 ? 'Clique em "Novo Empreendimento" para adicionar' : 'Tente outra busca'}</p>
+                <p>{empreendimentos.length === 0 ? 'Adicione seu primeiro empreendimento para começar' : 'Tente outra busca'}</p>
+                {empreendimentos.length === 0 && (
+                  <button 
+                    className="emp-empty-btn"
+                    onClick={() => {
+                      setEmpreendimentoForm({
+                        nome: '',
+                        descricao: '',
+                        comissao_total_externo: '7',
+                        comissao_total_interno: '6',
+                        cargos_externo: [{ nome_cargo: '', percentual: '' }],
+                        cargos_interno: [{ nome_cargo: '', percentual: '' }],
+                        logo_url: ''
+                      })
+                      setSelectedItem(null)
+                      setModalType('empreendimento')
+                      setShowModal(true)
+                    }}
+                  >
+                    <Plus size={20} />
+                    Novo Empreendimento
+                  </button>
+                )}
+              </div>
+            ) : empViewMode === 'grid' ? (
+              /* Visualização em Grid Premium */
+              <div className="empreendimentos-showcase">
+                {filteredEmpreendimentos.map((emp) => {
+                  const vendasEmp = vendas.filter(v => v.empreendimento_id === emp.id)
+                  const pagamentosEmp = pagamentos.filter(p => vendasEmp.some(v => v.id === p.venda_id))
+                  const totalVendasEmp = vendasEmp.length
+                  const valorTotalVendas = vendasEmp.reduce((acc, v) => acc + (parseFloat(v.valor_venda) || 0), 0)
+                  const comissaoTotal = pagamentosEmp.reduce((acc, p) => acc + (parseFloat(p.comissao_gerada) || 0), 0)
+                  const comissaoPaga = pagamentosEmp.filter(p => p.status === 'pago').reduce((acc, p) => acc + (parseFloat(p.comissao_gerada) || 0), 0)
+                  const comissaoPendente = comissaoTotal - comissaoPaga
+                  
+                  return (
+                    <div key={emp.id} className="emp-premium-card">
+                      {/* Imagem de Fachada */}
+                      <div className="emp-card-image">
+                        {emp.fachada_url ? (
+                          <img src={emp.fachada_url} alt={emp.nome} />
+                        ) : (
+                          <div className="emp-card-image-placeholder">
+                            <Building size={48} />
+                            <span>Sem imagem</span>
+                          </div>
+                        )}
+                        
+                        {/* Logo no canto superior direito */}
+                        {emp.logo_url && emp.logo_url.trim() !== '' && (
+                          <div className="emp-card-logo">
+                            <img 
+                              src={emp.logo_url} 
+                              alt={`Logo ${emp.nome}`}
+                              onError={(e) => {
+                                e.target.parentElement.style.display = 'none'
+                              }}
+                            />
+                          </div>
+                        )}
+                        
+                        {/* Nome do empreendimento - sempre visível */}
+                        <span className="emp-card-name">{emp.nome}</span>
+                        
+                        {/* Badges no canto inferior direito */}
+                        <div className="emp-card-badges">
+                          {emp.sienge_enterprise_id && (
+                            <span className="emp-status-badge sienge">Sienge</span>
+                          )}
+                          <span className="emp-status-badge active">Ativo</span>
+                        </div>
+                      </div>
+                      
+                      {/* Conteúdo do Card */}
+                      <div className="emp-card-content">
+                        {/* Taxas de Comissão */}
+                        <div className="emp-commission-rates">
+                          <div className="emp-rate-box externo">
+                            <span className="emp-rate-label">Externo</span>
+                            <span className="emp-rate-value">{emp.comissao_total_externo || 7}%</span>
+                          </div>
+                          <div className="emp-rate-box interno">
+                            <span className="emp-rate-label">Interno</span>
+                            <span className="emp-rate-value">{emp.comissao_total_interno || 6}%</span>
+                          </div>
+                        </div>
+                        
+                        {/* Estatísticas */}
+                        <div className="emp-card-stats">
+                          <div className="emp-mini-stat">
+                            <span className="emp-mini-stat-label">Vendas</span>
+                            <span className="emp-mini-stat-value">{totalVendasEmp}</span>
+                          </div>
+                          <div className="emp-mini-stat">
+                            <span className="emp-mini-stat-label">Volume</span>
+                            <span className="emp-mini-stat-value gold">{formatCurrency(valorTotalVendas)}</span>
+                          </div>
+                          <div className="emp-mini-stat">
+                            <span className="emp-mini-stat-label">Comissão Paga</span>
+                            <span className="emp-mini-stat-value green">{formatCurrency(comissaoPaga)}</span>
+                          </div>
+                          <div className="emp-mini-stat">
+                            <span className="emp-mini-stat-label">Pendente</span>
+                            <span className="emp-mini-stat-value yellow">{formatCurrency(comissaoPendente)}</span>
+                          </div>
+                        </div>
+                        
+                        {/* Ações */}
+                        <div className="emp-card-actions">
+                          <button 
+                            className="emp-action-btn view"
+                            onClick={() => setEmpreendimentoVisualizar(emp)}
+                            title="Visualizar detalhes"
+                          >
+                            <Eye size={16} />
+                          </button>
+                          <button 
+                            className="emp-action-btn primary"
+                            onClick={() => setGaleriaAberta(emp.id)}
+                          >
+                            <Camera size={16} />
+                            Galeria
+                          </button>
+                          <button 
+                            className="emp-action-btn secondary"
+                            onClick={() => {
+                              const cargosExt = emp.cargos?.filter(c => c.tipo_corretor === 'externo') || []
+                              const cargosInt = emp.cargos?.filter(c => c.tipo_corretor === 'interno') || []
+                              setSelectedItem(emp)
+                              setEmpreendimentoForm({
+                                nome: emp.nome,
+                                descricao: emp.descricao || '',
+                                comissao_total_externo: emp.comissao_total_externo?.toString() || '7',
+                                comissao_total_interno: emp.comissao_total_interno?.toString() || '6',
+                                cargos_externo: cargosExt.length > 0 
+                                  ? cargosExt.map(c => ({ nome_cargo: c.nome_cargo, percentual: c.percentual?.toString() || '' }))
+                                  : [{ nome_cargo: '', percentual: '' }],
+                                cargos_interno: cargosInt.length > 0 
+                                  ? cargosInt.map(c => ({ nome_cargo: c.nome_cargo, percentual: c.percentual?.toString() || '' }))
+                                  : [{ nome_cargo: '', percentual: '' }],
+                                logo_url: emp.logo_url || ''
+                              })
+                              setModalType('empreendimento')
+                              setShowModal(true)
+                            }}
+                          >
+                            <Edit2 size={16} />
+                          </button>
+                          <button 
+                            className="emp-action-btn danger"
+                            onClick={() => handleDeleteEmpreendimento(emp)}
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
               </div>
             ) : (
-              <div className="empreendimentos-grid">
-                {filteredEmpreendimentos.map((emp) => (
-                  <div key={emp.id} className="empreendimento-card">
-                    <div className="empreendimento-header">
-                      <div className="empreendimento-info">
-                        <h3>{emp.nome}</h3>
-                        {emp.sienge_enterprise_id && (
-                          <span style={{ 
-                            fontSize: '10px', 
-                            color: '#10b981', 
-                            background: 'rgba(16, 185, 129, 0.1)',
-                            padding: '2px 6px',
-                            borderRadius: '4px',
-                            marginBottom: '4px',
-                            display: 'inline-block'
-                          }}>
-                            ✓ Sienge #{emp.sienge_enterprise_id}
-                          </span>
+              /* Visualização em Lista */
+              <div className="empreendimentos-list-view">
+                {filteredEmpreendimentos.map((emp) => {
+                  const vendasEmp = vendas.filter(v => v.empreendimento_id === emp.id)
+                  const totalVendasEmp = vendasEmp.length
+                  const valorTotalVendas = vendasEmp.reduce((acc, v) => acc + (parseFloat(v.valor_venda) || 0), 0)
+                  
+                  return (
+                    <div key={emp.id} className="emp-list-item">
+                      <div className="emp-list-thumb">
+                        {emp.fachada_url ? (
+                          <img src={emp.fachada_url} alt={emp.nome} />
+                        ) : emp.logo_url ? (
+                          <img src={emp.logo_url} alt={emp.nome} style={{ objectFit: 'contain', padding: '10px' }} />
+                        ) : (
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
+                            <Building size={32} color="rgba(255,255,255,0.3)" />
+                          </div>
                         )}
-                        <div className="comissoes-totais">
-                          <span className="badge externo">
+                      </div>
+                      
+                      <div className="emp-list-info">
+                        <div className="emp-list-name">
+                          {emp.nome}
+                          {emp.sienge_enterprise_id && (
+                            <span className="emp-status-badge sienge">Sienge</span>
+                          )}
+                        </div>
+                        
+                        <div className="emp-list-rates">
+                          <span className="emp-list-rate externo">
+                            <Percent size={14} />
                             Externo: {emp.comissao_total_externo || 7}%
                           </span>
-                          <span className="badge interno">
+                          <span className="emp-list-rate interno">
+                            <Percent size={14} />
                             Interno: {emp.comissao_total_interno || 6}%
                           </span>
                         </div>
-                        {/* Resumo de Comissões */}
-                        {(() => {
-                          const vendasEmp = vendas.filter(v => v.empreendimento_id === emp.id)
-                          const pagamentosEmp = pagamentos.filter(p => vendasEmp.some(v => v.id === p.venda_id))
-                          const totalVendas = vendasEmp.length
-                          const comissaoTotal = pagamentosEmp.reduce((acc, p) => acc + (parseFloat(p.comissao_gerada) || 0), 0)
-                          const comissaoPaga = pagamentosEmp
-                            .filter(p => p.status === 'pago')
-                            .reduce((acc, p) => acc + (parseFloat(p.comissao_gerada) || 0), 0)
-                          const comissaoPendente = comissaoTotal - comissaoPaga
-                          
-                          return totalVendas > 0 ? (
-                            <div style={{ 
-                              marginTop: '8px', 
-                              padding: '8px', 
-                              background: 'rgba(0,0,0,0.2)', 
-                              borderRadius: '6px',
-                              fontSize: '11px'
-                            }}>
-                              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                                <span style={{ color: 'rgba(255,255,255,0.6)' }}>Vendas:</span>
-                                <span style={{ fontWeight: '600' }}>{totalVendas}</span>
-                              </div>
-                              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                                <span style={{ color: 'rgba(255,255,255,0.6)' }}>Comissão Total:</span>
-                                <span style={{ fontWeight: '600' }}>{formatCurrency(comissaoTotal)}</span>
-                              </div>
-                              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                                <span style={{ color: '#10b981' }}>Paga:</span>
-                                <span style={{ fontWeight: '600', color: '#10b981' }}>{formatCurrency(comissaoPaga)}</span>
-                              </div>
-                              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                <span style={{ color: '#fbbf24' }}>Pendente:</span>
-                                <span style={{ fontWeight: '600', color: '#fbbf24' }}>{formatCurrency(comissaoPendente)}</span>
-                              </div>
-                            </div>
-                          ) : null
-                        })()}
+                        
+                        <div className="emp-list-stats">
+                          <span className="emp-list-stat">
+                            Vendas: <strong>{totalVendasEmp}</strong>
+                          </span>
+                          <span className="emp-list-stat">
+                            Volume: <strong style={{ color: '#c9a962' }}>{formatCurrency(valorTotalVendas)}</strong>
+                          </span>
+                        </div>
                       </div>
-                      <div className="empreendimento-actions">
+                      
+                      <div className="emp-list-actions">
                         <button 
-                          className="action-btn edit small"
+                          className="emp-action-btn view"
+                          onClick={() => setEmpreendimentoVisualizar(emp)}
+                          title="Visualizar"
+                        >
+                          <Eye size={16} />
+                        </button>
+                        <button 
+                          className="emp-action-btn primary"
+                          onClick={() => setGaleriaAberta(emp.id)}
+                          title="Galeria"
+                        >
+                          <Camera size={16} />
+                        </button>
+                        <button 
+                          className="emp-action-btn secondary"
                           onClick={() => {
                             const cargosExt = emp.cargos?.filter(c => c.tipo_corretor === 'externo') || []
                             const cargosInt = emp.cargos?.filter(c => c.tipo_corretor === 'interno') || []
@@ -4696,191 +4625,18 @@ const AdminDashboard = () => {
                             setShowModal(true)
                           }}
                         >
-                          <Edit2 size={14} />
+                          <Edit2 size={16} />
                         </button>
                         <button 
-                          className="action-btn view small"
-                          onClick={() => setGaleriaAberta(emp.id)}
-                          title="Ver Galeria de Fotos"
-                        >
-                          <Camera size={14} />
-                        </button>
-                        <button 
-                          className="action-btn view small"
-                          onClick={() => abrirHistoricoEmpreendimento(emp)}
-                          title="Ver Histórico de Alterações"
-                        >
-                          <Clock size={14} />
-                        </button>
-                        <button 
-                          className="action-btn delete small"
+                          className="emp-action-btn danger"
                           onClick={() => handleDeleteEmpreendimento(emp)}
                         >
-                          <Trash2 size={14} />
+                          <Trash2 size={16} />
                         </button>
                       </div>
                     </div>
-                    {emp.descricao && (
-                      <p className="empreendimento-descricao">{emp.descricao}</p>
-                    )}
-                    
-                    {/* Cargos Externos */}
-                    <div className="empreendimento-cargos">
-                      <h4>Cargos Externos</h4>
-                      {emp.cargos?.filter(c => c.tipo_corretor === 'externo').length > 0 && (
-                        <button
-                          className="btn-toggle-cargos"
-                          onClick={() => setCargosExpandidos(prev => ({
-                            ...prev,
-                            [`${emp.id}-externo`]: !prev[`${emp.id}-externo`]
-                          }))}
-                        >
-                          {cargosExpandidos[`${emp.id}-externo`] ? 'Ocultar cargos e taxas' : 'Mostrar cargos e taxas'}
-                          <ChevronDown 
-                            size={16} 
-                            className={cargosExpandidos[`${emp.id}-externo`] ? 'rotated' : ''}
-                          />
-                        </button>
-                      )}
-                      {cargosExpandidos[`${emp.id}-externo`] && emp.cargos?.filter(c => c.tipo_corretor === 'externo').length > 0 ? (
-                        <div className="cargos-list">
-                          {emp.cargos.filter(c => c.tipo_corretor === 'externo').map((cargo, idx) => {
-                            const cargoKey = `${emp.id}-${cargo.id}`
-                            const setor = calcularValoresPorSetor(emp.id).find(s => s.cargo_id === cargo.id)
-                            const isExpanded = cargoExpandido === cargoKey
-                            
-                            return (
-                              <div key={idx}>
-                                <div className="cargo-item">
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1 }}>
-                                    <span>{cargo.nome_cargo}</span>
-                                    <span className="cargo-percent">{cargo.percentual}%</span>
-                                  </div>
-                                  <button
-                                    className="btn-cargo-expand"
-                                    onClick={(e) => {
-                                      e.stopPropagation()
-                                      setCargoExpandido(isExpanded ? null : cargoKey)
-                                    }}
-                                    title={isExpanded ? 'Ocultar detalhes' : 'Mostrar detalhes'}
-                                  >
-                                    {isExpanded ? <X size={14} /> : <Plus size={14} />}
-                                  </button>
-                                </div>
-                                {isExpanded && (
-                                  <div className="cargo-detalhes">
-                                    {setor ? (
-                                      <>
-                                        <div className="cargo-detalhe-row">
-                                          <span className="cargo-detalhe-label">Total:</span>
-                                          <span className="cargo-detalhe-valor">{formatCurrency(setor.valorTotal)}</span>
-                                        </div>
-                                        <div className="cargo-detalhe-row">
-                                          <span className="cargo-detalhe-label">Pago:</span>
-                                          <span className="cargo-detalhe-valor pago">
-                                            {formatCurrency(setor.valorPago)} <span className="cargo-detalhe-porcentagem">({setor.percentualPago}%)</span>
-                                          </span>
-                                        </div>
-                                        <div className="cargo-detalhe-row">
-                                          <span className="cargo-detalhe-label">Pendente:</span>
-                                          <span className="cargo-detalhe-valor pendente">{formatCurrency(setor.valorPendente)}</span>
-                                        </div>
-                                      </>
-                                    ) : (
-                                      <div className="cargo-detalhe-row" style={{ color: '#8b949e', fontSize: '11px', fontStyle: 'italic' }}>
-                                        Nenhuma venda registrada para este cargo
-                                      </div>
-                                    )}
-                                  </div>
-                                )}
-                              </div>
-                            )
-                          })}
-                        </div>
-                      ) : emp.cargos?.filter(c => c.tipo_corretor === 'externo').length === 0 ? (
-                        <p className="no-cargos">Nenhum cargo externo</p>
-                      ) : null}
-                    </div>
-
-                    {/* Cargos Internos */}
-                    <div className="empreendimento-cargos">
-                      <h4>Cargos Internos</h4>
-                      {emp.cargos?.filter(c => c.tipo_corretor === 'interno').length > 0 && (
-                        <button
-                          className="btn-toggle-cargos"
-                          onClick={() => setCargosExpandidos(prev => ({
-                            ...prev,
-                            [`${emp.id}-interno`]: !prev[`${emp.id}-interno`]
-                          }))}
-                        >
-                          {cargosExpandidos[`${emp.id}-interno`] ? 'Ocultar cargos e taxas' : 'Mostrar cargos e taxas'}
-                          <ChevronDown 
-                            size={16} 
-                            className={cargosExpandidos[`${emp.id}-interno`] ? 'rotated' : ''}
-                          />
-                        </button>
-                      )}
-                      {cargosExpandidos[`${emp.id}-interno`] && emp.cargos?.filter(c => c.tipo_corretor === 'interno').length > 0 ? (
-                        <div className="cargos-list">
-                          {emp.cargos.filter(c => c.tipo_corretor === 'interno').map((cargo, idx) => {
-                            const cargoKey = `${emp.id}-${cargo.id}`
-                            const setor = calcularValoresPorSetor(emp.id).find(s => s.cargo_id === cargo.id)
-                            const isExpanded = cargoExpandido === cargoKey
-                            
-                            return (
-                              <div key={idx}>
-                                <div className="cargo-item interno">
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1 }}>
-                                    <span>{cargo.nome_cargo}</span>
-                                    <span className="cargo-percent">{cargo.percentual}%</span>
-                                  </div>
-                                  <button
-                                    className="btn-cargo-expand"
-                                    onClick={(e) => {
-                                      e.stopPropagation()
-                                      setCargoExpandido(isExpanded ? null : cargoKey)
-                                    }}
-                                    title={isExpanded ? 'Ocultar detalhes' : 'Mostrar detalhes'}
-                                  >
-                                    {isExpanded ? <X size={14} /> : <Plus size={14} />}
-                                  </button>
-                                </div>
-                                {isExpanded && (
-                                  <div className="cargo-detalhes">
-                                    {setor ? (
-                                      <>
-                                        <div className="cargo-detalhe-row">
-                                          <span className="cargo-detalhe-label">Total:</span>
-                                          <span className="cargo-detalhe-valor">{formatCurrency(setor.valorTotal)}</span>
-                                        </div>
-                                        <div className="cargo-detalhe-row">
-                                          <span className="cargo-detalhe-label">Pago:</span>
-                                          <span className="cargo-detalhe-valor pago">
-                                            {formatCurrency(setor.valorPago)} <span className="cargo-detalhe-porcentagem">({setor.percentualPago}%)</span>
-                                          </span>
-                                        </div>
-                                        <div className="cargo-detalhe-row">
-                                          <span className="cargo-detalhe-label">Pendente:</span>
-                                          <span className="cargo-detalhe-valor pendente">{formatCurrency(setor.valorPendente)}</span>
-                                        </div>
-                                      </>
-                                    ) : (
-                                      <div className="cargo-detalhe-row" style={{ color: '#8b949e', fontSize: '11px', fontStyle: 'italic' }}>
-                                        Nenhuma venda registrada para este cargo
-                                      </div>
-                                    )}
-                                  </div>
-                                )}
-                              </div>
-                            )
-                          })}
-                        </div>
-                      ) : emp.cargos?.filter(c => c.tipo_corretor === 'interno').length === 0 ? (
-                        <p className="no-cargos">Nenhum cargo interno</p>
-                      ) : null}
-                    </div>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             )}
             
@@ -4892,6 +4648,207 @@ const AdminDashboard = () => {
                     empreendimentoId={galeriaAberta}
                     onClose={() => setGaleriaAberta(null)}
                   />
+                </div>
+              </div>
+            )}
+
+            {/* Modal de Visualização do Empreendimento */}
+            {empreendimentoVisualizar && (
+              <div className="modal-overlay" onClick={() => setEmpreendimentoVisualizar(null)}>
+                <div className="modal-content emp-view-modal" onClick={(e) => e.stopPropagation()}>
+                  <button 
+                    className="modal-close-btn"
+                    onClick={() => setEmpreendimentoVisualizar(null)}
+                  >
+                    <X size={24} />
+                  </button>
+                  
+                  {/* Header com Fachada */}
+                  <div className="emp-view-header">
+                    {empreendimentoVisualizar.fachada_url ? (
+                      <img 
+                        src={empreendimentoVisualizar.fachada_url} 
+                        alt={empreendimentoVisualizar.nome}
+                        className="emp-view-fachada"
+                      />
+                    ) : (
+                      <div className="emp-view-no-image">
+                        <Building size={80} />
+                        <span>Sem imagem de fachada</span>
+                      </div>
+                    )}
+                    <div className="emp-view-header-overlay">
+                      {empreendimentoVisualizar.logo_url && (
+                        <img 
+                          src={empreendimentoVisualizar.logo_url} 
+                          alt={`Logo ${empreendimentoVisualizar.nome}`}
+                          className="emp-view-logo"
+                        />
+                      )}
+                      <h2 className="emp-view-title">{empreendimentoVisualizar.nome}</h2>
+                      <div className="emp-view-badges">
+                        {empreendimentoVisualizar.sienge_enterprise_id && (
+                          <span className="emp-badge sienge">Integrado Sienge</span>
+                        )}
+                        <span className="emp-badge active">Ativo</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Conteúdo */}
+                  <div className="emp-view-content">
+                    {/* Descrição */}
+                    {empreendimentoVisualizar.descricao && (
+                      <div className="emp-view-section">
+                        <h3>Descrição</h3>
+                        <p>{empreendimentoVisualizar.descricao}</p>
+                      </div>
+                    )}
+
+                    {/* Comissões */}
+                    <div className="emp-view-section">
+                      <h3>Comissões</h3>
+                      <div className="emp-view-comissoes">
+                        <div className="emp-view-comissao-box">
+                          <span className="label">Corretor Externo</span>
+                          <span className="value">{empreendimentoVisualizar.comissao_total_externo || 7}%</span>
+                        </div>
+                        <div className="emp-view-comissao-box">
+                          <span className="label">Corretor Interno</span>
+                          <span className="value green">{empreendimentoVisualizar.comissao_total_interno || 6}%</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Cargos */}
+                    {empreendimentoVisualizar.cargos && empreendimentoVisualizar.cargos.length > 0 && (
+                      <div className="emp-view-section">
+                        <h3>Distribuição de Comissões por Cargo</h3>
+                        <div className="emp-view-cargos-grid">
+                          <div className="emp-view-cargos-col">
+                            <h4>Externos</h4>
+                            {empreendimentoVisualizar.cargos
+                              .filter(c => c.tipo_corretor === 'externo')
+                              .map((cargo, idx) => (
+                                <div key={idx} className="emp-view-cargo-item">
+                                  <span>{cargo.nome_cargo}</span>
+                                  <span className="cargo-percent">{cargo.percentual}%</span>
+                                </div>
+                              ))}
+                          </div>
+                          <div className="emp-view-cargos-col">
+                            <h4>Internos</h4>
+                            {empreendimentoVisualizar.cargos
+                              .filter(c => c.tipo_corretor === 'interno')
+                              .map((cargo, idx) => (
+                                <div key={idx} className="emp-view-cargo-item">
+                                  <span>{cargo.nome_cargo}</span>
+                                  <span className="cargo-percent green">{cargo.percentual}%</span>
+                                </div>
+                              ))}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Estatísticas */}
+                    <div className="emp-view-section">
+                      <h3>Estatísticas</h3>
+                      {(() => {
+                        const vendasEmp = vendas.filter(v => v.empreendimento_id === empreendimentoVisualizar.id)
+                        const totalVendas = vendasEmp.length
+                        const valorTotal = vendasEmp.reduce((acc, v) => acc + (parseFloat(v.valor_venda) || 0), 0)
+                        const comissaoPaga = vendasEmp.reduce((acc, v) => acc + (parseFloat(v.comissao_paga) || 0), 0)
+                        const comissaoPendente = vendasEmp.reduce((acc, v) => {
+                          const comissaoTotal = (parseFloat(v.valor_venda) || 0) * ((parseFloat(v.comissao_percentual) || 0) / 100)
+                          return acc + (comissaoTotal - (parseFloat(v.comissao_paga) || 0))
+                        }, 0)
+                        const corretoresEmp = [...new Set(vendasEmp.map(v => v.corretor_id))].length
+
+                        return (
+                          <div className="emp-view-stats">
+                            <div className="emp-view-stat">
+                              <TrendingUp size={20} />
+                              <div>
+                                <span className="stat-value">{totalVendas}</span>
+                                <span className="stat-label">Vendas</span>
+                              </div>
+                            </div>
+                            <div className="emp-view-stat">
+                              <DollarSign size={20} />
+                              <div>
+                                <span className="stat-value">{formatCurrency(valorTotal)}</span>
+                                <span className="stat-label">Volume Total</span>
+                              </div>
+                            </div>
+                            <div className="emp-view-stat">
+                              <CheckCircle size={20} />
+                              <div>
+                                <span className="stat-value green">{formatCurrency(comissaoPaga)}</span>
+                                <span className="stat-label">Comissão Paga</span>
+                              </div>
+                            </div>
+                            <div className="emp-view-stat">
+                              <Clock size={20} />
+                              <div>
+                                <span className="stat-value yellow">{formatCurrency(comissaoPendente)}</span>
+                                <span className="stat-label">Comissão Pendente</span>
+                              </div>
+                            </div>
+                            <div className="emp-view-stat">
+                              <Users size={20} />
+                              <div>
+                                <span className="stat-value">{corretoresEmp}</span>
+                                <span className="stat-label">Corretores</span>
+                              </div>
+                            </div>
+                          </div>
+                        )
+                      })()}
+                    </div>
+                  </div>
+
+                  {/* Footer com ações */}
+                  <div className="emp-view-footer">
+                    <button 
+                      className="emp-view-btn secondary"
+                      onClick={() => {
+                        setEmpreendimentoVisualizar(null)
+                        setGaleriaAberta(empreendimentoVisualizar.id)
+                      }}
+                    >
+                      <Camera size={18} />
+                      Ver Galeria
+                    </button>
+                    <button 
+                      className="emp-view-btn primary"
+                      onClick={() => {
+                        const emp = empreendimentoVisualizar
+                        const cargosExt = emp.cargos?.filter(c => c.tipo_corretor === 'externo') || []
+                        const cargosInt = emp.cargos?.filter(c => c.tipo_corretor === 'interno') || []
+                        setSelectedItem(emp)
+                        setEmpreendimentoForm({
+                          nome: emp.nome,
+                          descricao: emp.descricao || '',
+                          comissao_total_externo: emp.comissao_total_externo?.toString() || '7',
+                          comissao_total_interno: emp.comissao_total_interno?.toString() || '6',
+                          cargos_externo: cargosExt.length > 0 
+                            ? cargosExt.map(c => ({ nome_cargo: c.nome_cargo, percentual: c.percentual?.toString() || '' }))
+                            : [{ nome_cargo: '', percentual: '' }],
+                          cargos_interno: cargosInt.length > 0 
+                            ? cargosInt.map(c => ({ nome_cargo: c.nome_cargo, percentual: c.percentual?.toString() || '' }))
+                            : [{ nome_cargo: '', percentual: '' }],
+                          logo_url: emp.logo_url || ''
+                        })
+                        setEmpreendimentoVisualizar(null)
+                        setModalType('empreendimento')
+                        setShowModal(true)
+                      }}
+                    >
+                      <Edit2 size={18} />
+                      Editar
+                    </button>
+                  </div>
                 </div>
               </div>
             )}
@@ -7335,52 +7292,8 @@ const AdminDashboard = () => {
                       <span>Total Cargos Internos: {empreendimentoForm.cargos_interno.reduce((acc, c) => acc + (parseFloat(c.percentual) || 0), 0).toFixed(2)}%</span>
                     </div>
                   </div>
-
-                  {/* Seção de Alterações Detectadas (só aparece se editando) */}
-                  {selectedItem && detectarAlteracoes().length > 0 && (
-                    <div className="alteracoes-detectadas">
-                      <div className="section-divider warning">
-                        <span>⚠️ Alterações de Percentual Detectadas</span>
-                      </div>
-                      <div className="alteracoes-lista">
-                        {detectarAlteracoes().map((alt, idx) => (
-                          <div key={idx} className="alteracao-item">
-                            <span className="cargo-nome">{alt.nome}</span>
-                            <span className="tipo-badge">{alt.tipo}</span>
-                            <span className="alteracao-valores">
-                              <span className="valor-antigo">{alt.de}%</span>
-                              <span className="seta">→</span>
-                              <span className="valor-novo">{alt.para}%</span>
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                      <div className="form-group motivo-alteracao">
-                        <label>Motivo da Alteração (opcional, mas recomendado)</label>
-                        <textarea
-                          placeholder="Ex: Ajuste de mercado, correção de erro, renegociação..."
-                          value={motivoAlteracao}
-                          onChange={(e) => setMotivoAlteracao(e.target.value)}
-                          rows={2}
-                        />
-                        <small className="form-hint">
-                          Este registro ficará no histórico para auditoria
-                        </small>
-                      </div>
-                    </div>
-                  )}
                 </div>
                 <div className="modal-footer">
-                  {selectedItem && (
-                    <button 
-                      className="btn-outline" 
-                      onClick={() => abrirHistoricoEmpreendimento(selectedItem)}
-                      style={{ marginRight: 'auto' }}
-                    >
-                      <Clock size={16} />
-                      <span>Ver Histórico</span>
-                    </button>
-                  )}
                   <button className="btn-secondary" onClick={() => setShowModal(false)}>
                     Cancelar
                   </button>
@@ -7941,78 +7854,6 @@ const AdminDashboard = () => {
                 </div>
               </>
             )}
-          </div>
-        </div>
-      )}
-
-      {/* Modal de Histórico de Comissões */}
-      {showHistoricoModal && selectedItem && (
-        <div className="modal-overlay" onClick={() => setShowHistoricoModal(false)}>
-          <div className="modal-content modal-historico" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h3>📜 Histórico de Alterações - {selectedItem.nome}</h3>
-              <button className="close-btn" onClick={() => setShowHistoricoModal(false)}>
-                <X size={20} />
-              </button>
-            </div>
-            <div className="modal-body modal-body-scroll">
-              {historicoComissoes.length === 0 ? (
-                <div className="empty-state">
-                  <Clock size={48} />
-                  <p>Nenhuma alteração de percentual registrada</p>
-                  <small>O histórico será criado automaticamente quando percentuais forem alterados</small>
-                </div>
-              ) : (
-                <div className="historico-timeline">
-                  {historicoComissoes.map((item, idx) => (
-                    <div key={idx} className={`historico-item ${item.operacao.toLowerCase()}`}>
-                      <div className="historico-header">
-                        <span className={`operacao-badge ${item.operacao.toLowerCase()}`}>
-                          {item.operacao === 'CREATE' && '➕ Criado'}
-                          {item.operacao === 'UPDATE' && '✏️ Alterado'}
-                          {item.operacao === 'DELETE' && '🗑️ Removido'}
-                          {item.operacao === 'REACTIVATE' && '♻️ Reativado'}
-                        </span>
-                        <span className="historico-data">
-                          {new Date(item.alterado_em).toLocaleDateString('pt-BR', {
-                            day: '2-digit',
-                            month: '2-digit',
-                            year: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit'
-                          })}
-                        </span>
-                      </div>
-                      <div className="historico-content">
-                        <span className="cargo-nome">{item.nome_cargo}</span>
-                        <span className={`tipo-badge ${item.tipo_corretor}`}>{item.tipo_corretor}</span>
-                        {item.operacao === 'UPDATE' && (
-                          <span className="alteracao-valores">
-                            <span className="valor-antigo">{item.percentual_anterior}%</span>
-                            <span className="seta">→</span>
-                            <span className="valor-novo">{item.percentual_novo}%</span>
-                          </span>
-                        )}
-                        {item.operacao === 'CREATE' && (
-                          <span className="valor-novo">{item.percentual_novo}%</span>
-                        )}
-                      </div>
-                      {item.motivo && (
-                        <div className="historico-motivo">
-                          <span className="motivo-label">Motivo:</span>
-                          <span className="motivo-texto">{item.motivo}</span>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-            <div className="modal-footer">
-              <button className="btn-secondary" onClick={() => setShowHistoricoModal(false)}>
-                Fechar
-              </button>
-            </div>
           </div>
         </div>
       )}

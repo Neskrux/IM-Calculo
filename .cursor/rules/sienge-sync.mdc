@@ -89,31 +89,6 @@ const corretorId = await getOrCreateCorretorPlaceholder(siengeBrokerId)
 3. Vendas (depende de corretores e clientes)
 ```
 
-## Regra #7: FATOR DE COMISSÃO (CRÍTICO!)
-
-**NUNCA calcular comissão diretamente sobre a parcela!**
-
-```javascript
-// ❌ ERRADO - Não aplique percentual diretamente na parcela!
-const comissaoErrada = valorParcela * (percentualCargo / 100)
-
-// ✅ CORRETO - Calcular FATOR primeiro, depois aplicar
-const fatorCargo = (valorTotalVenda * percentualCargo) / valorProSoluto
-const comissaoCorreta = valorParcela * fatorCargo
-```
-
-**Fórmulas obrigatórias:**
-```
-FATOR = (VALOR_VENDA × PERCENTUAL) / PRO_SOLUTO
-COMISSÃO = PARCELA × FATOR
-```
-
-**Exemplo (Corretor 4%, Venda R$ 292.366, Pro-Soluto R$ 69.804):**
-- Fator: `(292.366 × 0,04) / 69.804 = 0,1675`
-- Comissão/Parcela: `1.292,67 × 0,1675 = R$ 216,52` ✅
-
-Ver regra completa em: `.cursor/rules/fator-comissao.mdc`
-
 ## Arquivos principais
 
 - `src/services/sienge/rawIngestion.js` - Ingestão RAW
