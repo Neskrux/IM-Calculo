@@ -665,13 +665,13 @@ const SincronizarSiengeV2 = () => {
             borderRadius: '8px'
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Clock size={18} style={{ color: '#3b82f6' }} />
+              <Clock size={18} style={{ color: '#c9a962' }} />
               <span style={{ fontWeight: '600' }}>Tempo decorrido:</span>
               <span style={{ 
                 fontFamily: 'monospace', 
                 fontSize: '18px', 
                 fontWeight: 'bold',
-                color: '#3b82f6'
+                color: '#c9a962'
               }}>
                 {formatarTempo(tempoDecorrido)}
               </span>

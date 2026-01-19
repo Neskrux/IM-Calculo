@@ -45,7 +45,7 @@ const EmpreendimentoGaleria = ({ empreendimentoId, onClose }) => {
       // Fallback para categorias padrão se a tabela não existir
       setCategorias([
         { id: '0', nome: 'logo', label: 'Logo', cor: '#c9a962' },
-        { id: '1', nome: 'fachada', label: 'Fachada', cor: '#3b82f6' },
+        { id: '1', nome: 'fachada', label: 'Fachada', cor: '#c9a962' },
         { id: '2', nome: 'interior', label: 'Áreas Internas', cor: '#10b981' },
         { id: '3', nome: 'apartamento', label: 'Apartamento Modelo', cor: '#8b5cf6' },
         { id: '4', nome: 'planta', label: 'Planta Baixa', cor: '#f59e0b' },

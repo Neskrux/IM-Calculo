@@ -2525,11 +2525,37 @@ const AdminDashboard = () => {
     try {
       const doc = new jsPDF()
       const pageWidth = doc.internal.pageSize.getWidth()
+      const pageHeight = doc.internal.pageSize.getHeight()
       
-      // Cores do tema
-      const corPrimaria = [30, 41, 59] // #1e293b
-      const corSecundaria = [16, 185, 129] // #10b981
-      const corTexto = [51, 65, 85] // #334155
+      // ========================================
+      // PALETA DE CORES PREMIUM - TEMA DOURADO
+      // ========================================
+      const cores = {
+        // Cores principais
+        preto: [15, 15, 15],           // #0f0f0f - Preto premium
+        dourado: [201, 169, 98],       // #c9a962 - Dourado principal
+        douradoClaro: [212, 185, 130], // #d4b982 - Dourado claro
+        douradoEscuro: [139, 115, 85], // #8b7355 - Dourado escuro
+        
+        // Tons neutros
+        cinzaEscuro: [30, 30, 30],     // #1e1e1e - Fundo escuro
+        cinzaMedio: [45, 45, 45],      // #2d2d2d - Cards
+        cinzaClaro: [60, 60, 60],      // #3c3c3c - Bordas
+        
+        // Texto
+        textoBranco: [255, 255, 255],  // #ffffff
+        textoClaro: [200, 200, 200],   // #c8c8c8
+        textoMedio: [150, 150, 150],   // #969696
+        
+        // Status
+        verde: [16, 185, 129],         // #10b981 - Pago/Sucesso
+        vermelho: [239, 68, 68],       // #ef4444 - Atrasado/Erro
+        amarelo: [245, 158, 11],       // #f59e0b - Pendente
+        
+        // Backgrounds claros para tabelas
+        bgClaro: [250, 248, 245],      // #faf8f5 - Fundo claro elegante
+        bgAlternado: [245, 242, 237]   // #f5f2ed - Linha alternada
+      }
       
       // Buscar nome do corretor se filtrado
       const corretorSelecionado = relatorioFiltros.corretorId 
@@ -2541,51 +2567,59 @@ const AdminDashboard = () => {
         ? empreendimentos.find(e => e.id === relatorioFiltros.empreendimentoId)
         : null
       
-      // Cabeçalho
-      doc.setFillColor(...corPrimaria)
-      doc.rect(0, 0, pageWidth, 45, 'F')
+      // ========================================
+      // CABECALHO PREMIUM
+      // ========================================
       
-      doc.setTextColor(255, 255, 255)
-      doc.setFontSize(20)
+      // Fundo preto elegante
+      doc.setFillColor(...cores.preto)
+      doc.rect(0, 0, pageWidth, 50, 'F')
+      
+      // Linha dourada decorativa no topo
+      doc.setFillColor(...cores.dourado)
+      doc.rect(0, 0, pageWidth, 2, 'F')
+      
+      // Linha dourada decorativa na base do header
+      doc.setFillColor(...cores.dourado)
+      doc.rect(0, 48, pageWidth, 2, 'F')
+      
+      // Logo/Titulo
+      doc.setTextColor(...cores.dourado)
+      doc.setFontSize(10)
+      doc.setFont('helvetica', 'normal')
+      doc.text('IM INCORPORADORA', 14, 15)
+      
+      // Titulo principal
+      doc.setTextColor(...cores.textoBranco)
+      doc.setFontSize(18)
       doc.setFont('helvetica', 'bold')
       
-      // Título dinâmico baseado nos filtros
-      let tituloRelatorio = 'RELATÓRIO DE COMISSÕES'
       if (corretorSelecionado) {
-        tituloRelatorio = `RELATÓRIO DE COMISSÕES`
-        doc.text(tituloRelatorio, pageWidth / 2, 15, { align: 'center' })
-        doc.setFontSize(14)
-        doc.text(corretorSelecionado.nome.toUpperCase(), pageWidth / 2, 26, { align: 'center' })
-        doc.setFontSize(10)
+        doc.text('RELATORIO DE COMISSOES', pageWidth / 2, 20, { align: 'center' })
+        doc.setFontSize(12)
+        doc.setTextColor(...cores.dourado)
+        doc.text(corretorSelecionado.nome.toUpperCase(), pageWidth / 2, 30, { align: 'center' })
+        doc.setFontSize(9)
+        doc.setTextColor(...cores.textoClaro)
         doc.setFont('helvetica', 'normal')
-        doc.text(`${corretorSelecionado.tipo_corretor === 'interno' ? 'Corretor Interno' : 'Corretor Externo'}`, pageWidth / 2, 34, { align: 'center' })
+        doc.text(`${corretorSelecionado.tipo_corretor === 'interno' ? 'Corretor Interno' : 'Corretor Externo'}`, pageWidth / 2, 38, { align: 'center' })
       } else {
-        doc.text(tituloRelatorio, pageWidth / 2, 18, { align: 'center' })
+        doc.text('RELATORIO DE COMISSOES', pageWidth / 2, 28, { align: 'center' })
       }
       
-      doc.setFontSize(9)
-      doc.setFont('helvetica', 'normal')
-      doc.text(`Gerado em: ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR')}`, pageWidth / 2, 42, { align: 'center' })
+      // Data de geracao
+      doc.setFontSize(8)
+      doc.setTextColor(...cores.textoMedio)
+      doc.text(`${new Date().toLocaleDateString('pt-BR')} | ${new Date().toLocaleTimeString('pt-BR')}`, pageWidth - 14, 15, { align: 'right' })
       
-      let yPosition = 55
+      let yPosition = 60
       
-      // Determinar fonte de dados: se há pagamentos, usar listaVendasComPagamentos
-      // Caso contrário, criar lista a partir das vendas diretamente
+      // Determinar fonte de dados
       let dadosFiltrados = []
       
-      console.log('🔍 [RELATÓRIO] Debug fonte de dados:', {
-        listaVendasComPagamentos: listaVendasComPagamentos.length,
-        vendas: vendas.length,
-        pagamentos: pagamentos.length
-      })
-      
       if (listaVendasComPagamentos.length > 0) {
-        // Usar dados agrupados por pagamentos
-        console.log('📋 [RELATÓRIO] Usando listaVendasComPagamentos')
         dadosFiltrados = [...listaVendasComPagamentos]
       } else if (vendas.length > 0) {
-        // Fallback: criar estrutura a partir das vendas diretamente
-        console.log('📋 [RELATÓRIO] Usando vendas diretamente (sem pagamentos_prosoluto)')
         dadosFiltrados = vendas.map(venda => ({
           venda_id: venda.id,
           venda: venda,
@@ -2595,61 +2629,39 @@ const AdminDashboard = () => {
           totalPago: venda.status === 'pago' ? (parseFloat(venda.comissao_total) || 0) : 0,
           totalPendente: venda.status !== 'pago' ? (parseFloat(venda.comissao_total) || 0) : 0
         }))
-      } else {
-        console.warn('⚠️ [RELATÓRIO] Nenhuma venda encontrada! Verifique se os dados foram carregados.')
       }
       
-      console.log('🔍 [RELATÓRIO] Filtros aplicados:', relatorioFiltros)
-      console.log('🔍 [RELATÓRIO] Antes dos filtros:', dadosFiltrados.length, 'vendas')
-      
-      // NOVO: Filtro por corretor
+      // Aplicar filtros
       if (relatorioFiltros.corretorId) {
-        const antes = dadosFiltrados.length
         dadosFiltrados = dadosFiltrados.filter(g => {
-          // Prioridade: corretor.id (objeto aninhado) > corretor_id (campo direto)
           const corretorIdVenda = String(g.venda?.corretor?.id || g.venda?.corretor_id || '')
-          const corretorIdFiltro = String(relatorioFiltros.corretorId)
-          return corretorIdVenda === corretorIdFiltro
+          return corretorIdVenda === String(relatorioFiltros.corretorId)
         })
-        console.log(`   Filtro corretor: ${antes} → ${dadosFiltrados.length}`)
       }
       
-      // NOVO: Filtro por empreendimento
       if (relatorioFiltros.empreendimentoId) {
-        const antes = dadosFiltrados.length
         dadosFiltrados = dadosFiltrados.filter(g => {
-          // Prioridade: empreendimento.id (objeto aninhado) > empreendimento_id (campo direto)
           const empIdVenda = String(g.venda?.empreendimento?.id || g.venda?.empreendimento_id || '')
-          const empIdFiltro = String(relatorioFiltros.empreendimentoId)
-          return empIdVenda === empIdFiltro
+          return empIdVenda === String(relatorioFiltros.empreendimentoId)
         })
-        console.log(`   Filtro empreendimento: ${antes} → ${dadosFiltrados.length}`)
       }
       
       if (relatorioFiltros.vendaId) {
-        const antes = dadosFiltrados.length
         dadosFiltrados = dadosFiltrados.filter(g => g.venda_id === relatorioFiltros.vendaId)
-        console.log(`   Filtro venda: ${antes} → ${dadosFiltrados.length}`)
       }
       
       if (relatorioFiltros.status !== 'todos') {
-        const antes = dadosFiltrados.length
         if (listaVendasComPagamentos.length > 0) {
-          // Filtrar por status dos pagamentos - MAS MANTER A VENDA se tiver pagamentos do status
           dadosFiltrados = dadosFiltrados.map(g => ({
             ...g,
             pagamentos: g.pagamentos.filter(p => p.status === relatorioFiltros.status)
           })).filter(g => g.pagamentos.length > 0)
         } else {
-          // Filtrar por status da venda
           dadosFiltrados = dadosFiltrados.filter(g => g.venda?.status === relatorioFiltros.status)
         }
-        console.log(`   Filtro status (${relatorioFiltros.status}): ${antes} → ${dadosFiltrados.length}`)
       }
       
-      // Filtro por data
       if (relatorioFiltros.dataInicio || relatorioFiltros.dataFim) {
-        const antes = dadosFiltrados.length
         const dataInicio = relatorioFiltros.dataInicio ? new Date(relatorioFiltros.dataInicio) : null
         const dataFim = relatorioFiltros.dataFim ? new Date(relatorioFiltros.dataFim + 'T23:59:59') : null
         
@@ -2664,7 +2676,6 @@ const AdminDashboard = () => {
             })
           })).filter(g => g.pagamentos.length > 0)
         } else {
-          // Filtrar por data da venda
           dadosFiltrados = dadosFiltrados.filter(g => {
             const dataVenda = new Date(g.venda?.data_venda)
             if (dataInicio && dataVenda < dataInicio) return false
@@ -2672,38 +2683,42 @@ const AdminDashboard = () => {
             return true
           })
         }
-        console.log(`   Filtro data: ${antes} → ${dadosFiltrados.length}`)
       }
       
-      console.log('📊 [RELATÓRIO] Dados filtrados FINAL:', dadosFiltrados.length, 'vendas')
-      
-      // Box de Filtros Aplicados
-      doc.setFillColor(241, 245, 249) // #f1f5f9
-      doc.roundedRect(14, yPosition, pageWidth - 28, 20, 2, 2, 'F')
-      
-      doc.setTextColor(...corTexto)
-      doc.setFontSize(9)
-      doc.setFont('helvetica', 'bold')
-      doc.text('FILTROS APLICADOS:', 18, yPosition + 7)
-      
-      doc.setFont('helvetica', 'normal')
+      // ========================================
+      // FILTROS APLICADOS - Design Minimalista
+      // ========================================
       let filtrosTexto = []
       if (corretorSelecionado) filtrosTexto.push(`Corretor: ${corretorSelecionado.nome}`)
       if (empreendimentoSelecionado) filtrosTexto.push(`Empreend.: ${empreendimentoSelecionado.nome}`)
       if (relatorioFiltros.status !== 'todos') filtrosTexto.push(`Status: ${relatorioFiltros.status === 'pago' ? 'Pago' : 'Pendente'}`)
       if (relatorioFiltros.cargoId) filtrosTexto.push(`Cargo: ${relatorioFiltros.cargoId}`)
       if (relatorioFiltros.dataInicio || relatorioFiltros.dataFim) {
-        const inicio = relatorioFiltros.dataInicio ? new Date(relatorioFiltros.dataInicio).toLocaleDateString('pt-BR') : 'início'
+        const inicio = relatorioFiltros.dataInicio ? new Date(relatorioFiltros.dataInicio).toLocaleDateString('pt-BR') : 'inicio'
         const fim = relatorioFiltros.dataFim ? new Date(relatorioFiltros.dataFim).toLocaleDateString('pt-BR') : 'hoje'
-        filtrosTexto.push(`Período: ${inicio} a ${fim}`)
+        filtrosTexto.push(`Periodo: ${inicio} a ${fim}`)
       }
-      if (filtrosTexto.length === 0) filtrosTexto.push('Nenhum filtro aplicado - Exibindo todos os dados')
       
-      doc.text(filtrosTexto.join(' | '), 18, yPosition + 14)
-      yPosition += 28
+      if (filtrosTexto.length > 0) {
+        doc.setFillColor(...cores.bgClaro)
+        doc.roundedRect(14, yPosition, pageWidth - 28, 16, 2, 2, 'F')
+        doc.setDrawColor(...cores.dourado)
+        doc.setLineWidth(0.3)
+        doc.roundedRect(14, yPosition, pageWidth - 28, 16, 2, 2, 'S')
+        
+        doc.setTextColor(...cores.douradoEscuro)
+        doc.setFontSize(7)
+        doc.setFont('helvetica', 'bold')
+        doc.text('FILTROS:', 18, yPosition + 6)
+        doc.setFont('helvetica', 'normal')
+        doc.setTextColor(...cores.cinzaEscuro)
+        doc.text(filtrosTexto.join('  |  '), 38, yPosition + 6)
+        yPosition += 22
+      }
       
-      // Resumo geral - calcular baseado no cargo selecionado ou total
-      // Obter percentual do corretor filtrado para cálculo dos totais
+      // ========================================
+      // CALCULAR TOTAIS
+      // ========================================
       const corretorParaTotais = relatorioFiltros.corretorId 
         ? corretores.find(c => c.id === relatorioFiltros.corretorId)
         : null
@@ -2715,77 +2730,99 @@ const AdminDashboard = () => {
       let totalPago = 0
       
       if (relatorioFiltros.cargoId) {
-        // Filtrar apenas comissões do cargo selecionado
         dadosFiltrados.forEach(grupo => {
           grupo.pagamentos.forEach(pag => {
             const comissoesCargo = calcularComissaoPorCargoPagamento(pag)
             const cargoEncontrado = comissoesCargo.find(c => c.nome_cargo === relatorioFiltros.cargoId)
             if (cargoEncontrado) {
               totalComissao += cargoEncontrado.valor
-              if (pag.status === 'pago') {
-                totalPago += cargoEncontrado.valor
-              }
+              if (pag.status === 'pago') totalPago += cargoEncontrado.valor
             }
           })
         })
       } else if (percentualCorretorTotais !== null) {
-        // Se há filtro por corretor com percentual próprio, recalcular comissões
         dadosFiltrados.forEach(grupo => {
           grupo.pagamentos.forEach(pag => {
             const valorParcela = parseFloat(pag.valor) || 0
             const comissao = valorParcela * percentualCorretorTotais
             totalComissao += comissao
-            if (pag.status === 'pago') {
-              totalPago += comissao
-            }
+            if (pag.status === 'pago') totalPago += comissao
           })
         })
       } else {
-        // Usar comissao_gerada dos pagamentos
         dadosFiltrados.forEach(grupo => {
           grupo.pagamentos.forEach(pag => {
             const comissao = parseFloat(pag.comissao_gerada) || 0
             totalComissao += comissao
-            if (pag.status === 'pago') {
-              totalPago += comissao
-            }
+            if (pag.status === 'pago') totalPago += comissao
           })
         })
       }
       const totalPendente = totalComissao - totalPago
       
-      // Box de resumo
-      doc.setFillColor(241, 245, 249) // #f1f5f9
-      doc.roundedRect(14, yPosition, pageWidth - 28, 25, 3, 3, 'F')
+      // ========================================
+      // CARDS DE RESUMO - Design Premium
+      // ========================================
+      const cardWidth = (pageWidth - 28 - 10) / 3 // 3 cards com 5px de gap
+      const cardHeight = 28
       
-      doc.setFontSize(10)
+      // Card 1 - Comissao Total (Dourado)
+      doc.setFillColor(...cores.preto)
+      doc.roundedRect(14, yPosition, cardWidth, cardHeight, 2, 2, 'F')
+      doc.setDrawColor(...cores.dourado)
+      doc.setLineWidth(0.5)
+      doc.roundedRect(14, yPosition, cardWidth, cardHeight, 2, 2, 'S')
+      
+      doc.setTextColor(...cores.dourado)
+      doc.setFontSize(7)
       doc.setFont('helvetica', 'normal')
-      doc.setTextColor(...corTexto)
-      
-      const resumoY = yPosition + 10
-      doc.text('Comissão Total:', 20, resumoY)
+      doc.text('COMISSAO TOTAL', 14 + cardWidth/2, yPosition + 8, { align: 'center' })
+      doc.setFontSize(12)
       doc.setFont('helvetica', 'bold')
-      doc.text(formatCurrency(totalComissao), 20, resumoY + 8)
+      doc.setTextColor(...cores.textoBranco)
+      doc.text(formatCurrency(totalComissao), 14 + cardWidth/2, yPosition + 20, { align: 'center' })
       
+      // Card 2 - Comissao Paga (Verde)
+      const card2X = 14 + cardWidth + 5
+      doc.setFillColor(...cores.preto)
+      doc.roundedRect(card2X, yPosition, cardWidth, cardHeight, 2, 2, 'F')
+      doc.setDrawColor(...cores.verde)
+      doc.setLineWidth(0.5)
+      doc.roundedRect(card2X, yPosition, cardWidth, cardHeight, 2, 2, 'S')
+      
+      doc.setTextColor(...cores.verde)
+      doc.setFontSize(7)
       doc.setFont('helvetica', 'normal')
-      doc.text('Comissão Paga:', 80, resumoY)
-      doc.setTextColor(16, 185, 129)
+      doc.text('COMISSAO PAGA', card2X + cardWidth/2, yPosition + 8, { align: 'center' })
+      doc.setFontSize(12)
       doc.setFont('helvetica', 'bold')
-      doc.text(formatCurrency(totalPago), 80, resumoY + 8)
+      doc.text(formatCurrency(totalPago), card2X + cardWidth/2, yPosition + 20, { align: 'center' })
       
-      doc.setTextColor(...corTexto)
+      // Card 3 - Comissao Pendente (Amarelo)
+      const card3X = card2X + cardWidth + 5
+      doc.setFillColor(...cores.preto)
+      doc.roundedRect(card3X, yPosition, cardWidth, cardHeight, 2, 2, 'F')
+      doc.setDrawColor(...cores.amarelo)
+      doc.setLineWidth(0.5)
+      doc.roundedRect(card3X, yPosition, cardWidth, cardHeight, 2, 2, 'S')
+      
+      doc.setTextColor(...cores.amarelo)
+      doc.setFontSize(7)
       doc.setFont('helvetica', 'normal')
-      doc.text('Comissão Pendente:', 140, resumoY)
-      doc.setTextColor(245, 158, 11)
+      doc.text('COMISSAO PENDENTE', card3X + cardWidth/2, yPosition + 8, { align: 'center' })
+      doc.setFontSize(12)
       doc.setFont('helvetica', 'bold')
-      doc.text(formatCurrency(totalPendente), 140, resumoY + 8)
+      doc.text(formatCurrency(totalPendente), card3X + cardWidth/2, yPosition + 20, { align: 'center' })
       
-      yPosition += 35
+      yPosition += 38
       
-      // Para cada venda
+      // ========================================
+      // DETALHAMENTO DAS VENDAS
+      // ========================================
+      
       dadosFiltrados.forEach((grupo, idx) => {
         // Verificar se precisa nova página
-        if (yPosition > 250) {
+        if (yPosition > 240) {
           doc.addPage()
           yPosition = 20
         }
@@ -2795,54 +2832,71 @@ const AdminDashboard = () => {
         const empreendimento = venda?.empreendimento?.nome || 'N/A'
         const unidade = venda?.unidade || venda?.numero_unidade || '-'
         const bloco = venda?.bloco || venda?.numero_bloco || '-'
-        const cliente = venda?.nome_cliente || venda?.cliente?.nome_completo || venda?.cliente?.nome || 'Cliente não informado'
+        const cliente = venda?.nome_cliente || venda?.cliente?.nome_completo || venda?.cliente?.nome || 'Cliente nao informado'
         const dataVenda = venda?.data_venda ? new Date(venda.data_venda).toLocaleDateString('pt-BR') : (venda?.data_emissao ? new Date(venda.data_emissao).toLocaleDateString('pt-BR') : '-')
         const valorVenda = parseFloat(venda?.valor_venda) || parseFloat(venda?.valor_venda_total) || 0
         
-        // Calcular comissão da venda - usar percentual do corretor se filtrado
+        // Calcular comissão da venda
         let comissaoVenda = 0
         if (percentualCorretorTotais !== null) {
-          // Recalcular usando percentual do corretor
           comissaoVenda = grupo.pagamentos.reduce((acc, p) => {
             const valorParcela = parseFloat(p.valor) || 0
             return acc + (valorParcela * percentualCorretorTotais)
           }, 0)
         } else {
-          // Usar soma das comissões dos pagamentos
           comissaoVenda = parseFloat(venda?.comissao_total) || grupo.totalComissao || grupo.pagamentos.reduce((acc, p) => acc + (parseFloat(p.comissao_gerada) || 0), 0)
         }
         
-        // Título da venda - Box principal
-        doc.setFillColor(...corPrimaria)
-        doc.rect(14, yPosition, pageWidth - 28, 18, 'F')
-        doc.setTextColor(255, 255, 255)
+        // ========================================
+        // HEADER DA VENDA - Design Elegante
+        // ========================================
+        
+        // Fundo escuro premium
+        doc.setFillColor(...cores.cinzaEscuro)
+        doc.roundedRect(14, yPosition, pageWidth - 28, 22, 2, 2, 'F')
+        
+        // Barra lateral dourada
+        doc.setFillColor(...cores.dourado)
+        doc.rect(14, yPosition, 3, 22, 'F')
+        
+        // Empreendimento (titulo principal)
+        doc.setTextColor(...cores.textoBranco)
         doc.setFontSize(10)
         doc.setFont('helvetica', 'bold')
-        doc.text(`${empreendimento}`, 18, yPosition + 6)
-        doc.setFontSize(9)
-        doc.setFont('helvetica', 'normal')
-        doc.text(`Bloco: ${bloco} | Unidade: ${unidade} | Data: ${dataVenda}`, 18, yPosition + 13)
+        doc.text(empreendimento.toUpperCase(), 22, yPosition + 8)
         
-        // Valores à direita
-        doc.setFontSize(9)
-        doc.text(`Venda: ${formatCurrency(valorVenda)}`, pageWidth - 18, yPosition + 6, { align: 'right' })
-        doc.setFont('helvetica', 'bold')
-        doc.text(`Comissão: ${formatCurrency(comissaoVenda)}`, pageWidth - 18, yPosition + 13, { align: 'right' })
-        
-        yPosition += 22
-        
-        // Linha de informações do cliente e corretor
-        doc.setFillColor(226, 232, 240) // #e2e8f0
-        doc.rect(14, yPosition, pageWidth - 28, 10, 'F')
-        doc.setTextColor(...corTexto)
+        // Detalhes da unidade
         doc.setFontSize(8)
+        doc.setFont('helvetica', 'normal')
+        doc.setTextColor(...cores.textoClaro)
+        doc.text(`Bl. ${bloco}  |  Un. ${unidade}  |  ${dataVenda}`, 22, yPosition + 16)
+        
+        // Valores a direita
+        doc.setTextColor(...cores.dourado)
+        doc.setFontSize(8)
+        doc.text(`Venda: ${formatCurrency(valorVenda)}`, pageWidth - 18, yPosition + 8, { align: 'right' })
+        doc.setFontSize(10)
+        doc.setFont('helvetica', 'bold')
+        doc.setTextColor(...cores.verde)
+        doc.text(formatCurrency(comissaoVenda), pageWidth - 18, yPosition + 17, { align: 'right' })
+        
+        yPosition += 26
+        
+        // ========================================
+        // LINHA DE INFO - Cliente e Corretor
+        // ========================================
+        doc.setFillColor(...cores.bgClaro)
+        doc.rect(14, yPosition, pageWidth - 28, 10, 'F')
+        
+        doc.setTextColor(...cores.cinzaEscuro)
+        doc.setFontSize(7)
         doc.setFont('helvetica', 'normal')
         doc.text(`Cliente: ${cliente}`, 18, yPosition + 6)
         doc.text(`Corretor: ${corretor}`, pageWidth - 18, yPosition + 6, { align: 'right' })
         
-        yPosition += 14
+        yPosition += 13
         
-        // Obter percentual do corretor filtrado (se houver filtro por corretor)
+        // Obter percentual do corretor filtrado
         const corretorFiltrado = relatorioFiltros.corretorId 
           ? corretores.find(c => c.id === relatorioFiltros.corretorId)
           : null
@@ -2850,24 +2904,21 @@ const AdminDashboard = () => {
           ? parseFloat(corretorFiltrado.percentual_corretor) / 100 
           : null
         
-        // Tabela de parcelas
+        // ========================================
+        // TABELA DE PARCELAS - Design Premium
+        // ========================================
         const parcelas = grupo.pagamentos.map(pag => {
           const valorParcela = parseFloat(pag.valor) || 0
-          
-          // Se há filtro por corretor e o corretor tem percentual próprio, usar esse percentual
           let comissaoExibir = parseFloat(pag.comissao_gerada) || 0
           let percentualUsado = 0
           
           if (percentualCorretor !== null && valorParcela > 0) {
-            // Recalcular comissão usando o percentual do corretor
             comissaoExibir = valorParcela * percentualCorretor
             percentualUsado = percentualCorretor * 100
           } else if (valorParcela > 0 && comissaoExibir > 0) {
-            // Calcular percentual a partir da comissão existente
             percentualUsado = (comissaoExibir / valorParcela) * 100
           }
           
-          // Se filtro por cargo, mostrar apenas comissão daquele cargo
           if (relatorioFiltros.cargoId) {
             const comissoesCargo = calcularComissaoPorCargoPagamento(pag)
             const cargoEncontrado = comissoesCargo.find(c => c.nome_cargo === relatorioFiltros.cargoId)
@@ -2875,15 +2926,13 @@ const AdminDashboard = () => {
             percentualUsado = valorParcela > 0 ? (comissaoExibir / valorParcela) * 100 : 0
           }
           
-          // Formatar percentual com 2 casas decimais
           const percentualComissao = percentualUsado.toFixed(2)
           
-          // Formatar tipo de pagamento
           const tipoFormatado = {
             'sinal': 'Sinal',
             'entrada': 'Entrada',
             'parcela_entrada': 'Parc. Entrada',
-            'balao': 'Balão',
+            'balao': 'Balao',
             'financiamento': 'Financ.',
             'mensal': 'Mensal'
           }[pag.tipo_pagamento || pag.tipo] || (pag.tipo_pagamento || pag.tipo || '-').charAt(0).toUpperCase() + (pag.tipo_pagamento || pag.tipo || '').slice(1)
@@ -2892,7 +2941,7 @@ const AdminDashboard = () => {
             tipoFormatado,
             pag.data_prevista ? new Date(pag.data_prevista).toLocaleDateString('pt-BR') : '-',
             formatCurrency(pag.valor),
-            pag.status === 'pago' ? 'Pago' : 'Pendente',
+            pag.status === 'pago' ? 'PAGO' : 'PENDENTE',
             `${percentualComissao.replace('.', ',')}%`,
             formatCurrency(comissaoExibir)
           ]
@@ -2900,56 +2949,77 @@ const AdminDashboard = () => {
         
         autoTable(doc, {
           startY: yPosition,
-          head: [['Tipo', 'Data', 'Valor Parcela', 'Status', '% Comissão', 'Comissão']],
+          head: [['Tipo', 'Data', 'Valor', 'Status', '%', 'Comissao']],
           body: parcelas,
-          theme: 'striped',
+          theme: 'plain',
           headStyles: {
-            fillColor: corSecundaria,
-            textColor: 255,
+            fillColor: cores.dourado,
+            textColor: cores.preto,
             fontStyle: 'bold',
-            fontSize: 9
+            fontSize: 7,
+            cellPadding: 3
           },
           bodyStyles: {
-            fontSize: 8,
-            textColor: corTexto
+            fontSize: 7,
+            textColor: cores.cinzaEscuro,
+            cellPadding: 2.5
           },
           alternateRowStyles: {
-            fillColor: [248, 250, 252]
+            fillColor: cores.bgAlternado
           },
           columnStyles: {
             0: { cellWidth: 25 },
-            1: { cellWidth: 25 },
-            2: { cellWidth: 35, halign: 'right' },
+            1: { cellWidth: 22 },
+            2: { cellWidth: 32, halign: 'right' },
             3: { cellWidth: 22, halign: 'center' },
-            4: { cellWidth: 25, halign: 'center' },
-            5: { cellWidth: 35, halign: 'right' }
+            4: { cellWidth: 18, halign: 'center' },
+            5: { cellWidth: 32, halign: 'right', fontStyle: 'bold' }
           },
-          margin: { left: 14, right: 14 }
+          margin: { left: 14, right: 14 },
+          didParseCell: function(data) {
+            // Colorir status
+            if (data.section === 'body' && data.column.index === 3) {
+              const cellText = data.cell.raw
+              if (cellText === 'PAGO') {
+                data.cell.styles.textColor = cores.verde
+                data.cell.styles.fontStyle = 'bold'
+              } else {
+                data.cell.styles.textColor = cores.amarelo
+                data.cell.styles.fontStyle = 'bold'
+              }
+            }
+            // Destacar valor da comissao
+            if (data.section === 'body' && data.column.index === 5) {
+              data.cell.styles.textColor = cores.douradoEscuro
+            }
+          }
         })
         
-        yPosition = doc.lastAutoTable.finalY + 10
+        yPosition = doc.lastAutoTable.finalY + 12
       })
       
-      // RESUMO EXECUTIVO FINAL (especialmente útil quando filtrado por corretor)
+      // ========================================
+      // RESUMO EXECUTIVO - Design Premium
+      // ========================================
       if (dadosFiltrados.length > 0) {
-        // Verificar se precisa nova página
-        if (yPosition > 220) {
+        if (yPosition > 200) {
           doc.addPage()
           yPosition = 20
         }
         
-        yPosition += 10
+        // Titulo da secao com linha dourada
+        doc.setFillColor(...cores.preto)
+        doc.roundedRect(14, yPosition, pageWidth - 28, 12, 2, 2, 'F')
+        doc.setFillColor(...cores.dourado)
+        doc.rect(14, yPosition, 4, 12, 'F')
         
-        // Título do resumo
-        doc.setFillColor(...corSecundaria)
-        doc.rect(14, yPosition, pageWidth - 28, 10, 'F')
-        doc.setTextColor(255, 255, 255)
-        doc.setFontSize(12)
+        doc.setTextColor(...cores.dourado)
+        doc.setFontSize(10)
         doc.setFont('helvetica', 'bold')
-        doc.text('RESUMO EXECUTIVO', pageWidth / 2, yPosition + 7, { align: 'center' })
-        yPosition += 15
+        doc.text('RESUMO EXECUTIVO', 24, yPosition + 8)
+        yPosition += 18
         
-        // Calcular estatísticas usando comissao_gerada dos pagamentos
+        // Calcular estatisticas
         const totalVendasRelatorio = dadosFiltrados.length
         const totalParcelasRelatorio = dadosFiltrados.reduce((acc, g) => acc + g.pagamentos.length, 0)
         const totalValorVendas = dadosFiltrados.reduce((acc, g) => acc + (parseFloat(g.venda?.valor_venda) || parseFloat(g.venda?.valor_venda_total) || 0), 0)
@@ -2961,61 +3031,81 @@ const AdminDashboard = () => {
         }, 0)
         const totalPendenteRelatorio = totalComissaoRelatorio - totalPagoRelatorio
         
-        // Grid de estatísticas
+        // Tabela de resumo elegante
         const statsData = [
           ['Total de Vendas', totalVendasRelatorio.toString()],
           ['Total de Parcelas', totalParcelasRelatorio.toString()],
           ['Valor Total em Vendas', formatCurrency(totalValorVendas)],
-          ['Comissão Total', formatCurrency(totalComissaoRelatorio)],
-          ['Comissão Paga', formatCurrency(totalPagoRelatorio)],
-          ['Comissão Pendente', formatCurrency(totalPendenteRelatorio)]
+          ['Comissao Total', formatCurrency(totalComissaoRelatorio)],
+          ['Comissao Paga', formatCurrency(totalPagoRelatorio)],
+          ['Comissao Pendente', formatCurrency(totalPendenteRelatorio)]
         ]
         
         autoTable(doc, {
           startY: yPosition,
-          head: [['Métrica', 'Valor']],
+          head: [['Metrica', 'Valor']],
           body: statsData,
-          theme: 'grid',
+          theme: 'plain',
           headStyles: {
-            fillColor: corPrimaria,
-            textColor: 255,
+            fillColor: cores.dourado,
+            textColor: cores.preto,
             fontStyle: 'bold',
-            fontSize: 10
+            fontSize: 8,
+            cellPadding: 4
           },
           bodyStyles: {
-            fontSize: 10,
-            textColor: corTexto
+            fontSize: 8,
+            textColor: cores.cinzaEscuro,
+            cellPadding: 3
+          },
+          alternateRowStyles: {
+            fillColor: cores.bgAlternado
           },
           columnStyles: {
-            0: { cellWidth: 80, fontStyle: 'bold' },
-            1: { cellWidth: 80, halign: 'right' }
+            0: { cellWidth: 70, fontStyle: 'bold' },
+            1: { cellWidth: 70, halign: 'right' }
           },
-          margin: { left: 25, right: 25 },
-          tableWidth: 160
+          margin: { left: 30, right: 30 },
+          tableWidth: 140,
+          didParseCell: function(data) {
+            // Destacar valores de comissao
+            if (data.section === 'body' && data.row.index === 3) {
+              data.cell.styles.textColor = cores.douradoEscuro
+              data.cell.styles.fontStyle = 'bold'
+            }
+            if (data.section === 'body' && data.row.index === 4 && data.column.index === 1) {
+              data.cell.styles.textColor = cores.verde
+              data.cell.styles.fontStyle = 'bold'
+            }
+            if (data.section === 'body' && data.row.index === 5 && data.column.index === 1) {
+              data.cell.styles.textColor = cores.amarelo
+              data.cell.styles.fontStyle = 'bold'
+            }
+          }
         })
         
-        yPosition = doc.lastAutoTable.finalY + 10
+        yPosition = doc.lastAutoTable.finalY + 12
         
-        // Se filtrado por corretor, adicionar lista de empreendimentos
+        // Lista de empreendimentos (se filtrado por corretor)
         if (corretorSelecionado) {
           const empreendimentosDoCorretor = [...new Set(dadosFiltrados.map(g => g.venda?.empreendimento?.nome).filter(Boolean))]
           
           if (empreendimentosDoCorretor.length > 0) {
-            doc.setTextColor(...corTexto)
-            doc.setFontSize(10)
+            doc.setTextColor(...cores.douradoEscuro)
+            doc.setFontSize(8)
             doc.setFont('helvetica', 'bold')
-            doc.text('Empreendimentos:', 25, yPosition + 5)
+            doc.text('EMPREENDIMENTOS:', 30, yPosition)
             doc.setFont('helvetica', 'normal')
-            doc.text(empreendimentosDoCorretor.join(', '), 25, yPosition + 12)
-            yPosition += 20
+            doc.setTextColor(...cores.cinzaEscuro)
+            doc.text(empreendimentosDoCorretor.join('  |  '), 30, yPosition + 8)
+            yPosition += 18
           }
         }
         
         // ========================================
-        // PREVISIBILIDADE DE RECEBIMENTO
+        // PREVISAO DE RECEBIMENTO - Design Premium
         // ========================================
         
-        // Coletar todas as parcelas pendentes e agrupar por mês
         const parcelasPendentes = []
         dadosFiltrados.forEach(grupo => {
           grupo.pagamentos
@@ -3034,48 +3124,42 @@ const AdminDashboard = () => {
         })
         
         if (parcelasPendentes.length > 0) {
-          // Verificar se precisa nova página
-          if (yPosition > 180) {
+          if (yPosition > 170) {
             doc.addPage()
             yPosition = 20
           }
           
-          yPosition += 5
+          // Titulo da secao
+          doc.setFillColor(...cores.preto)
+          doc.roundedRect(14, yPosition, pageWidth - 28, 12, 2, 2, 'F')
+          doc.setFillColor(...cores.dourado)
+          doc.rect(14, yPosition, 4, 12, 'F')
           
-          // Título da seção
-          doc.setFillColor(59, 130, 246) // Azul
-          doc.rect(14, yPosition, pageWidth - 28, 10, 'F')
-          doc.setTextColor(255, 255, 255)
-          doc.setFontSize(11)
+          doc.setTextColor(...cores.dourado)
+          doc.setFontSize(10)
           doc.setFont('helvetica', 'bold')
-          doc.text('📅 PREVISÃO DE RECEBIMENTO', pageWidth / 2, yPosition + 7, { align: 'center' })
-          yPosition += 15
+          doc.text('PREVISAO DE RECEBIMENTO', 24, yPosition + 8)
+          yPosition += 18
           
-          // Agrupar por mês/ano
+          // Agrupar por mes/ano
           const previsaoPorMes = {}
           const hoje = new Date()
           
           parcelasPendentes.forEach(p => {
             const mesAno = `${p.data.getFullYear()}-${String(p.data.getMonth() + 1).padStart(2, '0')}`
             if (!previsaoPorMes[mesAno]) {
-              previsaoPorMes[mesAno] = {
-                total: 0,
-                qtd: 0,
-                parcelas: []
-              }
+              previsaoPorMes[mesAno] = { total: 0, qtd: 0, parcelas: [] }
             }
             previsaoPorMes[mesAno].total += p.valor
             previsaoPorMes[mesAno].qtd += 1
             previsaoPorMes[mesAno].parcelas.push(p)
           })
           
-          // Ordenar por data
           const mesesOrdenados = Object.keys(previsaoPorMes).sort()
           
-          // Criar tabela de previsão
           const nomeMes = (mesAno) => {
             const [ano, mes] = mesAno.split('-')
-            const meses = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 
+            const meses = ['Janeiro', 'Fevereiro', 'Marco', 'Abril', 'Maio', 'Junho', 
                           'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro']
             return `${meses[parseInt(mes) - 1]}/${ano}`
           }
@@ -3088,92 +3172,99 @@ const AdminDashboard = () => {
             const isAtual = dataRef.getMonth() === hoje.getMonth() && dataRef.getFullYear() === hoje.getFullYear()
             
             let status = ''
-            if (isAtual) status = '🔔 ESTE MÊS'
-            else if (isPassado) status = '⚠️ ATRASADO'
-            else status = '📆 Futuro'
+            if (isAtual) status = 'ESTE MES'
+            else if (isPassado) status = 'ATRASADO'
+            else status = 'Futuro'
             
-            return [
-              nomeMes(mesAno),
-              dados.qtd.toString() + ' parcela(s)',
-              formatCurrency(dados.total),
-              status
-            ]
+            return [nomeMes(mesAno), dados.qtd.toString() + ' parcela(s)', formatCurrency(dados.total), status]
           })
           
-          // Calcular totais por período
           const proximosMeses = mesesOrdenados.slice(0, 3)
           const totalProximos3Meses = proximosMeses.reduce((acc, m) => acc + (previsaoPorMes[m]?.total || 0), 0)
           
           autoTable(doc, {
             startY: yPosition,
-            head: [['Período', 'Qtd. Parcelas', 'Valor Previsto', 'Status']],
+            head: [['Periodo', 'Qtd. Parcelas', 'Valor Previsto', 'Status']],
             body: previsaoData,
-            theme: 'striped',
+            theme: 'plain',
             headStyles: {
-              fillColor: [59, 130, 246],
-              textColor: 255,
+              fillColor: cores.dourado,
+              textColor: cores.preto,
               fontStyle: 'bold',
-              fontSize: 9
+              fontSize: 8,
+              cellPadding: 3
             },
             bodyStyles: {
-              fontSize: 9,
-              textColor: corTexto
+              fontSize: 8,
+              textColor: cores.cinzaEscuro,
+              cellPadding: 2.5
+            },
+            alternateRowStyles: {
+              fillColor: cores.bgAlternado
             },
             columnStyles: {
-              0: { cellWidth: 45 },
-              1: { cellWidth: 35, halign: 'center' },
-              2: { cellWidth: 45, halign: 'right' },
-              3: { cellWidth: 40, halign: 'center' }
+              0: { cellWidth: 40 },
+              1: { cellWidth: 30, halign: 'center' },
+              2: { cellWidth: 40, halign: 'right' },
+              3: { cellWidth: 35, halign: 'center' }
             },
             margin: { left: 14, right: 14 },
             didParseCell: function(data) {
-              // Colorir células baseado no status
               if (data.section === 'body' && data.column.index === 3) {
                 const cellText = data.cell.raw
                 if (cellText.includes('ATRASADO')) {
-                  data.cell.styles.textColor = [220, 38, 38] // Vermelho
+                  data.cell.styles.textColor = cores.vermelho
                   data.cell.styles.fontStyle = 'bold'
-                } else if (cellText.includes('ESTE MÊS')) {
-                  data.cell.styles.textColor = [16, 185, 129] // Verde
+                } else if (cellText.includes('ESTE MES')) {
+                  data.cell.styles.textColor = cores.verde
                   data.cell.styles.fontStyle = 'bold'
                 }
+              }
+              // Destacar valores
+              if (data.section === 'body' && data.column.index === 2) {
+                data.cell.styles.textColor = cores.douradoEscuro
+                data.cell.styles.fontStyle = 'bold'
               }
             }
           })
           
           yPosition = doc.lastAutoTable.finalY + 8
           
-          // Box com destaque do total dos próximos 3 meses
-          doc.setFillColor(236, 253, 245) // Verde claro
-          doc.roundedRect(14, yPosition, pageWidth - 28, 18, 2, 2, 'F')
-          doc.setDrawColor(16, 185, 129)
-          doc.roundedRect(14, yPosition, pageWidth - 28, 18, 2, 2, 'S')
+          // Box de destaque - Proximos 3 meses
+          doc.setFillColor(...cores.preto)
+          doc.roundedRect(14, yPosition, pageWidth - 28, 20, 2, 2, 'F')
+          doc.setDrawColor(...cores.dourado)
+          doc.setLineWidth(0.5)
+          doc.roundedRect(14, yPosition, pageWidth - 28, 20, 2, 2, 'S')
           
-          doc.setTextColor(16, 185, 129)
-          doc.setFontSize(10)
-          doc.setFont('helvetica', 'bold')
-          doc.text('💰 Previsão próximos 3 meses:', 20, yPosition + 8)
+          doc.setTextColor(...cores.textoClaro)
+          doc.setFontSize(8)
+          doc.setFont('helvetica', 'normal')
+          doc.text('PREVISAO PROXIMOS 3 MESES', 20, yPosition + 8)
+          
+          doc.setTextColor(...cores.dourado)
           doc.setFontSize(14)
-          doc.text(formatCurrency(totalProximos3Meses), pageWidth - 20, yPosition + 11, { align: 'right' })
+          doc.setFont('helvetica', 'bold')
+          doc.text(formatCurrency(totalProximos3Meses), pageWidth - 20, yPosition + 13, { align: 'right' })
           
-          yPosition += 25
+          yPosition += 28
           
-          // Detalhe das próximas parcelas (top 10)
+          // Proximas parcelas
           const proximasParcelas = parcelasPendentes
             .filter(p => p.data >= hoje)
             .sort((a, b) => a.data - b.data)
             .slice(0, 10)
           
-          if (proximasParcelas.length > 0 && yPosition < 230) {
-            doc.setTextColor(...corTexto)
-            doc.setFontSize(9)
+          if (proximasParcelas.length > 0 && yPosition < 220) {
+            doc.setTextColor(...cores.douradoEscuro)
+            doc.setFontSize(8)
             doc.setFont('helvetica', 'bold')
-            doc.text('Próximas 10 parcelas a receber:', 14, yPosition + 3)
-            yPosition += 6
+            doc.text('Proximas 10 parcelas a receber:', 14, yPosition + 3)
+            yPosition += 8
             
             const proximasData = proximasParcelas.map(p => [
               p.data.toLocaleDateString('pt-BR'),
-              `${p.empreendimento}`,
+              p.empreendimento,
               `Bl. ${p.bloco} Un. ${p.unidade}`,
               p.tipo.charAt(0).toUpperCase() + p.tipo.slice(1),
               formatCurrency(p.valor)
@@ -3181,42 +3272,77 @@ const AdminDashboard = () => {
             
             autoTable(doc, {
               startY: yPosition,
-              head: [['Data', 'Empreendimento', 'Unidade', 'Tipo', 'Comissão']],
+              head: [['Data', 'Empreendimento', 'Unidade', 'Tipo', 'Comissao']],
               body: proximasData,
               theme: 'plain',
               headStyles: {
-                fillColor: [241, 245, 249],
-                textColor: corTexto,
+                fillColor: cores.bgClaro,
+                textColor: cores.cinzaEscuro,
                 fontStyle: 'bold',
-                fontSize: 8
+                fontSize: 7,
+                cellPadding: 2
               },
               bodyStyles: {
-                fontSize: 8,
-                textColor: corTexto
+                fontSize: 7,
+                textColor: cores.cinzaEscuro,
+                cellPadding: 2
+              },
+              alternateRowStyles: {
+                fillColor: cores.bgAlternado
               },
               columnStyles: {
-                0: { cellWidth: 25 },
+                0: { cellWidth: 22 },
                 1: { cellWidth: 50 },
                 2: { cellWidth: 35 },
-                3: { cellWidth: 30 },
-                4: { cellWidth: 30, halign: 'right' }
+                3: { cellWidth: 25 },
+                4: { cellWidth: 28, halign: 'right', fontStyle: 'bold' }
               },
-              margin: { left: 14, right: 14 }
+              margin: { left: 14, right: 14 },
+              didParseCell: function(data) {
+                if (data.section === 'body' && data.column.index === 4) {
+                  data.cell.styles.textColor = cores.douradoEscuro
+                }
+              }
             })
           }
         }
       }
       
-      // Rodapé em todas as páginas
+      // ========================================
+      // RODAPE PREMIUM - Todas as paginas
+      // ========================================
       const pageCount = doc.internal.getNumberOfPages()
       for (let i = 1; i <= pageCount; i++) {
         doc.setPage(i)
-        doc.setFillColor(...corPrimaria)
-        doc.rect(0, doc.internal.pageSize.getHeight() - 15, pageWidth, 15, 'F')
-        doc.setTextColor(255, 255, 255)
-        doc.setFontSize(8)
-        doc.text('Sistema de Gestão de Comissões - Nohros Imobiliária', 14, doc.internal.pageSize.getHeight() - 6)
-        doc.text(`Página ${i} de ${pageCount}`, pageWidth - 14, doc.internal.pageSize.getHeight() - 6, { align: 'right' })
+        
+        // Fundo preto elegante
+        doc.setFillColor(...cores.preto)
+        doc.rect(0, pageHeight - 12, pageWidth, 12, 'F')
+        
+        // Linha dourada no topo do rodape
+        doc.setFillColor(...cores.dourado)
+        doc.rect(0, pageHeight - 12, pageWidth, 0.5, 'F')
+        
+        // Texto do rodape
+        doc.setTextColor(...cores.textoMedio)
+        doc.setFontSize(7)
+        doc.setFont('helvetica', 'normal')
+        doc.text('IM INCORPORADORA', 14, pageHeight - 5)
+        
+        // Separador
+        doc.setTextColor(...cores.dourado)
+        doc.text('|', 50, pageHeight - 5)
+        
+        doc.setTextColor(...cores.textoMedio)
+        doc.text('Sistema de Gestao de Comissoes', 54, pageHeight - 5)
+        
+        // Paginacao
+        doc.setTextColor(...cores.dourado)
+        doc.setFont('helvetica', 'bold')
+        doc.text(`${i}`, pageWidth - 20, pageHeight - 5, { align: 'right' })
+        doc.setTextColor(...cores.textoMedio)
+        doc.setFont('helvetica', 'normal')
+        doc.text(`/ ${pageCount}`, pageWidth - 14, pageHeight - 5, { align: 'right' })
       }
       
       // Salvar PDF com nome mais descritivo
@@ -4267,6 +4393,17 @@ const AdminDashboard = () => {
                           </div>
                           <div className="corretor-actions">
                             <button 
+                              className="action-btn view small"
+                              onClick={() => {
+                                setSelectedItem({...corretor, vendasCorretor, totalComissao, totalVendas, percentual})
+                                setModalType('visualizar-corretor')
+                                setShowModal(true)
+                              }}
+                              title="Visualizar corretor"
+                            >
+                              <Eye size={14} />
+                            </button>
+                            <button 
                               className="action-btn edit small"
                               onClick={() => openEditCorretor(corretor)}
                               title="Editar corretor"
@@ -5182,7 +5319,7 @@ const AdminDashboard = () => {
                             style={{ 
                               background: 'rgba(59, 130, 246, 0.1)',
                               border: '1px solid rgba(59, 130, 246, 0.3)',
-                              color: '#3b82f6',
+                              color: '#c9a962',
                               padding: '6px 10px',
                               borderRadius: '6px',
                               cursor: 'pointer',
@@ -5528,6 +5665,19 @@ const AdminDashboard = () => {
                       </div>
                       <div className="cliente-actions">
                         <button 
+                          className="action-btn view small"
+                          onClick={() => {
+                            // Buscar vendas do cliente
+                            const vendasCliente = vendas.filter(v => v.cliente_id === cliente.id)
+                            setSelectedItem({...cliente, vendasCliente})
+                            setModalType('visualizar-cliente')
+                            setShowModal(true)
+                          }}
+                          title="Visualizar cliente"
+                        >
+                          <Eye size={16} />
+                        </button>
+                        <button 
                           className="action-btn edit small"
                           onClick={() => {
                             setSelectedItem(cliente)
@@ -5539,12 +5689,14 @@ const AdminDashboard = () => {
                             setModalType('cliente')
                             setShowModal(true)
                           }}
+                          title="Editar cliente"
                         >
                           <Edit2 size={16} />
                         </button>
                         <button 
                           className="action-btn delete small"
                           onClick={() => handleDeleteCliente(cliente.id)}
+                          title="Excluir cliente"
                         >
                           <Trash2 size={16} />
                         </button>
@@ -5995,7 +6147,7 @@ const AdminDashboard = () => {
                           marginBottom: '16px',
                           border: '1px solid rgba(59, 130, 246, 0.3)'
                         }}>
-                          <h4 style={{ margin: '0 0 4px 0', fontSize: '20px', color: '#3b82f6' }}>
+                          <h4 style={{ margin: '0 0 4px 0', fontSize: '20px', color: '#c9a962' }}>
                             {empSelecionado?.nome || 'Empreendimento'}
                           </h4>
                           <p style={{ margin: 0, color: 'rgba(255,255,255,0.6)', fontSize: '14px' }}>
@@ -6220,7 +6372,7 @@ const AdminDashboard = () => {
                   </div>
                   <div>
                     <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '12px', display: 'block' }}>Comissão Total</span>
-                    <span style={{ fontSize: '20px', fontWeight: '700', color: '#3b82f6' }}>{formatCurrency(selectedItem.comissao_total)}</span>
+                    <span style={{ fontSize: '20px', fontWeight: '700', color: '#c9a962' }}>{formatCurrency(selectedItem.comissao_total)}</span>
                   </div>
                 </div>
               </div>
@@ -6634,7 +6786,7 @@ const AdminDashboard = () => {
                             })
                           }}
                           style={{
-                            background: '#4a90d9',
+                            background: '#c9a962',
                             color: 'white',
                             border: 'none',
                             borderRadius: '8px',
@@ -6744,7 +6896,7 @@ const AdminDashboard = () => {
                             })
                           }}
                           style={{
-                            background: '#4a90d9',
+                            background: '#c9a962',
                             color: 'white',
                             border: 'none',
                             borderRadius: '8px',
@@ -7854,6 +8006,455 @@ const AdminDashboard = () => {
                 </div>
               </>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Visualização de Corretor */}
+      {showModal && modalType === 'visualizar-corretor' && selectedItem && (
+        <div className="modal-overlay" onClick={() => setShowModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '700px' }}>
+            <div className="modal-header">
+              <h2>
+                <Eye size={20} style={{ marginRight: '8px' }} />
+                Detalhes do Corretor
+              </h2>
+              <button className="close-btn" onClick={() => setShowModal(false)}>
+                <X size={24} />
+              </button>
+            </div>
+            
+            <div className="modal-body" style={{ padding: '24px' }}>
+              {/* Header do Corretor */}
+              <div style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: '20px',
+                marginBottom: '24px',
+                paddingBottom: '24px',
+                borderBottom: '1px solid rgba(255,255,255,0.1)'
+              }}>
+                <div style={{
+                  width: '80px',
+                  height: '80px',
+                  borderRadius: '16px',
+                  background: 'linear-gradient(135deg, #c9a962 0%, #8b7355 100%)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '32px',
+                  fontWeight: '600',
+                  color: '#0a0a0a'
+                }}>
+                  {selectedItem.nome?.charAt(0)?.toUpperCase()}
+                </div>
+                <div>
+                  <h3 style={{ margin: '0 0 8px 0', fontSize: '24px', fontWeight: '600' }}>
+                    {selectedItem.nome}
+                  </h3>
+                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                    <span className={`badge ${selectedItem.tipo_corretor}`}>
+                      {selectedItem.tipo_corretor === 'interno' ? 'Interno' : 'Externo'}
+                    </span>
+                    <span className="badge percent">
+                      <Percent size={12} />
+                      {selectedItem.percentual}%
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Informações de Contato */}
+              <div style={{ 
+                display: 'grid', 
+                gridTemplateColumns: 'repeat(2, 1fr)', 
+                gap: '16px',
+                marginBottom: '24px'
+              }}>
+                <div style={{ 
+                  background: 'rgba(255,255,255,0.05)', 
+                  padding: '16px', 
+                  borderRadius: '12px',
+                  border: '1px solid rgba(255,255,255,0.1)'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                    <Mail size={16} style={{ color: '#c9a962' }} />
+                    <span style={{ color: '#94a3b8', fontSize: '12px', textTransform: 'uppercase' }}>Email</span>
+                  </div>
+                  <p style={{ margin: 0, fontSize: '14px' }}>{selectedItem.email || 'Não informado'}</p>
+                </div>
+                <div style={{ 
+                  background: 'rgba(255,255,255,0.05)', 
+                  padding: '16px', 
+                  borderRadius: '12px',
+                  border: '1px solid rgba(255,255,255,0.1)'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                    <Phone size={16} style={{ color: '#c9a962' }} />
+                    <span style={{ color: '#94a3b8', fontSize: '12px', textTransform: 'uppercase' }}>Telefone</span>
+                  </div>
+                  <p style={{ margin: 0, fontSize: '14px' }}>{selectedItem.telefone || 'Não informado'}</p>
+                </div>
+              </div>
+
+              {/* Vínculo */}
+              {(selectedItem.empreendimento?.nome || selectedItem.cargo?.nome_cargo) && (
+                <div style={{ 
+                  background: 'rgba(201, 169, 98, 0.1)', 
+                  padding: '16px', 
+                  borderRadius: '12px',
+                  border: '1px solid rgba(201, 169, 98, 0.2)',
+                  marginBottom: '24px'
+                }}>
+                  <h4 style={{ margin: '0 0 12px 0', color: '#c9a962', fontSize: '12px', textTransform: 'uppercase' }}>
+                    Vínculo
+                  </h4>
+                  <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
+                    {selectedItem.empreendimento?.nome && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <Building size={16} style={{ color: '#c9a962' }} />
+                        <span>{selectedItem.empreendimento.nome}</span>
+                      </div>
+                    )}
+                    {selectedItem.cargo?.nome_cargo && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <Award size={16} style={{ color: '#c9a962' }} />
+                        <span>{selectedItem.cargo.nome_cargo}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Estatísticas */}
+              <div style={{ 
+                background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(201, 169, 98, 0.1))',
+                padding: '24px',
+                borderRadius: '12px',
+                border: '1px solid rgba(16, 185, 129, 0.2)',
+                marginBottom: '24px'
+              }}>
+                <h4 style={{ margin: '0 0 16px 0', color: '#10b981', fontSize: '12px', textTransform: 'uppercase' }}>
+                  Desempenho
+                </h4>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
+                  <div>
+                    <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '12px', display: 'block' }}>Total em Vendas</span>
+                    <span style={{ fontSize: '20px', fontWeight: '700' }}>{formatCurrency(selectedItem.totalVendas)}</span>
+                  </div>
+                  <div>
+                    <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '12px', display: 'block' }}>Comissão Total</span>
+                    <span style={{ fontSize: '20px', fontWeight: '700', color: '#10b981' }}>{formatCurrency(selectedItem.totalComissao)}</span>
+                  </div>
+                  <div>
+                    <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '12px', display: 'block' }}>Nº de Vendas</span>
+                    <span style={{ fontSize: '20px', fontWeight: '700' }}>{selectedItem.vendasCorretor?.length || 0}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Lista de Vendas */}
+              {selectedItem.vendasCorretor && selectedItem.vendasCorretor.length > 0 && (
+                <div>
+                  <h4 style={{ margin: '0 0 12px 0', color: '#94a3b8', fontSize: '12px', textTransform: 'uppercase' }}>
+                    Vendas Recentes ({selectedItem.vendasCorretor.length})
+                  </h4>
+                  <div style={{ maxHeight: '200px', overflowY: 'auto' }}>
+                    {selectedItem.vendasCorretor.slice(0, 5).map(venda => (
+                      <div key={venda.id} style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        padding: '12px',
+                        background: 'rgba(255,255,255,0.03)',
+                        borderRadius: '8px',
+                        marginBottom: '8px'
+                      }}>
+                        <div>
+                          <span style={{ fontWeight: '500' }}>{venda.empreendimento?.nome || 'N/A'}</span>
+                          <span style={{ color: '#64748b', fontSize: '12px', marginLeft: '8px' }}>
+                            {new Date(venda.data_venda).toLocaleDateString('pt-BR')}
+                          </span>
+                        </div>
+                        <div style={{ textAlign: 'right' }}>
+                          <span style={{ fontWeight: '600', color: '#c9a962' }}>{formatCurrency(venda.valor_venda)}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+            
+            <div className="modal-footer">
+              <button className="btn-secondary" onClick={() => setShowModal(false)}>
+                Fechar
+              </button>
+              <button className="btn-primary" onClick={() => {
+                setShowModal(false)
+                openEditCorretor(selectedItem)
+              }}>
+                <Edit2 size={18} />
+                <span>Editar</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Visualização de Cliente */}
+      {showModal && modalType === 'visualizar-cliente' && selectedItem && (
+        <div className="modal-overlay" onClick={() => setShowModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '700px' }}>
+            <div className="modal-header">
+              <h2>
+                <Eye size={20} style={{ marginRight: '8px' }} />
+                Detalhes do Cliente
+              </h2>
+              <button className="close-btn" onClick={() => setShowModal(false)}>
+                <X size={24} />
+              </button>
+            </div>
+            
+            <div className="modal-body" style={{ padding: '24px' }}>
+              {/* Header do Cliente */}
+              <div style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: '20px',
+                marginBottom: '24px',
+                paddingBottom: '24px',
+                borderBottom: '1px solid rgba(255,255,255,0.1)'
+              }}>
+                <div style={{
+                  width: '80px',
+                  height: '80px',
+                  borderRadius: '16px',
+                  background: 'linear-gradient(135deg, #c9a962 0%, #8b7355 100%)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: '#0a0a0a'
+                }}>
+                  <UserCircle size={40} />
+                </div>
+                <div>
+                  <h3 style={{ margin: '0 0 8px 0', fontSize: '24px', fontWeight: '600' }}>
+                    {selectedItem.nome_completo}
+                  </h3>
+                  <p style={{ margin: 0, color: '#94a3b8', fontSize: '14px' }}>
+                    {selectedItem.cpf || 'CPF não informado'}
+                  </p>
+                </div>
+              </div>
+
+              {/* Informações de Contato */}
+              <div style={{ 
+                display: 'grid', 
+                gridTemplateColumns: 'repeat(2, 1fr)', 
+                gap: '16px',
+                marginBottom: '24px'
+              }}>
+                <div style={{ 
+                  background: 'rgba(255,255,255,0.05)', 
+                  padding: '16px', 
+                  borderRadius: '12px',
+                  border: '1px solid rgba(255,255,255,0.1)'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                    <Phone size={16} style={{ color: '#c9a962' }} />
+                    <span style={{ color: '#94a3b8', fontSize: '12px', textTransform: 'uppercase' }}>Telefone</span>
+                  </div>
+                  <p style={{ margin: 0, fontSize: '14px' }}>{selectedItem.telefone || 'Não informado'}</p>
+                </div>
+                <div style={{ 
+                  background: 'rgba(255,255,255,0.05)', 
+                  padding: '16px', 
+                  borderRadius: '12px',
+                  border: '1px solid rgba(255,255,255,0.1)'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                    <Mail size={16} style={{ color: '#c9a962' }} />
+                    <span style={{ color: '#94a3b8', fontSize: '12px', textTransform: 'uppercase' }}>Email</span>
+                  </div>
+                  <p style={{ margin: 0, fontSize: '14px' }}>{selectedItem.email || 'Não informado'}</p>
+                </div>
+                <div style={{ 
+                  background: 'rgba(255,255,255,0.05)', 
+                  padding: '16px', 
+                  borderRadius: '12px',
+                  border: '1px solid rgba(255,255,255,0.1)'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                    <MapPin size={16} style={{ color: '#c9a962' }} />
+                    <span style={{ color: '#94a3b8', fontSize: '12px', textTransform: 'uppercase' }}>Endereço</span>
+                  </div>
+                  <p style={{ margin: 0, fontSize: '14px' }}>{selectedItem.endereco || 'Não informado'}</p>
+                </div>
+                <div style={{ 
+                  background: 'rgba(255,255,255,0.05)', 
+                  padding: '16px', 
+                  borderRadius: '12px',
+                  border: '1px solid rgba(255,255,255,0.1)'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                    <DollarSign size={16} style={{ color: '#c9a962' }} />
+                    <span style={{ color: '#94a3b8', fontSize: '12px', textTransform: 'uppercase' }}>Renda Mensal</span>
+                  </div>
+                  <p style={{ margin: 0, fontSize: '14px' }}>{selectedItem.renda_mensal ? formatCurrency(selectedItem.renda_mensal) : 'Não informado'}</p>
+                </div>
+              </div>
+
+              {/* Profissão */}
+              {(selectedItem.profissao || selectedItem.empresa_trabalho) && (
+                <div style={{ 
+                  background: 'rgba(255,255,255,0.05)', 
+                  padding: '16px', 
+                  borderRadius: '12px',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  marginBottom: '24px'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                    <Briefcase size={16} style={{ color: '#c9a962' }} />
+                    <span style={{ color: '#94a3b8', fontSize: '12px', textTransform: 'uppercase' }}>Profissão</span>
+                  </div>
+                  <p style={{ margin: 0, fontSize: '14px' }}>
+                    {selectedItem.profissao || 'Não informado'}
+                    {selectedItem.empresa_trabalho && ` - ${selectedItem.empresa_trabalho}`}
+                  </p>
+                </div>
+              )}
+
+              {/* Badges FGTS */}
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '24px' }}>
+                {selectedItem.possui_3_anos_fgts && (
+                  <span className="badge fgts" style={{ padding: '8px 12px' }}>
+                    <CheckCircle size={14} style={{ marginRight: '6px' }} />
+                    3+ anos FGTS
+                  </span>
+                )}
+                {selectedItem.beneficiado_subsidio_fgts && (
+                  <span className="badge subsidio" style={{ padding: '8px 12px' }}>
+                    <CheckCircle size={14} style={{ marginRight: '6px' }} />
+                    Subsidiado FGTS
+                  </span>
+                )}
+                {selectedItem.tem_complemento_renda && (
+                  <span className="badge complemento" style={{ padding: '8px 12px' }}>
+                    <Users size={14} style={{ marginRight: '6px' }} />
+                    {selectedItem.complementadores?.length || 0} Complementador(es)
+                  </span>
+                )}
+              </div>
+
+              {/* Vendas do Cliente */}
+              {selectedItem.vendasCliente && selectedItem.vendasCliente.length > 0 && (
+                <div style={{ 
+                  background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(201, 169, 98, 0.1))',
+                  padding: '20px',
+                  borderRadius: '12px',
+                  border: '1px solid rgba(16, 185, 129, 0.2)'
+                }}>
+                  <h4 style={{ margin: '0 0 16px 0', color: '#10b981', fontSize: '12px', textTransform: 'uppercase' }}>
+                    Compras Realizadas ({selectedItem.vendasCliente.length})
+                  </h4>
+                  <div style={{ maxHeight: '200px', overflowY: 'auto' }}>
+                    {selectedItem.vendasCliente.map(venda => (
+                      <div key={venda.id} style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        padding: '12px',
+                        background: 'rgba(0,0,0,0.2)',
+                        borderRadius: '8px',
+                        marginBottom: '8px'
+                      }}>
+                        <div>
+                          <span style={{ fontWeight: '500' }}>{venda.empreendimento?.nome || 'N/A'}</span>
+                          <span style={{ color: '#64748b', fontSize: '12px', marginLeft: '8px' }}>
+                            {new Date(venda.data_venda).toLocaleDateString('pt-BR')}
+                          </span>
+                        </div>
+                        <div style={{ textAlign: 'right' }}>
+                          <span style={{ fontWeight: '600', color: '#10b981' }}>{formatCurrency(venda.valor_venda)}</span>
+                          <span className={`status-badge ${venda.status || 'pendente'}`} style={{ marginLeft: '8px', fontSize: '10px' }}>
+                            {venda.status === 'pago' ? 'Pago' : 'Pendente'}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <div style={{ 
+                    marginTop: '16px', 
+                    paddingTop: '16px', 
+                    borderTop: '1px solid rgba(255,255,255,0.1)',
+                    display: 'flex',
+                    justifyContent: 'space-between'
+                  }}>
+                    <span style={{ color: '#94a3b8' }}>Total em Compras:</span>
+                    <span style={{ fontWeight: '700', fontSize: '18px', color: '#10b981' }}>
+                      {formatCurrency(selectedItem.vendasCliente.reduce((acc, v) => acc + (parseFloat(v.valor_venda) || 0), 0))}
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {/* Documentos */}
+              {(selectedItem.rg_frente_url || selectedItem.rg_verso_url || selectedItem.cpf_url || 
+                selectedItem.comprovante_residencia_url || selectedItem.comprovante_renda_url) && (
+                <div style={{ marginTop: '24px' }}>
+                  <h4 style={{ margin: '0 0 12px 0', color: '#94a3b8', fontSize: '12px', textTransform: 'uppercase' }}>
+                    Documentos
+                  </h4>
+                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                    {selectedItem.rg_frente_url && (
+                      <a href={selectedItem.rg_frente_url} target="_blank" rel="noopener noreferrer" className="doc-link">
+                        RG Frente
+                      </a>
+                    )}
+                    {selectedItem.rg_verso_url && (
+                      <a href={selectedItem.rg_verso_url} target="_blank" rel="noopener noreferrer" className="doc-link">
+                        RG Verso
+                      </a>
+                    )}
+                    {selectedItem.cpf_url && (
+                      <a href={selectedItem.cpf_url} target="_blank" rel="noopener noreferrer" className="doc-link">
+                        CPF
+                      </a>
+                    )}
+                    {selectedItem.comprovante_residencia_url && (
+                      <a href={selectedItem.comprovante_residencia_url} target="_blank" rel="noopener noreferrer" className="doc-link">
+                        Comprovante Residência
+                      </a>
+                    )}
+                    {selectedItem.comprovante_renda_url && (
+                      <a href={selectedItem.comprovante_renda_url} target="_blank" rel="noopener noreferrer" className="doc-link">
+                        Comprovante Renda
+                      </a>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+            
+            <div className="modal-footer">
+              <button className="btn-secondary" onClick={() => setShowModal(false)}>
+                Fechar
+              </button>
+              <button className="btn-primary" onClick={() => {
+                setShowModal(false)
+                setClienteForm({
+                  ...selectedItem,
+                  renda_mensal: selectedItem.renda_mensal?.toString() || '',
+                  complementadores: selectedItem.complementadores || []
+                })
+                setModalType('cliente')
+                setShowModal(true)
+              }}>
+                <Edit2 size={18} />
+                <span>Editar</span>
+              </button>
+            </div>
           </div>
         </div>
       )}

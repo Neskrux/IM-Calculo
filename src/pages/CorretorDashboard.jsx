@@ -7,7 +7,8 @@ import {
   Calendar, User, CheckCircle, Clock, 
   Wallet, Target, Award, BarChart3,
   LayoutDashboard, Menu, X, ChevronLeft, ChevronRight, ChevronDown,
-  Building, MapPin
+  Building, MapPin, CreditCard, Users, FileText, Eye, Phone, Mail,
+  Home, Percent, CalendarDays, BanknoteIcon, TrendingDown, ArrowUpRight
 } from 'lucide-react'
 import logo from '../imgs/logo.png'
 import Ticker from '../components/Ticker'
@@ -43,6 +44,16 @@ const CorretorDashboard = () => {
   const [vendaExpandida, setVendaExpandida] = useState(null)
   const [pagamentosVenda, setPagamentosVenda] = useState({}) // Cache de pagamentos por venda
   const [gruposExpandidos, setGruposExpandidos] = useState({}) // Controla quais grupos estão expandidos: { "vendaId-tipo": true }
+  
+  // Novos estados para as abas adicionais
+  const [empreendimentos, setEmpreendimentos] = useState([])
+  const [meusPagamentos, setMeusPagamentos] = useState([])
+  const [meusClientes, setMeusClientes] = useState([])
+  const [loadingEmpreendimentos, setLoadingEmpreendimentos] = useState(false)
+  const [loadingPagamentos, setLoadingPagamentos] = useState(false)
+  const [loadingClientes, setLoadingClientes] = useState(false)
+  const [selectedEmpreendimento, setSelectedEmpreendimento] = useState(null)
+  const [selectedCliente, setSelectedCliente] = useState(null)
 
   useEffect(() => {
     if (user) {
@@ -55,6 +66,130 @@ const CorretorDashboard = () => {
       fetchCargoAndEmpreendimento()
     }
   }, [userProfile])
+
+  // Carregar dados quando mudar de aba
+  useEffect(() => {
+    if (activeTab === 'empreendimentos' && empreendimentos.length === 0) {
+      fetchEmpreendimentos()
+    }
+    if (activeTab === 'pagamentos' && meusPagamentos.length === 0 && vendas.length > 0) {
+      fetchMeusPagamentos()
+    }
+    if (activeTab === 'clientes' && meusClientes.length === 0 && vendas.length > 0) {
+      fetchMeusClientes()
+    }
+  }, [activeTab, vendas])
+
+  // Fetch Empreendimentos
+  const fetchEmpreendimentos = async () => {
+    setLoadingEmpreendimentos(true)
+    try {
+      const { data, error } = await supabase
+        .from('empreendimentos')
+        .select('*')
+        .order('nome')
+
+      if (error) throw error
+      
+      // Buscar fotos de fachada para cada empreendimento
+      const empsComFotos = await Promise.all((data || []).map(async (emp) => {
+        const { data: fotos } = await supabase
+          .from('empreendimento_fotos')
+          .select('url')
+          .eq('empreendimento_id', emp.id)
+          .eq('categoria', 'fachada')
+          .limit(1)
+        
+        return {
+          ...emp,
+          foto_fachada: fotos?.[0]?.url || null
+        }
+      }))
+      
+      setEmpreendimentos(empsComFotos)
+    } catch (error) {
+      console.error('Erro ao buscar empreendimentos:', error)
+    } finally {
+      setLoadingEmpreendimentos(false)
+    }
+  }
+
+  // Fetch Meus Pagamentos (pagamentos das vendas do corretor)
+  const fetchMeusPagamentos = async () => {
+    setLoadingPagamentos(true)
+    try {
+      const vendaIds = vendas.map(v => v.id)
+      if (vendaIds.length === 0) {
+        setMeusPagamentos([])
+        return
+      }
+
+      const { data, error } = await supabase
+        .from('pagamentos_prosoluto')
+        .select('*')
+        .in('venda_id', vendaIds)
+        .order('data_prevista', { ascending: true })
+
+      if (error) throw error
+
+      // Associar nome do cliente e empreendimento a cada pagamento
+      const pagamentosEnriquecidos = (data || []).map(pag => {
+        const venda = vendas.find(v => v.id === pag.venda_id)
+        return {
+          ...pag,
+          cliente_nome: venda?.cliente_nome || 'N/A',
+          empreendimento_nome: venda?.empreendimento_nome || 'N/A',
+          unidade: venda?.unidade || 'N/A',
+          valor_venda: venda?.valor_venda || 0,
+          comissao_corretor: venda?.comissao_corretor || 0
+        }
+      })
+
+      setMeusPagamentos(pagamentosEnriquecidos)
+    } catch (error) {
+      console.error('Erro ao buscar pagamentos:', error)
+    } finally {
+      setLoadingPagamentos(false)
+    }
+  }
+
+  // Fetch Meus Clientes (clientes das vendas do corretor)
+  const fetchMeusClientes = async () => {
+    setLoadingClientes(true)
+    try {
+      const clienteIds = [...new Set(vendas.map(v => v.cliente_id).filter(Boolean))]
+      if (clienteIds.length === 0) {
+        setMeusClientes([])
+        return
+      }
+
+      const { data, error } = await supabase
+        .from('clientes')
+        .select('*')
+        .in('id', clienteIds)
+        .order('nome_completo')
+
+      if (error) throw error
+
+      // Associar vendas a cada cliente
+      const clientesComVendas = (data || []).map(cliente => {
+        const vendasCliente = vendas.filter(v => v.cliente_id === cliente.id)
+        const totalVendas = vendasCliente.reduce((acc, v) => acc + (parseFloat(v.valor_venda) || 0), 0)
+        return {
+          ...cliente,
+          vendas: vendasCliente,
+          total_vendas: totalVendas,
+          qtd_vendas: vendasCliente.length
+        }
+      })
+
+      setMeusClientes(clientesComVendas)
+    } catch (error) {
+      console.error('Erro ao buscar clientes:', error)
+    } finally {
+      setLoadingClientes(false)
+    }
+  }
 
   const fetchCargoAndEmpreendimento = async () => {
     if (!userProfile?.cargo_id && !userProfile?.empreendimento_id) {
@@ -535,11 +670,35 @@ const CorretorDashboard = () => {
             <span>Minhas Vendas</span>
           </button>
           <button 
+            className={`nav-item ${activeTab === 'pagamentos' ? 'active' : ''}`}
+            onClick={() => navigate('/corretor/pagamentos')}
+            title="Meus Pagamentos"
+          >
+            <CreditCard size={20} />
+            <span>Meus Pagamentos</span>
+          </button>
+          <button 
+            className={`nav-item ${activeTab === 'clientes' ? 'active' : ''}`}
+            onClick={() => navigate('/corretor/clientes')}
+            title="Meus Clientes"
+          >
+            <Users size={20} />
+            <span>Meus Clientes</span>
+          </button>
+          <button 
+            className={`nav-item ${activeTab === 'empreendimentos' ? 'active' : ''}`}
+            onClick={() => navigate('/corretor/empreendimentos')}
+            title="Empreendimentos"
+          >
+            <Building size={20} />
+            <span>Empreendimentos</span>
+          </button>
+          <button 
             className={`nav-item ${activeTab === 'relatorios' ? 'active' : ''}`}
             onClick={() => navigate('/corretor/relatorios')}
             title="Relatórios"
           >
-            <TrendingUp size={20} />
+            <FileText size={20} />
             <span>Relatórios</span>
           </button>
         </nav>
@@ -583,6 +742,9 @@ const CorretorDashboard = () => {
           <h1>
             {activeTab === 'dashboard' && getDashboardTitle()}
             {activeTab === 'vendas' && 'Minhas Vendas'}
+            {activeTab === 'pagamentos' && 'Meus Pagamentos'}
+            {activeTab === 'clientes' && 'Meus Clientes'}
+            {activeTab === 'empreendimentos' && 'Empreendimentos'}
             {activeTab === 'relatorios' && 'Relatórios'}
           </h1>
         </header>
@@ -989,16 +1151,496 @@ const CorretorDashboard = () => {
           )}
 
           {/* Relatórios Tab */}
+          {/* Meus Pagamentos Tab */}
+          {activeTab === 'pagamentos' && (
+            <section className="pagamentos-section">
+              {loadingPagamentos ? (
+                <div className="loading-state">
+                  <div className="loading-spinner"></div>
+                  <p>Carregando pagamentos...</p>
+                </div>
+              ) : meusPagamentos.length === 0 ? (
+                <div className="empty-state">
+                  <CreditCard size={48} />
+                  <h3>Nenhum pagamento encontrado</h3>
+                  <p>Seus pagamentos aparecerão aqui quando houver vendas registradas</p>
+                </div>
+              ) : (
+                <>
+                  {/* Resumo de Pagamentos */}
+                  <div className="pagamentos-resumo">
+                    <div className="resumo-card">
+                      <div className="resumo-icon success">
+                        <CheckCircle size={24} />
+                      </div>
+                      <div className="resumo-info">
+                        <span className="resumo-label">Pagos</span>
+                        <span className="resumo-value success">
+                          {formatCurrency(meusPagamentos.filter(p => p.status === 'pago').reduce((acc, p) => {
+                            const venda = vendas.find(v => v.id === p.venda_id)
+                            if (!venda) return acc
+                            const proporcao = (parseFloat(p.valor) || 0) / (parseFloat(venda.valor_venda) || 1)
+                            return acc + (proporcao * (parseFloat(venda.comissao_corretor) || 0))
+                          }, 0))}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="resumo-card">
+                      <div className="resumo-icon warning">
+                        <Clock size={24} />
+                      </div>
+                      <div className="resumo-info">
+                        <span className="resumo-label">Pendentes</span>
+                        <span className="resumo-value warning">
+                          {formatCurrency(meusPagamentos.filter(p => p.status === 'pendente').reduce((acc, p) => {
+                            const venda = vendas.find(v => v.id === p.venda_id)
+                            if (!venda) return acc
+                            const proporcao = (parseFloat(p.valor) || 0) / (parseFloat(venda.valor_venda) || 1)
+                            return acc + (proporcao * (parseFloat(venda.comissao_corretor) || 0))
+                          }, 0))}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="resumo-card">
+                      <div className="resumo-icon info">
+                        <CalendarDays size={24} />
+                      </div>
+                      <div className="resumo-info">
+                        <span className="resumo-label">Total Parcelas</span>
+                        <span className="resumo-value">{meusPagamentos.length}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Lista de Pagamentos */}
+                  <div className="pagamentos-lista">
+                    <table className="data-table">
+                      <thead>
+                        <tr>
+                          <th>Cliente</th>
+                          <th>Empreendimento</th>
+                          <th>Tipo</th>
+                          <th>Valor Parcela</th>
+                          <th>Minha Comissão</th>
+                          <th>Vencimento</th>
+                          <th>Status</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {meusPagamentos.map(pagamento => {
+                          const venda = vendas.find(v => v.id === pagamento.venda_id)
+                          const proporcao = venda ? (parseFloat(pagamento.valor) || 0) / (parseFloat(venda.valor_venda) || 1) : 0
+                          const minhaComissao = venda ? proporcao * (parseFloat(venda.comissao_corretor) || 0) : 0
+                          
+                          return (
+                            <tr key={pagamento.id}>
+                              <td>{pagamento.cliente_nome}</td>
+                              <td>{pagamento.empreendimento_nome}</td>
+                              <td>
+                                <span className={`badge-tipo ${pagamento.tipo}`}>
+                                  {pagamento.tipo === 'sinal' && 'Sinal'}
+                                  {pagamento.tipo === 'entrada' && 'Entrada'}
+                                  {pagamento.tipo === 'parcela_entrada' && `Parcela ${pagamento.numero_parcela || ''}`}
+                                  {pagamento.tipo === 'balao' && `Balão ${pagamento.numero_parcela || ''}`}
+                                </span>
+                              </td>
+                              <td>{formatCurrency(pagamento.valor)}</td>
+                              <td className="comissao-cell">{formatCurrency(minhaComissao)}</td>
+                              <td>{pagamento.data_prevista ? new Date(pagamento.data_prevista).toLocaleDateString('pt-BR') : '-'}</td>
+                              <td>
+                                <span className={`status-badge ${pagamento.status}`}>
+                                  {pagamento.status === 'pago' && <><CheckCircle size={12} /> Pago</>}
+                                  {pagamento.status === 'pendente' && <><Clock size={12} /> Pendente</>}
+                                </span>
+                              </td>
+                            </tr>
+                          )
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </>
+              )}
+            </section>
+          )}
+
+          {/* Meus Clientes Tab */}
+          {activeTab === 'clientes' && (
+            <section className="clientes-section">
+              {loadingClientes ? (
+                <div className="loading-state">
+                  <div className="loading-spinner"></div>
+                  <p>Carregando clientes...</p>
+                </div>
+              ) : meusClientes.length === 0 ? (
+                <div className="empty-state">
+                  <Users size={48} />
+                  <h3>Nenhum cliente encontrado</h3>
+                  <p>Seus clientes aparecerão aqui quando houver vendas registradas</p>
+                </div>
+              ) : (
+                <>
+                  {/* Resumo de Clientes */}
+                  <div className="clientes-resumo">
+                    <div className="resumo-card">
+                      <div className="resumo-icon primary">
+                        <Users size={24} />
+                      </div>
+                      <div className="resumo-info">
+                        <span className="resumo-label">Total Clientes</span>
+                        <span className="resumo-value">{meusClientes.length}</span>
+                      </div>
+                    </div>
+                    <div className="resumo-card">
+                      <div className="resumo-icon success">
+                        <DollarSign size={24} />
+                      </div>
+                      <div className="resumo-info">
+                        <span className="resumo-label">Volume de Vendas</span>
+                        <span className="resumo-value success">
+                          {formatCurrency(meusClientes.reduce((acc, c) => acc + c.total_vendas, 0))}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Lista de Clientes */}
+                  <div className="clientes-grid">
+                    {meusClientes.map(cliente => (
+                      <div key={cliente.id} className="cliente-card">
+                        <div className="cliente-header">
+                          <div className="cliente-avatar">
+                            <User size={24} />
+                          </div>
+                          <div className="cliente-info">
+                            <h3>{capitalizeName(cliente.nome_completo)}</h3>
+                            <span className="cliente-cpf">{cliente.cpf || 'CPF não informado'}</span>
+                          </div>
+                        </div>
+                        
+                        <div className="cliente-contato">
+                          {cliente.telefone && (
+                            <div className="contato-item">
+                              <Phone size={14} />
+                              <span>{cliente.telefone}</span>
+                            </div>
+                          )}
+                          {cliente.email && (
+                            <div className="contato-item">
+                              <Mail size={14} />
+                              <span>{cliente.email}</span>
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="cliente-stats">
+                          <div className="stat-mini">
+                            <span className="stat-mini-label">Vendas</span>
+                            <span className="stat-mini-value">{cliente.qtd_vendas}</span>
+                          </div>
+                          <div className="stat-mini">
+                            <span className="stat-mini-label">Total</span>
+                            <span className="stat-mini-value success">{formatCurrency(cliente.total_vendas)}</span>
+                          </div>
+                        </div>
+
+                        <button 
+                          className="btn-ver-detalhes"
+                          onClick={() => setSelectedCliente(cliente)}
+                        >
+                          <Eye size={16} />
+                          Ver Detalhes
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
+            </section>
+          )}
+
+          {/* Empreendimentos Tab */}
+          {activeTab === 'empreendimentos' && (
+            <section className="empreendimentos-section">
+              {loadingEmpreendimentos ? (
+                <div className="loading-state">
+                  <div className="loading-spinner"></div>
+                  <p>Carregando empreendimentos...</p>
+                </div>
+              ) : empreendimentos.length === 0 ? (
+                <div className="empty-state">
+                  <Building size={48} />
+                  <h3>Nenhum empreendimento encontrado</h3>
+                  <p>Os empreendimentos disponíveis aparecerão aqui</p>
+                </div>
+              ) : (
+                <div className="empreendimentos-grid">
+                  {empreendimentos.map(emp => (
+                    <div key={emp.id} className="empreendimento-card-corretor">
+                      <div className="emp-card-image">
+                        {emp.foto_fachada ? (
+                          <img src={emp.foto_fachada} alt={emp.nome} />
+                        ) : (
+                          <div className="emp-placeholder">
+                            <Building size={48} />
+                          </div>
+                        )}
+                        {emp.logo_url && (
+                          <img src={emp.logo_url} alt="Logo" className="emp-logo-overlay" />
+                        )}
+                      </div>
+                      <div className="emp-card-content">
+                        <h3>{emp.nome}</h3>
+                        {emp.endereco && (
+                          <div className="emp-endereco">
+                            <MapPin size={14} />
+                            <span>{emp.endereco}</span>
+                          </div>
+                        )}
+                        <div className="emp-stats">
+                          <div className="emp-stat">
+                            <Home size={14} />
+                            <span>{emp.total_unidades || 0} unidades</span>
+                          </div>
+                          {emp.percentual_comissao && (
+                            <div className="emp-stat">
+                              <Percent size={14} />
+                              <span>{emp.percentual_comissao}% comissão</span>
+                            </div>
+                          )}
+                        </div>
+                        <button 
+                          className="btn-ver-detalhes"
+                          onClick={() => setSelectedEmpreendimento(emp)}
+                        >
+                          <Eye size={16} />
+                          Ver Detalhes
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </section>
+          )}
+
+          {/* Relatórios Tab */}
           {activeTab === 'relatorios' && (
             <section className="relatorios-section">
-              <div className="empty-state">
-                <TrendingUp size={48} />
-                <h3>Relatórios em desenvolvimento</h3>
-                <p>Em breve você poderá gerar relatórios detalhados das suas vendas e comissões</p>
+              {/* Resumo Geral */}
+              <div className="relatorios-resumo">
+                <h3>Resumo do Período</h3>
+                <div className="resumo-grid">
+                  <div className="resumo-card large">
+                    <div className="resumo-icon primary">
+                      <BarChart3 size={28} />
+                    </div>
+                    <div className="resumo-info">
+                      <span className="resumo-label">Total de Vendas</span>
+                      <span className="resumo-value large">{filteredVendas.length}</span>
+                    </div>
+                  </div>
+                  <div className="resumo-card large">
+                    <div className="resumo-icon success">
+                      <DollarSign size={28} />
+                    </div>
+                    <div className="resumo-info">
+                      <span className="resumo-label">Volume Total</span>
+                      <span className="resumo-value large success">{formatCurrency(getTotalVendas())}</span>
+                    </div>
+                  </div>
+                  <div className="resumo-card large">
+                    <div className="resumo-icon warning">
+                      <Wallet size={28} />
+                    </div>
+                    <div className="resumo-info">
+                      <span className="resumo-label">Comissão Total</span>
+                      <span className="resumo-value large warning">{formatCurrency(getTotalComissao())}</span>
+                    </div>
+                  </div>
+                  <div className="resumo-card large">
+                    <div className="resumo-icon info">
+                      <Percent size={28} />
+                    </div>
+                    <div className="resumo-info">
+                      <span className="resumo-label">Meu Percentual</span>
+                      <span className="resumo-value large">{percentualCorretor}%</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Vendas por Status */}
+              <div className="relatorios-status">
+                <h3>Vendas por Status</h3>
+                <div className="status-grid">
+                  <div className="status-card">
+                    <div className="status-header">
+                      <CheckCircle size={20} className="success" />
+                      <span>Pagas</span>
+                    </div>
+                    <div className="status-value">{filteredVendas.filter(v => v.status === 'pago').length}</div>
+                    <div className="status-amount success">{formatCurrency(getComissaoPaga())}</div>
+                  </div>
+                  <div className="status-card">
+                    <div className="status-header">
+                      <Clock size={20} className="warning" />
+                      <span>Pendentes</span>
+                    </div>
+                    <div className="status-value">{filteredVendas.filter(v => v.status === 'pendente').length}</div>
+                    <div className="status-amount warning">{formatCurrency(getComissaoPendente())}</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Vendas Recentes */}
+              <div className="relatorios-vendas">
+                <h3>Últimas Vendas</h3>
+                <table className="data-table">
+                  <thead>
+                    <tr>
+                      <th>Data</th>
+                      <th>Cliente</th>
+                      <th>Empreendimento</th>
+                      <th>Valor</th>
+                      <th>Comissão</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredVendas.slice(0, 10).map(venda => (
+                      <tr key={venda.id}>
+                        <td>{new Date(venda.data_venda).toLocaleDateString('pt-BR')}</td>
+                        <td>{capitalizeName(venda.cliente_nome) || 'N/A'}</td>
+                        <td>{venda.empreendimento_nome || 'N/A'}</td>
+                        <td>{formatCurrency(venda.valor_venda)}</td>
+                        <td className="comissao-cell">{formatCurrency(venda.comissao_corretor)}</td>
+                        <td>
+                          <span className={`status-badge ${venda.status}`}>
+                            {venda.status === 'pago' && <><CheckCircle size={12} /> Pago</>}
+                            {venda.status === 'pendente' && <><Clock size={12} /> Pendente</>}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </section>
           )}
         </div>
+
+        {/* Modal Cliente Detalhes */}
+        {selectedCliente && (
+          <div className="modal-overlay" onClick={() => setSelectedCliente(null)}>
+            <div className="modal-content" onClick={e => e.stopPropagation()}>
+              <div className="modal-header">
+                <h2>Detalhes do Cliente</h2>
+                <button className="close-btn" onClick={() => setSelectedCliente(null)}>
+                  <X size={20} />
+                </button>
+              </div>
+              <div className="modal-body">
+                <div className="cliente-detalhe-header">
+                  <div className="cliente-avatar-large">
+                    <User size={40} />
+                  </div>
+                  <div>
+                    <h3>{capitalizeName(selectedCliente.nome_completo)}</h3>
+                    <p>{selectedCliente.cpf || 'CPF não informado'}</p>
+                  </div>
+                </div>
+
+                <div className="cliente-detalhe-info">
+                  {selectedCliente.telefone && (
+                    <div className="info-row">
+                      <Phone size={16} />
+                      <span>{selectedCliente.telefone}</span>
+                    </div>
+                  )}
+                  {selectedCliente.email && (
+                    <div className="info-row">
+                      <Mail size={16} />
+                      <span>{selectedCliente.email}</span>
+                    </div>
+                  )}
+                </div>
+
+                <div className="cliente-detalhe-vendas">
+                  <h4>Vendas ({selectedCliente.qtd_vendas})</h4>
+                  {selectedCliente.vendas.map(venda => (
+                    <div key={venda.id} className="venda-mini-card">
+                      <div className="venda-mini-info">
+                        <span className="venda-mini-emp">{venda.empreendimento_nome || 'N/A'}</span>
+                        <span className="venda-mini-data">{new Date(venda.data_venda).toLocaleDateString('pt-BR')}</span>
+                      </div>
+                      <div className="venda-mini-valores">
+                        <span className="venda-mini-valor">{formatCurrency(venda.valor_venda)}</span>
+                        <span className={`status-badge ${venda.status}`}>{venda.status}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Modal Empreendimento Detalhes */}
+        {selectedEmpreendimento && (
+          <div className="modal-overlay" onClick={() => setSelectedEmpreendimento(null)}>
+            <div className="modal-content modal-large" onClick={e => e.stopPropagation()}>
+              <div className="modal-header">
+                <h2>{selectedEmpreendimento.nome}</h2>
+                <button className="close-btn" onClick={() => setSelectedEmpreendimento(null)}>
+                  <X size={20} />
+                </button>
+              </div>
+              <div className="modal-body">
+                {selectedEmpreendimento.foto_fachada && (
+                  <div className="emp-modal-image">
+                    <img src={selectedEmpreendimento.foto_fachada} alt={selectedEmpreendimento.nome} />
+                  </div>
+                )}
+
+                <div className="emp-modal-info">
+                  {selectedEmpreendimento.endereco && (
+                    <div className="info-row">
+                      <MapPin size={16} />
+                      <span>{selectedEmpreendimento.endereco}</span>
+                    </div>
+                  )}
+                  
+                  <div className="emp-modal-stats">
+                    <div className="emp-modal-stat">
+                      <Home size={20} />
+                      <div>
+                        <span className="stat-label">Total de Unidades</span>
+                        <span className="stat-value">{selectedEmpreendimento.total_unidades || 0}</span>
+                      </div>
+                    </div>
+                    {selectedEmpreendimento.percentual_comissao && (
+                      <div className="emp-modal-stat">
+                        <Percent size={20} />
+                        <div>
+                          <span className="stat-label">Comissão</span>
+                          <span className="stat-value">{selectedEmpreendimento.percentual_comissao}%</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {selectedEmpreendimento.descricao && (
+                    <div className="emp-modal-descricao">
+                      <h4>Descrição</h4>
+                      <p>{selectedEmpreendimento.descricao}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </main>
     </div>
   )

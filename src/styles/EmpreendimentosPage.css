@@ -327,7 +327,7 @@
 }
 
 .emp-status-badge.sienge {
-  color: #60a5fa;
+  color: var(--emp-gold);
   border: 1px solid rgba(96, 165, 250, 0.3);
 }
 
@@ -368,7 +368,7 @@
 }
 
 .emp-rate-box.externo .emp-rate-value {
-  color: #60a5fa;
+  color: var(--emp-gold);
 }
 
 .emp-rate-box.interno .emp-rate-value {
@@ -549,7 +549,7 @@
 }
 
 .emp-list-rate.externo span {
-  color: #60a5fa;
+  color: var(--emp-gold);
 }
 
 .emp-list-rate.interno span {
@@ -786,7 +786,7 @@
   width: 95%;
   max-height: 90vh;
   overflow: hidden;
-  background: linear-gradient(180deg, #0a1628 0%, #050a12 100%);
+  background: #0a0a0a;
   border: 1px solid rgba(201, 169, 98, 0.2);
   border-radius: 16px;
   display: flex;
@@ -836,7 +836,7 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #0d1f3c 0%, #0a1628 100%);
+  background: rgba(18, 18, 18, 0.8);
   color: rgba(255, 255, 255, 0.3);
   gap: 12px;
 }

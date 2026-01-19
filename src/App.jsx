@@ -1,5 +1,5 @@
 import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { supabase } from './lib/supabase'
 import Login from './pages/Login'
@@ -7,6 +7,7 @@ import AdminDashboard from './pages/AdminDashboard'
 import CorretorDashboard from './pages/CorretorDashboard'
 import ClienteDashboard from './pages/ClienteDashboard'
 import HomeDashboard from './pages/HomeDashboard'
+import SiteIntro from './components/SiteIntro'
 import './App.css'
 
 // Componente de Loading com botão de sair
@@ -318,12 +319,25 @@ function AppRoutes() {
 }
 
 function App() {
+  const [showIntro, setShowIntro] = useState(() => {
+    const hasSeenIntro = sessionStorage.getItem('im-intro-seen')
+    return !hasSeenIntro
+  })
+
+  const handleIntroComplete = () => {
+    sessionStorage.setItem('im-intro-seen', 'true')
+    setShowIntro(false)
+  }
+
   return (
-    <Router>
-      <AuthProvider>
-        <AppRoutes />
-      </AuthProvider>
-    </Router>
+    <>
+      {showIntro && <SiteIntro onComplete={handleIntroComplete} />}
+      <Router>
+        <AuthProvider>
+          <AppRoutes />
+        </AuthProvider>
+      </Router>
+    </>
   )
 }
 
