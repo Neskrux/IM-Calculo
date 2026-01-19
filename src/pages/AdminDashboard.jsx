@@ -284,7 +284,9 @@ const AdminDashboard = () => {
     cnpj: '',
     imobiliaria: '',
     creci: '',
-    is_autonomo: false // Novo campo para identificar corretor autônomo
+    is_autonomo: false, // Novo campo para identificar corretor autônomo
+    tem_acesso_sistema: false, // Se já tem conta no Auth
+    ativar_acesso: false // Se quer ativar acesso nesta edição
   })
 
   // Formulário de cliente
@@ -1403,7 +1405,18 @@ const AdminDashboard = () => {
       }
     }
 
-    // Se é edição, não precisa de senha
+    // Se é edição e quer ativar acesso, precisa de senha
+    if (selectedItem && corretorForm.ativar_acesso && !corretorForm.senha) {
+      setMessage({ type: 'error', text: 'Informe uma senha para ativar o acesso ao sistema' })
+      return
+    }
+
+    if (selectedItem && corretorForm.ativar_acesso && corretorForm.senha.length < 6) {
+      setMessage({ type: 'error', text: 'A senha deve ter no mínimo 6 caracteres' })
+      return
+    }
+
+    // Se é novo corretor, precisa de senha
     if (!selectedItem && !corretorForm.senha) {
       setMessage({ type: 'error', text: 'A senha é obrigatória para novos corretores' })
       return
@@ -1414,32 +1427,113 @@ const AdminDashboard = () => {
       return
     }
 
+    // Validar email se for ativar acesso (não pode ser @sync.local ou @placeholder.local)
+    if (selectedItem && corretorForm.ativar_acesso) {
+      if (corretorForm.email?.includes('@sync.local') || corretorForm.email?.includes('@placeholder.local')) {
+        setMessage({ type: 'error', text: 'Para ativar o acesso, informe um email válido (não pode ser @sync.local)' })
+        return
+      }
+    }
+
     setSaving(true)
     setMessage({ type: '', text: '' })
 
     try {
       if (selectedItem) {
         // EDIÇÃO de corretor existente
-        const { error: dbError } = await supabase
-          .from('usuarios')
-          .update({
-            nome: corretorForm.nome,
-            tipo_corretor: corretorForm.tipo_corretor,
-            telefone: corretorForm.telefone || null,
-            percentual_corretor: corretorForm.is_autonomo ? parseFloat(corretorForm.percentual_corretor) : (parseFloat(corretorForm.percentual_corretor) || null),
-            empreendimento_id: corretorForm.is_autonomo ? null : (corretorForm.empreendimento_id || null),
-            cargo_id: corretorForm.is_autonomo ? null : (corretorForm.cargo_id || null),
-            cnpj: corretorForm.cnpj || null,
-            imobiliaria: corretorForm.imobiliaria || null,
-            creci: corretorForm.creci || null
+        
+        // Se quer ativar acesso ao sistema
+        if (corretorForm.ativar_acesso && !corretorForm.tem_acesso_sistema) {
+          // Criar conta no Supabase Auth
+          const { data: authData, error: authError } = await supabase.auth.signUp({
+            email: corretorForm.email,
+            password: corretorForm.senha,
+            options: {
+              data: {
+                nome: corretorForm.nome
+              }
+            }
           })
-          .eq('id', selectedItem.id)
 
-        if (dbError) {
-          throw new Error(dbError.message)
+          if (authError) {
+            // Se o email já existe no Auth, tentar outra abordagem
+            if (authError.message?.includes('already registered')) {
+              throw new Error('Este email já está cadastrado no sistema de autenticação. Use outro email ou entre em contato com o suporte.')
+            }
+            throw new Error(`Erro ao criar acesso: ${authError.message}`)
+          }
+
+          if (!authData.user) {
+            throw new Error('Erro ao criar usuário no sistema de autenticação')
+          }
+
+          // Deletar o registro antigo (com ID gerado pelo banco)
+          await supabase.from('usuarios').delete().eq('id', selectedItem.id)
+
+          // Criar novo registro com o ID do Auth
+          const { error: dbError } = await supabase
+            .from('usuarios')
+            .insert([{
+              id: authData.user.id,
+              email: corretorForm.email,
+              nome: corretorForm.nome,
+              tipo: 'corretor',
+              tipo_corretor: corretorForm.tipo_corretor,
+              telefone: corretorForm.telefone || null,
+              percentual_corretor: corretorForm.is_autonomo ? parseFloat(corretorForm.percentual_corretor) : (parseFloat(corretorForm.percentual_corretor) || null),
+              empreendimento_id: corretorForm.is_autonomo ? null : (corretorForm.empreendimento_id || null),
+              cargo_id: corretorForm.is_autonomo ? null : (corretorForm.cargo_id || null),
+              cnpj: corretorForm.cnpj || null,
+              imobiliaria: corretorForm.imobiliaria || null,
+              creci: corretorForm.creci || null,
+              sienge_broker_id: selectedItem.sienge_broker_id || null,
+              origem: selectedItem.origem || null,
+              tem_acesso_sistema: true
+            }])
+
+          if (dbError) {
+            throw new Error(dbError.message)
+          }
+
+          // Atualizar referências em vendas (corretor_id)
+          if (selectedItem.id !== authData.user.id) {
+            await supabase
+              .from('vendas')
+              .update({ corretor_id: authData.user.id })
+              .eq('corretor_id', selectedItem.id)
+            
+            // Atualizar referências em comissoes_venda
+            await supabase
+              .from('comissoes_venda')
+              .update({ corretor_id: authData.user.id })
+              .eq('corretor_id', selectedItem.id)
+          }
+
+          setMessage({ type: 'success', text: `Acesso ativado para ${corretorForm.nome}! O corretor pode fazer login com o email ${corretorForm.email} e a senha definida.` })
+        } else {
+          // Apenas atualizar dados (sem ativar acesso)
+          const { error: dbError } = await supabase
+            .from('usuarios')
+            .update({
+              nome: corretorForm.nome,
+              email: corretorForm.email,
+              tipo_corretor: corretorForm.tipo_corretor,
+              telefone: corretorForm.telefone || null,
+              percentual_corretor: corretorForm.is_autonomo ? parseFloat(corretorForm.percentual_corretor) : (parseFloat(corretorForm.percentual_corretor) || null),
+              empreendimento_id: corretorForm.is_autonomo ? null : (corretorForm.empreendimento_id || null),
+              cargo_id: corretorForm.is_autonomo ? null : (corretorForm.cargo_id || null),
+              cnpj: corretorForm.cnpj || null,
+              imobiliaria: corretorForm.imobiliaria || null,
+              creci: corretorForm.creci || null
+            })
+            .eq('id', selectedItem.id)
+
+          if (dbError) {
+            throw new Error(dbError.message)
+          }
+
+          setMessage({ type: 'success', text: `Corretor ${corretorForm.nome} atualizado com sucesso!` })
         }
-
-        setMessage({ type: 'success', text: `Corretor ${corretorForm.nome} atualizado com sucesso!` })
       } else {
         // CRIAÇÃO de novo corretor
         const { data: authData, error: authError } = await supabase.auth.signUp({
@@ -1474,7 +1568,8 @@ const AdminDashboard = () => {
             cargo_id: corretorForm.is_autonomo ? null : (corretorForm.cargo_id || null),
             cnpj: corretorForm.cnpj || null,
             imobiliaria: corretorForm.imobiliaria || null,
-            creci: corretorForm.creci || null
+            creci: corretorForm.creci || null,
+            tem_acesso_sistema: true
           }])
 
         if (dbError) {
@@ -2086,6 +2181,12 @@ const AdminDashboard = () => {
     // Detectar se é autônomo (não tem empreendimento mas tem percentual)
     const isAutonomo = !corretor.empreendimento_id && corretor.percentual_corretor
     
+    // Detectar se já tem acesso ao sistema
+    // Corretores sincronizados do Sienge têm email @sync.local ou @placeholder.local
+    // e não têm conta no Auth (id gerado pelo banco, não pelo Auth)
+    const emailFake = corretor.email?.includes('@sync.local') || corretor.email?.includes('@placeholder.local')
+    const temAcessoSistema = corretor.tem_acesso_sistema === true || (!emailFake && corretor.origem !== 'sienge')
+    
     // Carregar cargos do empreendimento se existir
     if (corretor.empreendimento_id) {
       const emp = empreendimentos.find(e => e.id === corretor.empreendimento_id)
@@ -2106,7 +2207,9 @@ const AdminDashboard = () => {
       is_autonomo: isAutonomo,
       cnpj: corretor.cnpj || '',
       imobiliaria: corretor.imobiliaria || '',
-      creci: corretor.creci || ''
+      creci: corretor.creci || '',
+      tem_acesso_sistema: temAcessoSistema,
+      ativar_acesso: false
     })
     setModalType('corretor')
     setShowModal(true)
@@ -2156,7 +2259,9 @@ const AdminDashboard = () => {
       is_autonomo: false,
       cnpj: '',
       imobiliaria: '',
-      creci: ''
+      creci: '',
+      tem_acesso_sistema: false,
+      ativar_acesso: false
     })
     setCargosDisponiveis([])
   }
@@ -7632,6 +7737,7 @@ const AdminDashboard = () => {
                       />
                     </div>
                   </div>
+                  {/* Senha para novo corretor */}
                   {!selectedItem && (
                     <div className="form-group">
                       <label>Senha * (mínimo 6 caracteres)</label>
@@ -7644,6 +7750,105 @@ const AdminDashboard = () => {
                           onChange={(e) => setCorretorForm({...corretorForm, senha: e.target.value})}
                         />
                       </div>
+                    </div>
+                  )}
+
+                  {/* Seção de Acesso ao Sistema - apenas para edição */}
+                  {selectedItem && (
+                    <div className="access-section" style={{
+                      background: corretorForm.tem_acesso_sistema 
+                        ? 'rgba(16, 185, 129, 0.1)' 
+                        : 'rgba(245, 158, 11, 0.1)',
+                      border: `1px solid ${corretorForm.tem_acesso_sistema ? 'rgba(16, 185, 129, 0.3)' : 'rgba(245, 158, 11, 0.3)'}`,
+                      borderRadius: '8px',
+                      padding: '16px',
+                      marginBottom: '16px'
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+                        {corretorForm.tem_acesso_sistema ? (
+                          <>
+                            <CheckCircle size={20} style={{ color: '#10b981' }} />
+                            <span style={{ fontWeight: '600', color: '#10b981' }}>Acesso ao Sistema Ativo</span>
+                          </>
+                        ) : (
+                          <>
+                            <AlertCircle size={20} style={{ color: '#f59e0b' }} />
+                            <span style={{ fontWeight: '600', color: '#f59e0b' }}>Sem Acesso ao Sistema</span>
+                          </>
+                        )}
+                      </div>
+                      
+                      {corretorForm.tem_acesso_sistema ? (
+                        <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.7)', margin: 0 }}>
+                          Este corretor pode fazer login no sistema com o email cadastrado.
+                        </p>
+                      ) : (
+                        <>
+                          <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.7)', marginBottom: '12px' }}>
+                            Este corretor foi sincronizado do Sienge e ainda não tem acesso ao sistema. 
+                            Ative o acesso para que ele possa fazer login e visualizar suas comissões.
+                          </p>
+                          
+                          <div className="form-group" style={{ marginBottom: '12px' }}>
+                            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                              <input
+                                type="checkbox"
+                                checked={corretorForm.ativar_acesso}
+                                onChange={(e) => setCorretorForm({...corretorForm, ativar_acesso: e.target.checked})}
+                                style={{ width: '18px', height: '18px' }}
+                              />
+                              <span>Ativar acesso ao sistema</span>
+                            </label>
+                          </div>
+                          
+                          {corretorForm.ativar_acesso && (
+                            <>
+                              {(corretorForm.email?.includes('@sync.local') || corretorForm.email?.includes('@placeholder.local')) && (
+                                <div style={{
+                                  background: 'rgba(239, 68, 68, 0.1)',
+                                  border: '1px solid rgba(239, 68, 68, 0.3)',
+                                  borderRadius: '6px',
+                                  padding: '10px',
+                                  marginBottom: '12px'
+                                }}>
+                                  <p style={{ fontSize: '12px', color: '#ef4444', margin: 0 }}>
+                                    ⚠️ O email atual é temporário. Altere para um email válido antes de ativar o acesso.
+                                  </p>
+                                </div>
+                              )}
+                              
+                              <div className="form-group" style={{ marginBottom: '8px' }}>
+                                <label>Email para Login *</label>
+                                <div className="input-with-icon">
+                                  <Mail size={18} />
+                                  <input
+                                    type="email"
+                                    placeholder="email@exemplo.com"
+                                    value={corretorForm.email}
+                                    onChange={(e) => setCorretorForm({...corretorForm, email: e.target.value})}
+                                  />
+                                </div>
+                              </div>
+                              
+                              <div className="form-group">
+                                <label>Senha * (mínimo 6 caracteres)</label>
+                                <div className="input-with-icon">
+                                  <Lock size={18} />
+                                  <input
+                                    type="password"
+                                    placeholder="Defina uma senha"
+                                    value={corretorForm.senha}
+                                    onChange={(e) => setCorretorForm({...corretorForm, senha: e.target.value})}
+                                  />
+                                </div>
+                                <small style={{ fontSize: '11px', color: 'rgba(255,255,255,0.5)' }}>
+                                  A senha é armazenada de forma segura (criptografada). Apenas o corretor terá acesso.
+                                </small>
+                              </div>
+                            </>
+                          )}
+                        </>
+                      )}
                     </div>
                   )}
 
