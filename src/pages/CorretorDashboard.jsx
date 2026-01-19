@@ -1283,6 +1283,7 @@ const CorretorDashboard = () => {
                                                     {pagamento.tipo === 'entrada' && 'Entrada'}
                                                     {pagamento.tipo === 'parcela_entrada' && `Parcela ${pagamento.numero_parcela || ''}`}
                                                     {pagamento.tipo === 'balao' && `Balão ${pagamento.numero_parcela || ''}`}
+                                                    {pagamento.tipo === 'comissao_integral' && '✨ Comissão Integral'}
                                                   </div>
                                                   <div className="corretor-parcela-data">
                                                     {pagamento.data_prevista 
@@ -1438,6 +1439,7 @@ const CorretorDashboard = () => {
                                   {pagamento.tipo === 'entrada' && 'Entrada'}
                                   {pagamento.tipo === 'parcela_entrada' && `Parcela ${pagamento.numero_parcela || ''}`}
                                   {pagamento.tipo === 'balao' && `Balão ${pagamento.numero_parcela || ''}`}
+                                  {pagamento.tipo === 'comissao_integral' && '✨ Integral'}
                                 </span>
                               </td>
                               <td>{formatCurrency(pagamento.valor)}</td>

@@ -26,6 +26,12 @@ const AdminDashboard = () => {
   const navigate = useNavigate()
   const location = useLocation()
   
+  // VERIFICAÇÃO PRIORITÁRIA: Se há transição de login, não renderizar NADA
+  // (após hooks para não violar regras do React)
+  if (sessionStorage.getItem('im-login-transition')) {
+    return null
+  }
+  
   // Função de logout local para garantir funcionamento
   const handleLogout = async () => {
     try {
@@ -475,6 +481,11 @@ const AdminDashboard = () => {
 
   // Carregar dados apenas quando o perfil estiver pronto e for admin
   useEffect(() => {
+    // NÃO executar se há transição de login ativa
+    if (sessionStorage.getItem('im-login-transition')) {
+      return
+    }
+    
     if (!authLoading && userProfile && userProfile.tipo === 'admin' && !dataLoadedRef.current) {
       dataLoadedRef.current = true // Marca ANTES de chamar para evitar duplicação
       console.log('✅ Condições atendidas, chamando fetchData...')
@@ -1151,93 +1162,115 @@ const AdminDashboard = () => {
       // Recriar pagamentos com novos valores
       const pagamentos = []
       
-      // Sinal
-      if (valorSinal > 0) {
+      // ===== REGRA ESPECIAL: ENTRADA >= 20% =====
+      const valorEntradaParaCalculo = valorSinal + valorEntradaTotal
+      const percentualEntrada = valorVenda > 0 ? (valorEntradaParaCalculo / valorVenda) * 100 : 0
+      const entradaMaiorOuIgual20 = percentualEntrada >= 20
+      
+      if (entradaMaiorOuIgual20) {
+        // Entrada >= 20%: Gerar apenas 1 parcela com comissão total
+        const comissaoTotal = comissoesDinamicas.total || (valorProSoluto * fatorComissao)
+        
         pagamentos.push({
           venda_id: vendaId,
-          tipo: 'sinal',
-          valor: valorSinal,
+          tipo: 'comissao_integral',
+          valor: valorEntradaParaCalculo,
           data_prevista: vendaForm.data_venda,
-          comissao_gerada: valorSinal * fatorComissao
+          comissao_gerada: comissaoTotal
         })
-      }
-
-      // Entrada (à vista) - só se teve entrada E não parcelou
-      if (vendaForm.teve_entrada && !vendaForm.parcelou_entrada) {
-        const valorEntradaAvista = parseFloat(vendaForm.valor_entrada) || 0
-        if (valorEntradaAvista > 0) {
+        
+        console.log(`✅ Edição: Entrada >= 20% (${percentualEntrada.toFixed(1)}%). Comissão integral: R$ ${comissaoTotal.toFixed(2)}`)
+      } else {
+        // Entrada < 20%: Gerar parcelas normalmente
+        
+        // Sinal
+        if (valorSinal > 0) {
           pagamentos.push({
             venda_id: vendaId,
-            tipo: 'entrada',
-            valor: valorEntradaAvista,
+            tipo: 'sinal',
+            valor: valorSinal,
             data_prevista: vendaForm.data_venda,
-            comissao_gerada: valorEntradaAvista * fatorComissao
+            comissao_gerada: valorSinal * fatorComissao
           })
         }
-      }
-      
-      // Parcelas da entrada - só se teve entrada E parcelou
-      if (vendaForm.teve_entrada && vendaForm.parcelou_entrada) {
-        let numeroParcela = 1
-        // Iterar por cada grupo de parcelas (apenas grupos válidos)
-        gruposParcelasEntrada.forEach((grupo) => {
-          // Validar que grupo é um objeto válido antes de processar
-          if (!grupo || typeof grupo !== 'object' || grupo === null) {
-            console.warn('Grupo de parcela inválido ignorado:', grupo)
-            return
+
+        // Entrada (à vista) - só se teve entrada E não parcelou
+        if (vendaForm.teve_entrada && !vendaForm.parcelou_entrada) {
+          const valorEntradaAvista = parseFloat(vendaForm.valor_entrada) || 0
+          if (valorEntradaAvista > 0) {
+            pagamentos.push({
+              venda_id: vendaId,
+              tipo: 'entrada',
+              valor: valorEntradaAvista,
+              data_prevista: vendaForm.data_venda,
+              comissao_gerada: valorEntradaAvista * fatorComissao
+            })
           }
-          
-          const qtd = parseInt(grupo.qtd) || 0
-          const valor = parseFloat(grupo.valor) || 0
-          
-          // Só processar se quantidade e valor forem válidos
-          if (qtd > 0 && valor > 0) {
-            for (let i = 0; i < qtd; i++) {
-              const dataParcela = new Date(vendaForm.data_venda)
-              dataParcela.setMonth(dataParcela.getMonth() + numeroParcela)
-              
-              pagamentos.push({
-                venda_id: vendaId,
-                tipo: 'parcela_entrada',
-                numero_parcela: numeroParcela,
-                valor: valor,
-                data_prevista: dataParcela.toISOString().split('T')[0],
-                comissao_gerada: valor * fatorComissao
-              })
-              numeroParcela++
+        }
+        
+        // Parcelas da entrada - só se teve entrada E parcelou
+        if (vendaForm.teve_entrada && vendaForm.parcelou_entrada) {
+          let numeroParcela = 1
+          // Iterar por cada grupo de parcelas (apenas grupos válidos)
+          gruposParcelasEntrada.forEach((grupo) => {
+            // Validar que grupo é um objeto válido antes de processar
+            if (!grupo || typeof grupo !== 'object' || grupo === null) {
+              console.warn('Grupo de parcela inválido ignorado:', grupo)
+              return
             }
-          }
-        })
-      }
-      
-      // Balões
-      if (vendaForm.teve_balao === 'sim') {
-        let numeroBalao = 1
-        // Iterar por cada grupo de balões (apenas grupos válidos)
-        gruposBalao.forEach((grupo) => {
-          // Validar que grupo é um objeto válido antes de processar
-          if (!grupo || typeof grupo !== 'object' || grupo === null) {
-            console.warn('Grupo de balão inválido ignorado:', grupo)
-            return
-          }
-          
-          const qtd = parseInt(grupo.qtd) || 0
-          const valor = parseFloat(grupo.valor) || 0
-          
-          // Só processar se quantidade e valor forem válidos
-          if (qtd > 0 && valor > 0) {
-            for (let i = 0; i < qtd; i++) {
-              pagamentos.push({
-                venda_id: vendaId,
-                tipo: 'balao',
-                numero_parcela: numeroBalao,
-                valor: valor,
-                comissao_gerada: valor * fatorComissao
-              })
-              numeroBalao++
+            
+            const qtd = parseInt(grupo.qtd) || 0
+            const valor = parseFloat(grupo.valor) || 0
+            
+            // Só processar se quantidade e valor forem válidos
+            if (qtd > 0 && valor > 0) {
+              for (let i = 0; i < qtd; i++) {
+                const dataParcela = new Date(vendaForm.data_venda)
+                dataParcela.setMonth(dataParcela.getMonth() + numeroParcela)
+                
+                pagamentos.push({
+                  venda_id: vendaId,
+                  tipo: 'parcela_entrada',
+                  numero_parcela: numeroParcela,
+                  valor: valor,
+                  data_prevista: dataParcela.toISOString().split('T')[0],
+                  comissao_gerada: valor * fatorComissao
+                })
+                numeroParcela++
+              }
             }
-          }
-        })
+          })
+        }
+        
+        // Balões
+        if (vendaForm.teve_balao === 'sim') {
+          let numeroBalao = 1
+          // Iterar por cada grupo de balões (apenas grupos válidos)
+          gruposBalao.forEach((grupo) => {
+            // Validar que grupo é um objeto válido antes de processar
+            if (!grupo || typeof grupo !== 'object' || grupo === null) {
+              console.warn('Grupo de balão inválido ignorado:', grupo)
+              return
+            }
+            
+            const qtd = parseInt(grupo.qtd) || 0
+            const valor = parseFloat(grupo.valor) || 0
+            
+            // Só processar se quantidade e valor forem válidos
+            if (qtd > 0 && valor > 0) {
+              for (let i = 0; i < qtd; i++) {
+                pagamentos.push({
+                  venda_id: vendaId,
+                  tipo: 'balao',
+                  numero_parcela: numeroBalao,
+                  valor: valor,
+                  comissao_gerada: valor * fatorComissao
+                })
+                numeroBalao++
+              }
+            }
+          })
+        }
       }
 
       if (pagamentos.length > 0) {
@@ -1266,93 +1299,117 @@ const AdminDashboard = () => {
       // Fórmula: Comissão da Parcela = Valor da Parcela × Fcom
       const pagamentos = []
       
-      // Sinal
-      if (valorSinal > 0) {
+      // ===== REGRA ESPECIAL: ENTRADA >= 20% =====
+      // Se a entrada (sinal + entrada) for >= 20% do valor da venda,
+      // gera apenas 1 parcela com a comissão total do corretor
+      const valorEntradaParaCalculo = valorSinal + valorEntradaTotal
+      const percentualEntrada = valorVenda > 0 ? (valorEntradaParaCalculo / valorVenda) * 100 : 0
+      const entradaMaiorOuIgual20 = percentualEntrada >= 20
+      
+      if (entradaMaiorOuIgual20) {
+        // Entrada >= 20%: Gerar apenas 1 parcela com comissão total
+        const comissaoTotal = comissoesDinamicas.total || (valorProSoluto * fatorComissao)
+        
         pagamentos.push({
           venda_id: vendaId,
-          tipo: 'sinal',
-          valor: valorSinal,
+          tipo: 'comissao_integral',
+          valor: valorEntradaParaCalculo, // Valor da entrada
           data_prevista: vendaForm.data_venda,
-          comissao_gerada: valorSinal * fatorComissao
+          comissao_gerada: comissaoTotal // Comissão TOTAL do corretor
         })
-      }
-
-      // Entrada (à vista) - só se teve entrada E não parcelou
-      if (vendaForm.teve_entrada && !vendaForm.parcelou_entrada) {
-        const valorEntradaAvista = parseFloat(vendaForm.valor_entrada) || 0
-        if (valorEntradaAvista > 0) {
+        
+        console.log(`✅ Entrada >= 20% (${percentualEntrada.toFixed(1)}%). Comissão integral: R$ ${comissaoTotal.toFixed(2)}`)
+      } else {
+        // Entrada < 20%: Gerar parcelas normalmente
+        
+        // Sinal
+        if (valorSinal > 0) {
           pagamentos.push({
             venda_id: vendaId,
-            tipo: 'entrada',
-            valor: valorEntradaAvista,
+            tipo: 'sinal',
+            valor: valorSinal,
             data_prevista: vendaForm.data_venda,
-            comissao_gerada: valorEntradaAvista * fatorComissao
+            comissao_gerada: valorSinal * fatorComissao
           })
         }
-      }
-      
-      // Parcelas da entrada - só se teve entrada E parcelou
-      if (vendaForm.teve_entrada && vendaForm.parcelou_entrada) {
-        let numeroParcela = 1
-        // Iterar por cada grupo de parcelas (apenas grupos válidos)
-        gruposParcelasEntrada.forEach((grupo) => {
-          // Validar que grupo é um objeto válido antes de processar
-          if (!grupo || typeof grupo !== 'object' || grupo === null) {
-            console.warn('Grupo de parcela inválido ignorado:', grupo)
-            return
+
+        // Entrada (à vista) - só se teve entrada E não parcelou
+        if (vendaForm.teve_entrada && !vendaForm.parcelou_entrada) {
+          const valorEntradaAvista = parseFloat(vendaForm.valor_entrada) || 0
+          if (valorEntradaAvista > 0) {
+            pagamentos.push({
+              venda_id: vendaId,
+              tipo: 'entrada',
+              valor: valorEntradaAvista,
+              data_prevista: vendaForm.data_venda,
+              comissao_gerada: valorEntradaAvista * fatorComissao
+            })
           }
-          
-          const qtd = parseInt(grupo.qtd) || 0
-          const valor = parseFloat(grupo.valor) || 0
-          
-          // Só processar se quantidade e valor forem válidos
-          if (qtd > 0 && valor > 0) {
-            for (let i = 0; i < qtd; i++) {
-              const dataParcela = new Date(vendaForm.data_venda)
-              dataParcela.setMonth(dataParcela.getMonth() + numeroParcela)
-              
-              pagamentos.push({
-                venda_id: vendaId,
-                tipo: 'parcela_entrada',
-                numero_parcela: numeroParcela,
-                valor: valor,
-                data_prevista: dataParcela.toISOString().split('T')[0],
-                comissao_gerada: valor * fatorComissao
-              })
-              numeroParcela++
+        }
+        
+        // Parcelas da entrada - só se teve entrada E parcelou
+        if (vendaForm.teve_entrada && vendaForm.parcelou_entrada) {
+          let numeroParcela = 1
+          // Iterar por cada grupo de parcelas (apenas grupos válidos)
+          gruposParcelasEntrada.forEach((grupo) => {
+            // Validar que grupo é um objeto válido antes de processar
+            if (!grupo || typeof grupo !== 'object' || grupo === null) {
+              console.warn('Grupo de parcela inválido ignorado:', grupo)
+              return
             }
-          }
-        })
-      }
-      
-      // Balões
-      if (vendaForm.teve_balao === 'sim') {
-        let numeroBalao = 1
-        // Iterar por cada grupo de balões (apenas grupos válidos)
-        gruposBalao.forEach((grupo) => {
-          // Validar que grupo é um objeto válido antes de processar
-          if (!grupo || typeof grupo !== 'object' || grupo === null) {
-            console.warn('Grupo de balão inválido ignorado:', grupo)
-            return
-          }
-          
-          const qtd = parseInt(grupo.qtd) || 0
-          const valor = parseFloat(grupo.valor) || 0
-          
-          // Só processar se quantidade e valor forem válidos
-          if (qtd > 0 && valor > 0) {
-            for (let i = 0; i < qtd; i++) {
-              pagamentos.push({
-                venda_id: vendaId,
-                tipo: 'balao',
-                numero_parcela: numeroBalao,
-                valor: valor,
-                comissao_gerada: valor * fatorComissao
-              })
-              numeroBalao++
+            
+            const qtd = parseInt(grupo.qtd) || 0
+            const valor = parseFloat(grupo.valor) || 0
+            
+            // Só processar se quantidade e valor forem válidos
+            if (qtd > 0 && valor > 0) {
+              for (let i = 0; i < qtd; i++) {
+                const dataParcela = new Date(vendaForm.data_venda)
+                dataParcela.setMonth(dataParcela.getMonth() + numeroParcela)
+                
+                pagamentos.push({
+                  venda_id: vendaId,
+                  tipo: 'parcela_entrada',
+                  numero_parcela: numeroParcela,
+                  valor: valor,
+                  data_prevista: dataParcela.toISOString().split('T')[0],
+                  comissao_gerada: valor * fatorComissao
+                })
+                numeroParcela++
+              }
             }
-          }
-        })
+          })
+        }
+        
+        // Balões
+        if (vendaForm.teve_balao === 'sim') {
+          let numeroBalao = 1
+          // Iterar por cada grupo de balões (apenas grupos válidos)
+          gruposBalao.forEach((grupo) => {
+            // Validar que grupo é um objeto válido antes de processar
+            if (!grupo || typeof grupo !== 'object' || grupo === null) {
+              console.warn('Grupo de balão inválido ignorado:', grupo)
+              return
+            }
+            
+            const qtd = parseInt(grupo.qtd) || 0
+            const valor = parseFloat(grupo.valor) || 0
+            
+            // Só processar se quantidade e valor forem válidos
+            if (qtd > 0 && valor > 0) {
+              for (let i = 0; i < qtd; i++) {
+                pagamentos.push({
+                  venda_id: vendaId,
+                  tipo: 'balao',
+                  numero_parcela: numeroBalao,
+                  valor: valor,
+                  comissao_gerada: valor * fatorComissao
+                })
+                numeroBalao++
+              }
+            }
+          })
+        }
       }
 
       if (pagamentos.length > 0) {
@@ -1917,63 +1974,87 @@ const AdminDashboard = () => {
     
     const novosPagamentos = []
     
-    // Sinal
-    if (valorSinal > 0) {
+    // ===== REGRA ESPECIAL: ENTRADA >= 20% =====
+    // Se a entrada (sinal + entrada) for >= 20% do valor da venda,
+    // gera apenas 1 parcela com a comissão total do corretor
+    const valorEntradaParaCalculo = valorSinal + valorEntradaTotal
+    const percentualEntrada = valorVenda > 0 ? (valorEntradaParaCalculo / valorVenda) * 100 : 0
+    const entradaMaiorOuIgual20 = percentualEntrada >= 20
+    
+    if (entradaMaiorOuIgual20) {
+      // Entrada >= 20%: Gerar apenas 1 parcela com comissão total
+      const comissaoTotal = comissoesDinamicas.total || (valorProSoluto * fatorComissao)
+      
       novosPagamentos.push({
         venda_id: venda.id,
-        tipo: 'sinal',
-        valor: valorSinal,
+        tipo: 'comissao_integral',
+        valor: valorEntradaParaCalculo, // Valor da entrada
         data_prevista: venda.data_venda,
-        comissao_gerada: valorSinal * fatorComissao
+        comissao_gerada: comissaoTotal // Comissão TOTAL do corretor
       })
-    }
-
-    // Entrada à vista
-    if (venda.teve_entrada && !venda.parcelou_entrada) {
-      const valorEntradaAvista = parseFloat(venda.valor_entrada) || 0
-      if (valorEntradaAvista > 0) {
-        novosPagamentos.push({
-          venda_id: venda.id,
-          tipo: 'entrada',
-          valor: valorEntradaAvista,
-          data_prevista: venda.data_venda,
-          comissao_gerada: valorEntradaAvista * fatorComissao
-        })
-      }
-    }
-    
-    // Parcelas da entrada
-    if (venda.teve_entrada && venda.parcelou_entrada) {
-      const qtdParcelas = parseInt(venda.qtd_parcelas_entrada) || 0
-      const valorParcelaEnt = parseFloat(venda.valor_parcela_entrada) || 0
       
-      for (let i = 1; i <= qtdParcelas; i++) {
-        const dataParcela = new Date(venda.data_venda)
-        dataParcela.setMonth(dataParcela.getMonth() + i)
-        
+      console.log(`✅ Entrada >= 20% (${percentualEntrada.toFixed(1)}%). Comissão integral: R$ ${comissaoTotal.toFixed(2)}`)
+    } else {
+      // Entrada < 20%: Gerar parcelas normalmente
+      
+      // Sinal
+      if (valorSinal > 0) {
         novosPagamentos.push({
           venda_id: venda.id,
-          tipo: 'parcela_entrada',
-          numero_parcela: i,
-          valor: valorParcelaEnt,
-          data_prevista: dataParcela.toISOString().split('T')[0],
-          comissao_gerada: valorParcelaEnt * fatorComissao
+          tipo: 'sinal',
+          valor: valorSinal,
+          data_prevista: venda.data_venda,
+          comissao_gerada: valorSinal * fatorComissao
         })
       }
-    }
-    
-    // Balões
-    if (venda.teve_balao === 'sim') {
-      const qtdBalao = parseInt(venda.qtd_balao) || 0
-      const valorBalaoUnit = parseFloat(venda.valor_balao) || 0
-      for (let i = 1; i <= qtdBalao; i++) {
-        novosPagamentos.push({
-          venda_id: venda.id,
-          tipo: 'balao',
-          numero_parcela: i,
-          valor: valorBalaoUnit,
-          comissao_gerada: valorBalaoUnit * fatorComissao
-        })
+
+      // Entrada à vista
+      if (venda.teve_entrada && !venda.parcelou_entrada) {
+        const valorEntradaAvista = parseFloat(venda.valor_entrada) || 0
+        if (valorEntradaAvista > 0) {
+          novosPagamentos.push({
+            venda_id: venda.id,
+            tipo: 'entrada',
+            valor: valorEntradaAvista,
+            data_prevista: venda.data_venda,
+            comissao_gerada: valorEntradaAvista * fatorComissao
+          })
+        }
+      }
+      
+      // Parcelas da entrada
+      if (venda.teve_entrada && venda.parcelou_entrada) {
+        const qtdParcelas = parseInt(venda.qtd_parcelas_entrada) || 0
+        const valorParcelaEnt = parseFloat(venda.valor_parcela_entrada) || 0
+        
+        for (let i = 1; i <= qtdParcelas; i++) {
+          const dataParcela = new Date(venda.data_venda)
+          dataParcela.setMonth(dataParcela.getMonth() + i)
+          
+          novosPagamentos.push({
+            venda_id: venda.id,
+            tipo: 'parcela_entrada',
+            numero_parcela: i,
+            valor: valorParcelaEnt,
+            data_prevista: dataParcela.toISOString().split('T')[0],
+            comissao_gerada: valorParcelaEnt * fatorComissao
+          })
+        }
+      }
+      
+      // Balões
+      if (venda.teve_balao === 'sim') {
+        const qtdBalao = parseInt(venda.qtd_balao) || 0
+        const valorBalaoUnit = parseFloat(venda.valor_balao) || 0
+        for (let i = 1; i <= qtdBalao; i++) {
+          novosPagamentos.push({
+            venda_id: venda.id,
+            tipo: 'balao',
+            numero_parcela: i,
+            valor: valorBalaoUnit,
+            comissao_gerada: valorBalaoUnit * fatorComissao
+          })
+        }
       }
     }
 
@@ -1982,7 +2063,8 @@ const AdminDashboard = () => {
       if (error) {
         setMessage({ type: 'error', text: 'Erro ao gerar pagamentos: ' + error.message })
       } else {
-        setMessage({ type: 'success', text: `${novosPagamentos.length} pagamentos gerados!` })
+        const msgExtra = entradaMaiorOuIgual20 ? ' (Comissão integral - entrada >= 20%)' : ''
+        setMessage({ type: 'success', text: `${novosPagamentos.length} pagamentos gerados!${msgExtra}` })
         fetchData()
       }
     } else {
@@ -3884,16 +3966,23 @@ const AdminDashboard = () => {
     return tickerData
   }
 
-  // Verificar se há transição de login ativa - se sim, não renderizar NADA
-  const loginTransitionActive = sessionStorage.getItem('im-login-transition')
-  if (loginTransitionActive) {
-    return null
-  }
+  // Verificar se acabou de ter uma transição (para não mostrar loading imediatamente)
+  const transitionJustComplete = sessionStorage.getItem('im-transition-complete')
+  
+  // Limpar a flag após um tempo
+  useEffect(() => {
+    if (transitionJustComplete) {
+      const timer = setTimeout(() => {
+        sessionStorage.removeItem('im-transition-complete')
+      }, 2000) // Limpar após 2 segundos
+      return () => clearTimeout(timer)
+    }
+  }, [transitionJustComplete])
 
   return (
     <div className="dashboard-container">
-      {/* Barra de Carregamento Global */}
-      {(loading || authLoading) && (
+      {/* Barra de Carregamento Global - Não mostrar se acabou de ter transição */}
+      {(loading || authLoading) && !transitionJustComplete && (
         <div className="global-loading-overlay">
           <div className="global-loading-content">
             <div className="loading-spinner-large"></div>
@@ -5572,6 +5661,7 @@ const AdminDashboard = () => {
                                   {pag.tipo === 'entrada' && 'Entrada'}
                                   {pag.tipo === 'parcela_entrada' && `Parcela ${pag.numero_parcela}`}
                                   {pag.tipo === 'balao' && `Balão ${pag.numero_parcela || ''}`}
+                                  {pag.tipo === 'comissao_integral' && '✨ Comissão Integral'}
                                 </div>
                                 <div className="parcela-data">{pag.data_prevista ? new Date(pag.data_prevista).toLocaleDateString('pt-BR') : '-'}</div>
                                 <div className="parcela-valor">{formatCurrency(pag.valor)}</div>
@@ -5656,6 +5746,7 @@ const AdminDashboard = () => {
                               {pagamentoDetalhe.tipo === 'entrada' && 'Entrada'}
                               {pagamentoDetalhe.tipo === 'parcela_entrada' && `Parcela de Entrada ${pagamentoDetalhe.numero_parcela}`}
                               {pagamentoDetalhe.tipo === 'balao' && (pagamentoDetalhe.numero_parcela ? `Balão ${pagamentoDetalhe.numero_parcela}` : 'Balão')}
+                              {pagamentoDetalhe.tipo === 'comissao_integral' && '✨ Comissão Integral (Entrada ≥ 20%)'}
                             </span>
                           </div>
                           <div className="detalhe-row highlight">
@@ -5735,6 +5826,7 @@ const AdminDashboard = () => {
                               {pagamentoParaConfirmar.tipo === 'entrada' && 'Entrada'}
                               {pagamentoParaConfirmar.tipo === 'parcela_entrada' && `Parcela de Entrada ${pagamentoParaConfirmar.numero_parcela}`}
                               {pagamentoParaConfirmar.tipo === 'balao' && (pagamentoParaConfirmar.numero_parcela ? `Balão ${pagamentoParaConfirmar.numero_parcela}` : 'Balão')}
+                              {pagamentoParaConfirmar.tipo === 'comissao_integral' && '✨ Comissão Integral (Entrada ≥ 20%)'}
                             </span>
                           </div>
                           <div className="info-row">

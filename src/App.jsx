@@ -67,8 +67,11 @@ const LoadingScreen = ({ showLogout = false }) => {
 const ProtectedRoute = ({ children, requiredRole }) => {
   const { user, userProfile, loading } = useAuth()
 
-  // NUNCA mostrar loading se há transição ativa
-  if (loading && !isLoginTransitionActive()) {
+  // Verificar se acabou de ter uma transição
+  const transitionJustComplete = sessionStorage.getItem('im-transition-complete')
+
+  // NUNCA mostrar loading se há transição ativa ou acabou de completar
+  if (loading && !isLoginTransitionActive() && !transitionJustComplete) {
     return <LoadingScreen showLogout={true} />
   }
 
