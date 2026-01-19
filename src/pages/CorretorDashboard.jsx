@@ -811,6 +811,10 @@ const CorretorDashboard = () => {
     }
   }, [tab, navigate, location.pathname])
 
+  // Se há transição de login ativa, não renderizar nada
+  if (sessionStorage.getItem('im-login-transition')) {
+    return null
+  }
 
   return (
     <div className="dashboard-container">
@@ -1279,6 +1283,7 @@ const CorretorDashboard = () => {
                                                     {pagamento.tipo === 'entrada' && 'Entrada'}
                                                     {pagamento.tipo === 'parcela_entrada' && `Parcela ${pagamento.numero_parcela || ''}`}
                                                     {pagamento.tipo === 'balao' && `Balão ${pagamento.numero_parcela || ''}`}
+                                                    {pagamento.tipo === 'comissao_integral' && '✨ Comissão Integral'}
                                                   </div>
                                                   <div className="corretor-parcela-data">
                                                     {pagamento.data_prevista 
@@ -1434,6 +1439,7 @@ const CorretorDashboard = () => {
                                   {pagamento.tipo === 'entrada' && 'Entrada'}
                                   {pagamento.tipo === 'parcela_entrada' && `Parcela ${pagamento.numero_parcela || ''}`}
                                   {pagamento.tipo === 'balao' && `Balão ${pagamento.numero_parcela || ''}`}
+                                  {pagamento.tipo === 'comissao_integral' && '✨ Integral'}
                                 </span>
                               </td>
                               <td>{formatCurrency(pagamento.valor)}</td>

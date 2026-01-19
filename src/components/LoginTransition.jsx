@@ -17,8 +17,12 @@ const LoginTransition = ({ onComplete, redirectUrl }) => {
     const timeouts = timeline.map(({ phase: p, delay }) => 
       setTimeout(() => {
         if (p === 'complete') {
-          // Limpar flag de transição
+          // Limpar flag de transição ativa
           sessionStorage.removeItem('im-login-transition')
+          
+          // Marcar que a transição acabou mas ainda não chegou no dashboard
+          // Isso evita que o dashboard mostre loading imediatamente
+          sessionStorage.setItem('im-transition-complete', 'true')
           
           // Redirecionar para o dashboard
           if (redirectUrl) {
