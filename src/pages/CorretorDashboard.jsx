@@ -8,7 +8,7 @@ import {
   Wallet, Target, Award, BarChart3,
   LayoutDashboard, Menu, X, ChevronLeft, ChevronRight, ChevronDown,
   Building, MapPin, CreditCard, Users, FileText, Eye, Phone, Mail,
-  Home, Percent, CalendarDays, BanknoteIcon, TrendingDown, ArrowUpRight,
+  Home, CalendarDays, BanknoteIcon, TrendingDown, ArrowUpRight,
   Plus, UserPlus, Send, ClipboardList, CheckCircle2, XCircle, AlertCircle,
   Camera, Search
 } from 'lucide-react'
@@ -98,6 +98,22 @@ const CorretorDashboard = () => {
   const [message, setMessage] = useState({ type: '', text: '' })
   const [todosClientes, setTodosClientes] = useState([])
   
+  // Estados para aba Meu Perfil
+  const [editandoPerfil, setEditandoPerfil] = useState(false)
+  const [perfilForm, setPerfilForm] = useState({
+    nome: '',
+    telefone: '',
+    email: ''
+  })
+  const [salvandoPerfil, setSalvandoPerfil] = useState(false)
+  const [senhaForm, setSenhaForm] = useState({
+    senhaAtual: '',
+    novaSenha: '',
+    confirmarSenha: ''
+  })
+  const [alterandoSenha, setAlterandoSenha] = useState(false)
+  const [showSenhaModal, setShowSenhaModal] = useState(false)
+  
   // Form de nova venda
   const [novaVendaForm, setNovaVendaForm] = useState({
     empreendimento_id: '',
@@ -125,6 +141,13 @@ const CorretorDashboard = () => {
       fetchMinhasSolicitacoes()
     }
   }, [user])
+
+  // Carregar pagamentos sempre que vendas mudar (para o dashboard)
+  useEffect(() => {
+    if (vendas.length > 0 && meusPagamentos.length === 0) {
+      fetchMeusPagamentos()
+    }
+  }, [vendas])
 
   useEffect(() => {
     if (userProfile) {
@@ -499,6 +522,12 @@ const CorretorDashboard = () => {
       setMessage({ type: 'error', text: 'Nome e CPF são obrigatórios' })
       return
     }
+
+    // Validar CPF - deve ter 11 dígitos
+    if (!validarCPF(novoClienteForm.cpf)) {
+      setMessage({ type: 'error', text: 'CPF inválido. Deve conter 11 dígitos.' })
+      return
+    }
     
     try {
       setLoading(true)
@@ -532,6 +561,88 @@ const CorretorDashboard = () => {
     }
   }
 
+  // Inicializar form de perfil quando userProfile carregar
+  useEffect(() => {
+    if (userProfile && activeTab === 'perfil') {
+      setPerfilForm({
+        nome: userProfile.nome || '',
+        telefone: userProfile.telefone || '',
+        email: userProfile.email || ''
+      })
+    }
+  }, [userProfile, activeTab])
+
+  // Função para salvar alterações do perfil
+  const handleSalvarPerfil = async () => {
+    if (!perfilForm.nome.trim()) {
+      setMessage({ type: 'error', text: 'O nome é obrigatório' })
+      return
+    }
+
+    try {
+      setSalvandoPerfil(true)
+      
+      const { error } = await supabase
+        .from('usuarios')
+        .update({
+          nome: perfilForm.nome.trim(),
+          telefone: perfilForm.telefone.trim() || null,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', user.id)
+      
+      if (error) throw error
+      
+      setMessage({ type: 'success', text: 'Perfil atualizado com sucesso!' })
+      setEditandoPerfil(false)
+      
+      // Recarregar página para atualizar o contexto
+      setTimeout(() => window.location.reload(), 1500)
+    } catch (error) {
+      console.error('Erro ao atualizar perfil:', error)
+      setMessage({ type: 'error', text: 'Erro ao atualizar perfil: ' + error.message })
+    } finally {
+      setSalvandoPerfil(false)
+    }
+  }
+
+  // Função para alterar senha
+  const handleAlterarSenha = async () => {
+    if (!senhaForm.novaSenha || !senhaForm.confirmarSenha) {
+      setMessage({ type: 'error', text: 'Preencha todos os campos de senha' })
+      return
+    }
+
+    if (senhaForm.novaSenha !== senhaForm.confirmarSenha) {
+      setMessage({ type: 'error', text: 'As senhas não coincidem' })
+      return
+    }
+
+    if (senhaForm.novaSenha.length < 6) {
+      setMessage({ type: 'error', text: 'A senha deve ter pelo menos 6 caracteres' })
+      return
+    }
+
+    try {
+      setAlterandoSenha(true)
+      
+      const { error } = await supabase.auth.updateUser({
+        password: senhaForm.novaSenha
+      })
+      
+      if (error) throw error
+      
+      setMessage({ type: 'success', text: 'Senha alterada com sucesso!' })
+      setShowSenhaModal(false)
+      setSenhaForm({ senhaAtual: '', novaSenha: '', confirmarSenha: '' })
+    } catch (error) {
+      console.error('Erro ao alterar senha:', error)
+      setMessage({ type: 'error', text: 'Erro ao alterar senha: ' + error.message })
+    } finally {
+      setAlterandoSenha(false)
+    }
+  }
+
   const formatCurrency = (value) => {
     if (value === null || value === undefined || isNaN(value)) {
       return 'R$ 0,00'
@@ -555,6 +666,37 @@ const CorretorDashboard = () => {
       .join(' ')
   }
 
+  // Função para formatar CPF (000.000.000-00)
+  const formatarCPF = (valor) => {
+    // Remove tudo que não é número
+    const numeros = valor.replace(/\D/g, '')
+    // Limita a 11 dígitos
+    const limitado = numeros.slice(0, 11)
+    // Aplica a máscara
+    if (limitado.length <= 3) return limitado
+    if (limitado.length <= 6) return `${limitado.slice(0, 3)}.${limitado.slice(3)}`
+    if (limitado.length <= 9) return `${limitado.slice(0, 3)}.${limitado.slice(3, 6)}.${limitado.slice(6)}`
+    return `${limitado.slice(0, 3)}.${limitado.slice(3, 6)}.${limitado.slice(6, 9)}-${limitado.slice(9)}`
+  }
+
+  // Função para formatar Telefone ((00) 00000-0000)
+  const formatarTelefone = (valor) => {
+    // Remove tudo que não é número
+    const numeros = valor.replace(/\D/g, '')
+    // Limita a 11 dígitos (com DDD)
+    const limitado = numeros.slice(0, 11)
+    // Aplica a máscara
+    if (limitado.length <= 2) return limitado
+    if (limitado.length <= 7) return `(${limitado.slice(0, 2)}) ${limitado.slice(2)}`
+    return `(${limitado.slice(0, 2)}) ${limitado.slice(2, 7)}-${limitado.slice(7)}`
+  }
+
+  // Validar CPF (apenas verifica se tem 11 dígitos)
+  const validarCPF = (cpf) => {
+    const numeros = cpf.replace(/\D/g, '')
+    return numeros.length === 11
+  }
+
   const filteredVendas = vendas.filter(venda => {
     if (periodo === 'todos') return true
     
@@ -563,7 +705,7 @@ const CorretorDashboard = () => {
     
     if (periodo === 'mes') {
       const mesmoMes = dataVenda.getMonth() === hoje.getMonth() && 
-                       dataVenda.getFullYear() === hoje.getFullYear()
+             dataVenda.getFullYear() === hoje.getFullYear()
       return mesmoMes
     }
     if (periodo === 'ano') {
@@ -739,23 +881,46 @@ const CorretorDashboard = () => {
     return true
   })
 
-  // Funções de totais filtrados
+  // Funções de totais filtrados (baseado em PAGAMENTOS, não em vendas)
   const getFilteredTotalVendas = () => {
     return filteredMinhasVendas.reduce((acc, v) => acc + (parseFloat(v.valor_venda) || 0), 0)
   }
 
+  // Filtrar pagamentos das vendas filtradas
+  const getFilteredPagamentos = () => {
+    const vendaIdsFiltradas = filteredMinhasVendas.map(v => v.id)
+    return meusPagamentos.filter(pag => vendaIdsFiltradas.includes(pag.venda_id))
+  }
+
   const getFilteredTotalComissao = () => {
-    return filteredMinhasVendas.reduce((acc, v) => acc + (parseFloat(v.comissao_corretor) || 0), 0)
+    const pagamentosFiltrados = getFilteredPagamentos()
+    if (pagamentosFiltrados.length === 0) {
+      // Fallback se pagamentos ainda não carregaram
+      return filteredMinhasVendas.reduce((acc, v) => acc + (parseFloat(v.comissao_corretor) || 0), 0)
+    }
+    return pagamentosFiltrados.reduce((acc, pag) => acc + calcularComissaoPagamento(pag), 0)
   }
 
   const getFilteredComissaoPendente = () => {
-    return filteredMinhasVendas.filter(v => v.status === 'pendente')
-      .reduce((acc, v) => acc + (parseFloat(v.comissao_corretor) || 0), 0)
+    const pagamentosFiltrados = getFilteredPagamentos()
+    if (pagamentosFiltrados.length === 0) {
+      return filteredMinhasVendas.filter(v => v.status === 'pendente')
+        .reduce((acc, v) => acc + (parseFloat(v.comissao_corretor) || 0), 0)
+    }
+    return pagamentosFiltrados
+      .filter(pag => pag.status === 'pendente')
+      .reduce((acc, pag) => acc + calcularComissaoPagamento(pag), 0)
   }
 
   const getFilteredComissaoPaga = () => {
-    return filteredMinhasVendas.filter(v => v.status === 'pago')
-      .reduce((acc, v) => acc + (parseFloat(v.comissao_corretor) || 0), 0)
+    const pagamentosFiltrados = getFilteredPagamentos()
+    if (pagamentosFiltrados.length === 0) {
+      return filteredMinhasVendas.filter(v => v.status === 'pago')
+        .reduce((acc, v) => acc + (parseFloat(v.comissao_corretor) || 0), 0)
+    }
+    return pagamentosFiltrados
+      .filter(pag => pag.status === 'pago')
+      .reduce((acc, pag) => acc + calcularComissaoPagamento(pag), 0)
   }
 
   // Gerar relatório PDF do corretor
@@ -778,11 +943,18 @@ const CorretorDashboard = () => {
         vendasFiltradas = vendasFiltradas.filter(v => new Date(v.data_venda) <= new Date(relatorioFiltros.dataFim))
       }
 
-      // Calcular totais
+      // Calcular totais usando PAGAMENTOS (regra correta)
       const totalVendas = vendasFiltradas.length
       const valorTotalVendas = vendasFiltradas.reduce((acc, v) => acc + (parseFloat(v.valor_venda) || 0), 0)
-      const comissaoTotal = vendasFiltradas.reduce((acc, v) => acc + (parseFloat(v.comissao_corretor) || 0), 0)
-      const comissaoPaga = vendasFiltradas.filter(v => v.status === 'pago').reduce((acc, v) => acc + (parseFloat(v.comissao_corretor) || 0), 0)
+      
+      // Filtrar pagamentos das vendas filtradas
+      const vendaIdsFiltradas = vendasFiltradas.map(v => v.id)
+      const pagamentosFiltrados = meusPagamentos.filter(p => vendaIdsFiltradas.includes(p.venda_id))
+      
+      const comissaoTotal = pagamentosFiltrados.reduce((acc, pag) => acc + calcularComissaoPagamento(pag), 0)
+      const comissaoPaga = pagamentosFiltrados
+        .filter(p => p.status === 'pago')
+        .reduce((acc, pag) => acc + calcularComissaoPagamento(pag), 0)
       const comissaoPendente = comissaoTotal - comissaoPaga
 
       // Criar PDF
@@ -847,15 +1019,30 @@ const CorretorDashboard = () => {
       doc.setFont('helvetica', 'bold')
       doc.text('Detalhamento das Vendas', 14, yPos)
 
-      const tableData = vendasFiltradas.map(v => [
-        new Date(v.data_venda).toLocaleDateString('pt-BR'),
-        v.empreendimento_nome || '-',
-        v.unidade || '-',
-        capitalizeName(v.cliente_nome) || '-',
-        formatCurrency(v.valor_venda),
-        formatCurrency(v.comissao_corretor),
-        v.status === 'pago' ? 'Pago' : 'Pendente'
-      ])
+      const tableData = vendasFiltradas.map(v => {
+        // Calcular comissão baseado em pagamentos
+        const pagamentosVenda = pagamentosFiltrados.filter(p => p.venda_id === v.id)
+        const comissaoVenda = pagamentosVenda.reduce((acc, pag) => acc + calcularComissaoPagamento(pag), 0)
+        const comissaoPagaVenda = pagamentosVenda
+          .filter(p => p.status === 'pago')
+          .reduce((acc, pag) => acc + calcularComissaoPagamento(pag), 0)
+        
+        // Status baseado nos pagamentos
+        const percentPago = comissaoVenda > 0 ? (comissaoPagaVenda / comissaoVenda) * 100 : 0
+        let statusVenda = 'Pendente'
+        if (percentPago >= 100) statusVenda = 'Pago'
+        else if (percentPago > 0) statusVenda = `${Math.round(percentPago)}% Pago`
+        
+        return [
+          new Date(v.data_venda).toLocaleDateString('pt-BR'),
+          v.empreendimento_nome || '-',
+          v.unidade || '-',
+          capitalizeName(v.cliente_nome) || '-',
+          formatCurrency(v.valor_venda),
+          formatCurrency(comissaoVenda > 0 ? comissaoVenda : v.comissao_corretor),
+          statusVenda
+        ]
+      })
 
       autoTable(doc, {
         startY: yPos + 10,
@@ -916,28 +1103,68 @@ const CorretorDashboard = () => {
     return filteredVendas.reduce((acc, v) => acc + (parseFloat(v.valor_venda) || 0), 0)
   }
 
+  // Calcular comissão de um pagamento usando fator correto
+  const calcularComissaoPagamento = (pagamento) => {
+    // Primeiro: usar comissao_gerada se existir no pagamento
+    if (pagamento.comissao_gerada && parseFloat(pagamento.comissao_gerada) > 0) {
+      return parseFloat(pagamento.comissao_gerada)
+    }
+    
+    // Segundo: usar fator_comissao_corretor se existir
+    if (pagamento.fator_comissao_corretor && pagamento.fator_comissao_corretor > 0) {
+      return (parseFloat(pagamento.valor) || 0) * pagamento.fator_comissao_corretor
+    }
+    
+    // Terceiro: calcular fator baseado na venda
+    const venda = vendas.find(v => v.id === pagamento.venda_id)
+    if (venda && venda.fator_comissao_corretor && venda.fator_comissao_corretor > 0) {
+      return (parseFloat(pagamento.valor) || 0) * venda.fator_comissao_corretor
+    }
+    
+    // Fallback: usar proporção simples se tiver comissão_corretor na venda
+    if (venda && venda.comissao_corretor && venda.valor_pro_soluto && venda.valor_pro_soluto > 0) {
+      const fator = parseFloat(venda.comissao_corretor) / parseFloat(venda.valor_pro_soluto)
+      return (parseFloat(pagamento.valor) || 0) * fator
+    }
+    
+    // Último fallback: proporção simples baseado no percentual padrão
+    const valorParcela = parseFloat(pagamento.valor) || 0
+    const percentual = userProfile?.percentual_corretor || (userProfile?.tipo_corretor === 'interno' ? 2.5 : 4)
+    return valorParcela * (percentual / 100)
+  }
+
+  // Total de comissão = soma de todas as comissões dos pagamentos
   const getTotalComissao = () => {
-    return filteredVendas.reduce((acc, v) => {
-      const comissao = v.comissao_corretor === null || v.comissao_corretor === undefined 
-        ? 0 
-        : (parseFloat(v.comissao_corretor) || 0)
-      return acc + comissao
-    }, 0)
+    if (meusPagamentos.length === 0) {
+      // Fallback para vendas se pagamentos ainda não carregaram
+      return filteredVendas.reduce((acc, v) => acc + (parseFloat(v.comissao_corretor) || 0), 0)
+    }
+    return meusPagamentos.reduce((acc, pag) => acc + calcularComissaoPagamento(pag), 0)
   }
 
+  // Comissão Pendente = soma das comissões dos pagamentos pendentes
   const getComissaoPendente = () => {
-    const pendentes = filteredVendas.filter(v => v.status === 'pendente')
-    return pendentes.reduce((acc, v) => {
-      const comissao = v.comissao_corretor === null || v.comissao_corretor === undefined 
-        ? 0 
-        : (parseFloat(v.comissao_corretor) || 0)
-      return acc + comissao
-    }, 0)
+    if (meusPagamentos.length === 0) {
+      return filteredVendas.filter(v => v.status === 'pendente')
+        .reduce((acc, v) => acc + (parseFloat(v.comissao_corretor) || 0), 0)
+    }
+    const pendentes = meusPagamentos.filter(pag => pag.status === 'pendente')
+    return pendentes.reduce((acc, pag) => acc + calcularComissaoPagamento(pag), 0)
   }
 
+  // Comissão Paga = soma das comissões dos pagamentos PAGOS
   const getComissaoPaga = () => {
-    const pagas = filteredVendas.filter(v => v.status === 'pago')
-    return pagas.reduce((acc, v) => acc + (parseFloat(v.comissao_corretor) || 0), 0)
+    if (meusPagamentos.length === 0) {
+      return filteredVendas.filter(v => v.status === 'pago')
+        .reduce((acc, v) => acc + (parseFloat(v.comissao_corretor) || 0), 0)
+    }
+    const pagos = meusPagamentos.filter(pag => pag.status === 'pago')
+    return pagos.reduce((acc, pag) => acc + calcularComissaoPagamento(pag), 0)
+  }
+
+  // Contagem real de vendas (baseado em vendas únicas, não pagamentos)
+  const getVendasCount = () => {
+    return vendas.length
   }
 
   const percentualCorretor = userProfile?.percentual_corretor || 
@@ -972,33 +1199,6 @@ const CorretorDashboard = () => {
       console.error('Erro ao buscar pagamentos:', error)
       return []
     }
-  }
-
-  // Calcular comissão proporcional do corretor para uma parcela
-  // FÓRMULA: COMISSÃO DA PARCELA = Valor da Parcela × Fator do Corretor
-  // Onde: FATOR = (Valor da Venda × Percentual do Corretor) / Pro-Soluto
-  const calcularComissaoProporcional = (pagamento, venda) => {
-    const valorParcela = parseFloat(pagamento.valor) || 0
-    const valorVenda = parseFloat(venda.valor_venda) || 0
-    const valorProSoluto = parseFloat(venda.valor_pro_soluto) || 0
-    
-    // Se tem fator calculado na venda, usar
-    if (venda.fator_comissao_corretor && venda.fator_comissao_corretor > 0) {
-      return valorParcela * venda.fator_comissao_corretor
-    }
-    
-    // Calcular fator dinamicamente
-    if (valorProSoluto > 0 && valorVenda > 0) {
-      const percentualCorretor = venda.percentual_corretor || 
-        (userProfile?.percentual_corretor || (userProfile?.tipo_corretor === 'interno' ? 2.5 : 4))
-      const fatorCorretor = (valorVenda * (percentualCorretor / 100)) / valorProSoluto
-      return valorParcela * fatorCorretor
-    }
-    
-    // Fallback: proporção simples se não tiver pro-soluto
-    const comissaoTotalCorretor = parseFloat(venda.comissao_corretor) || 0
-    if (valorVenda === 0) return 0
-    return (comissaoTotalCorretor * valorParcela) / valorVenda
   }
 
   // Agrupar pagamentos por tipo
@@ -1122,19 +1322,19 @@ const CorretorDashboard = () => {
       {
         name: 'MINHA COMISSÃO PENDENTE',
         value: formatTicker(getComissaoPendente()),
-        change: getComissaoPendente() > 0 ? `${Math.round((getComissaoPendente() / getTotalVendas()) * 100)}%` : '',
-        type: getComissaoPendente() > 0 ? 'positive' : 'neutral'
+        change: getTotalComissao() > 0 ? `${Math.round((getComissaoPendente() / getTotalComissao()) * 100)}% do total` : '',
+        type: getComissaoPendente() > 0 ? 'warning' : 'neutral'
       },
       {
         name: 'TOTAL EM VENDAS',
         value: formatTicker(getTotalVendas()),
-        change: vendas.length > 0 ? `${vendas.length} vendas` : '',
+        change: vendas.length > 0 ? `${getVendasCount()} vendas` : '',
         type: 'positive'
       },
       {
         name: 'COMISSÃO PAGA',
         value: formatTicker(getComissaoPaga()),
-        change: getComissaoPaga() > 0 ? `${Math.round((getComissaoPaga() / getTotalVendas()) * 100)}%` : '',
+        change: getTotalComissao() > 0 ? `${Math.round((getComissaoPaga() / getTotalComissao()) * 100)}% do total` : '',
         type: getComissaoPaga() > 0 ? 'positive' : 'neutral'
       },
       {
@@ -1272,9 +1472,14 @@ const CorretorDashboard = () => {
           >
             <ClipboardList size={20} />
             <span>Solicitações</span>
-            {minhasSolicitacoes.filter(s => s.status === 'pendente').length > 0 && (
-              <span className="nav-badge pendente">{minhasSolicitacoes.filter(s => s.status === 'pendente').length}</span>
-            )}
+          </button>
+          <button 
+            className={`nav-item ${activeTab === 'perfil' ? 'active' : ''}`}
+            onClick={() => navigate('/corretor/perfil')}
+            title="Meu Perfil"
+          >
+            <User size={20} />
+            <span>Meu Perfil</span>
           </button>
         </nav>
 
@@ -1322,6 +1527,7 @@ const CorretorDashboard = () => {
             {activeTab === 'empreendimentos' && 'Empreendimentos'}
             {activeTab === 'relatorios' && 'Relatórios'}
             {activeTab === 'solicitacoes' && 'Minhas Solicitações'}
+            {activeTab === 'perfil' && 'Meu Perfil'}
           </h1>
       </header>
 
@@ -1398,24 +1604,168 @@ const CorretorDashboard = () => {
         </div>
       </section>
 
-      {/* Percentual Info */}
-      <section className="percentual-section">
-        <div className="percentual-card">
-          <div className="percentual-header">
-            <Award size={24} />
-            <h3>Seu Percentual de Comissão</h3>
+      {/* Gráficos e Resumos */}
+      <section className="dashboard-charts">
+        {/* Gráfico de Comissões */}
+        <div className="chart-card">
+          <div className="chart-header">
+            <BarChart3 size={20} />
+            <h3>Distribuição de Comissões</h3>
           </div>
-          <div className="percentual-value">
-            <span className="big-percent">
-              {percentualCorretor}%
-            </span>
-            <span className="percent-label">sobre cada venda</span>
+          <div className="chart-content">
+            <div className="donut-chart">
+              <svg viewBox="0 0 100 100" className="donut-svg">
+                {/* Background circle */}
+                <circle cx="50" cy="50" r="40" fill="none" stroke="#1a1a1a" strokeWidth="12" />
+                {/* Pago (verde) */}
+                <circle 
+                  cx="50" cy="50" r="40" 
+                  fill="none" 
+                  stroke="#10b981" 
+                  strokeWidth="12"
+                  strokeDasharray={`${(getComissaoPaga() / (getTotalComissao() || 1)) * 251.2} 251.2`}
+                  strokeDashoffset="0"
+                  transform="rotate(-90 50 50)"
+                  className="donut-segment"
+                />
+                {/* Pendente (dourado) */}
+                <circle 
+                  cx="50" cy="50" r="40" 
+                  fill="none" 
+                  stroke="#c9a962" 
+                  strokeWidth="12"
+                  strokeDasharray={`${(getComissaoPendente() / (getTotalComissao() || 1)) * 251.2} 251.2`}
+                  strokeDashoffset={`${-(getComissaoPaga() / (getTotalComissao() || 1)) * 251.2}`}
+                  transform="rotate(-90 50 50)"
+                  className="donut-segment"
+                />
+              </svg>
+              <div className="donut-center">
+                <span className="donut-total">{getVendasCount()}</span>
+                <span className="donut-label">vendas</span>
           </div>
-          <div className="percentual-info">
-            <p>
-              Como corretor <strong>{userProfile?.tipo_corretor === 'interno' ? 'interno' : 'externo'}</strong>, 
-              você recebe {percentualCorretor}% do valor de cada venda realizada.
-            </p>
+          </div>
+            <div className="chart-legend">
+              <div className="legend-item">
+                <span className="legend-color" style={{ background: '#10b981' }}></span>
+                <span className="legend-text">Pago</span>
+                <span className="legend-value">{formatCurrency(getComissaoPaga())}</span>
+        </div>
+              <div className="legend-item">
+                <span className="legend-color" style={{ background: '#c9a962' }}></span>
+                <span className="legend-text">Pendente</span>
+                <span className="legend-value">{formatCurrency(getComissaoPendente())}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Vendas por Mês */}
+        <div className="chart-card">
+          <div className="chart-header">
+            <TrendingUp size={20} />
+            <h3>Vendas por Mês</h3>
+          </div>
+          <div className="chart-content">
+            <div className="bar-chart">
+              {(() => {
+                // Agrupar vendas por mês (últimos 6 meses)
+                const meses = []
+                const hoje = new Date()
+                for (let i = 5; i >= 0; i--) {
+                  const data = new Date(hoje.getFullYear(), hoje.getMonth() - i, 1)
+                  const mesNome = data.toLocaleDateString('pt-BR', { month: 'short' }).replace('.', '')
+                  const vendasMes = vendas.filter(v => {
+                    const dv = new Date(v.data_venda)
+                    return dv.getMonth() === data.getMonth() && dv.getFullYear() === data.getFullYear()
+                  })
+                  // Usar PAGAMENTOS para calcular comissão (regra correta)
+                  const vendaIdsMes = vendasMes.map(v => v.id)
+                  const pagamentosMes = meusPagamentos.filter(p => vendaIdsMes.includes(p.venda_id))
+                  const total = pagamentosMes.reduce((acc, pag) => acc + calcularComissaoPagamento(pag), 0)
+                  meses.push({ nome: mesNome, total, count: vendasMes.length })
+                }
+                const maxTotal = Math.max(...meses.map(m => m.total), 1)
+                
+                return meses.map((mes, idx) => (
+                  <div key={idx} className="bar-item">
+                    <div className="bar-container">
+                      <div 
+                        className="bar-fill" 
+                        style={{ height: `${(mes.total / maxTotal) * 100}%` }}
+                        title={`${formatCurrency(mes.total)} (${mes.count} vendas)`}
+                      >
+                        {mes.count > 0 && <span className="bar-count">{mes.count}</span>}
+                      </div>
+                    </div>
+                    <span className="bar-label">{mes.nome}</span>
+                  </div>
+                ))
+              })()}
+            </div>
+          </div>
+        </div>
+
+        {/* Últimas Vendas */}
+        <div className="chart-card wide">
+          <div className="chart-header">
+            <DollarSign size={20} />
+            <h3>Últimas Vendas</h3>
+            <button 
+              className="chart-action-btn"
+              onClick={() => navigate('/corretor/vendas')}
+            >
+              Ver todas
+            </button>
+          </div>
+          <div className="recent-sales-list">
+            {vendas.slice(0, 5).length === 0 ? (
+              <div className="empty-state-mini">
+                <p>Nenhuma venda registrada</p>
+              </div>
+            ) : (
+              vendas.slice(0, 5).map((venda, idx) => {
+                // Calcular comissão baseado em PAGAMENTOS
+                const pagamentosVenda = meusPagamentos.filter(p => p.venda_id === venda.id)
+                const comissaoVenda = pagamentosVenda.reduce((acc, pag) => acc + calcularComissaoPagamento(pag), 0)
+                const comissaoPagaVenda = pagamentosVenda
+                  .filter(p => p.status === 'pago')
+                  .reduce((acc, pag) => acc + calcularComissaoPagamento(pag), 0)
+                
+                // Status baseado nos pagamentos
+                const percentPago = comissaoVenda > 0 ? (comissaoPagaVenda / comissaoVenda) * 100 : 0
+                let statusClass = 'pendente'
+                let statusLabel = 'Pendente'
+                if (percentPago >= 100) {
+                  statusClass = 'pago'
+                  statusLabel = 'Pago'
+                } else if (percentPago > 0) {
+                  statusClass = 'parcial'
+                  statusLabel = `${Math.round(percentPago)}%`
+                }
+                
+                return (
+                  <div key={idx} className="recent-sale-item">
+                    <div className="sale-info">
+                      <div className="sale-client">
+                        <User size={16} />
+                        <span>{capitalizeName(venda.cliente_nome)}</span>
+                      </div>
+                      <div className="sale-details">
+                        <span className="sale-emp">{venda.empreendimento_nome}</span>
+                        <span className="sale-unit">Unidade {venda.unidade}</span>
+                      </div>
+                    </div>
+                    <div className="sale-values">
+                      <span className="sale-comissao">{formatCurrency(comissaoVenda > 0 ? comissaoVenda : venda.comissao_corretor)}</span>
+                      <span className={`sale-status ${statusClass}`}>
+                        {statusLabel}
+                      </span>
+                    </div>
+                  </div>
+                )
+              })
+            )}
           </div>
         </div>
       </section>
@@ -1501,7 +1851,7 @@ const CorretorDashboard = () => {
                   </div>
                 </div>
                 
-                <button
+            <button 
                   className="btn-clear-filters"
                   onClick={() => {
                     setFiltrosVendas({
@@ -1516,14 +1866,14 @@ const CorretorDashboard = () => {
                 >
                   <X size={16} />
                   Limpar Filtros
-                </button>
-              </div>
+            </button>
+        </div>
 
-              {loading ? (
+        {loading ? (
                 <div className="loading-state">
                   <div className="loading-spinner"></div>
-                  <p>Carregando suas vendas...</p>
-                </div>
+            <p>Carregando suas vendas...</p>
+          </div>
               ) : (
                 <>
                   {/* Resumo de Comissões */}
@@ -1549,13 +1899,33 @@ const CorretorDashboard = () => {
                   {/* Lista de Vendas */}
                   {filteredMinhasVendas.length === 0 ? (
                     <div className="empty-state-box">
-                      <DollarSign size={48} />
-                      <h3>Nenhuma venda encontrada</h3>
+            <DollarSign size={48} />
+            <h3>Nenhuma venda encontrada</h3>
                       <p>Não há vendas que correspondam aos filtros selecionados</p>
-                    </div>
-                  ) : (
-                    <div className="vendas-list">
-                      {filteredMinhasVendas.map((venda) => (
+          </div>
+        ) : (
+          <div className="vendas-list">
+                      {filteredMinhasVendas.map((venda) => {
+                        // Calcular comissão baseado em PAGAMENTOS (regra correta)
+                        const pagamentosDestaVenda = meusPagamentos.filter(p => p.venda_id === venda.id)
+                        const comissaoVenda = pagamentosDestaVenda.reduce((acc, pag) => acc + calcularComissaoPagamento(pag), 0)
+                        const comissaoPagaVenda = pagamentosDestaVenda
+                          .filter(p => p.status === 'pago')
+                          .reduce((acc, pag) => acc + calcularComissaoPagamento(pag), 0)
+                        
+                        // Status baseado nos pagamentos
+                        const percentPago = comissaoVenda > 0 ? (comissaoPagaVenda / comissaoVenda) * 100 : 0
+                        let statusClass = 'pendente'
+                        let statusLabel = 'Pendente'
+                        if (percentPago >= 100) {
+                          statusClass = 'pago'
+                          statusLabel = 'Pago'
+                        } else if (percentPago > 0) {
+                          statusClass = 'parcial'
+                          statusLabel = `${Math.round(percentPago)}% Pago`
+                        }
+                        
+                        return (
               <div key={venda.id} className="venda-card">
                 <div className="venda-main">
                   <div className="venda-info">
@@ -1608,16 +1978,21 @@ const CorretorDashboard = () => {
                         <Calendar size={14} />
                         {new Date(venda.data_venda).toLocaleDateString('pt-BR')}
                       </span>
-                      <span className={`status-tag ${venda.status}`}>
-                        {venda.status === 'pago' ? (
+                      <span className={`status-tag ${statusClass}`}>
+                        {statusClass === 'pago' ? (
                           <>
                             <CheckCircle size={12} />
-                            Pago
+                            {statusLabel}
+                          </>
+                        ) : statusClass === 'parcial' ? (
+                          <>
+                            <Clock size={12} />
+                            {statusLabel}
                           </>
                         ) : (
                           <>
                             <Clock size={12} />
-                            Pendente
+                            {statusLabel}
                           </>
                         )}
                       </span>
@@ -1645,7 +2020,7 @@ const CorretorDashboard = () => {
                     </div>
                     <div className="venda-comissao">
                                 <span className="label">Sua Comissão ({percentualCorretor}%)</span>
-                      <span className="value highlight">{formatCurrency(venda.comissao_corretor)}</span>
+                      <span className="value highlight">{formatCurrency(comissaoVenda > 0 ? comissaoVenda : venda.comissao_corretor)}</span>
                     </div>
                   </div>
                 </div>
@@ -1657,7 +2032,7 @@ const CorretorDashboard = () => {
                                 <>
                                   <div className="parcelas-header">
                                     <h5>Detalhamento de Pagamentos</h5>
-                                  </div>
+              </div>
                                   
                                   {(() => {
                                     const grupos = agruparPagamentosPorTipo(pagamentosVenda[venda.id])
@@ -1669,7 +2044,7 @@ const CorretorDashboard = () => {
                                       
                                       // Calcular totais do grupo
                                       const totalValor = pagamentosGrupo.reduce((acc, p) => acc + (parseFloat(p.valor) || 0), 0)
-                                      const totalComissao = pagamentosGrupo.reduce((acc, p) => acc + calcularComissaoProporcional(p, venda), 0)
+                                      const totalComissao = pagamentosGrupo.reduce((acc, p) => acc + calcularComissaoPagamento(p), 0)
                                       const pagos = pagamentosGrupo.filter(p => p.status === 'pago').length
                                       const pendentes = pagamentosGrupo.filter(p => p.status === 'pendente').length
                                       
@@ -1695,7 +2070,7 @@ const CorretorDashboard = () => {
                                           </div>
                                           <div className="parcelas-list">
                                             {pagamentosExibidos.map((pagamento) => {
-                                              const comissaoParcela = calcularComissaoProporcional(pagamento, venda)
+                                              const comissaoParcela = calcularComissaoPagamento(pagamento)
                                               return (
                                                 <div 
                                                   key={pagamento.id} 
@@ -1762,7 +2137,8 @@ const CorretorDashboard = () => {
                             </div>
                           )}
               </div>
-                      ))}
+                        )
+                      })}
                     </div>
                   )}
                 </>
@@ -1889,7 +2265,7 @@ const CorretorDashboard = () => {
                         {formatCurrency(filteredMeusPagamentos.filter(p => p.status === 'pendente').reduce((acc, p) => {
                           const venda = vendas.find(v => v.id === p.venda_id)
                           if (!venda) return acc
-                          return acc + calcularComissaoProporcional(p, venda)
+                          return acc + calcularComissaoPagamento(p)
                         }, 0))}
                       </span>
                     </div>
@@ -1899,7 +2275,7 @@ const CorretorDashboard = () => {
                         {formatCurrency(filteredMeusPagamentos.filter(p => p.status === 'pago').reduce((acc, p) => {
                           const venda = vendas.find(v => v.id === p.venda_id)
                           if (!venda) return acc
-                          return acc + calcularComissaoProporcional(p, venda)
+                          return acc + calcularComissaoPagamento(p)
                         }, 0))}
                       </span>
                     </div>
@@ -1909,7 +2285,7 @@ const CorretorDashboard = () => {
                         {formatCurrency(filteredMeusPagamentos.reduce((acc, p) => {
                           const venda = vendas.find(v => v.id === p.venda_id)
                           if (!venda) return acc
-                          return acc + calcularComissaoProporcional(p, venda)
+                          return acc + calcularComissaoPagamento(p)
                         }, 0))}
                       </span>
                     </div>
@@ -1927,10 +2303,10 @@ const CorretorDashboard = () => {
                       filteredPagamentosAgrupados.map((grupo) => {
                         const venda = vendas.find(v => v.id === grupo.venda_id)
                         const totalComissao = grupo.pagamentos.reduce((acc, p) => {
-                          return acc + (venda ? calcularComissaoProporcional(p, venda) : 0)
+                          return acc + (venda ? calcularComissaoPagamento(p) : 0)
                         }, 0)
                         const comissaoPaga = grupo.pagamentos.filter(p => p.status === 'pago').reduce((acc, p) => {
-                          return acc + (venda ? calcularComissaoProporcional(p, venda) : 0)
+                          return acc + (venda ? calcularComissaoPagamento(p) : 0)
                         }, 0)
                         const comissaoPendente = totalComissao - comissaoPaga
 
@@ -1990,7 +2366,7 @@ const CorretorDashboard = () => {
                                     return (a.numero_parcela || 0) - (b.numero_parcela || 0)
                                   })
                                   .map((pag) => {
-                                    const minhaComissao = venda ? calcularComissaoProporcional(pag, venda) : 0
+                                    const minhaComissao = venda ? calcularComissaoPagamento(pag) : 0
                                     
                                     return (
                                       <div key={pag.id} className={`parcela-row ${pag.status === 'pago' ? 'pago' : ''}`}>
@@ -2017,8 +2393,8 @@ const CorretorDashboard = () => {
                                       </div>
                                     )
                                   })}
-                              </div>
-                            )}
+          </div>
+        )}
                           </div>
                         )
                       })
@@ -2118,7 +2494,13 @@ const CorretorDashboard = () => {
                     <div className="resumo-card">
                       <span className="resumo-label">Minha Comissão</span>
                       <span className="resumo-valor comissao">
-                        {formatCurrency(filteredMeusClientes.reduce((acc, c) => acc + c.total_comissao, 0))}
+                        {formatCurrency(filteredMeusClientes.reduce((acc, c) => {
+                          // Calcular comissão baseado em PAGAMENTOS
+                          const vendaIdsCliente = c.vendas?.map(v => v.id) || []
+                          const pagamentosCliente = meusPagamentos.filter(p => vendaIdsCliente.includes(p.venda_id))
+                          const comissao = pagamentosCliente.reduce((sum, pag) => sum + calcularComissaoPagamento(pag), 0)
+                          return acc + (comissao > 0 ? comissao : c.total_comissao)
+                        }, 0))}
                       </span>
                     </div>
                   </div>
@@ -2132,7 +2514,13 @@ const CorretorDashboard = () => {
                     </div>
                   ) : (
                     <div className="clientes-grid">
-                      {filteredMeusClientes.map(cliente => (
+                      {filteredMeusClientes.map(cliente => {
+                        // Calcular comissão baseado em PAGAMENTOS
+                        const vendaIdsCliente = cliente.vendas?.map(v => v.id) || []
+                        const pagamentosCliente = meusPagamentos.filter(p => vendaIdsCliente.includes(p.venda_id))
+                        const comissaoCliente = pagamentosCliente.reduce((sum, pag) => sum + calcularComissaoPagamento(pag), 0)
+                        
+                        return (
                         <div key={cliente.id} className="cliente-card">
                           <div className="cliente-header">
                             <div className="cliente-avatar">
@@ -2170,7 +2558,7 @@ const CorretorDashboard = () => {
                             </div>
                             <div className="stat-mini">
                               <span className="stat-mini-label">Comissão</span>
-                              <span className="stat-mini-value gold">{formatCurrency(cliente.total_comissao)}</span>
+                              <span className="stat-mini-value gold">{formatCurrency(comissaoCliente > 0 ? comissaoCliente : cliente.total_comissao)}</span>
                             </div>
                           </div>
 
@@ -2182,7 +2570,8 @@ const CorretorDashboard = () => {
                             Ver Detalhes
                           </button>
                         </div>
-                      ))}
+                        )
+                      })}
                     </div>
                   )}
                 </>
@@ -2257,8 +2646,14 @@ const CorretorDashboard = () => {
                       const vendasEmp = vendas.filter(v => v.empreendimento_id === emp.id)
                       const totalVendasEmp = vendasEmp.length
                       const valorTotalVendas = vendasEmp.reduce((acc, v) => acc + (parseFloat(v.valor_venda) || 0), 0)
-                      const comissaoTotal = vendasEmp.reduce((acc, v) => acc + (parseFloat(v.comissao_corretor) || 0), 0)
-                      const comissaoPaga = vendasEmp.filter(v => v.status === 'pago').reduce((acc, v) => acc + (parseFloat(v.comissao_corretor) || 0), 0)
+                      
+                      // Usar PAGAMENTOS para calcular comissões (regra correta)
+                      const vendaIdsEmp = vendasEmp.map(v => v.id)
+                      const pagamentosEmp = meusPagamentos.filter(p => vendaIdsEmp.includes(p.venda_id))
+                      const comissaoTotal = pagamentosEmp.reduce((acc, pag) => acc + calcularComissaoPagamento(pag), 0)
+                      const comissaoPaga = pagamentosEmp
+                        .filter(p => p.status === 'pago')
+                        .reduce((acc, pag) => acc + calcularComissaoPagamento(pag), 0)
                       const comissaoPendente = comissaoTotal - comissaoPaga
                       
                       return (
@@ -2486,58 +2881,6 @@ const CorretorDashboard = () => {
                 </div>
               </div>
               
-              {/* Comissão por Empreendimento */}
-              <div className="relatorio-beneficiarios">
-                <h3 style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
-                  <Building size={20} />
-                  Comissão por Empreendimento
-                </h3>
-                
-                <div className="beneficiarios-lista">
-                  {empreendimentos.filter(emp => 
-                    vendas.some(v => v.empreendimento_id === emp.id)
-                  ).map(emp => {
-                    const vendasEmp = vendas.filter(v => v.empreendimento_id === emp.id)
-                    const totalVendasEmp = vendasEmp.length
-                    const valorTotalVendas = vendasEmp.reduce((acc, v) => acc + (parseFloat(v.valor_venda) || 0), 0)
-                    const comissaoTotal = vendasEmp.reduce((acc, v) => acc + (parseFloat(v.comissao_corretor) || 0), 0)
-                    const comissaoPaga = vendasEmp.filter(v => v.status === 'pago').reduce((acc, v) => acc + (parseFloat(v.comissao_corretor) || 0), 0)
-                    const comissaoPendente = comissaoTotal - comissaoPaga
-
-                    return (
-                      <div key={emp.id} className="beneficiario-card">
-                        <div className="beneficiario-header">
-                          <Building size={18} />
-                          <strong>{emp.nome}</strong>
-                        </div>
-                        <div className="beneficiario-stats">
-                          <div className="stat-item">
-                            <span className="stat-label">Vendas</span>
-                            <span className="stat-value">{totalVendasEmp}</span>
-                          </div>
-                          <div className="stat-item">
-                            <span className="stat-label">Volume</span>
-                            <span className="stat-value">{formatCurrency(valorTotalVendas)}</span>
-                          </div>
-                          <div className="stat-item">
-                            <span className="stat-label">Comissão</span>
-                            <span className="stat-value gold">{formatCurrency(comissaoTotal)}</span>
-                          </div>
-                          <div className="stat-item">
-                            <span className="stat-label">Recebido</span>
-                            <span className="stat-value verde">{formatCurrency(comissaoPaga)}</span>
-                          </div>
-                          <div className="stat-item">
-                            <span className="stat-label">Pendente</span>
-                            <span className="stat-value amarelo">{formatCurrency(comissaoPendente)}</span>
-                          </div>
-                        </div>
-                      </div>
-                    )
-                  })}
-                </div>
-              </div>
-              
               {/* Últimas Vendas */}
               <div className="relatorios-vendas" style={{ marginTop: '24px' }}>
                 <h3>Últimas Vendas</h3>
@@ -2555,22 +2898,44 @@ const CorretorDashboard = () => {
                       </tr>
                     </thead>
                     <tbody>
-                      {vendas.slice(0, 10).map(venda => (
-                        <tr key={venda.id}>
-                          <td>{new Date(venda.data_venda).toLocaleDateString('pt-BR')}</td>
-                          <td>{capitalizeName(venda.cliente_nome) || 'N/A'}</td>
-                          <td>{venda.empreendimento_nome || 'N/A'}</td>
-                          <td>{venda.unidade || '-'}</td>
-                          <td>{formatCurrency(venda.valor_venda)}</td>
-                          <td className="comissao-cell">{formatCurrency(venda.comissao_corretor)}</td>
-                          <td>
-                            <span className={`status-badge ${venda.status}`}>
-                              {venda.status === 'pago' && <><CheckCircle size={12} /> Pago</>}
-                              {venda.status === 'pendente' && <><Clock size={12} /> Pendente</>}
-                            </span>
-                          </td>
-                        </tr>
-                      ))}
+                      {vendas.slice(0, 10).map(venda => {
+                        // Calcular comissão baseado em PAGAMENTOS
+                        const pagamentosVenda = meusPagamentos.filter(p => p.venda_id === venda.id)
+                        const comissaoVenda = pagamentosVenda.reduce((acc, pag) => acc + calcularComissaoPagamento(pag), 0)
+                        const comissaoPagaVenda = pagamentosVenda
+                          .filter(p => p.status === 'pago')
+                          .reduce((acc, pag) => acc + calcularComissaoPagamento(pag), 0)
+                        
+                        // Status baseado nos pagamentos
+                        const percentPago = comissaoVenda > 0 ? (comissaoPagaVenda / comissaoVenda) * 100 : 0
+                        let statusVenda = 'pendente'
+                        let statusLabel = 'Pendente'
+                        if (percentPago >= 100) {
+                          statusVenda = 'pago'
+                          statusLabel = 'Pago'
+                        } else if (percentPago > 0) {
+                          statusVenda = 'parcial'
+                          statusLabel = `${Math.round(percentPago)}% Pago`
+                        }
+                        
+                        return (
+                          <tr key={venda.id}>
+                            <td>{new Date(venda.data_venda).toLocaleDateString('pt-BR')}</td>
+                            <td>{capitalizeName(venda.cliente_nome) || 'N/A'}</td>
+                            <td>{venda.empreendimento_nome || 'N/A'}</td>
+                            <td>{venda.unidade || '-'}</td>
+                            <td>{formatCurrency(venda.valor_venda)}</td>
+                            <td className="comissao-cell">{formatCurrency(comissaoVenda > 0 ? comissaoVenda : venda.comissao_corretor)}</td>
+                            <td>
+                              <span className={`status-badge ${statusVenda}`}>
+                                {statusVenda === 'pago' && <><CheckCircle size={12} /> {statusLabel}</>}
+                                {statusVenda === 'pendente' && <><Clock size={12} /> {statusLabel}</>}
+                                {statusVenda === 'parcial' && <><Clock size={12} /> {statusLabel}</>}
+                              </span>
+                            </td>
+                          </tr>
+                        )
+                      })}
                     </tbody>
                   </table>
                 </div>
@@ -2673,9 +3038,340 @@ const CorretorDashboard = () => {
                   </div>
                 )}
               </div>
-            </section>
+      </section>
+          )}
+
+          {/* Meu Perfil Tab */}
+          {activeTab === 'perfil' && (
+            <div className="perfil-section">
+              {/* Mensagem de feedback */}
+              {message.text && (
+                <div className={`message-alert ${message.type}`}>
+                  {message.type === 'success' ? <CheckCircle2 size={18} /> : <AlertCircle size={18} />}
+                  {message.text}
+                </div>
+              )}
+
+              {/* Card Principal do Perfil */}
+              <div className="perfil-main-card">
+                <div className="perfil-avatar-section">
+                  <div className="perfil-avatar">
+                    <User size={60} />
+                  </div>
+                  <div className="perfil-tipo-badge">
+                    <span className={`badge-large ${userProfile?.tipo_corretor || 'externo'}`}>
+                      {userProfile?.tipo_corretor === 'interno' ? 'Corretor Interno' : 'Corretor Externo'}
+                    </span>
+                  </div>
+                </div>
+                
+                <div className="perfil-info-section">
+                  {!editandoPerfil ? (
+                    <>
+                      <div className="perfil-nome">
+                        <h2>{capitalizeName(userProfile?.nome || 'Corretor')}</h2>
+                        <button 
+                          className="btn-edit-perfil"
+                          onClick={() => setEditandoPerfil(true)}
+                        >
+                          <Camera size={16} />
+                          Editar Perfil
+                        </button>
+                      </div>
+                      
+                      <div className="perfil-detalhes">
+                        <div className="perfil-detalhe-item">
+                          <Mail size={18} />
+                          <span>{userProfile?.email || 'Não informado'}</span>
+                        </div>
+                        <div className="perfil-detalhe-item">
+                          <Phone size={18} />
+                          <span>{userProfile?.telefone || 'Não informado'}</span>
+                        </div>
+                        {userProfile?.cpf && (
+                          <div className="perfil-detalhe-item">
+                            <User size={18} />
+                            <span>CPF: {userProfile.cpf}</span>
+                          </div>
+                        )}
+                        {userProfile?.cnpj && (
+                          <div className="perfil-detalhe-item">
+                            <Building size={18} />
+                            <span>CNPJ: {userProfile.cnpj}</span>
+                          </div>
+                        )}
+                        {userProfile?.endereco && (
+                          <div className="perfil-detalhe-item">
+                            <MapPin size={18} />
+                            <span>{userProfile.endereco}</span>
+                          </div>
+                        )}
+                      </div>
+                    </>
+                  ) : (
+                    <div className="perfil-edit-form">
+                      <h3>Editar Perfil</h3>
+                      <div className="form-group">
+                        <label>Nome Completo *</label>
+                        <input
+                          type="text"
+                          value={perfilForm.nome}
+                          onChange={(e) => setPerfilForm({...perfilForm, nome: e.target.value})}
+                          placeholder="Seu nome completo"
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label>Telefone</label>
+                        <input
+                          type="text"
+                          value={perfilForm.telefone}
+                          onChange={(e) => setPerfilForm({...perfilForm, telefone: formatarTelefone(e.target.value)})}
+                          placeholder="(00) 00000-0000"
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label>E-mail</label>
+                        <input
+                          type="email"
+                          value={perfilForm.email}
+                          disabled
+                          className="input-disabled"
+                        />
+                        <small>O e-mail não pode ser alterado</small>
+                      </div>
+                      <div className="perfil-edit-actions">
+                        <button 
+                          className="btn-secondary"
+                          onClick={() => {
+                            setEditandoPerfil(false)
+                            setPerfilForm({
+                              nome: userProfile?.nome || '',
+                              telefone: userProfile?.telefone || '',
+                              email: userProfile?.email || ''
+                            })
+                          }}
+                        >
+                          Cancelar
+                        </button>
+                        <button 
+                          className="btn-primary"
+                          onClick={handleSalvarPerfil}
+                          disabled={salvandoPerfil}
+                        >
+                          {salvandoPerfil ? 'Salvando...' : 'Salvar Alterações'}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Estatísticas do Corretor */}
+              <div className="perfil-stats-section">
+                <h3><BarChart3 size={20} /> Minhas Estatísticas</h3>
+                <div className="perfil-stats-grid">
+                  <div className="perfil-stat-card">
+                    <div className="stat-icon vendas">
+                      <DollarSign size={24} />
+                    </div>
+                    <div className="stat-content">
+                      <span className="stat-value">{vendas.length}</span>
+                      <span className="stat-label">Vendas Realizadas</span>
+                    </div>
+                  </div>
+                  
+                  <div className="perfil-stat-card">
+                    <div className="stat-icon clientes">
+                      <Users size={24} />
+                    </div>
+                    <div className="stat-content">
+                      <span className="stat-value">{meusClientes.length}</span>
+                      <span className="stat-label">Clientes Atendidos</span>
+                    </div>
+                  </div>
+                  
+                  <div className="perfil-stat-card">
+                    <div className="stat-icon comissao">
+                      <Wallet size={24} />
+                    </div>
+                    <div className="stat-content">
+                      <span className="stat-value gold">
+                        {formatCurrency(meusPagamentos.reduce((acc, pag) => acc + calcularComissaoPagamento(pag), 0))}
+                      </span>
+                      <span className="stat-label">Comissão Total</span>
+                    </div>
+                  </div>
+                  
+                  <div className="perfil-stat-card">
+                    <div className="stat-icon recebido">
+                      <CheckCircle size={24} />
+                    </div>
+                    <div className="stat-content">
+                      <span className="stat-value verde">
+                        {formatCurrency(meusPagamentos.filter(p => p.status === 'pago').reduce((acc, pag) => acc + calcularComissaoPagamento(pag), 0))}
+                      </span>
+                      <span className="stat-label">Comissão Recebida</span>
+                    </div>
+                  </div>
+                  
+                  <div className="perfil-stat-card">
+                    <div className="stat-icon pendente">
+                      <Clock size={24} />
+                    </div>
+                    <div className="stat-content">
+                      <span className="stat-value amarelo">
+                        {formatCurrency(meusPagamentos.filter(p => p.status !== 'pago').reduce((acc, pag) => acc + calcularComissaoPagamento(pag), 0))}
+                      </span>
+                      <span className="stat-label">Comissão Pendente</span>
+                    </div>
+                  </div>
+                  
+                  <div className="perfil-stat-card">
+                    <div className="stat-icon empreendimentos">
+                      <Building size={24} />
+                    </div>
+                    <div className="stat-content">
+                      <span className="stat-value">
+                        {[...new Set(vendas.map(v => v.empreendimento_id))].length}
+                      </span>
+                      <span className="stat-label">Empreendimentos</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Informações da Conta */}
+              <div className="perfil-account-section">
+                <h3><CreditCard size={20} /> Informações da Conta</h3>
+                <div className="account-info-grid">
+                  <div className="account-info-item">
+                    <span className="info-label">Tipo de Corretor</span>
+                    <span className={`info-value badge ${userProfile?.tipo_corretor || 'externo'}`}>
+                      {userProfile?.tipo_corretor === 'interno' ? 'Interno' : 'Externo'}
+                    </span>
+                  </div>
+                  <div className="account-info-item">
+                    <span className="info-label">Percentual de Comissão</span>
+                    <span className="info-value gold">
+                      {userProfile?.percentual_corretor || (userProfile?.tipo_corretor === 'interno' ? '2.5' : '4')}%
+                    </span>
+                  </div>
+                  <div className="account-info-item">
+                    <span className="info-label">Status da Conta</span>
+                    <span className={`info-value badge ${userProfile?.ativo ? 'ativo' : 'inativo'}`}>
+                      {userProfile?.ativo ? 'Ativa' : 'Inativa'}
+                    </span>
+                  </div>
+                  <div className="account-info-item">
+                    <span className="info-label">Membro desde</span>
+                    <span className="info-value">
+                      {userProfile?.created_at 
+                        ? new Date(userProfile.created_at).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })
+                        : 'N/A'
+                      }
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Ações da Conta */}
+              <div className="perfil-actions-section">
+                <h3><Award size={20} /> Ações da Conta</h3>
+                <div className="actions-grid">
+                  <button 
+                    className="action-card"
+                    onClick={() => setShowSenhaModal(true)}
+                  >
+                    <CreditCard size={24} />
+                    <div>
+                      <strong>Alterar Senha</strong>
+                      <span>Atualize sua senha de acesso</span>
+                    </div>
+                  </button>
+                  
+                  <button 
+                    className="action-card"
+                    onClick={() => navigate('/corretor/relatorios')}
+                  >
+                    <FileText size={24} />
+                    <div>
+                      <strong>Gerar Relatório</strong>
+                      <span>Exporte seus dados em PDF</span>
+                    </div>
+                  </button>
+                  
+                  <button 
+                    className="action-card logout"
+                    onClick={signOut}
+                  >
+                    <LogOut size={24} />
+                    <div>
+                      <strong>Sair da Conta</strong>
+                      <span>Encerrar sessão atual</span>
+                    </div>
+                  </button>
+                </div>
+              </div>
+            </div>
           )}
         </div>
+
+        {/* Modal Alterar Senha */}
+        {showSenhaModal && (
+          <div className="modal-overlay" onClick={() => setShowSenhaModal(false)}>
+            <div className="modal-content modal-small" onClick={e => e.stopPropagation()}>
+              <div className="modal-header">
+                <h2><CreditCard size={20} /> Alterar Senha</h2>
+                <button className="close-btn" onClick={() => setShowSenhaModal(false)}>
+                  <X size={20} />
+                </button>
+              </div>
+              <div className="modal-body">
+                <div className="form-group">
+                  <label>Nova Senha *</label>
+                  <input
+                    type="password"
+                    value={senhaForm.novaSenha}
+                    onChange={(e) => setSenhaForm({...senhaForm, novaSenha: e.target.value})}
+                    placeholder="Digite sua nova senha"
+                    minLength={6}
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Confirmar Nova Senha *</label>
+                  <input
+                    type="password"
+                    value={senhaForm.confirmarSenha}
+                    onChange={(e) => setSenhaForm({...senhaForm, confirmarSenha: e.target.value})}
+                    placeholder="Confirme sua nova senha"
+                    minLength={6}
+                  />
+                </div>
+                <p className="form-hint">A senha deve ter pelo menos 6 caracteres</p>
+              </div>
+              <div className="modal-footer">
+                <button 
+                  type="button" 
+                  className="btn-secondary" 
+                  onClick={() => {
+                    setShowSenhaModal(false)
+                    setSenhaForm({ senhaAtual: '', novaSenha: '', confirmarSenha: '' })
+                  }}
+                >
+                  Cancelar
+                </button>
+                <button 
+                  type="button" 
+                  className="btn-primary" 
+                  onClick={handleAlterarSenha}
+                  disabled={alterandoSenha || !senhaForm.novaSenha || !senhaForm.confirmarSenha}
+                >
+                  {alterandoSenha ? 'Alterando...' : 'Alterar Senha'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Modal Nova Venda */}
         {showNovaVendaModal && (
@@ -2832,10 +3528,14 @@ const CorretorDashboard = () => {
                     <input
                       type="text"
                       value={novoClienteForm.cpf}
-                      onChange={(e) => setNovoClienteForm({...novoClienteForm, cpf: e.target.value})}
+                      onChange={(e) => setNovoClienteForm({...novoClienteForm, cpf: formatarCPF(e.target.value)})}
                       placeholder="000.000.000-00"
+                      maxLength={14}
                       required
                     />
+                    <small style={{ color: validarCPF(novoClienteForm.cpf) ? '#10b981' : '#9ca3af', fontSize: '12px' }}>
+                      {novoClienteForm.cpf.replace(/\D/g, '').length}/11 dígitos {validarCPF(novoClienteForm.cpf) && '✓'}
+                    </small>
                   </div>
                   
                   <div className="form-row">
@@ -2853,8 +3553,9 @@ const CorretorDashboard = () => {
                       <input
                         type="tel"
                         value={novoClienteForm.telefone}
-                        onChange={(e) => setNovoClienteForm({...novoClienteForm, telefone: e.target.value})}
+                        onChange={(e) => setNovoClienteForm({...novoClienteForm, telefone: formatarTelefone(e.target.value)})}
                         placeholder="(00) 00000-0000"
+                        maxLength={15}
                       />
                     </div>
                   </div>
@@ -2874,7 +3575,11 @@ const CorretorDashboard = () => {
                   <button type="button" className="btn-secondary" onClick={() => setShowNovoClienteModal(false)}>
                     Cancelar
                   </button>
-                  <button type="submit" className="btn-primary" disabled={loading}>
+                  <button 
+                    type="submit" 
+                    className="btn-primary" 
+                    disabled={loading || !validarCPF(novoClienteForm.cpf) || !novoClienteForm.nome_completo}
+                  >
                     <Send size={16} />
                     {loading ? 'Enviando...' : 'Enviar Solicitação'}
                   </button>
@@ -2945,7 +3650,11 @@ const CorretorDashboard = () => {
           const vendasEmp = vendas.filter(v => v.empreendimento_id === selectedEmpreendimento.id)
           const totalVendasEmp = vendasEmp.length
           const valorTotalVendas = vendasEmp.reduce((acc, v) => acc + (parseFloat(v.valor_venda) || 0), 0)
-          const comissaoTotal = vendasEmp.reduce((acc, v) => acc + (parseFloat(v.comissao_corretor) || 0), 0)
+          
+          // Usar PAGAMENTOS para calcular comissões (regra correta)
+          const vendaIdsEmp = vendasEmp.map(v => v.id)
+          const pagamentosEmp = meusPagamentos.filter(p => vendaIdsEmp.includes(p.venda_id))
+          const comissaoTotal = pagamentosEmp.reduce((acc, pag) => acc + calcularComissaoPagamento(pag), 0)
           
           return (
             <div className="modal-overlay" onClick={() => setSelectedEmpreendimento(null)}>

@@ -71,18 +71,65 @@ const ProtectedRoute = ({ children, requiredRole }) => {
 
   // Se não tem perfil cadastrado
   if (!userProfile) {
+    const handleCadastrarUsuario = async () => {
+      try {
+        const { error } = await supabase
+          .from('usuarios')
+          .insert([{
+            id: user.id,
+            email: user.email,
+            nome: user.email?.split('@')[0] || 'Corretor',
+            tipo: 'corretor',
+            tipo_corretor: 'externo',
+            ativo: true
+          }])
+        
+        if (error) {
+          alert('Erro ao cadastrar: ' + error.message)
+          return
+        }
+        
+        alert('Usuário cadastrado com sucesso! A página será recarregada.')
+        window.location.reload()
+      } catch (err) {
+        alert('Erro: ' + err.message)
+      }
+    }
+
     return (
       <div className="loading-screen">
         <div className="loading-content">
           <p style={{ color: '#ef4444', marginBottom: '10px', fontSize: '18px' }}>Usuário não cadastrado</p>
           <p style={{ fontSize: '14px', color: 'rgba(255,255,255,0.7)', marginBottom: '20px' }}>
-            Execute este SQL no Supabase:
+            O usuário existe no sistema de autenticação, mas não possui perfil cadastrado.
+          </p>
+          
+          <div style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
+            <button 
+              onClick={handleCadastrarUsuario}
+              style={{
+                padding: '12px 24px',
+                background: '#c9a962',
+                border: 'none',
+                color: '#000',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                fontSize: '14px',
+                fontWeight: 'bold'
+              }}
+            >
+              Cadastrar como Corretor Externo
+            </button>
+          </div>
+          
+          <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)', marginBottom: '10px' }}>
+            Ou execute manualmente no Supabase:
           </p>
           <div style={{ 
             background: 'rgba(0,0,0,0.3)', 
             padding: '15px', 
             borderRadius: '8px', 
-            fontSize: '12px',
+            fontSize: '11px',
             fontFamily: 'monospace',
             color: '#d4af37',
             textAlign: 'left',
@@ -171,13 +218,56 @@ const DashboardRedirect = () => {
   }
 
   if (user && !userProfile) {
+    const handleCadastrarUsuario = async () => {
+      try {
+        const { error } = await supabase
+          .from('usuarios')
+          .insert([{
+            id: user.id,
+            email: user.email,
+            nome: user.email?.split('@')[0] || 'Corretor',
+            tipo: 'corretor',
+            tipo_corretor: 'externo',
+            ativo: true
+          }])
+        
+        if (error) {
+          alert('Erro ao cadastrar: ' + error.message)
+          return
+        }
+        
+        alert('Usuário cadastrado com sucesso! A página será recarregada.')
+        window.location.reload()
+      } catch (err) {
+        alert('Erro: ' + err.message)
+      }
+    }
+
     return (
       <div className="loading-screen">
         <div className="loading-content">
           <p style={{ color: '#ef4444', marginBottom: '10px', fontSize: '18px' }}>Usuário não cadastrado</p>
           <p style={{ fontSize: '14px', color: 'rgba(255,255,255,0.7)', marginBottom: '20px' }}>
-            Seu perfil não foi encontrado no sistema. Entre em contato com a administração.
+            O usuário existe no sistema de autenticação, mas não possui perfil cadastrado.
           </p>
+          
+          <button 
+            onClick={handleCadastrarUsuario}
+            style={{
+              padding: '12px 24px',
+              background: '#c9a962',
+              border: 'none',
+              color: '#000',
+              borderRadius: '6px',
+              cursor: 'pointer',
+              fontSize: '14px',
+              fontWeight: 'bold',
+              marginBottom: '15px'
+            }}
+          >
+            Cadastrar como Corretor Externo
+          </button>
+          
           <button
             onClick={async () => {
               await supabase.auth.signOut()
