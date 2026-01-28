@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { supabase } from '../lib/supabase'
+import { deleteCliente } from '../services/adminClientes'
 import { jsPDF } from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import { 
@@ -560,7 +561,7 @@ const AdminDashboard = () => {
         supabase.from('usuarios').select('*').eq('tipo', 'corretor'),
         supabase.from('vendas').select('*'),
         supabase.from('empreendimentos').select('*'),
-        supabase.from('clientes').select('*')
+        supabase.from('clientes').select('*').or('ativo.eq.true,ativo.is.null')
       ])
 
       if (corretoresError) console.error('Erro ao buscar corretores:', corretoresError)
@@ -2644,18 +2645,16 @@ const AdminDashboard = () => {
     }))
   }
 
-  // Deletar cliente
+  // Deletar cliente (soft delete) — lógica em adminClientes.js (testada)
+  // Atualiza só o estado local para o card sumir na hora; evita fetchData() pesado e [Violation] click handler
   const handleDeleteCliente = async (clienteId) => {
     if (!window.confirm('Tem certeza que deseja excluir este cliente?')) return
-
     try {
-      const { error } = await supabase
-        .from('clientes')
-        .update({ ativo: false })
-        .eq('id', clienteId)
-      if (error) throw error
+      await deleteCliente(supabase, clienteId)
       setMessage({ type: 'success', text: 'Cliente excluído!' })
-      fetchData()
+      setClientes((prev) =>
+        prev.map((c) => (c.id === clienteId ? { ...c, ativo: false } : c))
+      )
     } catch (error) {
       setMessage({ type: 'error', text: 'Erro ao excluir: ' + error.message })
     }
@@ -3892,8 +3891,9 @@ const AdminDashboard = () => {
     return matchBusca
   })
 
-  // Filtro de Clientes
+  // Filtro de Clientes (excluídos = ativo false não aparecem)
   const filteredClientes = clientes.filter(cliente => {
+    if (cliente.ativo === false) return false
     // Busca por texto
     const matchBusca = !filtrosClientes.busca ||
       cliente.nome_completo?.toLowerCase().includes(filtrosClientes.busca.toLowerCase()) ||

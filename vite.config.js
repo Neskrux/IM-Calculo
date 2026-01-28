@@ -4,6 +4,13 @@ import react from '@vitejs/plugin-react'
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
+  test: {
+    globals: true,
+    environment: 'jsdom',
+    setupFiles: './tests/setup.js',
+    include: ['src/**/*.test.{js,jsx,ts,tsx}', 'tests/**/*.test.{js,jsx,ts,tsx}'],
+    coverage: { provider: 'v8', reporter: ['text', 'json', 'html'], exclude: ['node_modules/', 'tests/'] },
+  },
   server: {
     proxy: {
       '/api/sienge': {
