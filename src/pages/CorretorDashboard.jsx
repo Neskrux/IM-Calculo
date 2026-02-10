@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { safeGet, safeSet } from '../utils/storage'
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { supabase } from '../lib/supabase'
@@ -41,7 +42,7 @@ const CorretorDashboard = () => {
   const [periodo, setPeriodo] = useState('todos')
   const [menuOpen, setMenuOpen] = useState(false)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
-    const saved = localStorage.getItem('corretor-sidebar-collapsed')
+    const saved = safeGet('corretor-sidebar-collapsed')
     return saved === 'true'
   })
   const [cargoInfo, setCargoInfo] = useState(null)
@@ -255,6 +256,7 @@ const CorretorDashboard = () => {
         .from('clientes')
         .select('*')
         .in('id', clienteIds)
+        .or('ativo.eq.true,ativo.is.null')
         .order('nome_completo')
 
       if (error) throw error
@@ -715,23 +717,6 @@ const CorretorDashboard = () => {
     return true
   })
   
-  // Log resumido do filtro
-  useEffect(() => {
-    console.log(`🔍 [FILTRO RESUMO] Período: ${periodo.toUpperCase()} | Total vendas: ${vendas.length} | Vendas filtradas: ${filteredVendas.length}`)
-    if (periodo !== 'todos' && filteredVendas.length > 0) {
-      console.log(`📋 Vendas incluídas no filtro "${periodo}":`)
-      filteredVendas.forEach((v, i) => {
-        console.log(`  ${i + 1}. ${new Date(v.data_venda).toLocaleDateString('pt-BR')} - ${formatCurrency(v.valor_venda)}`)
-      })
-    } else if (periodo !== 'todos' && filteredVendas.length === 0) {
-      console.log(`⚠️ Nenhuma venda encontrada para o período "${periodo}"`)
-      console.log(`📅 Vendas disponíveis:`)
-      vendas.forEach((v, i) => {
-        console.log(`  ${i + 1}. ${new Date(v.data_venda).toLocaleDateString('pt-BR')} - ${formatCurrency(v.valor_venda)}`)
-      })
-    }
-  }, [periodo, vendas.length, filteredVendas.length])
-
   // Filtrar pagamentos
   const filteredMeusPagamentos = meusPagamentos.filter(pag => {
     // Filtro por status
@@ -1369,7 +1354,7 @@ const CorretorDashboard = () => {
   const toggleSidebar = () => {
     setSidebarCollapsed(prev => {
       const newValue = !prev
-      localStorage.setItem('corretor-sidebar-collapsed', String(newValue))
+      safeSet('corretor-sidebar-collapsed', String(newValue))
       return newValue
     })
   }

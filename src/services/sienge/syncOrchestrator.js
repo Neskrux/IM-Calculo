@@ -11,6 +11,7 @@
  */
 
 import { ingestAll, ingestCreditors, ingestCustomers, ingestSalesContracts, ingestEnterprises } from './rawIngestion'
+import { safeGet, safeSet } from '../../utils/storage'
 import { syncCorretoresFromRaw } from './syncCorretoresV2'
 import { syncClientesFromRaw } from './syncClientesV2'
 import { syncVendasFromRaw } from './syncVendasV2'
@@ -27,7 +28,7 @@ const LAST_SYNC_KEY = 'sienge_last_sync_date'
  */
 export const getLastSyncDate = () => {
   if (typeof localStorage !== 'undefined') {
-    return localStorage.getItem(LAST_SYNC_KEY)
+    return safeGet(LAST_SYNC_KEY)
   }
   return null
 }
@@ -38,7 +39,7 @@ export const getLastSyncDate = () => {
 export const setLastSyncDate = (date = null) => {
   if (typeof localStorage !== 'undefined') {
     const dateStr = date || new Date().toISOString().split('T')[0]
-    localStorage.setItem(LAST_SYNC_KEY, dateStr)
+    safeSet(LAST_SYNC_KEY, dateStr)
     return dateStr
   }
   return null
