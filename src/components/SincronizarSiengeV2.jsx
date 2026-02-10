@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
+import { safeGet, safeSet } from '../utils/storage'
 import { 
   syncCompleto, 
   apenasIngestaoRaw, 
@@ -59,7 +60,7 @@ const SincronizarSiengeV2 = () => {
       
       const agora = new Date()
       setUltimaSync(agora)
-      localStorage.setItem('sienge_ultima_sync', agora.toISOString())
+      safeSet('sienge_ultima_sync', agora.toISOString())
       
       console.log('✅ [AUTO-SYNC] Sincronização automática concluída:', stats.status)
     } catch (error) {
@@ -72,7 +73,7 @@ const SincronizarSiengeV2 = () => {
   // Iniciar polling automático ao montar o componente
   useEffect(() => {
     // Carregar última sincronização
-    const saved = localStorage.getItem('sienge_ultima_sync')
+    const saved = safeGet('sienge_ultima_sync')
     if (saved) {
       setUltimaSync(new Date(saved))
     }
@@ -329,7 +330,7 @@ const SincronizarSiengeV2 = () => {
       // Salvar timestamp da última sync
       const agora = new Date()
       setUltimaSync(agora)
-      localStorage.setItem('sienge_ultima_sync', agora.toISOString())
+      safeSet('sienge_ultima_sync', agora.toISOString())
       
       // Recarregar estatísticas
       await carregarEstatisticas()

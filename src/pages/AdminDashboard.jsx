@@ -20,6 +20,7 @@ import EmpreendimentoGaleria from '../components/EmpreendimentoGaleria'
 import '../styles/Dashboard.css'
 import '../styles/EmpreendimentosPage.css'
 import { LayoutGrid, List } from 'lucide-react'
+import { safeGet, safeSet } from '../utils/storage'
 
 const AdminDashboard = () => {
   const { userProfile, signOut, loading: authLoading } = useAuth()
@@ -59,9 +60,10 @@ const AdminDashboard = () => {
   const [pagamentos, setPagamentos] = useState([])
   const [loading, setLoading] = useState(true)
   const dataLoadedRef = useRef(false)
+  const messageTimeoutRef = useRef(null)
   const [menuOpen, setMenuOpen] = useState(false)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
-    const saved = localStorage.getItem('sidebar-collapsed')
+    const saved = safeGet('sidebar-collapsed')
     return saved === 'true'
   })
   const [searchTerm, setSearchTerm] = useState('')
@@ -165,9 +167,18 @@ const AdminDashboard = () => {
   const toggleSidebar = () => {
     setSidebarCollapsed(prev => {
       const newValue = !prev
-      localStorage.setItem('sidebar-collapsed', String(newValue))
+      safeSet('sidebar-collapsed', String(newValue))
       return newValue
     })
+  }
+
+  // Helper para limpar mensagem após ms (com cleanup no unmount)
+  const clearMessageAfter = (ms) => {
+    if (messageTimeoutRef.current) clearTimeout(messageTimeoutRef.current)
+    messageTimeoutRef.current = setTimeout(() => {
+      messageTimeoutRef.current = null
+      setMessage({ type: '', text: '' })
+    }, ms)
   }
 
   // Agrupar pagamentos por venda
@@ -506,6 +517,13 @@ const AdminDashboard = () => {
     window.addEventListener('resize', checkScreenSize)
     
     return () => window.removeEventListener('resize', checkScreenSize)
+  }, [])
+
+  // Cleanup do timeout de mensagem no unmount
+  useEffect(() => {
+    return () => {
+      if (messageTimeoutRef.current) clearTimeout(messageTimeoutRef.current)
+    }
   }, [])
 
   // Atualizar descrição automaticamente baseado em unidade, bloco e andar
@@ -1418,12 +1436,12 @@ const AdminDashboard = () => {
 
     // Se chegou até aqui, tudo deu certo
     setMessage({ type: 'success', text: 'Venda salva com sucesso!' })
-    setTimeout(() => setMessage({ type: '', text: '' }), 3000)
+    clearMessageAfter(3000)
 
     } catch (error) {
       console.error('Erro ao salvar venda:', error)
       setMessage({ type: 'error', text: 'Erro ao salvar venda: ' + (error.message || 'Erro desconhecido') })
-      setTimeout(() => setMessage({ type: '', text: '' }), 5000)
+      clearMessageAfter(5000)
     } finally {
       // Sempre fechar modal e resetar estado, mesmo em caso de erro
       setSaving(false)
@@ -1632,7 +1650,7 @@ const AdminDashboard = () => {
       setSelectedItem(null)
       resetCorretorForm()
       fetchData()
-      setTimeout(() => setMessage({ type: '', text: '' }), 5000)
+      clearMessageAfter(5000)
 
     } catch (err) {
       setSaving(false)
@@ -1661,7 +1679,7 @@ const AdminDashboard = () => {
       
       fetchData()
       setMessage({ type: 'success', text: 'Corretor excluído com sucesso!' })
-      setTimeout(() => setMessage({ type: '', text: '' }), 3000)
+      clearMessageAfter(3000)
     }
   }
 
@@ -1709,7 +1727,7 @@ const AdminDashboard = () => {
 
       setEmpreendimentoForm(prev => ({ ...prev, logo_url: urlData.publicUrl }))
       setMessage({ type: 'success', text: 'Logo enviada com sucesso!' })
-      setTimeout(() => setMessage({ type: '', text: '' }), 2000)
+      clearMessageAfter(2000)
     } catch (error) {
       console.error('Erro ao fazer upload da logo:', error)
       setMessage({ type: 'error', text: 'Erro ao enviar logo: ' + error.message })
@@ -1820,7 +1838,7 @@ const AdminDashboard = () => {
       setSelectedItem(null)
       fetchData()
       setMessage({ type: 'success', text: `Empreendimento ${selectedItem ? 'atualizado' : 'criado'} com sucesso!` })
-      setTimeout(() => setMessage({ type: '', text: '' }), 3000)
+      clearMessageAfter(3000)
 
     } catch (err) {
       setSaving(false)
@@ -1848,7 +1866,7 @@ const AdminDashboard = () => {
         type: 'error', 
         text: `Não é possível excluir "${emp.nome}". Existem ${corretoresVinculados.length} corretor(es) vinculado(s): ${nomes}${maisTexto}. Desvincule os corretores primeiro.`
       })
-      setTimeout(() => setMessage({ type: '', text: '' }), 8000)
+      clearMessageAfter(8000)
       return
     }
 
@@ -1864,7 +1882,7 @@ const AdminDashboard = () => {
         type: 'error', 
         text: `Não é possível excluir "${emp.nome}". Existem vendas registradas neste empreendimento.`
       })
-      setTimeout(() => setMessage({ type: '', text: '' }), 5000)
+      clearMessageAfter(5000)
       return
     }
 
@@ -1886,7 +1904,7 @@ const AdminDashboard = () => {
       
       fetchData()
       setMessage({ type: 'success', text: 'Empreendimento excluído com sucesso!' })
-      setTimeout(() => setMessage({ type: '', text: '' }), 3000)
+      clearMessageAfter(3000)
     }
   }
 
@@ -1946,7 +1964,7 @@ const AdminDashboard = () => {
       setConfirmandoPagamento(false)
       fetchData()
       setMessage({ type: 'success', text: 'Pagamento confirmado!' })
-      setTimeout(() => setMessage({ type: '', text: '' }), 3000)
+      clearMessageAfter(3000)
     } catch (error) {
       console.error('Erro ao processar confirmação:', error)
       setMessage({ type: 'error', text: 'Erro ao confirmar pagamento' })
@@ -2157,7 +2175,7 @@ const AdminDashboard = () => {
     }
     
     setSaving(false)
-    setTimeout(() => setMessage({ type: '', text: '' }), 3000)
+    clearMessageAfter(3000)
   }
 
   // Gerar pagamentos para todas as vendas sem pagamentos
@@ -2175,7 +2193,7 @@ const AdminDashboard = () => {
     setSaving(false)
     fetchData()
     setMessage({ type: 'success', text: `Pagamentos gerados para ${totalGerados} vendas!` })
-    setTimeout(() => setMessage({ type: '', text: '' }), 3000)
+    clearMessageAfter(3000)
   }
 
   const addCargo = (tipo) => {
@@ -2384,26 +2402,26 @@ const AdminDashboard = () => {
       const fileName = `${tipo}_${Date.now()}.${fileExt}`
       const filePath = `clientes/${fileName}`
 
-      // Log para debug
-      console.log('=== DEBUG UPLOAD (ADMIN) ===')
-      console.log('User ID:', session?.user?.id)
-      console.log('User ID Type:', typeof session?.user?.id)
-      console.log('File Path:', filePath)
-      console.log('File Name:', fileName)
-      console.log('File Size:', file.size)
-      console.log('File Type:', file.type)
-      console.log('Session User ID:', session?.user?.id)
+      if (import.meta.env.DEV) {
+        console.log('=== DEBUG UPLOAD (ADMIN) ===')
+        console.log('User ID:', session?.user?.id)
+        console.log('File Path:', filePath)
+        console.log('File Name:', fileName)
+        console.log('File Size:', file.size)
+        console.log('File Type:', file.type)
+      }
 
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('documentos')
         .upload(filePath, file)
 
       if (uploadError) {
-        console.error('=== ERRO NO UPLOAD (ADMIN) ===')
-        console.error('Upload Error:', uploadError)
-        console.error('Error Message:', uploadError.message)
-        console.error('Error Status:', uploadError.statusCode)
-        console.error('Error Details:', uploadError)
+        if (import.meta.env.DEV) {
+          console.error('=== ERRO NO UPLOAD (ADMIN) ===')
+          console.error('Upload Error:', uploadError)
+          console.error('Error Message:', uploadError.message)
+          console.error('Error Status:', uploadError.statusCode)
+        }
         throw uploadError
       }
 

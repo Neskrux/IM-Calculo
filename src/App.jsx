@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { supabase } from './lib/supabase'
 import Login from './pages/Login'
+import ErrorBoundary from './components/ErrorBoundary'
 import AdminDashboard from './pages/AdminDashboard'
 import CorretorDashboard from './pages/CorretorDashboard'
 import ClienteDashboard from './pages/ClienteDashboard'
@@ -120,30 +121,6 @@ const ProtectedRoute = ({ children, requiredRole }) => {
             >
               Cadastrar como Corretor Externo
             </button>
-          </div>
-          
-          <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)', marginBottom: '10px' }}>
-            Ou execute manualmente no Supabase:
-          </p>
-          <div style={{ 
-            background: 'rgba(0,0,0,0.3)', 
-            padding: '15px', 
-            borderRadius: '8px', 
-            fontSize: '11px',
-            fontFamily: 'monospace',
-            color: '#d4af37',
-            textAlign: 'left',
-            maxWidth: '500px',
-            wordBreak: 'break-all'
-          }}>
-            INSERT INTO usuarios (id, email, nome, tipo, tipo_corretor)<br/>
-            VALUES (<br/>
-            &nbsp;&nbsp;'{user.id}',<br/>
-            &nbsp;&nbsp;'{user.email}',<br/>
-            &nbsp;&nbsp;'{user.email?.split('@')[0] || 'Corretor'}',<br/>
-            &nbsp;&nbsp;'corretor',<br/>
-            &nbsp;&nbsp;'externo'<br/>
-            );
           </div>
           <button 
             onClick={async () => {
@@ -434,7 +411,9 @@ function App() {
   return (
     <Router>
       <AuthProvider>
-        <AppRoutes />
+        <ErrorBoundary>
+          <AppRoutes />
+        </ErrorBoundary>
       </AuthProvider>
     </Router>
   )

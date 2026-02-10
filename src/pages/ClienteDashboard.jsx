@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { safeGet, safeSet } from '../utils/storage'
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { supabase } from '../lib/supabase'
@@ -40,7 +41,7 @@ const ClienteDashboard = () => {
   const [compraExpandida, setCompraExpandida] = useState(null)
   const [gruposExpandidos, setGruposExpandidos] = useState({})
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
-    const saved = localStorage.getItem('cliente-sidebar-collapsed')
+    const saved = safeGet('cliente-sidebar-collapsed')
     return saved === 'true'
   })
 
@@ -510,7 +511,7 @@ const ClienteDashboard = () => {
   const toggleSidebar = () => {
     setSidebarCollapsed(prev => {
       const newValue = !prev
-      localStorage.setItem('cliente-sidebar-collapsed', String(newValue))
+      safeSet('cliente-sidebar-collapsed', String(newValue))
       return newValue
     })
   }

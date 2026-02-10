@@ -209,24 +209,39 @@ const Login = () => {
         return
       }
 
-      // Login bem sucedido! Buscar tipo do usuário para redirecionar
+      // Login bem sucedido! Buscar perfil em usuarios
       const { data: userProfile } = await supabase
         .from('usuarios')
         .select('tipo')
         .eq('id', data.user.id)
         .maybeSingle()
+
+      // Perfil não existe – mesmo formato que erro de senha: caixa vermelha acima do form
+      if (!userProfile) {
+        sessionStorage.removeItem('im-login-transition')
+        await supabase.auth.signOut()
+        const keysToRemove = []
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i)
+          if (key && (key.includes('supabase') || key.includes('sb-'))) keysToRemove.push(key)
+        }
+        keysToRemove.forEach(k => localStorage.removeItem(k))
+        setError('Perfil não encontrado. Entre em contato com o administrador para liberar seu acesso.')
+        setLoading(false)
+        return
+      }
       
       // Determinar URL de redirecionamento
       let url = '/dashboard'
-      if (userProfile?.tipo === 'admin') {
+      if (userProfile.tipo === 'admin') {
         url = '/admin/dashboard'
-      } else if (userProfile?.tipo === 'corretor') {
+      } else if (userProfile.tipo === 'corretor') {
         url = '/corretor/dashboard'
-      } else if (userProfile?.tipo === 'cliente') {
+      } else if (userProfile.tipo === 'cliente') {
         url = '/cliente/dashboard'
       }
       
-      // Mostrar a transição diretamente aqui
+      // Mostrar a transição e redirecionar
       setRedirectUrl(url)
       setShowTransition(true)
       return
@@ -247,10 +262,7 @@ const Login = () => {
 
   // Callback quando a transição terminar
   const handleTransitionComplete = () => {
-    // Limpar flag de transição
     sessionStorage.removeItem('im-login-transition')
-    
-    // Redirecionar usando window.location para forçar um carregamento limpo
     if (redirectUrl) {
       window.location.href = redirectUrl
     }
@@ -360,7 +372,6 @@ const Login = () => {
           </div>
         </div>
 
-        {/* Formulário */}
         <form onSubmit={handleSubmit} className="login-form">
           {error && (
             <div className="login-error">
