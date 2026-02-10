@@ -11,7 +11,7 @@ import {
   Building, MapPin, CreditCard, Users, FileText, Eye, Phone, Mail,
   Home, CalendarDays, BanknoteIcon, TrendingDown, ArrowUpRight,
   Plus, UserPlus, Send, ClipboardList, CheckCircle2, XCircle, AlertCircle,
-  Camera, Search
+  Camera, Search, Upload
 } from 'lucide-react'
 import { jsPDF } from 'jspdf'
 import autoTable from 'jspdf-autotable'
@@ -22,7 +22,7 @@ import '../styles/CorretorDashboard.css'
 import '../styles/EmpreendimentosPage.css'
 
 const CorretorDashboard = () => {
-  const { user, userProfile, signOut } = useAuth()
+  const { user, userProfile, signOut, refreshProfile } = useAuth()
   const { tab } = useParams()
   const navigate = useNavigate()
   const location = useLocation()
@@ -114,6 +114,8 @@ const CorretorDashboard = () => {
   })
   const [alterandoSenha, setAlterandoSenha] = useState(false)
   const [showSenhaModal, setShowSenhaModal] = useState(false)
+  const [uploadingDoc, setUploadingDoc] = useState(false)
+  const [uploadingDocType, setUploadingDocType] = useState(null)
   
   // Form de nova venda
   const [novaVendaForm, setNovaVendaForm] = useState({
@@ -605,6 +607,67 @@ const CorretorDashboard = () => {
       setMessage({ type: 'error', text: 'Erro ao atualizar perfil: ' + error.message })
     } finally {
       setSalvandoPerfil(false)
+    }
+  }
+
+  const getUrlComCacheBust = (url) => {
+    if (!url) return url
+    const separator = url.includes('?') ? '&' : '?'
+    return `${url}${separator}t=${Date.now()}`
+  }
+
+  const uploadDocumentoCorretor = async (file, tipo) => {
+    if (!file || !user?.id) return
+    if (tipo !== 'creci') return
+    const extensoesPermitidas = ['pdf', 'jpg', 'jpeg', 'png', 'gif', 'webp']
+    const fileExt = file.name.split('.').pop()?.toLowerCase()
+    if (!fileExt || !extensoesPermitidas.includes(fileExt)) {
+      setMessage({ type: 'error', text: `Tipo não permitido. Use: ${extensoesPermitidas.join(', ').toUpperCase()}` })
+      return
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      setMessage({ type: 'error', text: 'Arquivo muito grande. Máximo 10MB' })
+      return
+    }
+    setUploadingDoc(true)
+    setUploadingDocType(tipo)
+    try {
+      const docExistente = userProfile?.creci_url
+      let filePath
+        if (docExistente) {
+        try {
+          const urlParts = docExistente.split('/')
+          let nomeExistente = urlParts[urlParts.length - 1]?.split('?')[0]
+          if (nomeExistente?.length > 0) {
+            filePath = `corretores/${user.id}/${nomeExistente}`
+          } else {
+            filePath = `corretores/${user.id}/creci_${Date.now()}.${fileExt}`
+          }
+        } catch {
+          filePath = `corretores/${user.id}/creci_${Date.now()}.${fileExt}`
+        }
+      } else {
+        filePath = `corretores/${user.id}/creci_${Date.now()}.${fileExt}`
+      }
+      if (filePath.includes('..') || filePath.includes('//')) throw new Error('Caminho inválido')
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('documentos')
+        .upload(filePath, file, { cacheControl: '3600', upsert: true })
+      if (uploadError) throw uploadError
+      const { data: { publicUrl } } = supabase.storage.from('documentos').getPublicUrl(uploadData?.path || filePath)
+      const { error: updateError } = await supabase
+        .from('usuarios')
+        .update({ creci_url: publicUrl })
+        .eq('id', user.id)
+      if (updateError) throw updateError
+      setMessage({ type: 'success', text: 'Documento enviado com sucesso!' })
+      await refreshProfile()
+    } catch (err) {
+      console.error('Erro upload:', err)
+      setMessage({ type: 'error', text: err.message || 'Erro ao enviar documento' })
+    } finally {
+      setUploadingDoc(false)
+      setUploadingDocType(null)
     }
   }
 
@@ -3151,80 +3214,6 @@ const CorretorDashboard = () => {
                 </div>
               </div>
 
-              {/* Estatísticas do Corretor */}
-              <div className="perfil-stats-section">
-                <h3><BarChart3 size={20} /> Minhas Estatísticas</h3>
-                <div className="perfil-stats-grid">
-                  <div className="perfil-stat-card">
-                    <div className="stat-icon vendas">
-                      <DollarSign size={24} />
-                    </div>
-                    <div className="stat-content">
-                      <span className="stat-value">{vendas.length}</span>
-                      <span className="stat-label">Vendas Realizadas</span>
-                    </div>
-                  </div>
-                  
-                  <div className="perfil-stat-card">
-                    <div className="stat-icon clientes">
-                      <Users size={24} />
-                    </div>
-                    <div className="stat-content">
-                      <span className="stat-value">{meusClientes.length}</span>
-                      <span className="stat-label">Clientes Atendidos</span>
-                    </div>
-                  </div>
-                  
-                  <div className="perfil-stat-card">
-                    <div className="stat-icon comissao">
-                      <Wallet size={24} />
-                    </div>
-                    <div className="stat-content">
-                      <span className="stat-value gold">
-                        {formatCurrency(meusPagamentos.reduce((acc, pag) => acc + calcularComissaoPagamento(pag), 0))}
-                      </span>
-                      <span className="stat-label">Comissão Total</span>
-                    </div>
-                  </div>
-                  
-                  <div className="perfil-stat-card">
-                    <div className="stat-icon recebido">
-                      <CheckCircle size={24} />
-                    </div>
-                    <div className="stat-content">
-                      <span className="stat-value verde">
-                        {formatCurrency(meusPagamentos.filter(p => p.status === 'pago').reduce((acc, pag) => acc + calcularComissaoPagamento(pag), 0))}
-                      </span>
-                      <span className="stat-label">Comissão Recebida</span>
-                    </div>
-                  </div>
-                  
-                  <div className="perfil-stat-card">
-                    <div className="stat-icon pendente">
-                      <Clock size={24} />
-                    </div>
-                    <div className="stat-content">
-                      <span className="stat-value amarelo">
-                        {formatCurrency(meusPagamentos.filter(p => p.status !== 'pago').reduce((acc, pag) => acc + calcularComissaoPagamento(pag), 0))}
-                      </span>
-                      <span className="stat-label">Comissão Pendente</span>
-                    </div>
-                  </div>
-                  
-                  <div className="perfil-stat-card">
-                    <div className="stat-icon empreendimentos">
-                      <Building size={24} />
-                    </div>
-                    <div className="stat-content">
-                      <span className="stat-value">
-                        {[...new Set(vendas.map(v => v.empreendimento_id))].length}
-                      </span>
-                      <span className="stat-label">Empreendimentos</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
               {/* Informações da Conta */}
               <div className="perfil-account-section">
                 <h3><CreditCard size={20} /> Informações da Conta</h3>
@@ -3259,6 +3248,71 @@ const CorretorDashboard = () => {
                 </div>
               </div>
 
+              {/* Meus Documentos */}
+              <div className="perfil-documentos-section">
+                <h3><FileText size={20} /> Meus Documentos</h3>
+                <div className="docs-upload-grid-cliente">
+                  {/* CRECI - upload pessoal (bucket documentos) */}
+                  <div className="form-group-doc">
+                    <label className="doc-label">
+                      CRECI
+                      {userProfile?.creci_url ? (
+                        <span className="doc-status-badge success">
+                          <CheckCircle size={14} />
+                          Enviado
+                        </span>
+                      ) : (
+                        <span className="doc-status-badge warning">
+                          <Clock size={14} />
+                          Pendente
+                        </span>
+                      )}
+                    </label>
+                    <div className="file-upload-wrapper">
+                      {userProfile?.creci_url && (
+                        <div className="file-upload-info">
+                          <span className="file-name" title={userProfile.creci_url.split('/').pop()?.split('?')[0]}>
+                            {userProfile.creci_url.split('/').pop()?.split('?')[0]}
+                          </span>
+                          <a href={getUrlComCacheBust(userProfile.creci_url)} target="_blank" rel="noopener noreferrer" className="doc-preview">
+                            Ver arquivo
+                          </a>
+                        </div>
+                      )}
+                      <label className="file-upload-label">
+                        <input
+                          type="file"
+                          accept="image/*,.pdf"
+                          onChange={(e) => e.target.files[0] && uploadDocumentoCorretor(e.target.files[0], 'creci')}
+                          className="file-upload-input"
+                          disabled={uploadingDoc && uploadingDocType === 'creci'}
+                        />
+                        <span className="file-upload-button">
+                          {uploadingDoc && uploadingDocType === 'creci' ? (
+                            <>
+                              <div className="loading-spinner-small"></div>
+                              Enviando...
+                            </>
+                          ) : (
+                            'Escolher Arquivo'
+                          )}
+                        </span>
+                      </label>
+                    </div>
+                  </div>
+                  {/* Informativo de Cálculo - mesmo para todos (bucket informativo) - em desenvolvimento */}
+                  <div className="form-group-doc form-group-doc-informativo">
+                    <label className="doc-label">
+                      Informativo de Cálculo
+                      <span className="doc-status-badge info">Em breve</span>
+                    </label>
+                    <p className="doc-informativo-desc">
+                      Documento único para todos os corretores. Será disponibilizado em breve no bucket <strong>informativo</strong>.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
               {/* Ações da Conta */}
               <div className="perfil-actions-section">
                 <h3><Award size={20} /> Ações da Conta</h3>
@@ -3286,13 +3340,13 @@ const CorretorDashboard = () => {
                   </button>
                   
                   <button 
-                    className="action-card logout"
-                    onClick={signOut}
+                    className="action-card"
+                    onClick={() => navigate('/corretor/pagamentos')}
                   >
-                    <LogOut size={24} />
+                    <Wallet size={24} />
                     <div>
-                      <strong>Sair da Conta</strong>
-                      <span>Encerrar sessão atual</span>
+                      <strong>Meus Pagamentos</strong>
+                      <span>Acompanhe suas comissões e pagamentos</span>
                     </div>
                   </button>
                 </div>
