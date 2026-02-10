@@ -173,6 +173,14 @@ export const AuthProvider = ({ children }) => {
     }
   }
 
+  const refreshProfile = async () => {
+    const { data: { session } } = await supabase.auth.getSession()
+    if (session?.user) {
+      isLoadingProfile.current = false
+      await loadProfile(session.user, session)
+    }
+  }
+
   return (
     <AuthContext.Provider value={{
       user,
@@ -180,6 +188,7 @@ export const AuthProvider = ({ children }) => {
       loading,
       signIn,
       signOut,
+      refreshProfile,
       isAdmin: userProfile?.tipo === 'admin',
       isCorretor: userProfile?.tipo === 'corretor'
     }}>
