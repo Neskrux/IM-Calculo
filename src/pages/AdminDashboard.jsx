@@ -129,7 +129,8 @@ const AdminDashboard = () => {
   const [showModalConfirmarPagamento, setShowModalConfirmarPagamento] = useState(false)
   const [pagamentoParaConfirmar, setPagamentoParaConfirmar] = useState(null)
   const [formConfirmarPagamento, setFormConfirmarPagamento] = useState({
-    valorPersonalizado: ''
+    valorPersonalizado: '',
+    dataPagamento: ''
   })
   const [confirmandoPagamento, setConfirmandoPagamento] = useState(false)
   // const [mostrarCadastroMassa, setMostrarCadastroMassa] = useState(false)
@@ -1911,8 +1912,11 @@ const AdminDashboard = () => {
   // Abrir modal de confirmação de pagamento
   const confirmarPagamento = (pagamento) => {
     setPagamentoParaConfirmar(pagamento)
+    const hoje = new Date().toISOString().split('T')[0]
+    const dataPrevista = pagamento.data_prevista ? new Date(pagamento.data_prevista).toISOString().split('T')[0] : hoje
     setFormConfirmarPagamento({
-      valorPersonalizado: ''
+      valorPersonalizado: '',
+      dataPagamento: dataPrevista
     })
     setShowModalConfirmarPagamento(true)
   }
@@ -1924,11 +1928,11 @@ const AdminDashboard = () => {
     setConfirmandoPagamento(true)
     
     try {
-      // Atualizar pagamento - apenas status e data
-      // O valor personalizado será usado apenas para cálculo, não será salvo no banco
+      // Data em que o pagamento foi efetivamente feito (pode ser antes ou depois do previsto)
+      const dataPagamento = formConfirmarPagamento.dataPagamento?.trim() || new Date().toISOString().split('T')[0]
       const updateData = {
         status: 'pago',
-        data_pagamento: new Date().toISOString().split('T')[0]
+        data_pagamento: dataPagamento
       }
 
       // Se houver valor personalizado, podemos salvar em um campo de observação ou comentário
@@ -5932,6 +5936,27 @@ const AdminDashboard = () => {
                             <span className="label">Valor da Parcela:</span>
                             <span className="value">{formatCurrency(pagamentoParaConfirmar.valor)}</span>
                           </div>
+                          <div className="info-row">
+                            <span className="label">Data Prevista:</span>
+                            <span className="value">
+                              {pagamentoParaConfirmar.data_prevista
+                                ? new Date(pagamentoParaConfirmar.data_prevista).toLocaleDateString('pt-BR')
+                                : '-'}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Data em que o pagamento foi feito */}
+                        <div className="form-section">
+                          <label>
+                            <span>Data em que o pagamento foi feito</span>
+                            <input
+                              type="date"
+                              value={formConfirmarPagamento.dataPagamento}
+                              onChange={(e) => setFormConfirmarPagamento({...formConfirmarPagamento, dataPagamento: e.target.value})}
+                            />
+                            <small>Pode ser antes ou depois da data prevista</small>
+                          </label>
                         </div>
 
                         {/* Comissão que tem que ser paga */}
