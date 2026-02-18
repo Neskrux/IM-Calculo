@@ -2287,10 +2287,12 @@ const AdminDashboard = () => {
     const emailFake = corretor.email?.includes('@sync.local') || corretor.email?.includes('@placeholder.local')
     const temAcessoSistema = corretor.tem_acesso_sistema === true || (!emailFake && corretor.origem !== 'sienge')
     
-    // Carregar cargos do empreendimento se existir
+    // Carregar cargos do empreendimento filtrados pelo tipo (externo/interno)
+    const tipoCorretor = corretor.tipo_corretor || 'externo'
     if (corretor.empreendimento_id) {
       const emp = empreendimentos.find(e => e.id === corretor.empreendimento_id)
-      setCargosDisponiveis(emp?.cargos || [])
+      const cargosFiltrados = emp?.cargos?.filter(c => c.tipo_corretor === tipoCorretor) || []
+      setCargosDisponiveis(cargosFiltrados)
     } else {
       setCargosDisponiveis([])
     }
@@ -8041,25 +8043,13 @@ const AdminDashboard = () => {
                         onChange={(e) => handleCargoChange(e.target.value)}
                       >
                         <option value="">Selecione um cargo</option>
-                        {cargosDisponiveis
-                          .filter(cargo => {
-                            // Filtrar cargos já ocupados (exceto se for edição do mesmo corretor)
-                            const ocupado = corretores.some(c => 
-                              c.cargo_id === cargo.id && c.id !== selectedItem?.id
-                            )
-                            return !ocupado
-                          })
-                          .map((cargo) => (
-                            <option key={cargo.id} value={cargo.id}>
-                              {cargo.nome_cargo} ({cargo.percentual}%)
-                            </option>
-                          ))
+                        {cargosDisponiveis.map((cargo) => (
+                          <option key={cargo.id} value={cargo.id}>
+                            {cargo.nome_cargo} ({cargo.percentual}%)
+                          </option>
+                        ))
                         }
                       </select>
-                      {cargosDisponiveis.length > 0 && 
-                       cargosDisponiveis.filter(c => !corretores.some(cor => cor.cargo_id === c.id && cor.id !== selectedItem?.id)).length === 0 && (
-                        <p className="field-hint error">Todos os cargos deste empreendimento já estão ocupados</p>
-                      )}
                     </div>
                   )}
 
