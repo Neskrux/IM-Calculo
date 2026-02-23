@@ -27,91 +27,39 @@ const Login = () => {
   const [isTransitioning, setIsTransitioning] = useState(false)
   const [loadingEmpreendimentos, setLoadingEmpreendimentos] = useState(true)
 
-  // Carregar empreendimentos com fotos de fachada e logo
+  // Carregar empreendimentos com fotos (2 queries em vez de N+1)
   useEffect(() => {
+    let cancelled = false
+    const timeout = setTimeout(() => { cancelled = true; setLoadingEmpreendimentos(false) }, 8000)
+
     const carregarEmpreendimentos = async () => {
       try {
-        // Buscar empreendimentos ativos
-        const { data: emps, error: empsError } = await supabase
-          .from('empreendimentos')
-          .select('id, nome, logo_url')
-          .eq('ativo', true)
-          .order('nome')
+        const [empsResult, fotosResult] = await Promise.all([
+          supabase.from('empreendimentos').select('id, nome, logo_url').eq('ativo', true).order('nome'),
+          supabase.from('empreendimento_fotos').select('empreendimento_id, url, categoria, destaque, ordem').in('categoria', ['fachada', 'logo']).order('destaque', { ascending: false }).order('ordem', { ascending: true })
+        ])
 
-        if (empsError) throw empsError
+        if (cancelled) return
+        if (empsResult.error || fotosResult.error) return
 
-        // Para cada empreendimento, buscar foto de fachada e logo
-        const empreendimentosComFotos = await Promise.all(
-          (emps || []).map(async (emp) => {
-            // Buscar logo da categoria 'logo'
-            let logoUrl = emp.logo_url // Primeiro tenta do campo logo_url
-            if (!logoUrl) {
-              const { data: logoFoto } = await supabase
-                .from('empreendimento_fotos')
-                .select('url')
-                .eq('empreendimento_id', emp.id)
-                .eq('categoria', 'logo')
-                .order('ordem', { ascending: true })
-                .limit(1)
-                .maybeSingle()
-              logoUrl = logoFoto?.url || null
-            }
+        const fotos = fotosResult.data || []
+        const comFotos = (empsResult.data || []).map(emp => {
+          const empFotos = fotos.filter(f => f.empreendimento_id === emp.id)
+          const fotoFachada = empFotos.find(f => f.categoria === 'fachada' && f.destaque) || empFotos.find(f => f.categoria === 'fachada')
+          const logoUrl = emp.logo_url || empFotos.find(f => f.categoria === 'logo')?.url || null
+          return { ...emp, fotoUrl: fotoFachada?.url || null, logoUrl }
+        }).filter(e => e.fotoUrl)
 
-            // Primeiro tenta foto destaque de fachada
-            let { data: foto } = await supabase
-              .from('empreendimento_fotos')
-              .select('url')
-              .eq('empreendimento_id', emp.id)
-              .eq('categoria', 'fachada')
-              .eq('destaque', true)
-              .limit(1)
-              .maybeSingle()
-
-            // Se não tem destaque, pega primeira de fachada
-            if (!foto) {
-              const { data: primeiraFoto } = await supabase
-                .from('empreendimento_fotos')
-                .select('url')
-                .eq('empreendimento_id', emp.id)
-                .eq('categoria', 'fachada')
-                .order('ordem', { ascending: true })
-                .limit(1)
-                .maybeSingle()
-              foto = primeiraFoto
-            }
-
-            // Se não tem fachada, pega qualquer foto (exceto logo)
-            if (!foto) {
-              const { data: qualquerFoto } = await supabase
-                .from('empreendimento_fotos')
-                .select('url')
-                .eq('empreendimento_id', emp.id)
-                .neq('categoria', 'logo')
-                .order('ordem', { ascending: true })
-                .limit(1)
-                .maybeSingle()
-              foto = qualquerFoto
-            }
-
-            return {
-              ...emp,
-              fotoUrl: foto?.url || null,
-              logoUrl: logoUrl
-            }
-          })
-        )
-
-        // Filtrar apenas os que têm foto
-        const comFotos = empreendimentosComFotos.filter(e => e.fotoUrl)
-        setEmpreendimentos(comFotos)
-      } catch (error) {
-        console.error('Erro ao carregar empreendimentos:', error)
+        if (!cancelled) setEmpreendimentos(comFotos)
+      } catch (_) {
+        // Silencioso - carrossel é decorativo, não deve bloquear login
       } finally {
-        setLoadingEmpreendimentos(false)
+        if (!cancelled) setLoadingEmpreendimentos(false)
       }
     }
 
     carregarEmpreendimentos()
+    return () => { cancelled = true; clearTimeout(timeout) }
   }, [])
 
   // Auto-play do carrossel

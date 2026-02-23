@@ -3795,6 +3795,49 @@
   transform: translateY(0);
 }
 
+.btn-small-danger {
+  padding: 5px 12px;
+  background: #dc2626;
+  border: none;
+  border-radius: 4px;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+
+.btn-small-danger:hover {
+  background: #b91c1c;
+  transform: translateY(-1px);
+}
+
+.btn-small-danger:active {
+  transform: translateY(0);
+}
+
+.btn-danger {
+  padding: 0.5rem 1rem;
+  background: #dc2626;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-danger:hover {
+  background: #b91c1c;
+}
+
+.btn-danger:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .parcela-comissoes {
   padding-top: 12px;
   margin-top: 12px;
