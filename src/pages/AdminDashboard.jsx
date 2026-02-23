@@ -127,6 +127,9 @@ const AdminDashboard = () => {
   const [pagamentoDetalhe, setPagamentoDetalhe] = useState(null)
   const [vendaExpandida, setVendaExpandida] = useState(null)
   const [showModalConfirmarPagamento, setShowModalConfirmarPagamento] = useState(false)
+  const [showModalExcluirBaixa, setShowModalExcluirBaixa] = useState(false)
+  const [pagamentoParaExcluir, setPagamentoParaExcluir] = useState(null)
+  const [excluindoBaixa, setExcluindoBaixa] = useState(false)
   const [pagamentoParaConfirmar, setPagamentoParaConfirmar] = useState(null)
   const [formConfirmarPagamento, setFormConfirmarPagamento] = useState({
     valorPersonalizado: '',
@@ -1921,6 +1924,50 @@ const AdminDashboard = () => {
     setShowModalConfirmarPagamento(true)
   }
 
+  // Abrir modal para editar baixa (parcela já paga)
+  const editarBaixa = (pagamento) => {
+    setPagamentoParaConfirmar(pagamento)
+    const dataPag = pagamento.data_pagamento ? new Date(pagamento.data_pagamento).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]
+    setFormConfirmarPagamento({
+      valorPersonalizado: pagamento.comissao_gerada != null ? String(pagamento.comissao_gerada) : '',
+      dataPagamento: dataPag
+    })
+    setShowModalConfirmarPagamento(true)
+  }
+
+  // Abrir modal para excluir (reverter) baixa
+  const excluirBaixa = (pagamento) => {
+    setPagamentoParaExcluir(pagamento)
+    setShowModalExcluirBaixa(true)
+  }
+
+  // Reverter baixa: status pendente, data_pagamento null
+  const processarExcluirBaixa = async () => {
+    if (!pagamentoParaExcluir || excluindoBaixa) return
+    setExcluindoBaixa(true)
+    try {
+      const { error } = await supabase
+        .from('pagamentos_prosoluto')
+        .update({ status: 'pendente', data_pagamento: null })
+        .eq('id', pagamentoParaExcluir.id)
+      if (error) {
+        setMessage({ type: 'error', text: 'Erro ao reverter baixa: ' + error.message })
+        setExcluindoBaixa(false)
+        return
+      }
+      setShowModalExcluirBaixa(false)
+      setPagamentoParaExcluir(null)
+      setExcluindoBaixa(false)
+      fetchData()
+      setMessage({ type: 'success', text: 'Baixa revertida. Parcela voltou a Pendente.' })
+      clearMessageAfter(3000)
+    } catch (err) {
+      console.error('Erro ao reverter baixa:', err)
+      setMessage({ type: 'error', text: 'Erro ao reverter baixa' })
+      setExcluindoBaixa(false)
+    }
+  }
+
   // Confirmar pagamento pro-soluto com valores personalizados
   const processarConfirmarPagamento = async () => {
     if (!pagamentoParaConfirmar || confirmandoPagamento) return
@@ -1967,7 +2014,7 @@ const AdminDashboard = () => {
       setPagamentoParaConfirmar(null)
       setConfirmandoPagamento(false)
       fetchData()
-      setMessage({ type: 'success', text: 'Pagamento confirmado!' })
+      setMessage({ type: 'success', text: pagamentoParaConfirmar.status === 'pago' ? 'Baixa atualizada!' : 'Pagamento confirmado!' })
       clearMessageAfter(3000)
     } catch (error) {
       console.error('Erro ao processar confirmação:', error)
@@ -3900,7 +3947,10 @@ const AdminDashboard = () => {
       return matchCorretor && matchEmpreendimento && matchCliente && matchUnidade && matchStatus && matchTipo && matchBusca
     })
     .sort((a, b) => {
-    // Ordenar por data da venda mais recente primeiro
+    // Ordenar por último atualizado (updated_at) primeiro; fallback para data da venda
+    const maxUpdatedA = Math.max(...(a.pagamentos || []).map(p => new Date(p.updated_at || p.created_at || 0).getTime()), 0)
+    const maxUpdatedB = Math.max(...(b.pagamentos || []).map(p => new Date(p.updated_at || p.created_at || 0).getTime()), 0)
+    if (maxUpdatedA !== maxUpdatedB) return maxUpdatedB - maxUpdatedA
     const dataA = new Date(a.venda?.data_venda || a.venda?.created_at || 0)
     const dataB = new Date(b.venda?.data_venda || b.venda?.created_at || 0)
     return dataB - dataA
@@ -5784,13 +5834,32 @@ const AdminDashboard = () => {
                                     <Eye size={14} />
                                     Ver
                                   </button>
-                                  {pag.status !== 'pago' && (
+                                  {pag.status !== 'pago' ? (
                                     <button 
                                       className="btn-small-confirm"
                                       onClick={(e) => { e.stopPropagation(); confirmarPagamento(pag); }}
                                     >
                                       Confirmar
                                     </button>
+                                  ) : (
+                                    <>
+                                      <button 
+                                        className="btn-ver-detalhe"
+                                        onClick={(e) => { e.stopPropagation(); editarBaixa(pag); }}
+                                        title="Editar baixa"
+                                      >
+                                        <Edit2 size={14} />
+                                        Editar
+                                      </button>
+                                      <button 
+                                        className="btn-small-danger"
+                                        onClick={(e) => { e.stopPropagation(); excluirBaixa(pag); }}
+                                        title="Reverter baixa"
+                                      >
+                                        <Trash2 size={14} />
+                                        Excluir
+                                      </button>
+                                    </>
                                   )}
                                 </div>
                               </div>
@@ -5915,7 +5984,7 @@ const AdminDashboard = () => {
                   <div className="modal-overlay" onClick={() => setShowModalConfirmarPagamento(false)}>
                     <div className="modal" onClick={e => e.stopPropagation()}>
                       <div className="modal-header">
-                        <h2>Confirmar Pagamento</h2>
+                        <h2>{pagamentoParaConfirmar.status === 'pago' ? 'Editar Baixa' : 'Confirmar Pagamento'}</h2>
                         <button className="close-btn" onClick={() => setShowModalConfirmarPagamento(false)}>
                           <X size={24} />
                         </button>
@@ -6016,10 +6085,52 @@ const AdminDashboard = () => {
                             {confirmandoPagamento ? (
                               <>
                                 <span className="btn-spinner"></span>
-                                Confirmando...
+                                {pagamentoParaConfirmar.status === 'pago' ? 'Salvando...' : 'Confirmando...'}
                               </>
                             ) : (
-                              'Confirmar Pagamento'
+                              pagamentoParaConfirmar.status === 'pago' ? 'Salvar Alterações' : 'Confirmar Pagamento'
+                            )}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Modal de Excluir/Reverter Baixa */}
+                {showModalExcluirBaixa && pagamentoParaExcluir && (
+                  <div className="modal-overlay" onClick={() => setShowModalExcluirBaixa(false)}>
+                    <div className="modal" onClick={e => e.stopPropagation()}>
+                      <div className="modal-header">
+                        <h2>Reverter Baixa</h2>
+                        <button className="close-btn" onClick={() => setShowModalExcluirBaixa(false)}>
+                          <X size={24} />
+                        </button>
+                      </div>
+                      <div className="modal-body">
+                        <p>
+                          Tem certeza que deseja reverter esta baixa? A parcela voltará ao status <strong>Pendente</strong> e a data de pagamento será removida.
+                        </p>
+                        <div className="modal-actions">
+                          <button
+                            className="btn-secondary"
+                            onClick={() => setShowModalExcluirBaixa(false)}
+                            disabled={excluindoBaixa}
+                          >
+                            Cancelar
+                          </button>
+                          <button
+                            className="btn-danger"
+                            onClick={processarExcluirBaixa}
+                            disabled={excluindoBaixa}
+                          >
+                            {excluindoBaixa ? (
+                              <>
+                                <span className="btn-spinner"></span>
+                                Revertendo...
+                              </>
+                            ) : (
+                              'Reverter Baixa'
                             )}
                           </button>
                         </div>
