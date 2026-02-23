@@ -3423,13 +3423,11 @@ const AdminDashboard = () => {
         // Calcular estatisticas (usar totalComissao/totalPago/totalPendente já calculados acima - respeitam filtro de cargo)
         const totalVendasRelatorio = dadosFiltrados.length
         const totalParcelasRelatorio = dadosFiltrados.reduce((acc, g) => acc + g.pagamentos.length, 0)
-        const totalValorVendas = dadosFiltrados.reduce((acc, g) => acc + (parseFloat(g.venda?.valor_venda) || parseFloat(g.venda?.valor_venda_total) || 0), 0)
         
         // Tabela de resumo elegante (usa totalComissao, totalPago, totalPendente que já respeitam cargoId/corretor)
         const statsData = [
           ['Total de Vendas', totalVendasRelatorio.toString()],
           ['Total de Parcelas', totalParcelasRelatorio.toString()],
-          ['Valor Total em Vendas', formatCurrency(totalValorVendas)],
           ['Comissao Total', formatCurrency(totalComissao)],
           ['Comissao Paga', formatCurrency(totalPago)],
           ['Comissao Pendente', formatCurrency(totalPendente)]
@@ -3462,16 +3460,16 @@ const AdminDashboard = () => {
           margin: { left: 30, right: 30 },
           tableWidth: 140,
           didParseCell: function(data) {
-            // Destacar valores de comissao
-            if (data.section === 'body' && data.row.index === 3) {
+            // Destacar valores de comissao (row 2=Total, 3=Paga, 4=Pendente)
+            if (data.section === 'body' && data.row.index === 2) {
               data.cell.styles.textColor = cores.douradoEscuro
               data.cell.styles.fontStyle = 'bold'
             }
-            if (data.section === 'body' && data.row.index === 4 && data.column.index === 1) {
+            if (data.section === 'body' && data.row.index === 3 && data.column.index === 1) {
               data.cell.styles.textColor = cores.verde
               data.cell.styles.fontStyle = 'bold'
             }
-            if (data.section === 'body' && data.row.index === 5 && data.column.index === 1) {
+            if (data.section === 'body' && data.row.index === 4 && data.column.index === 1) {
               data.cell.styles.textColor = cores.amarelo
               data.cell.styles.fontStyle = 'bold'
             }
