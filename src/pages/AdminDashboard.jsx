@@ -3311,21 +3311,20 @@ const AdminDashboard = () => {
         // ========================================
         const parcelas = grupo.pagamentos.map(pag => {
           const valorParcela = parseFloat(pag.valor) || 0
-          let comissaoExibir = parseFloat(pag.comissao_gerada) || 0
+          let comissaoExibir = 0
           let percentualUsado = 0
-          
-          if (percentualCorretor !== null && valorParcela > 0) {
-            comissaoExibir = valorParcela * percentualCorretor
-            percentualUsado = percentualCorretor * 100
-          } else if (valorParcela > 0 && comissaoExibir > 0) {
-            percentualUsado = (comissaoExibir / valorParcela) * 100
-          }
           
           if (relatorioFiltros.cargoId) {
             const comissoesCargo = calcularComissaoPorCargoPagamento(pag)
             const cargoEncontrado = comissoesCargo.find(c => c.nome_cargo === relatorioFiltros.cargoId)
             comissaoExibir = cargoEncontrado ? cargoEncontrado.valor : 0
             percentualUsado = valorParcela > 0 ? (comissaoExibir / valorParcela) * 100 : 0
+          } else if (percentualCorretor !== null && valorParcela > 0) {
+            comissaoExibir = valorParcela * percentualCorretor
+            percentualUsado = percentualCorretor * 100
+          } else {
+            comissaoExibir = parseFloat(pag.comissao_gerada) || 0
+            percentualUsado = valorParcela > 0 && comissaoExibir > 0 ? (comissaoExibir / valorParcela) * 100 : 0
           }
           
           const percentualComissao = percentualUsado.toFixed(2)
@@ -3421,26 +3420,19 @@ const AdminDashboard = () => {
         doc.text('RESUMO EXECUTIVO', 24, yPosition + 8)
         yPosition += 18
         
-        // Calcular estatisticas
+        // Calcular estatisticas (usar totalComissao/totalPago/totalPendente já calculados acima - respeitam filtro de cargo)
         const totalVendasRelatorio = dadosFiltrados.length
         const totalParcelasRelatorio = dadosFiltrados.reduce((acc, g) => acc + g.pagamentos.length, 0)
         const totalValorVendas = dadosFiltrados.reduce((acc, g) => acc + (parseFloat(g.venda?.valor_venda) || parseFloat(g.venda?.valor_venda_total) || 0), 0)
-        const totalComissaoRelatorio = dadosFiltrados.reduce((acc, g) => {
-          return acc + g.pagamentos.reduce((a, p) => a + (parseFloat(p.comissao_gerada) || 0), 0)
-        }, 0)
-        const totalPagoRelatorio = dadosFiltrados.reduce((acc, g) => {
-          return acc + g.pagamentos.filter(p => p.status === 'pago').reduce((a, p) => a + (parseFloat(p.comissao_gerada) || 0), 0)
-        }, 0)
-        const totalPendenteRelatorio = totalComissaoRelatorio - totalPagoRelatorio
         
-        // Tabela de resumo elegante
+        // Tabela de resumo elegante (usa totalComissao, totalPago, totalPendente que já respeitam cargoId/corretor)
         const statsData = [
           ['Total de Vendas', totalVendasRelatorio.toString()],
           ['Total de Parcelas', totalParcelasRelatorio.toString()],
           ['Valor Total em Vendas', formatCurrency(totalValorVendas)],
-          ['Comissao Total', formatCurrency(totalComissaoRelatorio)],
-          ['Comissao Paga', formatCurrency(totalPagoRelatorio)],
-          ['Comissao Pendente', formatCurrency(totalPendenteRelatorio)]
+          ['Comissao Total', formatCurrency(totalComissao)],
+          ['Comissao Paga', formatCurrency(totalPago)],
+          ['Comissao Pendente', formatCurrency(totalPendente)]
         ]
         
         autoTable(doc, {
@@ -3501,211 +3493,6 @@ const AdminDashboard = () => {
             doc.setTextColor(...cores.cinzaEscuro)
             doc.text(empreendimentosDoCorretor.join('  |  '), 30, yPosition + 8)
             yPosition += 18
-          }
-        }
-        
-        // ========================================
-        // PREVISAO DE RECEBIMENTO - Design Premium
-        // ========================================
-        
-        const parcelasPendentes = []
-        dadosFiltrados.forEach(grupo => {
-          grupo.pagamentos
-            .filter(p => p.status === 'pendente' || p.status !== 'pago')
-            .forEach(pag => {
-              const comissao = parseFloat(pag.comissao_gerada) || 0
-              parcelasPendentes.push({
-                data: new Date(pag.data_prevista),
-                valor: comissao,
-                empreendimento: grupo.venda?.empreendimento?.nome || 'N/A',
-                unidade: grupo.venda?.unidade || '-',
-                bloco: grupo.venda?.bloco || '-',
-                tipo: pag.tipo_pagamento || 'parcela'
-              })
-            })
-        })
-        
-        if (parcelasPendentes.length > 0) {
-          if (yPosition > 170) {
-            doc.addPage()
-            yPosition = 20
-          }
-          
-          // Titulo da secao
-          doc.setFillColor(...cores.preto)
-          doc.roundedRect(14, yPosition, pageWidth - 28, 12, 2, 2, 'F')
-          doc.setFillColor(...cores.dourado)
-          doc.rect(14, yPosition, 4, 12, 'F')
-          
-          doc.setTextColor(...cores.dourado)
-          doc.setFontSize(10)
-          doc.setFont('helvetica', 'bold')
-          doc.text('PREVISAO DE RECEBIMENTO', 24, yPosition + 8)
-          yPosition += 18
-          
-          // Agrupar por mes/ano
-          const previsaoPorMes = {}
-          const hoje = new Date()
-          
-          parcelasPendentes.forEach(p => {
-            const mesAno = `${p.data.getFullYear()}-${String(p.data.getMonth() + 1).padStart(2, '0')}`
-            if (!previsaoPorMes[mesAno]) {
-              previsaoPorMes[mesAno] = { total: 0, qtd: 0, parcelas: [] }
-            }
-            previsaoPorMes[mesAno].total += p.valor
-            previsaoPorMes[mesAno].qtd += 1
-            previsaoPorMes[mesAno].parcelas.push(p)
-          })
-          
-          const mesesOrdenados = Object.keys(previsaoPorMes).sort()
-          
-          const nomeMes = (mesAno) => {
-            const [ano, mes] = mesAno.split('-')
-            const meses = ['Janeiro', 'Fevereiro', 'Marco', 'Abril', 'Maio', 'Junho', 
-                          'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro']
-            return `${meses[parseInt(mes) - 1]}/${ano}`
-          }
-          
-          const previsaoData = mesesOrdenados.slice(0, 12).map(mesAno => {
-            const dados = previsaoPorMes[mesAno]
-            const [ano, mes] = mesAno.split('-')
-            const dataRef = new Date(parseInt(ano), parseInt(mes) - 1)
-            const isPassado = dataRef < new Date(hoje.getFullYear(), hoje.getMonth())
-            const isAtual = dataRef.getMonth() === hoje.getMonth() && dataRef.getFullYear() === hoje.getFullYear()
-            
-            let status = ''
-            if (isAtual) status = 'ESTE MES'
-            else if (isPassado) status = 'ATRASADO'
-            else status = 'Futuro'
-            
-            return [nomeMes(mesAno), dados.qtd.toString() + ' parcela(s)', formatCurrency(dados.total), status]
-          })
-          
-          const proximosMeses = mesesOrdenados.slice(0, 3)
-          const totalProximos3Meses = proximosMeses.reduce((acc, m) => acc + (previsaoPorMes[m]?.total || 0), 0)
-          
-          autoTable(doc, {
-            startY: yPosition,
-            head: [['Periodo', 'Qtd. Parcelas', 'Valor Previsto', 'Status']],
-            body: previsaoData,
-            theme: 'plain',
-            headStyles: {
-              fillColor: cores.dourado,
-              textColor: cores.preto,
-              fontStyle: 'bold',
-              fontSize: 8,
-              cellPadding: 3
-            },
-            bodyStyles: {
-              fontSize: 8,
-              textColor: cores.cinzaEscuro,
-              cellPadding: 2.5
-            },
-            alternateRowStyles: {
-              fillColor: cores.bgAlternado
-            },
-            columnStyles: {
-              0: { cellWidth: 40 },
-              1: { cellWidth: 30, halign: 'center' },
-              2: { cellWidth: 40, halign: 'right' },
-              3: { cellWidth: 35, halign: 'center' }
-            },
-            margin: { left: 14, right: 14 },
-            didParseCell: function(data) {
-              if (data.section === 'body' && data.column.index === 3) {
-                const cellText = data.cell.raw
-                if (cellText.includes('ATRASADO')) {
-                  data.cell.styles.textColor = cores.vermelho
-                  data.cell.styles.fontStyle = 'bold'
-                } else if (cellText.includes('ESTE MES')) {
-                  data.cell.styles.textColor = cores.verde
-                  data.cell.styles.fontStyle = 'bold'
-                }
-              }
-              // Destacar valores
-              if (data.section === 'body' && data.column.index === 2) {
-                data.cell.styles.textColor = cores.douradoEscuro
-                data.cell.styles.fontStyle = 'bold'
-              }
-            }
-          })
-          
-          yPosition = doc.lastAutoTable.finalY + 8
-          
-          // Box de destaque - Proximos 3 meses
-          doc.setFillColor(...cores.preto)
-          doc.roundedRect(14, yPosition, pageWidth - 28, 20, 2, 2, 'F')
-          doc.setDrawColor(...cores.dourado)
-          doc.setLineWidth(0.5)
-          doc.roundedRect(14, yPosition, pageWidth - 28, 20, 2, 2, 'S')
-          
-          doc.setTextColor(...cores.textoClaro)
-          doc.setFontSize(8)
-          doc.setFont('helvetica', 'normal')
-          doc.text('PREVISAO PROXIMOS 3 MESES', 20, yPosition + 8)
-          
-          doc.setTextColor(...cores.dourado)
-          doc.setFontSize(14)
-          doc.setFont('helvetica', 'bold')
-          doc.text(formatCurrency(totalProximos3Meses), pageWidth - 20, yPosition + 13, { align: 'right' })
-          
-          yPosition += 28
-          
-          // Proximas parcelas
-          const proximasParcelas = parcelasPendentes
-            .filter(p => p.data >= hoje)
-            .sort((a, b) => a.data - b.data)
-            .slice(0, 10)
-          
-          if (proximasParcelas.length > 0 && yPosition < 220) {
-            doc.setTextColor(...cores.douradoEscuro)
-            doc.setFontSize(8)
-            doc.setFont('helvetica', 'bold')
-            doc.text('Proximas 10 parcelas a receber:', 14, yPosition + 3)
-            yPosition += 8
-            
-            const proximasData = proximasParcelas.map(p => [
-              p.data.toLocaleDateString('pt-BR'),
-              p.empreendimento,
-              `Bl. ${p.bloco} Un. ${p.unidade}`,
-              p.tipo.charAt(0).toUpperCase() + p.tipo.slice(1),
-              formatCurrency(p.valor)
-            ])
-            
-            autoTable(doc, {
-              startY: yPosition,
-              head: [['Data', 'Empreendimento', 'Unidade', 'Tipo', 'Comissao']],
-              body: proximasData,
-              theme: 'plain',
-              headStyles: {
-                fillColor: cores.bgClaro,
-                textColor: cores.cinzaEscuro,
-                fontStyle: 'bold',
-                fontSize: 7,
-                cellPadding: 2
-              },
-              bodyStyles: {
-                fontSize: 7,
-                textColor: cores.cinzaEscuro,
-                cellPadding: 2
-              },
-              alternateRowStyles: {
-                fillColor: cores.bgAlternado
-              },
-              columnStyles: {
-                0: { cellWidth: 22 },
-                1: { cellWidth: 50 },
-                2: { cellWidth: 35 },
-                3: { cellWidth: 25 },
-                4: { cellWidth: 28, halign: 'right', fontStyle: 'bold' }
-              },
-              margin: { left: 14, right: 14 },
-              didParseCell: function(data) {
-                if (data.section === 'body' && data.column.index === 4) {
-                  data.cell.styles.textColor = cores.douradoEscuro
-                }
-              }
-            })
           }
         }
       }
