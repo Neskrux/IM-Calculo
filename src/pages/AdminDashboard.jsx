@@ -21,7 +21,7 @@ import '../styles/Dashboard.css'
 import '../styles/EmpreendimentosPage.css'
 import { LayoutGrid, List } from 'lucide-react'
 import { safeGet, safeSet } from '../utils/storage'
-
+import { calcularFatorComissao, calcularComissaoPagamento } from '../utils/comissaoCalculator'
 const AdminDashboard = () => {
   const { userProfile, signOut, loading: authLoading } = useAuth()
   const { tab } = useParams()
@@ -456,15 +456,20 @@ const AdminDashboard = () => {
     const valorPagamento = parseFloat(pagamento.valor) || 0
     
     // USAR A COMISSÃO JÁ CALCULADA E SALVA NO PAGAMENTO
-    // A comissao_gerada já foi calculada corretamente na importação como: valorParcela * (percentualTotal / 100)
     let comissaoTotalParcela = parseFloat(pagamento.comissao_gerada) || 0
     
-    // Se não houver comissao_gerada salva, calcular usando o percentual total de comissão
+    // Se não houver comissao_gerada salva, calcular via fator (fator_comissao_aplicado ou fórmula fator-comissao.mdc)
     if (comissaoTotalParcela === 0) {
-      // Calcular percentual total dos cargos
       const percentualTotal = cargosDoTipo.reduce((acc, c) => acc + (parseFloat(c.percentual) || 0), 0)
-      const fatorComissao = percentualTotal / 100
-      comissaoTotalParcela = valorPagamento * fatorComissao
+      let fator
+      if (pagamento.fator_comissao_aplicado != null && parseFloat(pagamento.fator_comissao_aplicado) > 0) {
+        fator = parseFloat(pagamento.fator_comissao_aplicado)
+      } else {
+        const valorVenda = parseFloat(venda.valor_venda) || 0
+        const valorProSoluto = parseFloat(venda.valor_pro_soluto) || 0
+        fator = calcularFatorComissao(valorVenda, valorProSoluto, percentualTotal)
+      }
+      comissaoTotalParcela = calcularComissaoPagamento(valorPagamento, fator)
     }
     
     // Calcular percentual total dos cargos para distribuição
@@ -489,6 +494,49 @@ const AdminDashboard = () => {
   const calcularComissaoTotalPagamento = (pagamento) => {
     const comissoesPorCargo = calcularComissaoPorCargoPagamento(pagamento)
     return comissoesPorCargo.reduce((acc, c) => acc + c.valor, 0)
+  }
+
+  // Calcular comissão de uma venda a partir dos PAGAMENTOS (conforme comissao-corretor.mdc)
+  // Retorna { comissaoTotal, comissaoCorretor }
+  const calcularComissaoVendaPorPagamentos = (vendaId) => {
+    const grupo = listaVendasComPagamentos.find(g => String(g.venda_id) === String(vendaId))
+    if (!grupo?.pagamentos?.length) return { comissaoTotal: 0, comissaoCorretor: 0 }
+    let comissaoTotal = 0
+    let comissaoCorretor = 0
+    grupo.pagamentos.forEach(pag => {
+      comissaoTotal += parseFloat(pag.comissao_gerada) || 0
+      const cargos = calcularComissaoPorCargoPagamento(pag)
+      const cargoCorretor = cargos.find(c => c.nome_cargo === 'Corretor' || c.nome_cargo?.toLowerCase().includes('corretor'))
+      comissaoCorretor += cargoCorretor?.valor ?? 0
+    })
+    return { comissaoTotal, comissaoCorretor }
+  }
+
+  // Calcular comissão do corretor a partir dos PAGAMENTOS (conforme comissao-corretor.mdc)
+  // Retorna { total, pago, pendente }
+  const calcularComissaoCorretorPorPagamentos = (corretorId) => {
+    const gruposCorretor = listaVendasComPagamentos.filter(
+      g => String(g.venda?.corretor_id || g.venda?.corretor?.id || '') === String(corretorId)
+    )
+    let total = 0
+    let pago = 0
+    let pendente = 0
+    gruposCorretor.forEach(grupo => {
+      grupo.pagamentos.forEach(pag => {
+        const comissoesCargo = calcularComissaoPorCargoPagamento(pag)
+        const cargoCorretor = comissoesCargo.find(c =>
+          c.nome_cargo === 'Corretor' || c.nome_cargo?.toLowerCase().includes('corretor')
+        )
+        const valorCorretor = cargoCorretor?.valor ?? 0
+        total += valorCorretor
+        if (pag.status === 'pago') {
+          pago += valorCorretor
+        } else {
+          pendente += valorCorretor
+        }
+      })
+    })
+    return { total, pago, pendente }
   }
 
   // Carregar dados apenas quando o perfil estiver pronto e for admin
@@ -1078,9 +1126,9 @@ const AdminDashboard = () => {
     // Pro-soluto = sinal + entrada + balões
     const valorProSoluto = valorSinal + valorEntradaTotal + valorTotalBalao
     
-    // Fator de comissão = Percentual total de comissão / 100
-    // Ex: 7% -> 0.07, então parcela de R$ 1.000 x 0.07 = R$ 70 de comissão
-    const fatorComissao = comissoesDinamicas.percentualTotal / 100
+    // Fator de comissão conforme fator-comissao.mdc: (valorVenda * percentual) / valorProSoluto
+    const percentualTotal = comissoesDinamicas.percentualTotal
+    const fatorTotal = calcularFatorComissao(valorVenda, valorProSoluto, percentualTotal)
     
     // Calcular comissão do corretor
     const comissaoCorretor = calcularComissaoCorretor(comissoesDinamicas, vendaForm.corretor_id, valorVenda)
@@ -1093,7 +1141,7 @@ const AdminDashboard = () => {
       valorProSoluto,
       comissaoTotal: comissoesDinamicas.total,
       comissaoCorretor,
-      fatorComissao,
+      fatorTotal,
       teveSinal: vendaForm.teve_sinal,
       teveEntrada: vendaForm.teve_entrada,
       parcelouEntrada: vendaForm.parcelou_entrada,
@@ -1126,7 +1174,7 @@ const AdminDashboard = () => {
       tipo_permuta: vendaForm.tipo_permuta || null,
       valor_permuta: parseFloat(vendaForm.valor_permuta) || null,
       valor_pro_soluto: valorProSoluto || null,
-      fator_comissao: fatorComissao || null,
+      fator_comissao: fatorTotal || null,
       comissao_total: comissoesDinamicas.total,
       comissao_corretor: comissaoCorretor,
       contrato_url: vendaForm.contrato_url || null,
@@ -1183,14 +1231,17 @@ const AdminDashboard = () => {
       
       if (entradaMaiorOuIgual20) {
         // Entrada >= 20%: Gerar apenas 1 parcela com comissão total
-        const comissaoTotal = comissoesDinamicas.total || (valorProSoluto * fatorComissao)
+        const comissaoTotal = comissoesDinamicas.total || (valorProSoluto * fatorTotal)
+        const fatorIntegral = valorEntradaParaCalculo > 0 ? comissaoTotal / valorEntradaParaCalculo : 0
         
         pagamentos.push({
           venda_id: vendaId,
           tipo: 'comissao_integral',
           valor: valorEntradaParaCalculo,
           data_prevista: vendaForm.data_venda,
-          comissao_gerada: comissaoTotal
+          comissao_gerada: comissaoTotal,
+          fator_comissao_aplicado: fatorIntegral,
+          percentual_comissao_total: percentualTotal
         })
         
         console.log(`✅ Edição: Entrada >= 20% (${percentualEntrada.toFixed(1)}%). Comissão integral: R$ ${comissaoTotal.toFixed(2)}`)
@@ -1204,7 +1255,9 @@ const AdminDashboard = () => {
             tipo: 'sinal',
             valor: valorSinal,
             data_prevista: vendaForm.data_venda,
-            comissao_gerada: valorSinal * fatorComissao
+            comissao_gerada: calcularComissaoPagamento(valorSinal, fatorTotal),
+            fator_comissao_aplicado: fatorTotal,
+            percentual_comissao_total: percentualTotal
           })
         }
 
@@ -1217,7 +1270,9 @@ const AdminDashboard = () => {
               tipo: 'entrada',
               valor: valorEntradaAvista,
               data_prevista: vendaForm.data_venda,
-              comissao_gerada: valorEntradaAvista * fatorComissao
+              comissao_gerada: calcularComissaoPagamento(valorEntradaAvista, fatorTotal),
+              fator_comissao_aplicado: fatorTotal,
+              percentual_comissao_total: percentualTotal
             })
           }
         }
@@ -1248,7 +1303,9 @@ const AdminDashboard = () => {
                   numero_parcela: numeroParcela,
                   valor: valor,
                   data_prevista: dataParcela.toISOString().split('T')[0],
-                  comissao_gerada: valor * fatorComissao
+                  comissao_gerada: calcularComissaoPagamento(valor, fatorTotal),
+                  fator_comissao_aplicado: fatorTotal,
+                  percentual_comissao_total: percentualTotal
                 })
                 numeroParcela++
               }
@@ -1278,7 +1335,9 @@ const AdminDashboard = () => {
                   tipo: 'balao',
                   numero_parcela: numeroBalao,
                   valor: valor,
-                  comissao_gerada: valor * fatorComissao
+                  comissao_gerada: calcularComissaoPagamento(valor, fatorTotal),
+                  fator_comissao_aplicado: fatorTotal,
+                  percentual_comissao_total: percentualTotal
                 })
                 numeroBalao++
               }
@@ -1322,14 +1381,17 @@ const AdminDashboard = () => {
       
       if (entradaMaiorOuIgual20) {
         // Entrada >= 20%: Gerar apenas 1 parcela com comissão total
-        const comissaoTotal = comissoesDinamicas.total || (valorProSoluto * fatorComissao)
+        const comissaoTotal = comissoesDinamicas.total || (valorProSoluto * fatorTotal)
+        const fatorIntegral = valorEntradaParaCalculo > 0 ? comissaoTotal / valorEntradaParaCalculo : 0
         
         pagamentos.push({
           venda_id: vendaId,
           tipo: 'comissao_integral',
           valor: valorEntradaParaCalculo, // Valor da entrada
           data_prevista: vendaForm.data_venda,
-          comissao_gerada: comissaoTotal // Comissão TOTAL do corretor
+          comissao_gerada: comissaoTotal, // Comissão TOTAL do corretor
+          fator_comissao_aplicado: fatorIntegral,
+          percentual_comissao_total: percentualTotal
         })
         
         console.log(`✅ Entrada >= 20% (${percentualEntrada.toFixed(1)}%). Comissão integral: R$ ${comissaoTotal.toFixed(2)}`)
@@ -1343,7 +1405,9 @@ const AdminDashboard = () => {
             tipo: 'sinal',
             valor: valorSinal,
             data_prevista: vendaForm.data_venda,
-            comissao_gerada: valorSinal * fatorComissao
+            comissao_gerada: calcularComissaoPagamento(valorSinal, fatorTotal),
+            fator_comissao_aplicado: fatorTotal,
+            percentual_comissao_total: percentualTotal
           })
         }
 
@@ -1356,7 +1420,9 @@ const AdminDashboard = () => {
               tipo: 'entrada',
               valor: valorEntradaAvista,
               data_prevista: vendaForm.data_venda,
-              comissao_gerada: valorEntradaAvista * fatorComissao
+              comissao_gerada: calcularComissaoPagamento(valorEntradaAvista, fatorTotal),
+              fator_comissao_aplicado: fatorTotal,
+              percentual_comissao_total: percentualTotal
             })
           }
         }
@@ -1387,7 +1453,9 @@ const AdminDashboard = () => {
                   numero_parcela: numeroParcela,
                   valor: valor,
                   data_prevista: dataParcela.toISOString().split('T')[0],
-                  comissao_gerada: valor * fatorComissao
+                  comissao_gerada: calcularComissaoPagamento(valor, fatorTotal),
+                  fator_comissao_aplicado: fatorTotal,
+                  percentual_comissao_total: percentualTotal
                 })
                 numeroParcela++
               }
@@ -1417,7 +1485,9 @@ const AdminDashboard = () => {
                   tipo: 'balao',
                   numero_parcela: numeroBalao,
                   valor: valor,
-                  comissao_gerada: valor * fatorComissao
+                  comissao_gerada: calcularComissaoPagamento(valor, fatorTotal),
+                  fator_comissao_aplicado: fatorTotal,
+                  percentual_comissao_total: percentualTotal
                 })
                 numeroBalao++
               }
@@ -2110,18 +2180,19 @@ const AdminDashboard = () => {
       : 0
     
     const valorProSoluto = valorSinal + valorEntradaTotal + valorTotalBalao
-    // Fator de comissão = Percentual total / 100
-    const fatorComissao = comissoesDinamicas.percentualTotal / 100
+    // Fator de comissão conforme fator-comissao.mdc
+    const percentualTotal = comissoesDinamicas.percentualTotal
+    const fatorTotal = calcularFatorComissao(valorVenda, valorProSoluto, percentualTotal)
     
     // Calcular e atualizar comissão do corretor na venda se não estiver preenchida
     const comissaoCorretor = calcularComissaoCorretor(comissoesDinamicas, venda.corretor_id, valorVenda)
     if (!venda.comissao_corretor || venda.comissao_corretor === 0) {
       await supabase
         .from('vendas')
-        .update({ 
+        .update({
           comissao_corretor: comissaoCorretor,
           comissao_total: comissoesDinamicas.total,
-          fator_comissao: fatorComissao
+          fator_comissao: fatorTotal
         })
         .eq('id', venda.id)
     }
@@ -2137,14 +2208,17 @@ const AdminDashboard = () => {
     
     if (entradaMaiorOuIgual20) {
       // Entrada >= 20%: Gerar apenas 1 parcela com comissão total
-      const comissaoTotal = comissoesDinamicas.total || (valorProSoluto * fatorComissao)
+      const comissaoTotal = comissoesDinamicas.total || (valorProSoluto * fatorTotal)
+      const fatorIntegral = valorEntradaParaCalculo > 0 ? comissaoTotal / valorEntradaParaCalculo : 0
       
       novosPagamentos.push({
         venda_id: venda.id,
         tipo: 'comissao_integral',
         valor: valorEntradaParaCalculo, // Valor da entrada
         data_prevista: venda.data_venda,
-        comissao_gerada: comissaoTotal // Comissão TOTAL do corretor
+        comissao_gerada: comissaoTotal, // Comissão TOTAL do corretor
+        fator_comissao_aplicado: fatorIntegral,
+        percentual_comissao_total: percentualTotal
       })
       
       console.log(`✅ Entrada >= 20% (${percentualEntrada.toFixed(1)}%). Comissão integral: R$ ${comissaoTotal.toFixed(2)}`)
@@ -2158,7 +2232,9 @@ const AdminDashboard = () => {
           tipo: 'sinal',
           valor: valorSinal,
           data_prevista: venda.data_venda,
-          comissao_gerada: valorSinal * fatorComissao
+          comissao_gerada: calcularComissaoPagamento(valorSinal, fatorTotal),
+          fator_comissao_aplicado: fatorTotal,
+          percentual_comissao_total: percentualTotal
         })
       }
 
@@ -2171,7 +2247,9 @@ const AdminDashboard = () => {
             tipo: 'entrada',
             valor: valorEntradaAvista,
             data_prevista: venda.data_venda,
-            comissao_gerada: valorEntradaAvista * fatorComissao
+            comissao_gerada: calcularComissaoPagamento(valorEntradaAvista, fatorTotal),
+            fator_comissao_aplicado: fatorTotal,
+            percentual_comissao_total: percentualTotal
           })
         }
       }
@@ -2191,7 +2269,9 @@ const AdminDashboard = () => {
             numero_parcela: i,
             valor: valorParcelaEnt,
             data_prevista: dataParcela.toISOString().split('T')[0],
-            comissao_gerada: valorParcelaEnt * fatorComissao
+            comissao_gerada: calcularComissaoPagamento(valorParcelaEnt, fatorTotal),
+            fator_comissao_aplicado: fatorTotal,
+            percentual_comissao_total: percentualTotal
           })
         }
       }
@@ -2206,7 +2286,9 @@ const AdminDashboard = () => {
             tipo: 'balao',
             numero_parcela: i,
             valor: valorBalaoUnit,
-            comissao_gerada: valorBalaoUnit * fatorComissao
+            comissao_gerada: calcularComissaoPagamento(valorBalaoUnit, fatorTotal),
+            fator_comissao_aplicado: fatorTotal,
+            percentual_comissao_total: percentualTotal
           })
         }
       }
@@ -4348,7 +4430,9 @@ const AdminDashboard = () => {
                       </td>
                     </tr>
                   ) : (
-                    filteredVendas.map((venda) => (
+                    filteredVendas.map((venda) => {
+                      const { comissaoTotal, comissaoCorretor } = calcularComissaoVendaPorPagamentos(venda.id)
+                      return (
                       <tr key={venda.id}>
                         <td>
                           <div className="corretor-cell">
@@ -4371,8 +4455,8 @@ const AdminDashboard = () => {
                           </span>
                         </td>
                         <td className="value-cell">{formatCurrency(venda.valor_venda)}</td>
-                        <td className="value-cell highlight">{formatCurrency(venda.comissao_corretor)}</td>
-                        <td className="value-cell">{formatCurrency(venda.comissao_total)}</td>
+                        <td className="value-cell highlight">{formatCurrency(comissaoCorretor)}</td>
+                        <td className="value-cell">{formatCurrency(comissaoTotal)}</td>
                         <td>{new Date(venda.data_venda).toLocaleDateString('pt-BR')}</td>
                         <td>
                           <span className={`status-badge ${venda.status}`}>
@@ -4414,7 +4498,7 @@ const AdminDashboard = () => {
                           </div>
                         </td>
                       </tr>
-                    ))
+                    )})
                   )}
                 </tbody>
               </table>
@@ -4549,7 +4633,8 @@ const AdminDashboard = () => {
                 <div className="corretores-grid">
                   {filteredCorretores.map((corretor) => {
                     const vendasCorretor = vendas.filter(v => v.corretor_id === corretor.id)
-                    const totalComissao = vendasCorretor.reduce((acc, v) => acc + (parseFloat(v.comissao_corretor) || 0), 0)
+                    const comissaoPorPagamentos = calcularComissaoCorretorPorPagamentos(corretor.id)
+                    const totalComissao = comissaoPorPagamentos.total
                     const totalVendas = vendasCorretor.reduce((acc, v) => acc + (parseFloat(v.valor_venda) || 0), 0)
                     const percentual = corretor.percentual_corretor || (corretor.tipo_corretor === 'interno' ? 2.5 : 4)
                     const isAutonomo = !corretor.empreendimento_id && corretor.percentual_corretor
@@ -4604,7 +4689,15 @@ const AdminDashboard = () => {
                             <button 
                               className="action-btn view small"
                               onClick={() => {
-                                setSelectedItem({...corretor, vendasCorretor, totalComissao, totalVendas, percentual})
+                                setSelectedItem({
+                                  ...corretor,
+                                  vendasCorretor,
+                                  totalComissao,
+                                  totalVendas,
+                                  percentual,
+                                  comissaoPaga: comissaoPorPagamentos.pago,
+                                  comissaoPendente: comissaoPorPagamentos.pendente
+                                })
                                 setModalType('visualizar-corretor')
                                 setShowModal(true)
                               }}
@@ -5521,33 +5614,29 @@ const AdminDashboard = () => {
                           </div>
                           <div className="valor-item">
                             <span className="valor-label">Comissão Total</span>
-                            <span className="valor-number comissao">{formatCurrency(grupo.venda?.comissao_total || 0)}</span>
+                            <span className="valor-number comissao">{formatCurrency(
+                              grupo.pagamentos.reduce((sum, p) => sum + (parseFloat(p.comissao_gerada) || 0), 0)
+                            )}</span>
                           </div>
                           <div className="valor-item">
                             <span className="valor-label">Comissão Paga</span>
                             <span className="valor-number pago">{formatCurrency(
-                              (() => {
-                                const comissaoTotal = parseFloat(grupo.venda?.comissao_total) || 0
-                                const totalParcelas = grupo.totalValor
-                                const parcelasPagas = grupo.pagamentos.filter(p => p.status === 'pago').reduce((a, p) => a + (parseFloat(p.valor) || 0), 0)
-                                return totalParcelas > 0 ? (comissaoTotal * parcelasPagas / totalParcelas) : 0
-                              })()
+                              grupo.pagamentos
+                                .filter(p => p.status === 'pago')
+                                .reduce((sum, p) => sum + (parseFloat(p.comissao_gerada) || 0), 0)
                             )}</span>
                           </div>
                           <div className="valor-item">
                             <span className="valor-label">Comissão Pendente</span>
                             <span className="valor-number pendente">{formatCurrency(
-                              (() => {
-                                // Calcular comissão pendente considerando valores já pagos
-                                return grupo.pagamentos.reduce((sum, pag) => {
-                                  if (pag.status === 'pendente') {
-                                    const comissaoParcela = parseFloat(pag.comissao_gerada) || 0
-                                    const valorJaPago = parseFloat(pag.valor_ja_pago) || 0
-                                    return sum + (comissaoParcela - valorJaPago)
-                                  }
-                                  return sum
-                                }, 0)
-                              })()
+                              grupo.pagamentos.reduce((sum, pag) => {
+                                if (pag.status === 'pendente') {
+                                  const comissaoParcela = parseFloat(pag.comissao_gerada) || 0
+                                  const valorJaPago = parseFloat(pag.valor_ja_pago) || 0
+                                  return sum + (comissaoParcela - valorJaPago)
+                                }
+                                return sum
+                              }, 0)
                             )}</span>
                           </div>
                         </div>
@@ -8914,7 +9003,7 @@ const AdminDashboard = () => {
                 <h4 style={{ margin: '0 0 16px 0', color: '#10b981', fontSize: '12px', textTransform: 'uppercase' }}>
                   Desempenho
                 </h4>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: '16px' }}>
                   <div>
                     <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '12px', display: 'block' }}>Total em Vendas</span>
                     <span style={{ fontSize: '20px', fontWeight: '700' }}>{formatCurrency(selectedItem.totalVendas)}</span>
@@ -8922,6 +9011,14 @@ const AdminDashboard = () => {
                   <div>
                     <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '12px', display: 'block' }}>Comissão Total</span>
                     <span style={{ fontSize: '20px', fontWeight: '700', color: '#10b981' }}>{formatCurrency(selectedItem.totalComissao)}</span>
+                  </div>
+                  <div>
+                    <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '12px', display: 'block' }}>Comissão Paga</span>
+                    <span style={{ fontSize: '20px', fontWeight: '700', color: '#10b981' }}>{formatCurrency(selectedItem.comissaoPaga ?? 0)}</span>
+                  </div>
+                  <div>
+                    <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '12px', display: 'block' }}>Comissão Pendente</span>
+                    <span style={{ fontSize: '20px', fontWeight: '700', color: '#eab308' }}>{formatCurrency(selectedItem.comissaoPendente ?? 0)}</span>
                   </div>
                   <div>
                     <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '12px', display: 'block' }}>Nº de Vendas</span>

@@ -40,6 +40,7 @@ export {
   syncVendasFromRaw,
   findVendaBySiengeId,
   reprocessarPagamentosVenda,
+  recalcularComissoesPagamentosVenda,
   mapearPaymentConditions
 } from './syncVendasV2'
 

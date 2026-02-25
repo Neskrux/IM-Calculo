@@ -30,6 +30,7 @@
  */
 
 import { supabase } from '../../lib/supabase'
+import { calcularFatorComissao, calcularComissaoPagamento } from '../../utils/comissaoCalculator'
 import { findCorretorBySiengeId, getOrCreateCorretorPlaceholder } from './syncCorretoresV2'
 import { findClienteBySiengeId, getOrCreateClientePlaceholder } from './syncClientesV2'
 
@@ -67,7 +68,7 @@ const normalizarSituacao = (situation) => {
  * - FI (Financiamento) = Financiamento
  * - CV (Comissão de Venda) = Não é pagamento do cliente
  */
-const mapearPaymentConditions = (paymentConditions) => {
+export const mapearPaymentConditions = (paymentConditions) => {
   const resultado = {
     // Sinal (AT, SN)
     teve_sinal: false,
@@ -215,11 +216,17 @@ const mapearPaymentConditions = (paymentConditions) => {
 
 /**
  * Cria registros em pagamentos_prosoluto a partir das condições mapeadas
+ * Usa fórmula correta: fator = (valorVenda × percentualTotal/100) / valorProSoluto, comissao = parcela × fator
  */
-const criarPagamentosProsoluto = async (vendaId, condicoesProsoluto, fatorComissao, dataVenda) => {
+const criarPagamentosProsoluto = async (vendaId, condicoesProsoluto, valorVenda, valorProSoluto, percentualTotal, dataVenda) => {
   if (!vendaId || !condicoesProsoluto || condicoesProsoluto.length === 0) {
     return 0
   }
+
+  const valorVendaNum = parseFloat(valorVenda) || 0
+  const valorProSolutoNum = parseFloat(valorProSoluto) || 0
+  const percentualTotalNum = parseFloat(percentualTotal) || 7
+  const fatorTotal = calcularFatorComissao(valorVendaNum, valorProSolutoNum, percentualTotalNum)
 
   const pagamentos = []
 
@@ -245,8 +252,8 @@ const criarPagamentosProsoluto = async (vendaId, condicoesProsoluto, fatorComiss
         dataVencimento = dataVenda
       }
 
-      // Calcular comissão gerada
-      const comissaoGerada = valorParcela * (fatorComissao || 0)
+      // Calcular comissão gerada: parcela × fator (fórmula correta)
+      const comissaoGerada = calcularComissaoPagamento(valorParcela, fatorTotal)
 
       pagamentos.push({
         venda_id: vendaId,
@@ -255,7 +262,9 @@ const criarPagamentosProsoluto = async (vendaId, condicoesProsoluto, fatorComiss
         valor: valorParcela,
         data_prevista: dataVencimento,
         status: 'pendente',
-        comissao_gerada: comissaoGerada
+        comissao_gerada: comissaoGerada,
+        fator_comissao_aplicado: fatorTotal,
+        percentual_comissao_total: percentualTotalNum
       })
     }
   }
@@ -288,12 +297,10 @@ const criarPagamentosProsoluto = async (vendaId, condicoesProsoluto, fatorComiss
 }
 
 /**
- * Busca fator de comissão do empreendimento
+ * Busca percentual total de comissão do empreendimento (ex: 7, 6.5)
  */
-const getFatorComissaoEmpreendimento = async (empreendimentoId, tipoCorretor = 'externo') => {
-  if (!empreendimentoId) {
-    return 0.07 // Default 7%
-  }
+const getPercentualTotalEmpreendimento = async (empreendimentoId, tipoCorretor = 'externo') => {
+  if (!empreendimentoId) return 7
 
   const { data: emp } = await supabase
     .from('empreendimentos')
@@ -301,15 +308,11 @@ const getFatorComissaoEmpreendimento = async (empreendimentoId, tipoCorretor = '
     .eq('id', empreendimentoId)
     .maybeSingle()
 
-  if (!emp) {
-    return 0.07 // Default 7%
-  }
+  if (!emp) return 7
 
-  const percentual = tipoCorretor === 'interno' 
-    ? (emp.comissao_total_interno || 6) 
-    : (emp.comissao_total_externo || 7)
-
-  return percentual / 100 // Converter para fator (ex: 7% → 0.07)
+  return tipoCorretor === 'interno'
+    ? parseFloat(emp.comissao_total_interno) || 6
+    : parseFloat(emp.comissao_total_externo) || 7
 }
 
 /**
@@ -555,21 +558,24 @@ export const syncVendasFromRaw = async (options = {}) => {
           )
         }
 
-        // Buscar fator de comissão do empreendimento
-        const fatorComissao = await getFatorComissaoEmpreendimento(empreendimentoId, tipoCorretor)
+        // Buscar percentual total de comissão do empreendimento
+        const percentualTotal = await getPercentualTotalEmpreendimento(empreendimentoId, tipoCorretor)
 
         // ===== MAPEAR paymentConditions =====
         const paymentData = mapearPaymentConditions(contract.paymentConditions)
-        paymentData.fator_comissao = fatorComissao
+        paymentData.percentual_total = percentualTotal
 
         // Log de debug para verificar mapeamento
         if (i < 3) { // Mostrar apenas os 3 primeiros
+          const valorVenda = parseFloat(contract.value || 0)
+          const valorProSoluto = paymentData.valor_pro_soluto || 0
+          const fatorCalc = calcularFatorComissao(valorVenda, valorProSoluto, percentualTotal)
           console.log(`\n📋 [DEBUG] Contrato ${contract.id} (${contract.number}):`)
           console.log(`   Sinal: ${paymentData.teve_sinal ? 'R$ ' + paymentData.valor_sinal : 'Não'}`)
           console.log(`   Entrada: ${paymentData.teve_entrada ? (paymentData.parcelou_entrada ? paymentData.qtd_parcelas_entrada + 'x R$ ' + paymentData.valor_parcela_entrada?.toFixed(2) : 'R$ ' + paymentData.valor_entrada) : 'Não'}`)
           console.log(`   Balão: ${paymentData.teve_balao === 'sim' ? paymentData.qtd_balao + 'x R$ ' + paymentData.valor_balao?.toFixed(2) : 'Não'}`)
           console.log(`   Pro-soluto: R$ ${paymentData.valor_pro_soluto?.toFixed(2)}`)
-          console.log(`   Fator comissão: ${(fatorComissao * 100).toFixed(2)}%`)
+          console.log(`   Fator comissão: ${(fatorCalc * 100).toFixed(2)}% (${percentualTotal}% sobre valor venda)`)
         }
 
         // Mapear dados da venda
@@ -644,10 +650,14 @@ export const syncVendasFromRaw = async (options = {}) => {
 
         // ===== CRIAR PAGAMENTOS PRO-SOLUTO =====
         if (criarPagamentos && vendaId && paymentData._condicoes_prosoluto.length > 0) {
+          const valorVenda = vendaData.valor_venda || 0
+          const valorProSoluto = paymentData.valor_pro_soluto || 0
           const qtdPagamentos = await criarPagamentosProsoluto(
             vendaId,
             paymentData._condicoes_prosoluto,
-            fatorComissao,
+            valorVenda,
+            valorProSoluto,
+            percentualTotal,
             vendaData.data_venda
           )
           stats.pagamentosCriados += qtdPagamentos
@@ -655,6 +665,7 @@ export const syncVendasFromRaw = async (options = {}) => {
         
         // ===== CRIAR/ATUALIZAR COMISSAO_VENDA =====
         if (vendaId && corretorId && paymentData.valor_pro_soluto > 0) {
+          const fatorComissao = calcularFatorComissao(vendaData.valor_venda, paymentData.valor_pro_soluto, percentualTotal)
           await criarOuAtualizarComissaoVenda(vendaId, corretorId, empreendimentoId, paymentData, fatorComissao)
         }
 
@@ -764,13 +775,65 @@ export const findVendaBySiengeId = async (siengeContractId) => {
 }
 
 /**
+ * Recalcula comissões dos pagamentos existentes (UPDATE, preserva status, valor_comissao_pago, valor_ja_pago, data_pagamento)
+ * Usa fórmula correta: fator = (valorVenda × percentualTotal) / valorProSoluto, comissao = parcela × fator
+ */
+export const recalcularComissoesPagamentosVenda = async (vendaId) => {
+  const { data: venda } = await supabase
+    .from('vendas')
+    .select('id, valor_venda, valor_pro_soluto, empreendimento_id, tipo_corretor')
+    .eq('id', vendaId)
+    .single()
+
+  if (!venda) return { success: false, error: 'Venda não encontrada' }
+
+  const valorVenda = parseFloat(venda.valor_venda) || 0
+  const valorProSoluto = parseFloat(venda.valor_pro_soluto) || 0
+
+  if (valorVenda <= 0 || valorProSoluto <= 0) {
+    return { success: false, error: 'Venda sem valor ou pro-soluto para recalcular' }
+  }
+
+  const percentualTotal = await getPercentualTotalEmpreendimento(venda.empreendimento_id, venda.tipo_corretor)
+  const fatorTotal = calcularFatorComissao(valorVenda, valorProSoluto, percentualTotal)
+
+  const { data: pagamentos } = await supabase
+    .from('pagamentos_prosoluto')
+    .select('id, valor')
+    .eq('venda_id', vendaId)
+
+  if (!pagamentos || pagamentos.length === 0) {
+    return { success: true, atualizados: 0 }
+  }
+
+  let atualizados = 0
+  for (const pag of pagamentos) {
+    const valorParcela = parseFloat(pag.valor) || 0
+    const comissaoGerada = calcularComissaoPagamento(valorParcela, fatorTotal)
+
+    const { error } = await supabase
+      .from('pagamentos_prosoluto')
+      .update({
+        comissao_gerada: comissaoGerada,
+        fator_comissao_aplicado: fatorTotal,
+        percentual_comissao_total: percentualTotal
+      })
+      .eq('id', pag.id)
+
+    if (!error) atualizados++
+  }
+
+  return { success: true, atualizados }
+}
+
+/**
  * Reprocessa pagamentos de uma venda específica (útil para correções)
  */
 export const reprocessarPagamentosVenda = async (vendaId) => {
   // Buscar venda com dados do RAW
   const { data: venda } = await supabase
     .from('vendas')
-    .select('id, sienge_contract_id, fator_comissao, data_venda, tipo_corretor, empreendimento_id')
+    .select('id, sienge_contract_id, valor_venda, valor_pro_soluto, data_venda, tipo_corretor, empreendimento_id')
     .eq('id', vendaId)
     .single()
 
@@ -794,14 +857,18 @@ export const reprocessarPagamentosVenda = async (vendaId) => {
   // Mapear paymentConditions
   const paymentData = mapearPaymentConditions(raw.payload.paymentConditions)
   
-  // Buscar fator de comissão atualizado
-  const fatorComissao = venda.fator_comissao || await getFatorComissaoEmpreendimento(venda.empreendimento_id, venda.tipo_corretor)
+  // Buscar percentual total e criar pagamentos com fórmula correta
+  const percentualTotal = await getPercentualTotalEmpreendimento(venda.empreendimento_id, venda.tipo_corretor)
+  const valorVenda = parseFloat(venda.valor_venda) || 0
+  const valorProSoluto = parseFloat(venda.valor_pro_soluto) || 0
 
   // Criar pagamentos
   const qtd = await criarPagamentosProsoluto(
     vendaId,
     paymentData._condicoes_prosoluto,
-    fatorComissao,
+    valorVenda,
+    valorProSoluto,
+    percentualTotal,
     venda.data_venda
   )
 
@@ -812,5 +879,6 @@ export default {
   syncVendasFromRaw,
   findVendaBySiengeId,
   reprocessarPagamentosVenda,
+  recalcularComissoesPagamentosVenda,
   mapearPaymentConditions
 }

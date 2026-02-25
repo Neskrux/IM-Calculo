@@ -2,6 +2,7 @@ import { useState, useRef } from 'react'
 import { supabase } from '../lib/supabase'
 import * as XLSX from 'xlsx'
 import { Upload, FileText, CheckCircle, XCircle, AlertCircle, Download } from 'lucide-react'
+import { calcularFatorComissao, calcularComissaoPagamento } from '../utils/comissaoCalculator'
 import '../styles/ImportarVendas.css'
 
 const ImportarVendas = ({ corretores = [], empreendimentos = [], clientes = [] }) => {
@@ -705,9 +706,8 @@ const ImportarVendas = ({ corretores = [], empreendimentos = [], clientes = [] }
             throw new Error(`Nenhum cargo de comissão encontrado para o empreendimento "${empreendimento.nome}" e tipo de corretor "${tipoCorretor}". Configure os cargos no empreendimento primeiro.`)
           }
 
-          // Fator de comissão = percentual total de comissão / 100
-          // Ex: 7% -> 0.07, então parcela de R$ 1.000 x 0.07 = R$ 70 de comissão
-          const fatorComissao = comissoesDinamicas.percentualTotal / 100
+          // Fator de comissão correto: fator = (valorVenda × percentualTotal/100) / valorProSoluto
+          const fatorTotal = calcularFatorComissao(valorVenda, valorProSoluto, comissoesDinamicas.percentualTotal)
 
           // 10. Calcular comissão do corretor
           const cargoCorretor = comissoesDinamicas.cargos.find(c => 
@@ -799,6 +799,8 @@ const ImportarVendas = ({ corretores = [], empreendimentos = [], clientes = [] }
           if (valorProSoluto > 0) {
             const pagamentos = []
             
+            const percentualTotal = comissoesDinamicas.percentualTotal
+
             // Sinal
             if (valorSinal > 0) {
               pagamentos.push({
@@ -806,7 +808,9 @@ const ImportarVendas = ({ corretores = [], empreendimentos = [], clientes = [] }
                 tipo: 'sinal',
                 valor: valorSinal,
                 data_prevista: dataVenda,
-                comissao_gerada: valorSinal * fatorComissao
+                comissao_gerada: calcularComissaoPagamento(valorSinal, fatorTotal),
+                fator_comissao_aplicado: fatorTotal,
+                percentual_comissao_total: percentualTotal
               })
             }
 
@@ -817,7 +821,9 @@ const ImportarVendas = ({ corretores = [], empreendimentos = [], clientes = [] }
                 tipo: 'entrada',
                 valor: valorEntradaAvista,
                 data_prevista: dataVenda,
-                comissao_gerada: valorEntradaAvista * fatorComissao
+                comissao_gerada: calcularComissaoPagamento(valorEntradaAvista, fatorTotal),
+                fator_comissao_aplicado: fatorTotal,
+                percentual_comissao_total: percentualTotal
               })
             }
 
@@ -834,7 +840,9 @@ const ImportarVendas = ({ corretores = [], empreendimentos = [], clientes = [] }
                   numero_parcela: p,
                   valor: valorParcela,
                   data_prevista: dataParcela.toISOString().split('T')[0],
-                  comissao_gerada: valorParcela * fatorComissao
+                  comissao_gerada: calcularComissaoPagamento(valorParcela, fatorTotal),
+                  fator_comissao_aplicado: fatorTotal,
+                  percentual_comissao_total: percentualTotal
                 })
               }
             }
@@ -855,7 +863,9 @@ const ImportarVendas = ({ corretores = [], empreendimentos = [], clientes = [] }
                   numero_parcela: b,
                   valor: valorBalao,
                   data_prevista: dataBalao.toISOString().split('T')[0],
-                  comissao_gerada: valorBalao * fatorComissao
+                  comissao_gerada: calcularComissaoPagamento(valorBalao, fatorTotal),
+                  fator_comissao_aplicado: fatorTotal,
+                  percentual_comissao_total: percentualTotal
                 })
               }
             }
