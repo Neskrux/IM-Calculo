@@ -166,6 +166,7 @@ const AdminDashboard = () => {
   })
   const [buscaCorretorRelatorio, setBuscaCorretorRelatorio] = useState('')
   const [gerandoPdf, setGerandoPdf] = useState(false)
+  const [pdfPreviewUrl, setPdfPreviewUrl] = useState(null) // Preview PDF (aba temporária para ajuste visual)
 
   // Toggle sidebar collapsed state
   const toggleSidebar = () => {
@@ -3002,8 +3003,8 @@ const AdminDashboard = () => {
     return cleanValue
   }
 
-  // Função para gerar PDF de relatório
-  const gerarRelatorioPDF = async () => {
+  // Função para gerar PDF de relatório (options.paraPreview = true retorna blob para visualização na aba Preview)
+  const gerarRelatorioPDF = async (options = {}) => {
     setGerandoPdf(true)
     
     try {
@@ -3184,20 +3185,11 @@ const AdminDashboard = () => {
       }
       
       if (filtrosTexto.length > 0) {
-        doc.setFillColor(...cores.bgClaro)
-        doc.roundedRect(14, yPosition, pageWidth - 28, 16, 2, 2, 'F')
-        doc.setDrawColor(...cores.dourado)
-        doc.setLineWidth(0.3)
-        doc.roundedRect(14, yPosition, pageWidth - 28, 16, 2, 2, 'S')
-        
-        doc.setTextColor(...cores.douradoEscuro)
-        doc.setFontSize(7)
-        doc.setFont('helvetica', 'bold')
-        doc.text('FILTROS:', 18, yPosition + 6)
-        doc.setFont('helvetica', 'normal')
         doc.setTextColor(...cores.cinzaEscuro)
-        doc.text(filtrosTexto.join('  |  '), 38, yPosition + 6)
-        yPosition += 22
+        doc.setFontSize(9)
+        doc.setFont('helvetica', 'normal')
+        doc.text(filtrosTexto.join('   '), 14, yPosition + 6)
+        yPosition += 16
       }
       
       // ========================================
@@ -3280,6 +3272,7 @@ const AdminDashboard = () => {
       doc.text('COMISSAO PAGA', card2X + cardWidth/2, yPosition + 8, { align: 'center' })
       doc.setFontSize(12)
       doc.setFont('helvetica', 'bold')
+      doc.setTextColor(...cores.textoBranco)
       doc.text(formatCurrency(totalPago), card2X + cardWidth/2, yPosition + 20, { align: 'center' })
       
       // Card 3 - Comissao Pendente (Amarelo)
@@ -3296,6 +3289,7 @@ const AdminDashboard = () => {
       doc.text('COMISSAO PENDENTE', card3X + cardWidth/2, yPosition + 8, { align: 'center' })
       doc.setFontSize(12)
       doc.setFont('helvetica', 'bold')
+      doc.setTextColor(...cores.textoBranco)
       doc.text(formatCurrency(totalPendente), card3X + cardWidth/2, yPosition + 20, { align: 'center' })
       
       yPosition += 38
@@ -3319,6 +3313,9 @@ const AdminDashboard = () => {
         const cliente = venda?.nome_cliente || venda?.cliente?.nome_completo || venda?.cliente?.nome || 'Cliente nao informado'
         const dataVenda = venda?.data_venda ? new Date(venda.data_venda).toLocaleDateString('pt-BR') : (venda?.data_emissao ? new Date(venda.data_emissao).toLocaleDateString('pt-BR') : '-')
         const valorVenda = parseFloat(venda?.valor_venda) || parseFloat(venda?.valor_venda_total) || 0
+        const valorProSolutoDb = parseFloat(venda?.valor_pro_soluto) || 0
+        const valorProSolutoCalc = grupo.pagamentos.reduce((acc, p) => acc + (parseFloat(p.valor) || 0), 0)
+        const valorProSoluto = valorProSolutoDb > 0 ? valorProSolutoDb : (valorProSolutoCalc > 0 ? valorProSolutoCalc : valorVenda)
         
         // Calcular comissão da venda
         let comissaoVenda = 0
@@ -3332,53 +3329,36 @@ const AdminDashboard = () => {
         }
         
         // ========================================
-        // HEADER DA VENDA - Design Elegante
+        // HEADER DA VENDA - Borda fina preta, cor dourada, valores sem |, Cliente/Corretor dentro
         // ========================================
         
-        // Fundo escuro premium
-        doc.setFillColor(...cores.cinzaEscuro)
-        doc.roundedRect(14, yPosition, pageWidth - 28, 22, 2, 2, 'F')
-        
-        // Barra lateral dourada
-        doc.setFillColor(...cores.dourado)
-        doc.rect(14, yPosition, 3, 22, 'F')
-        
-        // Empreendimento (titulo principal)
-        doc.setTextColor(...cores.textoBranco)
-        doc.setFontSize(10)
-        doc.setFont('helvetica', 'bold')
-        doc.text(empreendimento.toUpperCase(), 22, yPosition + 8)
-        
-        // Detalhes da unidade
-        doc.setFontSize(8)
-        doc.setFont('helvetica', 'normal')
-        doc.setTextColor(...cores.textoClaro)
-        doc.text(`Bl. ${bloco}  |  Un. ${unidade}  |  ${dataVenda}`, 22, yPosition + 16)
-        
-        // Valores a direita
-        doc.setTextColor(...cores.dourado)
-        doc.setFontSize(8)
-        doc.text(`Venda: ${formatCurrency(valorVenda)}`, pageWidth - 18, yPosition + 8, { align: 'right' })
-        doc.setFontSize(10)
-        doc.setFont('helvetica', 'bold')
-        doc.setTextColor(...cores.verde)
-        doc.text(formatCurrency(comissaoVenda), pageWidth - 18, yPosition + 17, { align: 'right' })
-        
-        yPosition += 26
-        
-        // ========================================
-        // LINHA DE INFO - Cliente e Corretor
-        // ========================================
+        const cardW = pageWidth - 28
+        const cardH = 38
         doc.setFillColor(...cores.bgClaro)
-        doc.rect(14, yPosition, pageWidth - 28, 10, 'F')
+        doc.setDrawColor(...cores.dourado)
+        doc.setLineWidth(0.2)
+        doc.roundedRect(14, yPosition, cardW, cardH, 2, 2, 'FD')
         
+        // Empreendimento + Unidade (ex: FIGUEIRA GARCIA - Un. 1101 A)
         doc.setTextColor(...cores.cinzaEscuro)
-        doc.setFontSize(7)
-        doc.setFont('helvetica', 'normal')
-        doc.text(`Cliente: ${cliente}`, 18, yPosition + 6)
-        doc.text(`Corretor: ${corretor}`, pageWidth - 18, yPosition + 6, { align: 'right' })
+        doc.setFontSize(10)
+        doc.setFont('helvetica', 'bold')
+        const tituloEmp = unidade !== '-' ? `${empreendimento.toUpperCase()} - Un. ${unidade}` : empreendimento.toUpperCase()
+        doc.text(tituloEmp, 18, yPosition + 8)
         
-        yPosition += 13
+        // Valores: Valor Venda   Valor Pro-Soluto   Valor Comissão (sem |)
+        doc.setFontSize(8)
+        doc.setFont('helvetica', 'normal')
+        doc.setTextColor(...cores.cinzaEscuro)
+        const linhaValores = `Valor Venda: ${formatCurrency(valorVenda)}   Valor Pro-Soluto: ${formatCurrency(valorProSoluto)}   Valor Comissão: ${formatCurrency(comissaoVenda)}`
+        doc.text(linhaValores, 18, yPosition + 18)
+        
+        // Cliente e Corretor abaixo dos valores, dentro do card (sem |)
+        doc.setFontSize(7)
+        doc.setTextColor(...cores.cinzaEscuro)
+        doc.text(`Cliente: ${cliente}   Corretor: ${corretor}`, 18, yPosition + 30)
+        
+        yPosition += cardH + 4
         
         // Obter percentual do corretor filtrado
         const corretorFiltrado = relatorioFiltros.corretorId 
@@ -3411,14 +3391,21 @@ const AdminDashboard = () => {
           
           const percentualComissao = percentualUsado.toFixed(2)
           
-          const tipoFormatado = {
-            'sinal': 'Sinal',
-            'entrada': 'Entrada',
-            'parcela_entrada': 'Parc. Entrada',
-            'balao': 'Balao',
-            'financiamento': 'Financ.',
-            'mensal': 'Mensal'
-          }[pag.tipo_pagamento || pag.tipo] || (pag.tipo_pagamento || pag.tipo || '-').charAt(0).toUpperCase() + (pag.tipo_pagamento || pag.tipo || '').slice(1)
+          const tipoRaw = pag.tipo_pagamento ?? pag.tipo
+          let tipoFormatado
+          if (tipoRaw === 'parcela_entrada') {
+            const num = pag.numero_parcela ?? pag.numero
+            tipoFormatado = num != null ? `Parcela ${num}` : 'Parcela'
+          } else {
+            tipoFormatado = {
+              'sinal': 'Sinal',
+              'entrada': 'Entrada',
+              'balao': 'Balão',
+              'bens': 'Bens / Dação',
+              'financiamento': 'Financ.',
+              'mensal': 'Mensal'
+            }[tipoRaw] || (tipoRaw ? String(tipoRaw).charAt(0).toUpperCase() + String(tipoRaw).slice(1).replace(/_/g, ' ') : '-')
+          }
           
           return [
             tipoFormatado,
@@ -3430,11 +3417,14 @@ const AdminDashboard = () => {
           ]
         })
         
+        const tabelaW = pageWidth - 28
         autoTable(doc, {
           startY: yPosition,
           head: [['Tipo', 'Data', 'Valor', 'Status', '%', 'Comissao']],
           body: parcelas,
           theme: 'plain',
+          tableWidth: tabelaW,
+          margin: { left: 14, right: 14 },
           headStyles: {
             fillColor: cores.dourado,
             textColor: cores.preto,
@@ -3451,14 +3441,13 @@ const AdminDashboard = () => {
             fillColor: cores.bgAlternado
           },
           columnStyles: {
-            0: { cellWidth: 25 },
-            1: { cellWidth: 22 },
-            2: { cellWidth: 32, halign: 'right' },
-            3: { cellWidth: 22, halign: 'center' },
-            4: { cellWidth: 18, halign: 'center' },
-            5: { cellWidth: 32, halign: 'right', fontStyle: 'bold' }
+            0: { cellWidth: tabelaW * 0.14, halign: 'left' },
+            1: { cellWidth: tabelaW * 0.15, halign: 'left' },
+            2: { cellWidth: tabelaW * 0.18, halign: 'right' },
+            3: { cellWidth: tabelaW * 0.18, halign: 'center' },
+            4: { cellWidth: tabelaW * 0.12, halign: 'center' },
+            5: { cellWidth: tabelaW * 0.23, halign: 'right', fontStyle: 'bold' }
           },
-          margin: { left: 14, right: 14 },
           didParseCell: function(data) {
             // Colorir status
             if (data.section === 'body' && data.column.index === 3) {
@@ -3471,9 +3460,10 @@ const AdminDashboard = () => {
                 data.cell.styles.fontStyle = 'bold'
               }
             }
-            // Destacar valor da comissao
+            // Comissão em branco (fundo escuro para contraste)
             if (data.section === 'body' && data.column.index === 5) {
-              data.cell.styles.textColor = cores.douradoEscuro
+              data.cell.styles.textColor = cores.textoBranco
+              data.cell.styles.fillColor = cores.cinzaEscuro
             }
           }
         })
@@ -3515,11 +3505,14 @@ const AdminDashboard = () => {
           ['Comissao Pendente', formatCurrency(totalPendente)]
         ]
         
+        const resumoW = pageWidth - 28
         autoTable(doc, {
           startY: yPosition,
           head: [['Metrica', 'Valor']],
           body: statsData,
           theme: 'plain',
+          tableWidth: resumoW,
+          margin: { left: 14, right: 14 },
           headStyles: {
             fillColor: cores.dourado,
             textColor: cores.preto,
@@ -3536,23 +3529,14 @@ const AdminDashboard = () => {
             fillColor: cores.bgAlternado
           },
           columnStyles: {
-            0: { cellWidth: 70, fontStyle: 'bold' },
-            1: { cellWidth: 70, halign: 'right' }
+            0: { cellWidth: resumoW * 0.5, fontStyle: 'bold' },
+            1: { cellWidth: resumoW * 0.5, halign: 'right' }
           },
-          margin: { left: 30, right: 30 },
-          tableWidth: 140,
           didParseCell: function(data) {
-            // Destacar valores de comissao (row 2=Total, 3=Paga, 4=Pendente)
-            if (data.section === 'body' && data.row.index === 2) {
-              data.cell.styles.textColor = cores.douradoEscuro
-              data.cell.styles.fontStyle = 'bold'
-            }
-            if (data.section === 'body' && data.row.index === 3 && data.column.index === 1) {
-              data.cell.styles.textColor = cores.verde
-              data.cell.styles.fontStyle = 'bold'
-            }
-            if (data.section === 'body' && data.row.index === 4 && data.column.index === 1) {
-              data.cell.styles.textColor = cores.amarelo
+            // Valores de comissao em branco (row 2=Total, 3=Paga, 4=Pendente)
+            if (data.section === 'body' && data.column.index === 1 && data.row.index >= 2 && data.row.index <= 4) {
+              data.cell.styles.textColor = cores.textoBranco
+              data.cell.styles.fillColor = cores.cinzaEscuro
               data.cell.styles.fontStyle = 'bold'
             }
           }
@@ -3614,6 +3598,12 @@ const AdminDashboard = () => {
         doc.text(`/ ${pageCount}`, pageWidth - 14, pageHeight - 5, { align: 'right' })
       }
       
+      if (options.paraPreview) {
+        const blob = doc.output('blob')
+        setMessage({ type: 'success', text: 'Relatório gerado! Visualize abaixo.' })
+        return blob
+      }
+
       // Salvar PDF com nome mais descritivo
       let nomeArquivo = 'relatorio_comissoes'
       if (corretorSelecionado) {
@@ -4100,6 +4090,14 @@ const AdminDashboard = () => {
             <span>Relatórios</span>
           </button>
           <button 
+            className={`nav-item ${activeTab === 'preview-pdf' ? 'active' : ''}`}
+            onClick={() => navigate('/admin/preview-pdf')}
+            title="Ver PDF (preview para ajuste visual)"
+          >
+            <Eye size={20} />
+            <span>Ver PDF</span>
+          </button>
+          <button 
             className={`nav-item ${activeTab === 'solicitacoes' ? 'active' : ''}`}
             onClick={() => navigate('/admin/solicitacoes')}
             title="Solicitações"
@@ -4176,6 +4174,7 @@ const AdminDashboard = () => {
             {activeTab === 'pagamentos' && 'Acompanhamento de Pagamentos'}
             {activeTab === 'clientes' && 'Cadastro de Clientes'}
             {activeTab === 'relatorios' && 'Relatórios'}
+            {activeTab === 'preview-pdf' && 'Ver PDF'}
             {activeTab === 'solicitacoes' && 'Solicitações'}
             {false && activeTab === 'sienge' && 'Sincronização Sienge'}
           </h1>
@@ -6668,6 +6667,60 @@ const AdminDashboard = () => {
                 </div>
               ) : null}
             </div>
+          </div>
+        )}
+
+        {/* Aba Ver PDF: preview para ajuste visual (remover para usuário final) */}
+        {activeTab === 'preview-pdf' && (
+          <div className="content-section">
+            <div className="relatorio-gerador" style={{ marginBottom: '20px' }}>
+              <div className="gerador-header">
+                <Eye size={24} />
+                <div>
+                  <h3>Visualizar PDF do relatório</h3>
+                  <p>Use os filtros na aba Relatórios e clique abaixo para gerar e ver o PDF sem baixar.</p>
+                </div>
+              </div>
+              <button
+                className="btn-gerar-pdf"
+                onClick={async () => {
+                  try {
+                    if (pdfPreviewUrl) {
+                      URL.revokeObjectURL(pdfPreviewUrl)
+                      setPdfPreviewUrl(null)
+                    }
+                    const blob = await gerarRelatorioPDF({ paraPreview: true })
+                    if (blob) {
+                      setPdfPreviewUrl(URL.createObjectURL(blob))
+                    }
+                  } catch (e) {
+                    console.error(e)
+                  }
+                }}
+                disabled={gerandoPdf}
+              >
+                {gerandoPdf ? (
+                  <>
+                    <Clock size={20} className="spinning" />
+                    Gerando...
+                  </>
+                ) : (
+                  <>
+                    <FileText size={20} />
+                    Gerar e visualizar PDF
+                  </>
+                )}
+              </button>
+            </div>
+            {pdfPreviewUrl && (
+              <div style={{ width: '100%', minHeight: '800px', background: '#1e1e1e', borderRadius: '8px', overflow: 'hidden' }}>
+                <iframe
+                  src={pdfPreviewUrl}
+                  title="Preview do relatório PDF"
+                  style={{ width: '100%', height: '85vh', minHeight: '800px', border: 'none' }}
+                />
+              </div>
+            )}
           </div>
         )}
 
