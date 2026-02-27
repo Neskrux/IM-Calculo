@@ -3611,15 +3611,7 @@ const AdminDashboard = () => {
           },
           columnStyles: {
             0: { cellWidth: resumoW * 0.5, fontStyle: 'bold' },
-            1: { cellWidth: resumoW * 0.5, halign: 'right' }
-          },
-          didParseCell: function(data) {
-            // Valores de comissao em branco (row 2=Total, 3=Paga, 4=Pendente)
-            if (data.section === 'body' && data.column.index === 1 && data.row.index >= 2 && data.row.index <= 4) {
-              data.cell.styles.textColor = cores.textoBranco
-              data.cell.styles.fillColor = cores.cinzaEscuro
-              data.cell.styles.fontStyle = 'bold'
-            }
+            1: { cellWidth: resumoW * 0.5, halign: 'right', fontStyle: 'bold' }
           }
         })
         
