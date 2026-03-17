@@ -1153,6 +1153,17 @@ const AdminDashboard = () => {
       teveBalao: vendaForm.teve_balao
     })
 */
+    // Quando parcelou_entrada, preencher qtd e valor a partir do primeiro grupo válido
+    let qtdParcelasEntradaPayload = parseInt(vendaForm.qtd_parcelas_entrada) || null
+    let valorParcelaEntradaPayload = parseFloat(vendaForm.valor_parcela_entrada) || null
+    if (vendaForm.parcelou_entrada && gruposParcelasEntrada.length > 0) {
+      const primeiroGrupo = gruposParcelasEntrada[0]
+      if (primeiroGrupo && (parseFloat(primeiroGrupo.qtd) || 0) > 0 && (parseFloat(primeiroGrupo.valor) || 0) > 0) {
+        qtdParcelasEntradaPayload = parseInt(primeiroGrupo.qtd) || null
+        valorParcelaEntradaPayload = parseFloat(primeiroGrupo.valor) || null
+      }
+    }
+
     const vendaData = {
       corretor_id: vendaForm.corretor_id,
       empreendimento_id: isCorretorAutonomo ? null : (vendaForm.empreendimento_id || null),
@@ -1170,8 +1181,8 @@ const AdminDashboard = () => {
       teve_entrada: vendaForm.teve_entrada,
       valor_entrada: parseFloat(vendaForm.valor_entrada) || null,
       parcelou_entrada: vendaForm.parcelou_entrada,
-      qtd_parcelas_entrada: parseInt(vendaForm.qtd_parcelas_entrada) || null,
-      valor_parcela_entrada: parseFloat(vendaForm.valor_parcela_entrada) || null,
+      qtd_parcelas_entrada: qtdParcelasEntradaPayload,
+      valor_parcela_entrada: valorParcelaEntradaPayload,
       teve_balao: vendaForm.teve_balao,
       qtd_balao: parseInt(vendaForm.qtd_balao) || null,
       valor_balao: parseFloat(vendaForm.valor_balao) || null,
@@ -1229,13 +1240,14 @@ const AdminDashboard = () => {
       // Recriar pagamentos com novos valores
       const pagamentos = []
       
-      // ===== REGRA ESPECIAL: ENTRADA >= 20% =====
+      // ===== REGRA ESPECIAL: ENTRADA >= 20% NO ATO (ver .cursor/rules/comissao-integral-20.mdc) =====
       const valorEntradaParaCalculo = valorSinal + valorEntradaTotal
       const percentualEntrada = valorVenda > 0 ? (valorEntradaParaCalculo / valorVenda) * 100 : 0
-      const entradaMaiorOuIgual20 = percentualEntrada >= 20
+      const entradaNoAto = !vendaForm.parcelou_entrada
+      const aplicarComissaoIntegral = percentualEntrada >= 20 && entradaNoAto
       
-      if (entradaMaiorOuIgual20) {
-        // Entrada >= 20%: Gerar apenas 1 parcela com comissão total
+      if (aplicarComissaoIntegral) {
+        // Entrada >= 20% e paga no ato (não parcelada): 1 parcela com comissão total
         const comissaoTotal = comissoesDinamicas.total || (valorProSoluto * fatorTotal)
         const fatorIntegral = valorEntradaParaCalculo > 0 ? comissaoTotal / valorEntradaParaCalculo : 0
         
@@ -1249,9 +1261,9 @@ const AdminDashboard = () => {
           percentual_comissao_total: percentualTotal
         })
         
-        console.log(`✅ Edição: Entrada >= 20% (${percentualEntrada.toFixed(1)}%). Comissão integral: R$ ${comissaoTotal.toFixed(2)}`)
+        console.log(`✅ Edição: Entrada >= 20% no ato (${percentualEntrada.toFixed(1)}%). Comissão integral: R$ ${comissaoTotal.toFixed(2)}`)
       } else {
-        // Entrada < 20%: Gerar parcelas normalmente
+        // Entrada < 20% ou entrada parcelada: gerar parcelas normalmente
         
         // Sinal
         if (valorSinal > 0) {
@@ -1377,15 +1389,14 @@ const AdminDashboard = () => {
       // Fórmula: Comissão da Parcela = Valor da Parcela × Fcom
       const pagamentos = []
       
-      // ===== REGRA ESPECIAL: ENTRADA >= 20% =====
-      // Se a entrada (sinal + entrada) for >= 20% do valor da venda,
-      // gera apenas 1 parcela com a comissão total do corretor
+      // ===== REGRA ESPECIAL: ENTRADA >= 20% NO ATO (ver .cursor/rules/comissao-integral-20.mdc) =====
       const valorEntradaParaCalculo = valorSinal + valorEntradaTotal
       const percentualEntrada = valorVenda > 0 ? (valorEntradaParaCalculo / valorVenda) * 100 : 0
-      const entradaMaiorOuIgual20 = percentualEntrada >= 20
+      const entradaNoAto = !vendaForm.parcelou_entrada
+      const aplicarComissaoIntegral = percentualEntrada >= 20 && entradaNoAto
       
-      if (entradaMaiorOuIgual20) {
-        // Entrada >= 20%: Gerar apenas 1 parcela com comissão total
+      if (aplicarComissaoIntegral) {
+        // Entrada >= 20% e paga no ato (não parcelada): 1 parcela com comissão total
         const comissaoTotal = comissoesDinamicas.total || (valorProSoluto * fatorTotal)
         const fatorIntegral = valorEntradaParaCalculo > 0 ? comissaoTotal / valorEntradaParaCalculo : 0
         
@@ -1399,9 +1410,9 @@ const AdminDashboard = () => {
           percentual_comissao_total: percentualTotal
         })
         
-        console.log(`✅ Entrada >= 20% (${percentualEntrada.toFixed(1)}%). Comissão integral: R$ ${comissaoTotal.toFixed(2)}`)
+        console.log(`✅ Entrada >= 20% no ato (${percentualEntrada.toFixed(1)}%). Comissão integral: R$ ${comissaoTotal.toFixed(2)}`)
       } else {
-        // Entrada < 20%: Gerar parcelas normalmente
+        // Entrada < 20% ou entrada parcelada: gerar parcelas normalmente
         
         // Sinal
         if (valorSinal > 0) {
@@ -2204,15 +2215,14 @@ const AdminDashboard = () => {
     
     const novosPagamentos = []
     
-    // ===== REGRA ESPECIAL: ENTRADA >= 20% =====
-    // Se a entrada (sinal + entrada) for >= 20% do valor da venda,
-    // gera apenas 1 parcela com a comissão total do corretor
+    // ===== REGRA ESPECIAL: ENTRADA >= 20% NO ATO (ver .cursor/rules/comissao-integral-20.mdc) =====
     const valorEntradaParaCalculo = valorSinal + valorEntradaTotal
     const percentualEntrada = valorVenda > 0 ? (valorEntradaParaCalculo / valorVenda) * 100 : 0
-    const entradaMaiorOuIgual20 = percentualEntrada >= 20
+    const entradaNoAto = !venda.parcelou_entrada
+    const aplicarComissaoIntegral = percentualEntrada >= 20 && entradaNoAto
     
-    if (entradaMaiorOuIgual20) {
-      // Entrada >= 20%: Gerar apenas 1 parcela com comissão total
+    if (aplicarComissaoIntegral) {
+      // Entrada >= 20% e paga no ato (não parcelada): 1 parcela com comissão total
       const comissaoTotal = comissoesDinamicas.total || (valorProSoluto * fatorTotal)
       const fatorIntegral = valorEntradaParaCalculo > 0 ? comissaoTotal / valorEntradaParaCalculo : 0
       
@@ -2226,9 +2236,9 @@ const AdminDashboard = () => {
         percentual_comissao_total: percentualTotal
       })
       
-      console.log(`✅ Entrada >= 20% (${percentualEntrada.toFixed(1)}%). Comissão integral: R$ ${comissaoTotal.toFixed(2)}`)
+      console.log(`✅ Entrada >= 20% no ato (${percentualEntrada.toFixed(1)}%). Comissão integral: R$ ${comissaoTotal.toFixed(2)}`)
     } else {
-      // Entrada < 20%: Gerar parcelas normalmente
+      // Entrada < 20% ou entrada parcelada: gerar parcelas normalmente
       
       // Sinal
       if (valorSinal > 0) {
@@ -2304,7 +2314,7 @@ const AdminDashboard = () => {
       if (error) {
         setMessage({ type: 'error', text: 'Erro ao gerar pagamentos: ' + error.message })
       } else {
-        const msgExtra = entradaMaiorOuIgual20 ? ' (Comissão integral - entrada >= 20%)' : ''
+        const msgExtra = aplicarComissaoIntegral ? ' (Comissão integral - entrada ≥ 20% no ato)' : ''
         setMessage({ type: 'success', text: `${novosPagamentos.length} pagamentos gerados!${msgExtra}` })
         fetchData()
       }

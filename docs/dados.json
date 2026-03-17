@@ -1,0 +1,907 @@
+{
+  "passo1": [
+    {
+      "id": "de177f50-a1e8-4650-a759-655d184a1c84",
+      "data_venda": "2025-04-25",
+      "valor_venda": "310442.00",
+      "parcelou_entrada": true,
+      "qtd_parcelas_entrada": null,
+      "valor_parcela_entrada": null,
+      "valor_pro_soluto": "61999.60"
+    },
+    {
+      "id": "a4b242b6-d5cb-41fe-a501-70d91e50c3bf",
+      "data_venda": "2025-04-25",
+      "valor_venda": "310442.00",
+      "parcelou_entrada": true,
+      "qtd_parcelas_entrada": null,
+      "valor_parcela_entrada": null,
+      "valor_pro_soluto": "62000.20"
+    },
+    {
+      "id": "1d996b91-6a09-4444-bd24-41844fec8673",
+      "data_venda": "2025-04-25",
+      "valor_venda": "310442.00",
+      "parcelou_entrada": true,
+      "qtd_parcelas_entrada": null,
+      "valor_parcela_entrada": null,
+      "valor_pro_soluto": "62000.20"
+    },
+    {
+      "id": "8daa3121-fcfa-42fa-8318-8e39fdac8800",
+      "data_venda": "2025-04-25",
+      "valor_venda": "345733.70",
+      "parcelou_entrada": true,
+      "qtd_parcelas_entrada": null,
+      "valor_parcela_entrada": null,
+      "valor_pro_soluto": "345733.50"
+    },
+    {
+      "id": "13736419-ed8e-44b8-bd34-5b241981bd23",
+      "data_venda": "2025-05-09",
+      "valor_venda": "388744.70",
+      "parcelou_entrada": true,
+      "qtd_parcelas_entrada": null,
+      "valor_parcela_entrada": null,
+      "valor_pro_soluto": "70599.60"
+    },
+    {
+      "id": "77ebdede-471f-4d4a-b50b-8b9ecb602fdd",
+      "data_venda": "2025-04-28",
+      "valor_venda": "343010.70",
+      "parcelou_entrada": true,
+      "qtd_parcelas_entrada": null,
+      "valor_parcela_entrada": null,
+      "valor_pro_soluto": "68599.80"
+    },
+    {
+      "id": "d6cf726c-95eb-42f0-8397-b28d753d56ca",
+      "data_venda": "2025-07-15",
+      "valor_venda": "439267.86",
+      "parcelou_entrada": true,
+      "qtd_parcelas_entrada": null,
+      "valor_parcela_entrada": null,
+      "valor_pro_soluto": "87859.04"
+    },
+    {
+      "id": "293a5835-fafb-41ad-9a7f-8abd29dbe207",
+      "data_venda": "2025-05-09",
+      "valor_venda": "345733.70",
+      "parcelou_entrada": true,
+      "qtd_parcelas_entrada": null,
+      "valor_parcela_entrada": null,
+      "valor_pro_soluto": "69000.00"
+    },
+    {
+      "id": "c6100456-03b1-44a9-8f1b-c47dd16997ad",
+      "data_venda": "2025-07-02",
+      "valor_venda": "391000.97",
+      "parcelou_entrada": true,
+      "qtd_parcelas_entrada": null,
+      "valor_parcela_entrada": null,
+      "valor_pro_soluto": "80741.06"
+    },
+    {
+      "id": "2f4a2c67-cb4f-484b-a96c-b559606950fc",
+      "data_venda": "2025-05-23",
+      "valor_venda": "341486.20",
+      "parcelou_entrada": true,
+      "qtd_parcelas_entrada": null,
+      "valor_parcela_entrada": null,
+      "valor_pro_soluto": "75753.00"
+    },
+    {
+      "id": "86488d6e-7ebb-46ec-8931-f77e6f1dc8eb",
+      "data_venda": "2026-01-19",
+      "valor_venda": "426900.16",
+      "parcelou_entrada": true,
+      "qtd_parcelas_entrada": null,
+      "valor_parcela_entrada": null,
+      "valor_pro_soluto": "85379.61"
+    },
+    {
+      "id": "bd0483d9-e3a2-4c30-a010-d4eb93769972",
+      "data_venda": "2026-01-26",
+      "valor_venda": "453281.51",
+      "parcelou_entrada": true,
+      "qtd_parcelas_entrada": null,
+      "valor_parcela_entrada": null,
+      "valor_pro_soluto": "90656.04"
+    },
+    {
+      "id": "95c3686f-781f-42de-8474-3b9b0bfa2a3b",
+      "data_venda": "2026-02-05",
+      "valor_venda": "457814.34",
+      "parcelou_entrada": true,
+      "qtd_parcelas_entrada": null,
+      "valor_parcela_entrada": null,
+      "valor_pro_soluto": "91562.64"
+    },
+    {
+      "id": "90d58687-ed27-42ff-b77d-a4d9d87c6134",
+      "data_venda": "2026-02-10",
+      "valor_venda": "426900.16",
+      "parcelou_entrada": true,
+      "qtd_parcelas_entrada": null,
+      "valor_parcela_entrada": null,
+      "valor_pro_soluto": "85380.00"
+    },
+    {
+      "id": "1ddf9705-7c27-4b1c-bca1-a51a7ec77adf",
+      "data_venda": "2026-02-10",
+      "valor_venda": "422673.41",
+      "parcelou_entrada": true,
+      "qtd_parcelas_entrada": null,
+      "valor_parcela_entrada": null,
+      "valor_pro_soluto": "84534.84"
+    },
+    {
+      "id": "7640350e-c0ea-4f89-9fa4-5af8d9a414f7",
+      "data_venda": "2026-01-30",
+      "valor_venda": "444350.08",
+      "parcelou_entrada": true,
+      "qtd_parcelas_entrada": null,
+      "valor_parcela_entrada": null,
+      "valor_pro_soluto": "88870.00"
+    },
+    {
+      "id": "008553b3-8c88-420f-9c79-c665051a497a",
+      "data_venda": "2026-02-03",
+      "valor_venda": "301225.05",
+      "parcelou_entrada": true,
+      "qtd_parcelas_entrada": null,
+      "valor_parcela_entrada": null,
+      "valor_pro_soluto": "59086.56"
+    },
+    {
+      "id": "ff950500-466d-4fe8-a8db-72d6f2664a35",
+      "data_venda": "2026-02-12",
+      "valor_venda": "467016.40",
+      "parcelou_entrada": true,
+      "qtd_parcelas_entrada": null,
+      "valor_parcela_entrada": null,
+      "valor_pro_soluto": "93403.44"
+    },
+    {
+      "id": "18944c05-6807-4f6f-9c31-bfff7c1e6f3e",
+      "data_venda": "2026-01-19",
+      "valor_venda": "443660.52",
+      "parcelou_entrada": true,
+      "qtd_parcelas_entrada": null,
+      "valor_parcela_entrada": null,
+      "valor_pro_soluto": "87057.66"
+    },
+    {
+      "id": "db0e76dc-1eca-4410-bca6-35bf094bc9ba",
+      "data_venda": "2026-01-20",
+      "valor_venda": "435594.63",
+      "parcelou_entrada": true,
+      "qtd_parcelas_entrada": null,
+      "valor_parcela_entrada": null,
+      "valor_pro_soluto": "87118.72"
+    },
+    {
+      "id": "2ccbc032-fcd4-4106-a755-6cbbd96933c2",
+      "data_venda": "2026-01-20",
+      "valor_venda": "418488.51",
+      "parcelou_entrada": true,
+      "qtd_parcelas_entrada": null,
+      "valor_parcela_entrada": null,
+      "valor_pro_soluto": "83697.64"
+    },
+    {
+      "id": "ff6997f6-fb32-4a7a-ac57-afb32d2c30ba",
+      "data_venda": "2026-01-14",
+      "valor_venda": "422991.12",
+      "parcelou_entrada": true,
+      "qtd_parcelas_entrada": null,
+      "valor_parcela_entrada": null,
+      "valor_pro_soluto": "84597.76"
+    },
+    {
+      "id": "a03e4c10-4a5b-4adf-b603-56d8cb73de3e",
+      "data_venda": "2026-01-20",
+      "valor_venda": "292366.06",
+      "parcelou_entrada": true,
+      "qtd_parcelas_entrada": null,
+      "valor_parcela_entrada": null,
+      "valor_pro_soluto": "57370.04"
+    },
+    {
+      "id": "26fc2ac4-a7a4-4dc4-9e91-4dcc618890ae",
+      "data_venda": "2026-01-20",
+      "valor_venda": "430000.00",
+      "parcelou_entrada": true,
+      "qtd_parcelas_entrada": null,
+      "valor_parcela_entrada": null,
+      "valor_pro_soluto": "87161.68"
+    },
+    {
+      "id": "cb5aa582-5e88-4ecc-866a-91e224115b9f",
+      "data_venda": "2026-01-16",
+      "valor_venda": "435808.19",
+      "parcelou_entrada": true,
+      "qtd_parcelas_entrada": null,
+      "valor_parcela_entrada": null,
+      "valor_pro_soluto": "87161.15"
+    },
+    {
+      "id": "e1220449-7207-4d62-b558-57004ae9cee6",
+      "data_venda": "2026-01-16",
+      "valor_venda": "457103.88",
+      "parcelou_entrada": true,
+      "qtd_parcelas_entrada": null,
+      "valor_parcela_entrada": null,
+      "valor_pro_soluto": "93143.41"
+    },
+    {
+      "id": "68373e1c-8996-4dc1-a334-7aa3b21cf33f",
+      "data_venda": "2026-01-20",
+      "valor_venda": "476403.43",
+      "parcelou_entrada": true,
+      "qtd_parcelas_entrada": null,
+      "valor_parcela_entrada": null,
+      "valor_pro_soluto": "107981.64"
+    },
+    {
+      "id": "a008f85a-13f7-4c75-a0b9-fdd1578a12fb",
+      "data_venda": "2026-02-11",
+      "valor_venda": "462392.49",
+      "parcelou_entrada": true,
+      "qtd_parcelas_entrada": null,
+      "valor_parcela_entrada": null,
+      "valor_pro_soluto": "92478.50"
+    },
+    {
+      "id": "1d4cae3b-2430-447a-ad1b-2c5cf6853403",
+      "data_venda": "2026-02-19",
+      "valor_venda": "467016.40",
+      "parcelou_entrada": true,
+      "qtd_parcelas_entrada": null,
+      "valor_parcela_entrada": null,
+      "valor_pro_soluto": "93404.00"
+    },
+    {
+      "id": "3832f966-73fc-460e-b42b-32e5606705de",
+      "data_venda": "2026-02-23",
+      "valor_venda": "467016.40",
+      "parcelou_entrada": true,
+      "qtd_parcelas_entrada": null,
+      "valor_parcela_entrada": null,
+      "valor_pro_soluto": "93402.93"
+    },
+    {
+      "id": "2026ca9d-1c30-49da-bfe6-b4024462477c",
+      "data_venda": "2026-02-26",
+      "valor_venda": "100000.00",
+      "parcelou_entrada": true,
+      "qtd_parcelas_entrada": null,
+      "valor_parcela_entrada": null,
+      "valor_pro_soluto": "12500.00"
+    },
+    {
+      "id": "ff98dc24-ac20-4b36-81ae-807869353add",
+      "data_venda": "2026-02-27",
+      "valor_venda": "471686.56",
+      "parcelou_entrada": true,
+      "qtd_parcelas_entrada": null,
+      "valor_parcela_entrada": null,
+      "valor_pro_soluto": "94336.84"
+    },
+    {
+      "id": "9b6d5bf3-db8f-4c8b-80f4-fc84461af081",
+      "data_venda": "2026-02-23",
+      "valor_venda": "467016.40",
+      "parcelou_entrada": true,
+      "qtd_parcelas_entrada": null,
+      "valor_parcela_entrada": null,
+      "valor_pro_soluto": "123403.23"
+    },
+    {
+      "id": "624897e1-f9a7-4803-9c48-cafb0021733f",
+      "data_venda": "2026-03-04",
+      "valor_venda": "310200.39",
+      "parcelou_entrada": true,
+      "qtd_parcelas_entrada": null,
+      "valor_parcela_entrada": null,
+      "valor_pro_soluto": "62039.70"
+    },
+    {
+      "id": "986e8b2c-84ec-4fd5-aa63-f6335d74ced3",
+      "data_venda": "2026-03-04",
+      "valor_venda": "466063.20",
+      "parcelou_entrada": true,
+      "qtd_parcelas_entrada": null,
+      "valor_parcela_entrada": null,
+      "valor_pro_soluto": "93212.50"
+    },
+    {
+      "id": "e3bd5695-27ce-436b-a578-ce1bfac3d7aa",
+      "data_venda": "2025-05-26",
+      "valor_venda": "345733.70",
+      "parcelou_entrada": true,
+      "qtd_parcelas_entrada": null,
+      "valor_parcela_entrada": null,
+      "valor_pro_soluto": "69120.00"
+    },
+    {
+      "id": "8224b391-adff-4e0d-8696-7f72a6501625",
+      "data_venda": "2026-03-09",
+      "valor_venda": "435860.41",
+      "parcelou_entrada": true,
+      "qtd_parcelas_entrada": null,
+      "valor_parcela_entrada": null,
+      "valor_pro_soluto": "87096.11"
+    },
+    {
+      "id": "6a33ac0b-00af-4fc3-8539-7529998a94b2",
+      "data_venda": "2025-07-08",
+      "valor_venda": "457103.88",
+      "parcelou_entrada": true,
+      "qtd_parcelas_entrada": null,
+      "valor_parcela_entrada": null,
+      "valor_pro_soluto": "93820.75"
+    },
+    {
+      "id": "683dfeef-9e09-4f97-a315-498ec3416a6f",
+      "data_venda": "2026-03-12",
+      "valor_venda": "490598.43",
+      "parcelou_entrada": true,
+      "qtd_parcelas_entrada": null,
+      "valor_parcela_entrada": null,
+      "valor_pro_soluto": "98119.50"
+    }
+  ],
+  "passo2": [
+    {
+      "id": "d09743fd-8d6e-4e68-a4d7-229ac6d401f5",
+      "data_venda": "2026-01-20",
+      "qtd_parcelas_entrada": 52,
+      "valor_parcela_entrada": "2076.57",
+      "qtd_parcelas_tabela": 0,
+      "tem_comissao_integral": 1
+    }
+  ],
+  "passo3": [
+    {
+      "id": "8daa3121-fcfa-42fa-8318-8e39fdac8800",
+      "valor_pro_soluto": "345733.50",
+      "val_sinal": "1000.00",
+      "val_entrada": "0",
+      "val_balao": "0",
+      "expected_pro_soluto": "1000.00",
+      "diff": "344733.50"
+    },
+    {
+      "id": "30d53f3b-3306-41b4-a817-70de77ac3aff",
+      "valor_pro_soluto": "300000.00",
+      "val_sinal": "0",
+      "val_entrada": "175000.20",
+      "val_balao": "0",
+      "expected_pro_soluto": "175000.20",
+      "diff": "124999.80"
+    },
+    {
+      "id": "9b6d5bf3-db8f-4c8b-80f4-fc84461af081",
+      "valor_pro_soluto": "123403.23",
+      "val_sinal": "0",
+      "val_entrada": "0",
+      "val_balao": "0",
+      "expected_pro_soluto": "0",
+      "diff": "123403.23"
+    },
+    {
+      "id": "68373e1c-8996-4dc1-a334-7aa3b21cf33f",
+      "valor_pro_soluto": "107981.64",
+      "val_sinal": "0",
+      "val_entrada": "0",
+      "val_balao": "0",
+      "expected_pro_soluto": "0",
+      "diff": "107981.64"
+    },
+    {
+      "id": "683dfeef-9e09-4f97-a315-498ec3416a6f",
+      "valor_pro_soluto": "98119.50",
+      "val_sinal": "0",
+      "val_entrada": "0",
+      "val_balao": "0",
+      "expected_pro_soluto": "0",
+      "diff": "98119.50"
+    },
+    {
+      "id": "6a33ac0b-00af-4fc3-8539-7529998a94b2",
+      "valor_pro_soluto": "93820.75",
+      "val_sinal": "0",
+      "val_entrada": "0",
+      "val_balao": "0",
+      "expected_pro_soluto": "0",
+      "diff": "93820.75"
+    },
+    {
+      "id": "ff950500-466d-4fe8-a8db-72d6f2664a35",
+      "valor_pro_soluto": "93403.44",
+      "val_sinal": "0",
+      "val_entrada": "0",
+      "val_balao": "0",
+      "expected_pro_soluto": "0",
+      "diff": "93403.44"
+    },
+    {
+      "id": "3832f966-73fc-460e-b42b-32e5606705de",
+      "valor_pro_soluto": "93402.93",
+      "val_sinal": "0",
+      "val_entrada": "0",
+      "val_balao": "0",
+      "expected_pro_soluto": "0",
+      "diff": "93402.93"
+    },
+    {
+      "id": "986e8b2c-84ec-4fd5-aa63-f6335d74ced3",
+      "valor_pro_soluto": "93212.50",
+      "val_sinal": "0",
+      "val_entrada": "0",
+      "val_balao": "0",
+      "expected_pro_soluto": "0",
+      "diff": "93212.50"
+    },
+    {
+      "id": "a008f85a-13f7-4c75-a0b9-fdd1578a12fb",
+      "valor_pro_soluto": "92478.50",
+      "val_sinal": "0",
+      "val_entrada": "0",
+      "val_balao": "0",
+      "expected_pro_soluto": "0",
+      "diff": "92478.50"
+    },
+    {
+      "id": "e1220449-7207-4d62-b558-57004ae9cee6",
+      "valor_pro_soluto": "93143.41",
+      "val_sinal": "1500.00",
+      "val_entrada": "0",
+      "val_balao": "0",
+      "expected_pro_soluto": "1500.00",
+      "diff": "91643.41"
+    },
+    {
+      "id": "95c3686f-781f-42de-8474-3b9b0bfa2a3b",
+      "valor_pro_soluto": "91562.64",
+      "val_sinal": "0",
+      "val_entrada": "0",
+      "val_balao": "0",
+      "expected_pro_soluto": "0",
+      "diff": "91562.64"
+    },
+    {
+      "id": "bd0483d9-e3a2-4c30-a010-d4eb93769972",
+      "valor_pro_soluto": "90656.04",
+      "val_sinal": "0",
+      "val_entrada": "0",
+      "val_balao": "0",
+      "expected_pro_soluto": "0",
+      "diff": "90656.04"
+    },
+    {
+      "id": "d6cf726c-95eb-42f0-8397-b28d753d56ca",
+      "valor_pro_soluto": "87859.04",
+      "val_sinal": "0",
+      "val_entrada": "0",
+      "val_balao": "0",
+      "expected_pro_soluto": "0",
+      "diff": "87859.04"
+    },
+    {
+      "id": "cb5aa582-5e88-4ecc-866a-91e224115b9f",
+      "valor_pro_soluto": "87161.15",
+      "val_sinal": "0",
+      "val_entrada": "0",
+      "val_balao": "0",
+      "expected_pro_soluto": "0",
+      "diff": "87161.15"
+    },
+    {
+      "id": "db0e76dc-1eca-4410-bca6-35bf094bc9ba",
+      "valor_pro_soluto": "87118.72",
+      "val_sinal": "0",
+      "val_entrada": "0",
+      "val_balao": "0",
+      "expected_pro_soluto": "0",
+      "diff": "87118.72"
+    },
+    {
+      "id": "26fc2ac4-a7a4-4dc4-9e91-4dcc618890ae",
+      "valor_pro_soluto": "87161.68",
+      "val_sinal": "1644.56",
+      "val_entrada": "0",
+      "val_balao": "0",
+      "expected_pro_soluto": "1644.56",
+      "diff": "85517.12"
+    },
+    {
+      "id": "18944c05-6807-4f6f-9c31-bfff7c1e6f3e",
+      "valor_pro_soluto": "87057.66",
+      "val_sinal": "1665.81",
+      "val_entrada": "0",
+      "val_balao": "0",
+      "expected_pro_soluto": "1665.81",
+      "diff": "85391.85"
+    },
+    {
+      "id": "86488d6e-7ebb-46ec-8931-f77e6f1dc8eb",
+      "valor_pro_soluto": "85379.61",
+      "val_sinal": "0",
+      "val_entrada": "0",
+      "val_balao": "0",
+      "expected_pro_soluto": "0",
+      "diff": "85379.61"
+    },
+    {
+      "id": "ff6997f6-fb32-4a7a-ac57-afb32d2c30ba",
+      "valor_pro_soluto": "84597.76",
+      "val_sinal": "0",
+      "val_entrada": "0",
+      "val_balao": "0",
+      "expected_pro_soluto": "0",
+      "diff": "84597.76"
+    },
+    {
+      "id": "1ddf9705-7c27-4b1c-bca1-a51a7ec77adf",
+      "valor_pro_soluto": "84534.84",
+      "val_sinal": "0",
+      "val_entrada": "0",
+      "val_balao": "0",
+      "expected_pro_soluto": "0",
+      "diff": "84534.84"
+    },
+    {
+      "id": "ff98dc24-ac20-4b36-81ae-807869353add",
+      "valor_pro_soluto": "94336.84",
+      "val_sinal": "10000.00",
+      "val_entrada": "0",
+      "val_balao": "0",
+      "expected_pro_soluto": "10000.00",
+      "diff": "84336.84"
+    },
+    {
+      "id": "2ccbc032-fcd4-4106-a755-6cbbd96933c2",
+      "valor_pro_soluto": "83697.64",
+      "val_sinal": "0",
+      "val_entrada": "0",
+      "val_balao": "0",
+      "expected_pro_soluto": "0",
+      "diff": "83697.64"
+    },
+    {
+      "id": "1d4cae3b-2430-447a-ad1b-2c5cf6853403",
+      "valor_pro_soluto": "93404.00",
+      "val_sinal": "10000.00",
+      "val_entrada": "0",
+      "val_balao": "0",
+      "expected_pro_soluto": "10000.00",
+      "diff": "83404.00"
+    },
+    {
+      "id": "c6100456-03b1-44a9-8f1b-c47dd16997ad",
+      "valor_pro_soluto": "80741.06",
+      "val_sinal": "0",
+      "val_entrada": "0",
+      "val_balao": "0",
+      "expected_pro_soluto": "0",
+      "diff": "80741.06"
+    },
+    {
+      "id": "7640350e-c0ea-4f89-9fa4-5af8d9a414f7",
+      "valor_pro_soluto": "88870.00",
+      "val_sinal": "10000.00",
+      "val_entrada": "0",
+      "val_balao": "0",
+      "expected_pro_soluto": "10000.00",
+      "diff": "78870.00"
+    },
+    {
+      "id": "8224b391-adff-4e0d-8696-7f72a6501625",
+      "valor_pro_soluto": "87096.11",
+      "val_sinal": "10000.00",
+      "val_entrada": "0",
+      "val_balao": "0",
+      "expected_pro_soluto": "10000.00",
+      "diff": "77096.11"
+    },
+    {
+      "id": "2f4a2c67-cb4f-484b-a96c-b559606950fc",
+      "valor_pro_soluto": "75753.00",
+      "val_sinal": "0",
+      "val_entrada": "0",
+      "val_balao": "0",
+      "expected_pro_soluto": "0",
+      "diff": "75753.00"
+    },
+    {
+      "id": "90d58687-ed27-42ff-b77d-a4d9d87c6134",
+      "valor_pro_soluto": "85380.00",
+      "val_sinal": "10000.00",
+      "val_entrada": "0",
+      "val_balao": "0",
+      "expected_pro_soluto": "10000.00",
+      "diff": "75380.00"
+    },
+    {
+      "id": "13736419-ed8e-44b8-bd34-5b241981bd23",
+      "valor_pro_soluto": "70599.60",
+      "val_sinal": "0",
+      "val_entrada": "0",
+      "val_balao": "0",
+      "expected_pro_soluto": "0",
+      "diff": "70599.60"
+    },
+    {
+      "id": "e3bd5695-27ce-436b-a578-ce1bfac3d7aa",
+      "valor_pro_soluto": "69120.00",
+      "val_sinal": "0",
+      "val_entrada": "0",
+      "val_balao": "0",
+      "expected_pro_soluto": "0",
+      "diff": "69120.00"
+    },
+    {
+      "id": "293a5835-fafb-41ad-9a7f-8abd29dbe207",
+      "valor_pro_soluto": "69000.00",
+      "val_sinal": "0",
+      "val_entrada": "0",
+      "val_balao": "0",
+      "expected_pro_soluto": "0",
+      "diff": "69000.00"
+    },
+    {
+      "id": "77ebdede-471f-4d4a-b50b-8b9ecb602fdd",
+      "valor_pro_soluto": "68599.80",
+      "val_sinal": "0",
+      "val_entrada": "0",
+      "val_balao": "0",
+      "expected_pro_soluto": "0",
+      "diff": "68599.80"
+    },
+    {
+      "id": "624897e1-f9a7-4803-9c48-cafb0021733f",
+      "valor_pro_soluto": "62039.70",
+      "val_sinal": "1000.00",
+      "val_entrada": "0",
+      "val_balao": "0",
+      "expected_pro_soluto": "1000.00",
+      "diff": "61039.70"
+    },
+    {
+      "id": "a4b242b6-d5cb-41fe-a501-70d91e50c3bf",
+      "valor_pro_soluto": "62000.20",
+      "val_sinal": "1000.00",
+      "val_entrada": "0",
+      "val_balao": "0",
+      "expected_pro_soluto": "1000.00",
+      "diff": "61000.20"
+    },
+    {
+      "id": "1d996b91-6a09-4444-bd24-41844fec8673",
+      "valor_pro_soluto": "62000.20",
+      "val_sinal": "1000.00",
+      "val_entrada": "0",
+      "val_balao": "0",
+      "expected_pro_soluto": "1000.00",
+      "diff": "61000.20"
+    },
+    {
+      "id": "de177f50-a1e8-4650-a759-655d184a1c84",
+      "valor_pro_soluto": "61999.60",
+      "val_sinal": "1000.00",
+      "val_entrada": "0",
+      "val_balao": "0",
+      "expected_pro_soluto": "1000.00",
+      "diff": "60999.60"
+    },
+    {
+      "id": "008553b3-8c88-420f-9c79-c665051a497a",
+      "valor_pro_soluto": "59086.56",
+      "val_sinal": "0",
+      "val_entrada": "0",
+      "val_balao": "0",
+      "expected_pro_soluto": "0",
+      "diff": "59086.56"
+    },
+    {
+      "id": "a03e4c10-4a5b-4adf-b603-56d8cb73de3e",
+      "valor_pro_soluto": "57370.04",
+      "val_sinal": "0",
+      "val_entrada": "0",
+      "val_balao": "0",
+      "expected_pro_soluto": "0",
+      "diff": "57370.04"
+    },
+    {
+      "id": "ac1c4423-44f2-4c1d-b09c-866fcf326fe3",
+      "valor_pro_soluto": "85444.15",
+      "val_sinal": "0",
+      "val_entrada": "27500.00",
+      "val_balao": "3160.59",
+      "expected_pro_soluto": "30660.59",
+      "diff": "54783.56"
+    },
+    {
+      "id": "3771951d-5221-4a3d-8b2f-6a0c5b076b12",
+      "valor_pro_soluto": "124200.00",
+      "val_sinal": "0",
+      "val_entrada": "165000.00",
+      "val_balao": "0",
+      "expected_pro_soluto": "165000.00",
+      "diff": "-40800.00"
+    },
+    {
+      "id": "bbbb5555-5555-5555-5555-555555555555",
+      "valor_pro_soluto": "136000.00",
+      "val_sinal": "15000.00",
+      "val_entrada": "48000.00",
+      "val_balao": "36000.00",
+      "expected_pro_soluto": "99000.00",
+      "diff": "37000.00"
+    },
+    {
+      "id": "bbbb3333-3333-3333-3333-333333333333",
+      "valor_pro_soluto": "104000.00",
+      "val_sinal": "10000.00",
+      "val_entrada": "32000.00",
+      "val_balao": "32000.00",
+      "expected_pro_soluto": "74000.00",
+      "diff": "30000.00"
+    },
+    {
+      "id": "53d0c5f5-aa8e-4804-9c64-fef6ecdf04fc",
+      "valor_pro_soluto": "86205.49",
+      "val_sinal": "0",
+      "val_entrada": "86205.49",
+      "val_balao": "25361.05",
+      "expected_pro_soluto": "111566.54",
+      "diff": "-25361.05"
+    },
+    {
+      "id": "1d7772d4-ee1e-4d72-92ec-3e67460880cc",
+      "valor_pro_soluto": "150850.00",
+      "val_sinal": "45000.00",
+      "val_entrada": "84000.00",
+      "val_balao": "0",
+      "expected_pro_soluto": "129000.00",
+      "diff": "21850.00"
+    },
+    {
+      "id": "bbbb2222-2222-2222-2222-222222222222",
+      "valor_pro_soluto": "76000.00",
+      "val_sinal": "6000.00",
+      "val_entrada": "50000.00",
+      "val_balao": "0",
+      "expected_pro_soluto": "56000.00",
+      "diff": "20000.00"
+    },
+    {
+      "id": "a7fe850b-0b89-44ab-b222-68cf877febfe",
+      "valor_pro_soluto": "86298.50",
+      "val_sinal": "0",
+      "val_entrada": "27500.00",
+      "val_balao": "40000.00",
+      "expected_pro_soluto": "67500.00",
+      "diff": "18798.50"
+    },
+    {
+      "id": "63e023d8-2376-498e-9895-b497922f6b24",
+      "valor_pro_soluto": "94052.10",
+      "val_sinal": "0",
+      "val_entrada": "105981.00",
+      "val_balao": "0",
+      "expected_pro_soluto": "105981.00",
+      "diff": "-11928.90"
+    },
+    {
+      "id": "2026ca9d-1c30-49da-bfe6-b4024462477c",
+      "valor_pro_soluto": "12500.00",
+      "val_sinal": "1000.00",
+      "val_entrada": "0",
+      "val_balao": "0",
+      "expected_pro_soluto": "1000.00",
+      "diff": "11500.00"
+    },
+    {
+      "id": "6aa7d912-025b-476f-9179-bf516a2e5a0e",
+      "valor_pro_soluto": "67695.43",
+      "val_sinal": "327.99",
+      "val_entrada": "18367.44",
+      "val_balao": "40000.00",
+      "expected_pro_soluto": "58695.43",
+      "diff": "9000.00"
+    },
+    {
+      "id": "7c3ca9b3-8251-469b-ae71-5f8a433a6d3e",
+      "valor_pro_soluto": "69200.00",
+      "val_sinal": "1000.00",
+      "val_entrada": "76504.20",
+      "val_balao": "0",
+      "expected_pro_soluto": "77504.20",
+      "diff": "-8304.20"
+    },
+    {
+      "id": "84b74c27-fa97-4cb0-9e22-be95f88237d2",
+      "valor_pro_soluto": "73581.34",
+      "val_sinal": "0",
+      "val_entrada": "73273.80",
+      "val_balao": "6056.15",
+      "expected_pro_soluto": "79329.95",
+      "diff": "-5748.61"
+    },
+    {
+      "id": "137d0df9-2c8e-49da-b3a3-528129babfd2",
+      "valor_pro_soluto": "88033.20",
+      "val_sinal": "0",
+      "val_entrada": "93055.20",
+      "val_balao": "0",
+      "expected_pro_soluto": "93055.20",
+      "diff": "-5022.00"
+    },
+    {
+      "id": "bbbb1111-1111-1111-1111-111111111111",
+      "valor_pro_soluto": "90000.00",
+      "val_sinal": "5000.00",
+      "val_entrada": "60000.00",
+      "val_balao": "30000.00",
+      "expected_pro_soluto": "95000.00",
+      "diff": "-5000.00"
+    },
+    {
+      "id": "36810789-4453-4544-9523-3651bd74d027",
+      "valor_pro_soluto": "52725.04",
+      "val_sinal": "5000.00",
+      "val_entrada": "27725.04",
+      "val_balao": "15000.00",
+      "expected_pro_soluto": "47725.04",
+      "diff": "5000.00"
+    },
+    {
+      "id": "aff2856b-b787-47a4-84e2-81930c5c9201",
+      "valor_pro_soluto": "84598.22",
+      "val_sinal": "0",
+      "val_entrada": "66000.00",
+      "val_balao": "14392.88",
+      "expected_pro_soluto": "80392.88",
+      "diff": "4205.34"
+    },
+    {
+      "id": "cb112568-042f-4e78-b86d-b1a209fa76d4",
+      "valor_pro_soluto": "86160.00",
+      "val_sinal": "0",
+      "val_entrada": "58000.00",
+      "val_balao": "32160.00",
+      "expected_pro_soluto": "90160.00",
+      "diff": "-4000.00"
+    },
+    {
+      "id": "cffb2c73-edb7-4127-8f74-18f382efbe78",
+      "valor_pro_soluto": "44482.63",
+      "val_sinal": "0",
+      "val_entrada": "43400.00",
+      "val_balao": "3282.63",
+      "expected_pro_soluto": "46682.63",
+      "diff": "-2200.00"
+    },
+    {
+      "id": "37357039-b2ed-404a-b8f9-5162019eb51f",
+      "valor_pro_soluto": "62800.00",
+      "val_sinal": "0",
+      "val_entrada": "64800.00",
+      "val_balao": "0",
+      "expected_pro_soluto": "64800.00",
+      "diff": "-2000.00"
+    },
+    {
+      "id": "c9e6358d-2aab-4743-8358-e7628f761350",
+      "valor_pro_soluto": "83668.30",
+      "val_sinal": "0",
+      "val_entrada": "85062.67",
+      "val_balao": "0",
+      "expected_pro_soluto": "85062.67",
+      "diff": "-1394.37"
+    }
+  ]
+}
