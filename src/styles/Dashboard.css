@@ -3089,6 +3089,27 @@
   color: var(--im-text-secondary, #94a3b8);
 }
 
+.contrato-extracao-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 12px;
+}
+
+.contrato-extracao-actions .btn-secondary {
+  min-height: 42px;
+}
+
+.contrato-extracao-summary {
+  margin-top: 12px;
+}
+
+.form-group.extracao-highlight input,
+.form-group.extracao-highlight select,
+.form-group.extracao-highlight textarea {
+  border-color: var(--im-border-accent);
+  box-shadow: 0 0 0 1px rgba(201, 169, 98, 0.12);
+}
+
 .info-box {
   background: var(--im-bg-primary, var(--im-bg-primary));
   border: 1px solid var(--im-border, var(--im-border));

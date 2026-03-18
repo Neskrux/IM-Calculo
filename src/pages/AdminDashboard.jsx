@@ -22,6 +22,65 @@ import '../styles/EmpreendimentosPage.css'
 import { LayoutGrid, List } from 'lucide-react'
 import { safeGet, safeSet } from '../utils/storage'
 import { calcularFatorComissao, calcularComissaoPagamento } from '../utils/comissaoCalculator'
+import { extrairContrato as extrairContratoApi } from '../services/contrato.service'
+
+const EXTRACAO_FIELD_LABELS = {
+  corretor_id: 'Corretor',
+  empreendimento_id: 'Empreendimento',
+  cliente_id: 'Cliente',
+  valor_venda: 'Valor da Venda',
+  data_venda: 'Data da Venda',
+  unidade: 'Unidade',
+  bloco: 'Bloco',
+  andar: 'Andar',
+  descricao: 'Descricao',
+  tipo_corretor: 'Tipo do Corretor',
+  teve_sinal: 'Sinal',
+  valor_sinal: 'Valor do Sinal',
+  teve_entrada: 'Entrada',
+  valor_entrada: 'Valor da Entrada',
+  parcelou_entrada: 'Entrada Parcelada',
+  grupos_parcelas_entrada: 'Parcelas da Entrada',
+  teve_balao: 'Balao',
+  grupos_balao: 'Grupos de Balao',
+  teve_permuta: 'Permuta',
+  tipo_permuta: 'Tipo de Permuta',
+  valor_permuta: 'Valor da Permuta'
+}
+
+const EMPTY_GROUP = { qtd: '', valor: '' }
+
+const calcularValorProSolutoFormulario = (form) => {
+  const valorSinal = parseFloat(form?.valor_sinal) || 0
+  const valorEntrada = form?.teve_entrada
+    ? (
+        form?.parcelou_entrada
+          ? (form?.grupos_parcelas_entrada || []).reduce(
+              (sum, grupo) => sum + ((parseFloat(grupo?.qtd) || 0) * (parseFloat(grupo?.valor) || 0)),
+              0
+            )
+          : (parseFloat(form?.valor_entrada) || 0)
+      )
+    : 0
+  const valorBalao = form?.teve_balao === 'sim'
+    ? (form?.grupos_balao || []).reduce(
+        (sum, grupo) => sum + ((parseFloat(grupo?.qtd) || 0) * (parseFloat(grupo?.valor) || 0)),
+        0
+      )
+    : 0
+
+  return valorSinal + valorEntrada + valorBalao
+}
+
+const hasFilledGroup = (grupos) =>
+  Array.isArray(grupos) &&
+  grupos.some((grupo) => (parseFloat(grupo?.qtd) || 0) > 0 && (parseFloat(grupo?.valor) || 0) > 0)
+
+const isValorVazio = (value) => {
+  if (value == null || value === '') return true
+  if (Array.isArray(value)) return value.length === 0 || !hasFilledGroup(value)
+  return false
+}
 const AdminDashboard = () => {
   const { userProfile, signOut, loading: authLoading } = useAuth()
   const { tab } = useParams()
@@ -124,6 +183,13 @@ const AdminDashboard = () => {
   const [message, setMessage] = useState({ type: '', text: '' })
   const [contratoFile, setContratoFile] = useState(null)
   const [uploadingContrato, setUploadingContrato] = useState(false)
+  const [extraindoContrato, setExtraindoContrato] = useState(false)
+  const [extracaoContrato, setExtracaoContrato] = useState(null)
+  const [manualRequired, setManualRequired] = useState(false)
+  const [warningsExtracao, setWarningsExtracao] = useState([])
+  const [camposAlteradosExtracao, setCamposAlteradosExtracao] = useState({})
+  const [valorProSolutoExtraido, setValorProSolutoExtraido] = useState(null)
+  const [divergenciaProSoluto, setDivergenciaProSoluto] = useState(null)
   const [pagamentoDetalhe, setPagamentoDetalhe] = useState(null)
   const [vendaExpandida, setVendaExpandida] = useState(null)
   const [showModalConfirmarPagamento, setShowModalConfirmarPagamento] = useState(false)
@@ -184,6 +250,58 @@ const AdminDashboard = () => {
       messageTimeoutRef.current = null
       setMessage({ type: '', text: '' })
     }, ms)
+  }
+
+  const resetExtracaoContratoState = () => {
+    setExtraindoContrato(false)
+    setExtracaoContrato(null)
+    setManualRequired(false)
+    setWarningsExtracao([])
+    setCamposAlteradosExtracao({})
+    setValorProSolutoExtraido(null)
+    setDivergenciaProSoluto(null)
+  }
+
+  const getCorretorVendaPatch = (corretorId, currentForm) => {
+    const corretor = corretores.find(c => c.id === corretorId)
+    const isAutonomo = corretor && !corretor.empreendimento_id && corretor.percentual_corretor
+
+    return {
+      corretor_id: corretorId,
+      tipo_corretor: corretor?.tipo_corretor || 'externo',
+      empreendimento_id: isAutonomo ? '' : (corretor?.empreendimento_id || currentForm.empreendimento_id)
+    }
+  }
+
+  const getExtracaoGroupClass = (...fields) => {
+    const highlighted = fields.some((field) => camposAlteradosExtracao[field])
+    return highlighted ? 'form-group extracao-highlight' : 'form-group'
+  }
+
+  const getExtracaoHint = (...fields) => {
+    const field = fields.find((item) => camposAlteradosExtracao[item])
+    if (!field) return null
+
+    if (camposAlteradosExtracao[field] === 'revisar') {
+      return {
+        className: 'warning',
+        text: 'Revisao obrigatoria apos a extracao automatica.'
+      }
+    }
+
+    return {
+      className: camposAlteradosExtracao[field] === 'sobrescrito' ? 'warning' : 'success',
+      text: camposAlteradosExtracao[field] === 'sobrescrito'
+        ? 'Valor sugerido pelo contrato sobrescreveu o preenchimento atual.'
+        : 'Campo preenchido automaticamente com base no contrato.'
+    }
+  }
+
+  const getResumoMatchExtracao = (label, match) => {
+    if (!match || !match.status) return null
+    if (match.status === 'multiple') return `${label}: mais de uma opcao encontrada. Escolha manualmente.`
+    if (match.status === 'none') return `${label}: nenhum vinculo encontrado automaticamente.`
+    return null
   }
 
   // Agrupar pagamentos por venda
@@ -2490,6 +2608,7 @@ const AdminDashboard = () => {
       contrato_nome: ''
     })
     setContratoFile(null)
+    resetExtracaoContratoState()
   }
 
   const resetCorretorForm = () => {
@@ -2930,6 +3049,7 @@ const AdminDashboard = () => {
       contrato_nome: venda.contrato_nome || ''
     })
     setContratoFile(null)
+    resetExtracaoContratoState()
     setModalType('venda')
     setShowModal(true)
   }
@@ -3716,6 +3836,207 @@ const AdminDashboard = () => {
     setVendaForm({ ...vendaForm, [field]: numValue })
   }
 
+  const mergeExtracaoNoFormulario = (data) => {
+    const saleForm = data?.sale_form || {}
+    const entityMatches = data?.entity_matches || {}
+    const camposAlterados = {}
+    const nextForm = { ...vendaForm }
+
+    console.log('[AdminDashboard] aplicando extracao no formulario', {
+      manualRequired: Boolean(data?.manual_required),
+      warningsCount: data?.warnings?.length ?? 0,
+      sourceType: data?.document_meta?.source_type ?? null
+    })
+
+    const markField = (field, previousValue, nextValue, modeOverride) => {
+      if (JSON.stringify(previousValue) === JSON.stringify(nextValue)) return
+      camposAlterados[field] = modeOverride || (isValorVazio(previousValue) ? 'preenchido' : 'sobrescrito')
+    }
+
+    const applyStringField = (field) => {
+      const value = saleForm[field]
+      if (typeof value !== 'string' || !value.trim()) return
+      markField(field, nextForm[field], value.trim())
+      nextForm[field] = value.trim()
+    }
+
+    const applyNumberAsStringField = (field) => {
+      const value = saleForm[field]
+      if (value == null || value === '') return
+      const stringValue = String(value)
+      if (!stringValue.trim()) return
+      markField(field, nextForm[field], stringValue)
+      nextForm[field] = stringValue
+    }
+
+    applyStringField('unidade')
+    applyStringField('bloco')
+    applyStringField('andar')
+    applyStringField('data_venda')
+    applyStringField('descricao')
+    applyNumberAsStringField('valor_venda')
+    applyNumberAsStringField('valor_sinal')
+    applyNumberAsStringField('valor_entrada')
+    applyNumberAsStringField('valor_permuta')
+
+    if (saleForm.teve_sinal === true || (parseFloat(saleForm.valor_sinal) || 0) > 0) {
+      markField('teve_sinal', nextForm.teve_sinal, true)
+      nextForm.teve_sinal = true
+    }
+
+    if (
+      saleForm.teve_entrada === true ||
+      (parseFloat(saleForm.valor_entrada) || 0) > 0 ||
+      hasFilledGroup(saleForm.grupos_parcelas_entrada)
+    ) {
+      markField('teve_entrada', nextForm.teve_entrada, true)
+      nextForm.teve_entrada = true
+    }
+
+    if (saleForm.parcelou_entrada === true || hasFilledGroup(saleForm.grupos_parcelas_entrada)) {
+      markField('parcelou_entrada', nextForm.parcelou_entrada, true)
+      nextForm.parcelou_entrada = true
+    }
+
+    if (hasFilledGroup(saleForm.grupos_parcelas_entrada)) {
+      const gruposEntrada = saleForm.grupos_parcelas_entrada.map((grupo) => ({
+        qtd: String(grupo.qtd ?? ''),
+        valor: String(grupo.valor ?? '')
+      }))
+      markField('grupos_parcelas_entrada', nextForm.grupos_parcelas_entrada, gruposEntrada)
+      nextForm.grupos_parcelas_entrada = gruposEntrada
+    }
+
+    if (saleForm.teve_balao === 'sim' || saleForm.teve_balao === 'pendente') {
+      markField('teve_balao', nextForm.teve_balao, saleForm.teve_balao)
+      nextForm.teve_balao = saleForm.teve_balao
+    }
+
+    if (hasFilledGroup(saleForm.grupos_balao)) {
+      const gruposBalao = saleForm.grupos_balao.map((grupo) => ({
+        qtd: String(grupo.qtd ?? ''),
+        valor: String(grupo.valor ?? '')
+      }))
+      markField('grupos_balao', nextForm.grupos_balao, gruposBalao)
+      nextForm.grupos_balao = gruposBalao
+      if (nextForm.teve_balao !== 'sim') {
+        markField('teve_balao', nextForm.teve_balao, 'sim')
+        nextForm.teve_balao = 'sim'
+      }
+    }
+
+    if (
+      saleForm.teve_permuta === true ||
+      !!saleForm.tipo_permuta ||
+      (parseFloat(saleForm.valor_permuta) || 0) > 0
+    ) {
+      markField('teve_permuta', nextForm.teve_permuta, true)
+      nextForm.teve_permuta = true
+    }
+
+    applyStringField('tipo_permuta')
+
+    if (entityMatches.cliente?.status === 'single' && entityMatches.cliente.options?.[0]?.id) {
+      markField('cliente_id', nextForm.cliente_id, entityMatches.cliente.options[0].id)
+      nextForm.cliente_id = entityMatches.cliente.options[0].id
+    }
+
+    if (entityMatches.empreendimento?.status === 'single' && entityMatches.empreendimento.options?.[0]?.id) {
+      markField('empreendimento_id', nextForm.empreendimento_id, entityMatches.empreendimento.options[0].id)
+      nextForm.empreendimento_id = entityMatches.empreendimento.options[0].id
+    }
+
+    if (entityMatches.corretor?.status === 'single' && entityMatches.corretor.options?.[0]?.id) {
+      const corretorPatch = getCorretorVendaPatch(entityMatches.corretor.options[0].id, nextForm)
+      Object.entries(corretorPatch).forEach(([field, value]) => {
+        markField(field, nextForm[field], value, field === 'tipo_corretor' ? 'revisar' : undefined)
+        nextForm[field] = value
+      })
+    }
+
+    if (Object.keys(camposAlterados).length > 0 && !camposAlterados.tipo_corretor) {
+      camposAlterados.tipo_corretor = 'revisar'
+    }
+
+    console.log('[AdminDashboard] merge concluido', {
+      camposAlterados: Object.keys(camposAlterados),
+      matches: {
+        cliente: entityMatches.cliente?.status,
+        corretor: entityMatches.corretor?.status,
+        empreendimento: entityMatches.empreendimento?.status
+      }
+    })
+
+    setVendaForm(nextForm)
+    setCamposAlteradosExtracao(camposAlterados)
+    setExtracaoContrato(data)
+    setManualRequired(Boolean(data?.manual_required))
+    setWarningsExtracao(Array.isArray(data?.warnings) ? data.warnings : [])
+    setValorProSolutoExtraido(data?.valor_pro_soluto_extraido ?? null)
+
+    const valorExtraido = Number(data?.valor_pro_soluto_extraido)
+    if (Number.isFinite(valorExtraido)) {
+      const valorCalculado = calcularValorProSolutoFormulario(nextForm)
+      const diferenca = Math.abs(valorCalculado - valorExtraido)
+      setDivergenciaProSoluto(diferenca > 0.01 ? { valorCalculado, valorExtraido, diferenca } : null)
+    } else {
+      setDivergenciaProSoluto(null)
+    }
+  }
+
+  const handleExtrairDadosContrato = async () => {
+    if (!contratoFile) {
+      setMessage({ type: 'warning', text: 'Anexe um contrato antes de iniciar a extracao.' })
+      clearMessageAfter(3000)
+      return
+    }
+
+    console.log('[AdminDashboard] iniciando extracao do contrato', {
+      nome: contratoFile.name,
+      size: contratoFile.size,
+      type: contratoFile.type,
+      vendaId: vendaForm.id || null
+    })
+
+    setExtraindoContrato(true)
+    setExtracaoContrato(null)
+    setWarningsExtracao([])
+    setManualRequired(false)
+    setCamposAlteradosExtracao({})
+    setValorProSolutoExtraido(null)
+    setDivergenciaProSoluto(null)
+
+    try {
+      const result = await extrairContratoApi(contratoFile)
+      console.log('[AdminDashboard] extracao recebida do backend', {
+        manualRequired: Boolean(result?.data?.manual_required),
+        warningsCount: result?.data?.warnings?.length ?? 0,
+        sourceType: result?.data?.document_meta?.source_type ?? null
+      })
+      mergeExtracaoNoFormulario(result?.data || {})
+
+      setMessage({
+        type: 'success',
+        text: result?.data?.manual_required
+          ? 'Contrato analisado. Revise os dados e siga com preenchimento manual quando necessario.'
+          : 'Dados do contrato aplicados ao formulario para revisao.'
+      })
+      clearMessageAfter(3500)
+    } catch (error) {
+      console.error('Erro ao extrair contrato:', error)
+      setExtracaoContrato(null)
+      setWarningsExtracao([])
+      setManualRequired(false)
+      setCamposAlteradosExtracao({})
+      setValorProSolutoExtraido(null)
+      setDivergenciaProSoluto(null)
+      setMessage({ type: 'error', text: error.message || 'Erro ao extrair dados do contrato.' })
+      clearMessageAfter(5000)
+    } finally {
+      setExtraindoContrato(false)
+    }
+  }
+
   // Upload de contrato
   const handleContratoUpload = async (file) => {
     if (!file) return null
@@ -3755,6 +4076,7 @@ const AdminDashboard = () => {
   const handleRemoveContrato = () => {
     setContratoFile(null)
     setVendaForm({ ...vendaForm, contrato_url: '', contrato_nome: '' })
+    resetExtracaoContratoState()
   }
 
   const getTotalVendas = () => {
@@ -3933,14 +4255,9 @@ const AdminDashboard = () => {
 
   // Quando seleciona um corretor na venda, atualiza o tipo automaticamente
   const handleCorretorChange = (corretorId) => {
-    const corretor = corretores.find(c => c.id === corretorId)
-    const isAutonomo = corretor && !corretor.empreendimento_id && corretor.percentual_corretor
-    
     setVendaForm({
-      ...vendaForm, 
-      corretor_id: corretorId,
-      tipo_corretor: corretor?.tipo_corretor || 'externo',
-      empreendimento_id: isAutonomo ? '' : (corretor?.empreendimento_id || vendaForm.empreendimento_id)
+      ...vendaForm,
+      ...getCorretorVendaPatch(corretorId, vendaForm)
     })
   }
 
@@ -7363,7 +7680,7 @@ const AdminDashboard = () => {
             {modalType === 'venda' && (
               <>
                 <div className="modal-body">
-                  <div className="form-group">
+                  <div className={getExtracaoGroupClass('corretor_id', 'tipo_corretor')}>
                     <label>Corretor *</label>
                     <select
                       value={vendaForm.corretor_id}
@@ -7380,10 +7697,15 @@ const AdminDashboard = () => {
                         )
                       })}
                     </select>
+                    {getExtracaoHint('corretor_id', 'tipo_corretor') && (
+                      <small className={`form-hint ${getExtracaoHint('corretor_id', 'tipo_corretor').className}`}>
+                        {getExtracaoHint('corretor_id', 'tipo_corretor').text}
+                      </small>
+                    )}
                   </div>
 
                   <div className="form-row">
-                    <div className="form-group">
+                    <div className={getExtracaoGroupClass('valor_venda')}>
                       <label>Valor da Venda *</label>
                       <div className="input-currency">
                         <span className="currency-prefix">R$</span>
@@ -7394,19 +7716,29 @@ const AdminDashboard = () => {
                           onChange={(e) => handleCurrencyChange('valor_venda', e.target.value)}
                         />
                       </div>
+                      {getExtracaoHint('valor_venda') && (
+                        <small className={`form-hint ${getExtracaoHint('valor_venda').className}`}>
+                          {getExtracaoHint('valor_venda').text}
+                        </small>
+                      )}
                     </div>
-                    <div className="form-group">
+                    <div className={getExtracaoGroupClass('data_venda')}>
                       <label>Data da Venda</label>
                       <input
                         type="date"
                         value={vendaForm.data_venda}
                         onChange={(e) => setVendaForm({...vendaForm, data_venda: e.target.value})}
                       />
+                      {getExtracaoHint('data_venda') && (
+                        <small className={`form-hint ${getExtracaoHint('data_venda').className}`}>
+                          {getExtracaoHint('data_venda').text}
+                        </small>
+                      )}
                     </div>
                   </div>
 
                   <div className="form-row">
-                    <div className="form-group">
+                    <div className={getExtracaoGroupClass('empreendimento_id')}>
                       <label>
                         Empreendimento {(() => {
                           const corretor = corretores.find(c => c.id === vendaForm.corretor_id)
@@ -7438,8 +7770,13 @@ const AdminDashboard = () => {
                           </small>
                         )
                       })()}
+                      {getExtracaoHint('empreendimento_id') && (
+                        <small className={`form-hint ${getExtracaoHint('empreendimento_id').className}`}>
+                          {getExtracaoHint('empreendimento_id').text}
+                        </small>
+                      )}
                     </div>
-                    <div className="form-group">
+                    <div className={getExtracaoGroupClass('cliente_id')}>
                       <label>Cliente (opcional)</label>
                       <select
                         value={vendaForm.cliente_id || ''}
@@ -7452,11 +7789,16 @@ const AdminDashboard = () => {
                           </option>
                         ))}
                       </select>
+                      {getExtracaoHint('cliente_id') && (
+                        <small className={`form-hint ${getExtracaoHint('cliente_id').className}`}>
+                          {getExtracaoHint('cliente_id').text}
+                        </small>
+                      )}
                     </div>
                   </div>
 
                   <div className="form-row">
-                    <div className="form-group">
+                    <div className={getExtracaoGroupClass('unidade')}>
                       <label>Unidade</label>
                       <input
                         type="text"
@@ -7468,8 +7810,13 @@ const AdminDashboard = () => {
                           setVendaForm({...vendaForm, unidade: val})
                         }}
                       />
+                      {getExtracaoHint('unidade') && (
+                        <small className={`form-hint ${getExtracaoHint('unidade').className}`}>
+                          {getExtracaoHint('unidade').text}
+                        </small>
+                      )}
                     </div>
-                    <div className="form-group">
+                    <div className={getExtracaoGroupClass('bloco')}>
                       <label>Bloco</label>
                       <input
                         type="text"
@@ -7481,8 +7828,13 @@ const AdminDashboard = () => {
                           setVendaForm({...vendaForm, bloco: val})
                         }}
                       />
+                      {getExtracaoHint('bloco') && (
+                        <small className={`form-hint ${getExtracaoHint('bloco').className}`}>
+                          {getExtracaoHint('bloco').text}
+                        </small>
+                      )}
                     </div>
-                    <div className="form-group">
+                    <div className={getExtracaoGroupClass('andar')}>
                       <label>Andar</label>
                       <input
                         type="text"
@@ -7500,10 +7852,15 @@ const AdminDashboard = () => {
                           }
                         }}
                       />
+                      {getExtracaoHint('andar') && (
+                        <small className={`form-hint ${getExtracaoHint('andar').className}`}>
+                          {getExtracaoHint('andar').text}
+                        </small>
+                      )}
                     </div>
                   </div>
                   <div className="form-row">
-                    <div className="form-group">
+                    <div className={getExtracaoGroupClass('descricao')}>
                       <label>Descrição (opcional)</label>
                       <input
                         type="text"
@@ -7511,6 +7868,11 @@ const AdminDashboard = () => {
                         value={vendaForm.descricao}
                         onChange={(e) => setVendaForm({...vendaForm, descricao: e.target.value})}
                       />
+                      {getExtracaoHint('descricao') && (
+                        <small className={`form-hint ${getExtracaoHint('descricao').className}`}>
+                          {getExtracaoHint('descricao').text}
+                        </small>
+                      )}
                     </div>
                   </div>
 
@@ -7520,7 +7882,7 @@ const AdminDashboard = () => {
 
                   {/* SINAL */}
                   <div className="form-row">
-                    <div className="form-group">
+                    <div className={getExtracaoGroupClass('teve_sinal', 'valor_sinal')}>
                       <label>Teve Sinal?</label>
                       <select
                         value={vendaForm.teve_sinal ? 'sim' : 'nao'}
@@ -7531,7 +7893,7 @@ const AdminDashboard = () => {
                       </select>
                     </div>
                     {vendaForm.teve_sinal && (
-                      <div className="form-group">
+                      <div className={getExtracaoGroupClass('valor_sinal')}>
                         <label>Valor do Sinal</label>
                         <div className="input-currency">
                           <span className="currency-prefix">R$</span>
@@ -7548,7 +7910,7 @@ const AdminDashboard = () => {
 
                   {/* ENTRADA */}
                   <div className="form-row">
-                    <div className="form-group">
+                    <div className={getExtracaoGroupClass('teve_entrada', 'parcelou_entrada', 'valor_entrada', 'grupos_parcelas_entrada')}>
                       <label>Teve Entrada?</label>
                       <select
                         value={vendaForm.teve_entrada ? 'sim' : 'nao'}
@@ -7564,7 +7926,7 @@ const AdminDashboard = () => {
                       </select>
                     </div>
                     {vendaForm.teve_entrada && (
-                      <div className="form-group">
+                      <div className={getExtracaoGroupClass('parcelou_entrada')}>
                         <label>Parcelou a Entrada?</label>
                         <select
                           value={vendaForm.parcelou_entrada ? 'sim' : 'nao'}
@@ -7579,7 +7941,7 @@ const AdminDashboard = () => {
 
                   {/* Valor entrada à vista */}
                   {vendaForm.teve_entrada && !vendaForm.parcelou_entrada && (
-                    <div className="form-group">
+                    <div className={getExtracaoGroupClass('valor_entrada')}>
                       <label>Valor da Entrada</label>
                       <div className="input-currency">
                         <span className="currency-prefix">R$</span>
@@ -7595,7 +7957,7 @@ const AdminDashboard = () => {
 
                   {/* Parcelas da entrada */}
                   {vendaForm.teve_entrada && vendaForm.parcelou_entrada && (
-                    <div className="form-group">
+                    <div className={getExtracaoGroupClass('grupos_parcelas_entrada')}>
                       <label>Grupos de Parcelas</label>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '8px' }}>
                         {(vendaForm.grupos_parcelas_entrada || []).map((grupo, idx) => (
@@ -7686,7 +8048,7 @@ const AdminDashboard = () => {
 
                   {/* BALÃO */}
                   <div className="form-row">
-                    <div className="form-group">
+                    <div className={getExtracaoGroupClass('teve_permuta', 'tipo_permuta', 'valor_permuta')}>
                       <label>Teve Balão?</label>
                       <select
                         value={vendaForm.teve_balao}
@@ -7812,7 +8174,7 @@ const AdminDashboard = () => {
                       </select>
                     </div>
                     {vendaForm.teve_permuta && (
-                      <div className="form-group">
+                      <div className={getExtracaoGroupClass('tipo_permuta')}>
                         <label>Tipo de Permuta</label>
                         <select
                           value={vendaForm.tipo_permuta}
@@ -7828,7 +8190,7 @@ const AdminDashboard = () => {
                   </div>
 
                   {vendaForm.teve_permuta && (
-                    <div className="form-group">
+                    <div className={getExtracaoGroupClass('valor_permuta')}>
                       <label>Valor da Permuta</label>
                       <div className="input-currency">
                         <span className="currency-prefix">R$</span>
@@ -7842,7 +8204,7 @@ const AdminDashboard = () => {
                     </div>
                   )}
 
-                  <div className="form-group">
+                  <div className={getExtracaoGroupClass('status')}>
                     <label>Status</label>
                     <select
                       value={vendaForm.status}
@@ -7867,6 +8229,7 @@ const AdminDashboard = () => {
                           onChange={(e) => {
                             const file = e.target.files[0]
                             if (file) {
+                              resetExtracaoContratoState()
                               setContratoFile(file)
                               setVendaForm({ ...vendaForm, contrato_nome: file.name })
                             }
@@ -7907,10 +8270,69 @@ const AdminDashboard = () => {
                         </button>
                       </div>
                     )}
+                    {vendaForm.contrato_url && !contratoFile && (
+                      <small className="form-hint warning">
+                        Para usar a extracao automatica no MVP, anexe novamente o contrato neste modal.
+                      </small>
+                    )}
+                    {contratoFile && (
+                      <div className="contrato-extracao-actions">
+                        <button
+                          type="button"
+                          className="btn-secondary"
+                          onClick={handleExtrairDadosContrato}
+                          disabled={extraindoContrato}
+                        >
+                          {extraindoContrato ? <div className="btn-spinner"></div> : <RefreshCw size={16} />}
+                          <span>{extraindoContrato ? 'Extraindo...' : 'Extrair dados do contrato'}</span>
+                        </button>
+                      </div>
+                    )}
                     {uploadingContrato && (
                       <div className="upload-progress">
                         <div className="loading-spinner"></div>
                         <span>Enviando contrato...</span>
+                      </div>
+                    )}
+                    {(manualRequired || warningsExtracao.length > 0 || extracaoContrato) && (
+                      <div className="contrato-extracao-summary">
+                        {manualRequired && (
+                          <div className="acesso-info warning">
+                            <AlertCircle size={16} />
+                            <span>Este contrato precisa de revisao manual. A extracao automatica serviu apenas como apoio.</span>
+                          </div>
+                        )}
+                        {warningsExtracao.map((warning, index) => (
+                          <div key={`${warning}-${index}`} className="acesso-info warning">
+                            <AlertCircle size={16} />
+                            <span>{warning}</span>
+                          </div>
+                        ))}
+                        {Object.keys(camposAlteradosExtracao).length > 0 && (
+                          <div className="acesso-info success">
+                            <CheckCircle size={16} />
+                            <span>
+                              Campos revisados pela extracao: {Object.keys(camposAlteradosExtracao)
+                                .map((field) => EXTRACAO_FIELD_LABELS[field] || field)
+                                .join(', ')}
+                            </span>
+                          </div>
+                        )}
+                        {[ 
+                          getResumoMatchExtracao('Cliente', extracaoContrato?.entity_matches?.cliente),
+                          getResumoMatchExtracao('Corretor', extracaoContrato?.entity_matches?.corretor),
+                          getResumoMatchExtracao('Empreendimento', extracaoContrato?.entity_matches?.empreendimento)
+                        ].filter(Boolean).map((texto) => (
+                          <div key={texto} className="acesso-info warning">
+                            <AlertCircle size={16} />
+                            <span>{texto}</span>
+                          </div>
+                        ))}
+                        {getExtracaoHint('tipo_corretor') && (
+                          <small className="form-hint warning">
+                            Tipo do corretor: revisao obrigatoria apos a sugestao automatica.
+                          </small>
+                        )}
                       </div>
                     )}
                   </div>
@@ -7925,17 +8347,7 @@ const AdminDashboard = () => {
                         </div>
                         <div className="preview-item">
                           <span>Pro-Soluto</span>
-                          <span>{formatCurrency(
-                            (parseFloat(vendaForm.valor_sinal) || 0) +
-                            (vendaForm.teve_entrada
-                              ? (vendaForm.parcelou_entrada 
-                                  ? (vendaForm.grupos_parcelas_entrada || []).reduce((sum, grupo) => sum + ((parseFloat(grupo.qtd) || 0) * (parseFloat(grupo.valor) || 0)), 0)
-                                  : (parseFloat(vendaForm.valor_entrada) || 0))
-                              : 0) +
-                            (vendaForm.teve_balao === 'sim'
-                              ? (vendaForm.grupos_balao || []).reduce((sum, grupo) => sum + ((parseFloat(grupo.qtd) || 0) * (parseFloat(grupo.valor) || 0)), 0)
-                              : 0)
-                          )}</span>
+                          <span>{formatCurrency(calcularValorProSolutoFormulario(vendaForm))}</span>
                         </div>
                         {getPreviewComissoes().cargos.map((cargo, idx) => (
                           <div key={idx} className="preview-item">
@@ -7948,11 +8360,23 @@ const AdminDashboard = () => {
                           <span>{formatCurrency(getPreviewComissoes().total)}</span>
                         </div>
                       </div>
+                      {valorProSolutoExtraido != null && (
+                        <small className={`form-hint ${divergenciaProSoluto ? 'warning' : 'success'}`}>
+                          Pro-soluto extraido do contrato: {formatCurrency(Number(valorProSolutoExtraido) || 0)}
+                          {divergenciaProSoluto
+                            ? ` • calculado no formulario: ${formatCurrency(divergenciaProSoluto.valorCalculado)}`
+                            : ' • consistente com o calculo atual'}
+                        </small>
+                      )}
                     </div>
                   )}
                 </div>
                 <div className="modal-footer">
-                  <button className="btn-secondary" onClick={() => setShowModal(false)}>
+                  <button className="btn-secondary" onClick={() => {
+                    setShowModal(false)
+                    resetVendaForm()
+                    setSelectedItem(null)
+                  }}>
                     Cancelar
                   </button>
                   <button className="btn-primary" onClick={handleSaveVenda} disabled={saving}>
