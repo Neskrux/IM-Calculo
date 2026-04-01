@@ -259,6 +259,14 @@ const AdminDashboard = () => {
   })
   const [uploadingLogo, setUploadingLogo] = useState(false)
 
+  // Estados de edição de datas (sinal, parcelas, balões)
+  const [editandoDataSinal, setEditandoDataSinal] = useState(false)
+  const [dataSinalTemp, setDataSinalTemp] = useState('')
+  const [editandoDataParcela, setEditandoDataParcela] = useState(null)
+  const [dataParcelaTemp, setDataParcelaTemp] = useState('')
+  const [editandoDataBalao, setEditandoDataBalao] = useState(null)
+  const [dataBalaoTemp, setDataBalaoTemp] = useState('')
+
   // Dados do formulário de venda
   const [vendaForm, setVendaForm] = useState({
     corretor_id: '',
@@ -270,6 +278,10 @@ const AdminDashboard = () => {
     valor_venda: '',
     tipo_corretor: 'externo',
     data_venda: new Date().toISOString().split('T')[0],
+    data_entrada: '',
+    data_sinal: '',
+    datas_parcelas_override: {},
+    datas_balao_override: {},
     descricao: '',
     status: 'pendente',
     // Campos pro-soluto
@@ -278,8 +290,10 @@ const AdminDashboard = () => {
     teve_entrada: false,
     valor_entrada: '',
     parcelou_entrada: false,
+    periodicidade_parcelas: 1,
     grupos_parcelas_entrada: [{ qtd: '', valor: '' }], // Array de grupos: [{ qtd: '4', valor: '500' }, { qtd: '5', valor: '1000' }]
     teve_balao: 'nao', // 'nao', 'sim', 'pendente'
+    periodicidade_balao: 6,
     grupos_balao: [{ qtd: '', valor: '' }], // Array de grupos: [{ qtd: '2', valor: '10000' }, { qtd: '1', valor: '5000' }]
     teve_permuta: false,
     tipo_permuta: '',
@@ -1174,6 +1188,7 @@ const AdminDashboard = () => {
       valor_venda: valorVenda,
       tipo_corretor: vendaForm.tipo_corretor,
       data_venda: vendaForm.data_venda,
+      data_entrada: vendaForm.data_entrada || null,
       descricao: vendaForm.descricao,
       status: vendaForm.status,
       teve_sinal: vendaForm.teve_sinal,
@@ -1181,9 +1196,11 @@ const AdminDashboard = () => {
       teve_entrada: vendaForm.teve_entrada,
       valor_entrada: parseFloat(vendaForm.valor_entrada) || null,
       parcelou_entrada: vendaForm.parcelou_entrada,
+      periodicidade_parcelas: parseInt(vendaForm.periodicidade_parcelas) || 1,
       qtd_parcelas_entrada: qtdParcelasEntradaPayload,
       valor_parcela_entrada: valorParcelaEntradaPayload,
       teve_balao: vendaForm.teve_balao,
+      periodicidade_balao: parseInt(vendaForm.periodicidade_balao) || 6,
       qtd_balao: parseInt(vendaForm.qtd_balao) || null,
       valor_balao: parseFloat(vendaForm.valor_balao) || null,
       teve_permuta: vendaForm.teve_permuta,
@@ -1246,32 +1263,34 @@ const AdminDashboard = () => {
       const entradaNoAto = !vendaForm.parcelou_entrada
       const aplicarComissaoIntegral = percentualEntrada >= 20 && entradaNoAto
       
+      const dataBaseCalculo = vendaForm.data_entrada || vendaForm.data_venda
+
       if (aplicarComissaoIntegral) {
         // Entrada >= 20% e paga no ato (não parcelada): 1 parcela com comissão total
         const comissaoTotal = comissoesDinamicas.total || (valorProSoluto * fatorTotal)
         const fatorIntegral = valorEntradaParaCalculo > 0 ? comissaoTotal / valorEntradaParaCalculo : 0
-        
+
         pagamentos.push({
           venda_id: vendaId,
           tipo: 'comissao_integral',
           valor: valorEntradaParaCalculo,
-          data_prevista: vendaForm.data_venda,
+          data_prevista: dataBaseCalculo,
           comissao_gerada: comissaoTotal,
           fator_comissao_aplicado: fatorIntegral,
           percentual_comissao_total: percentualTotal
         })
-        
+
         console.log(`✅ Edição: Entrada >= 20% no ato (${percentualEntrada.toFixed(1)}%). Comissão integral: R$ ${comissaoTotal.toFixed(2)}`)
       } else {
         // Entrada < 20% ou entrada parcelada: gerar parcelas normalmente
-        
+
         // Sinal
         if (valorSinal > 0) {
           pagamentos.push({
             venda_id: vendaId,
             tipo: 'sinal',
             valor: valorSinal,
-            data_prevista: vendaForm.data_venda,
+            data_prevista: vendaForm.data_sinal || dataBaseCalculo,
             comissao_gerada: calcularComissaoPagamento(valorSinal, fatorTotal),
             fator_comissao_aplicado: fatorTotal,
             percentual_comissao_total: percentualTotal
@@ -1286,14 +1305,14 @@ const AdminDashboard = () => {
               venda_id: vendaId,
               tipo: 'entrada',
               valor: valorEntradaAvista,
-              data_prevista: vendaForm.data_venda,
+              data_prevista: dataBaseCalculo,
               comissao_gerada: calcularComissaoPagamento(valorEntradaAvista, fatorTotal),
               fator_comissao_aplicado: fatorTotal,
               percentual_comissao_total: percentualTotal
             })
           }
         }
-        
+
         // Parcelas da entrada - só se teve entrada E parcelou
         if (vendaForm.teve_entrada && vendaForm.parcelou_entrada) {
           let numeroParcela = 1
@@ -1304,22 +1323,29 @@ const AdminDashboard = () => {
               console.warn('Grupo de parcela inválido ignorado:', grupo)
               return
             }
-            
+
             const qtd = parseInt(grupo.qtd) || 0
             const valor = parseFloat(grupo.valor) || 0
-            
+
             // Só processar se quantidade e valor forem válidos
             if (qtd > 0 && valor > 0) {
               for (let i = 0; i < qtd; i++) {
-                const dataParcela = new Date(vendaForm.data_venda)
-                dataParcela.setMonth(dataParcela.getMonth() + numeroParcela)
-                
+                const idxParcela = numeroParcela - 1
+                const dataOverride = (vendaForm.datas_parcelas_override || {})[idxParcela]
+                let dataPrevistaParcela
+                if (dataOverride) {
+                  dataPrevistaParcela = dataOverride
+                } else {
+                  const periodicidade = parseInt(vendaForm.periodicidade_parcelas) || 1
+                  dataPrevistaParcela = addMonthsSafe(dataBaseCalculo, numeroParcela * periodicidade)
+                }
+
                 pagamentos.push({
                   venda_id: vendaId,
                   tipo: 'parcela_entrada',
                   numero_parcela: numeroParcela,
                   valor: valor,
-                  data_prevista: dataParcela.toISOString().split('T')[0],
+                  data_prevista: dataPrevistaParcela,
                   comissao_gerada: calcularComissaoPagamento(valor, fatorTotal),
                   fator_comissao_aplicado: fatorTotal,
                   percentual_comissao_total: percentualTotal
@@ -1329,7 +1355,7 @@ const AdminDashboard = () => {
             }
           })
         }
-        
+
         // Balões
         if (vendaForm.teve_balao === 'sim') {
           let numeroBalao = 1
@@ -1340,18 +1366,24 @@ const AdminDashboard = () => {
               console.warn('Grupo de balão inválido ignorado:', grupo)
               return
             }
-            
+
             const qtd = parseInt(grupo.qtd) || 0
             const valor = parseFloat(grupo.valor) || 0
-            
+
             // Só processar se quantidade e valor forem válidos
             if (qtd > 0 && valor > 0) {
               for (let i = 0; i < qtd; i++) {
+                const dataOverrideBalao = (vendaForm.datas_balao_override || {})[numeroBalao - 1]
+                const periBalao = parseInt(vendaForm.periodicidade_balao) || 6
+                const dataAutoBalao = dataBaseCalculo
+                  ? addMonthsSafe(dataBaseCalculo, numeroBalao * periBalao)
+                  : undefined
                 pagamentos.push({
                   venda_id: vendaId,
                   tipo: 'balao',
                   numero_parcela: numeroBalao,
                   valor: valor,
+                  data_prevista: dataOverrideBalao || dataAutoBalao || undefined,
                   comissao_gerada: calcularComissaoPagamento(valor, fatorTotal),
                   fator_comissao_aplicado: fatorTotal,
                   percentual_comissao_total: percentualTotal
@@ -1395,32 +1427,34 @@ const AdminDashboard = () => {
       const entradaNoAto = !vendaForm.parcelou_entrada
       const aplicarComissaoIntegral = percentualEntrada >= 20 && entradaNoAto
       
+      const dataBaseCalculo2 = vendaForm.data_entrada || vendaForm.data_venda
+
       if (aplicarComissaoIntegral) {
         // Entrada >= 20% e paga no ato (não parcelada): 1 parcela com comissão total
         const comissaoTotal = comissoesDinamicas.total || (valorProSoluto * fatorTotal)
         const fatorIntegral = valorEntradaParaCalculo > 0 ? comissaoTotal / valorEntradaParaCalculo : 0
-        
+
         pagamentos.push({
           venda_id: vendaId,
           tipo: 'comissao_integral',
-          valor: valorEntradaParaCalculo, // Valor da entrada
-          data_prevista: vendaForm.data_venda,
-          comissao_gerada: comissaoTotal, // Comissão TOTAL do corretor
+          valor: valorEntradaParaCalculo,
+          data_prevista: dataBaseCalculo2,
+          comissao_gerada: comissaoTotal,
           fator_comissao_aplicado: fatorIntegral,
           percentual_comissao_total: percentualTotal
         })
-        
+
         console.log(`✅ Entrada >= 20% no ato (${percentualEntrada.toFixed(1)}%). Comissão integral: R$ ${comissaoTotal.toFixed(2)}`)
       } else {
         // Entrada < 20% ou entrada parcelada: gerar parcelas normalmente
-        
+
         // Sinal
         if (valorSinal > 0) {
           pagamentos.push({
             venda_id: vendaId,
             tipo: 'sinal',
             valor: valorSinal,
-            data_prevista: vendaForm.data_venda,
+            data_prevista: vendaForm.data_sinal || dataBaseCalculo2,
             comissao_gerada: calcularComissaoPagamento(valorSinal, fatorTotal),
             fator_comissao_aplicado: fatorTotal,
             percentual_comissao_total: percentualTotal
@@ -1435,14 +1469,14 @@ const AdminDashboard = () => {
               venda_id: vendaId,
               tipo: 'entrada',
               valor: valorEntradaAvista,
-              data_prevista: vendaForm.data_venda,
+              data_prevista: dataBaseCalculo2,
               comissao_gerada: calcularComissaoPagamento(valorEntradaAvista, fatorTotal),
               fator_comissao_aplicado: fatorTotal,
               percentual_comissao_total: percentualTotal
             })
           }
         }
-        
+
         // Parcelas da entrada - só se teve entrada E parcelou
         if (vendaForm.teve_entrada && vendaForm.parcelou_entrada) {
           let numeroParcela = 1
@@ -1453,22 +1487,29 @@ const AdminDashboard = () => {
               console.warn('Grupo de parcela inválido ignorado:', grupo)
               return
             }
-            
+
             const qtd = parseInt(grupo.qtd) || 0
             const valor = parseFloat(grupo.valor) || 0
-            
+
             // Só processar se quantidade e valor forem válidos
             if (qtd > 0 && valor > 0) {
               for (let i = 0; i < qtd; i++) {
-                const dataParcela = new Date(vendaForm.data_venda)
-                dataParcela.setMonth(dataParcela.getMonth() + numeroParcela)
-                
+                const idxParcela2 = numeroParcela - 1
+                const dataOverride2 = (vendaForm.datas_parcelas_override || {})[idxParcela2]
+                let dataPrevistaParcela2
+                if (dataOverride2) {
+                  dataPrevistaParcela2 = dataOverride2
+                } else {
+                  const periodicidade2 = parseInt(vendaForm.periodicidade_parcelas) || 1
+                  dataPrevistaParcela2 = addMonthsSafe(dataBaseCalculo2, numeroParcela * periodicidade2)
+                }
+
                 pagamentos.push({
                   venda_id: vendaId,
                   tipo: 'parcela_entrada',
                   numero_parcela: numeroParcela,
                   valor: valor,
-                  data_prevista: dataParcela.toISOString().split('T')[0],
+                  data_prevista: dataPrevistaParcela2,
                   comissao_gerada: calcularComissaoPagamento(valor, fatorTotal),
                   fator_comissao_aplicado: fatorTotal,
                   percentual_comissao_total: percentualTotal
@@ -1478,7 +1519,7 @@ const AdminDashboard = () => {
             }
           })
         }
-        
+
         // Balões
         if (vendaForm.teve_balao === 'sim') {
           let numeroBalao = 1
@@ -1489,18 +1530,24 @@ const AdminDashboard = () => {
               console.warn('Grupo de balão inválido ignorado:', grupo)
               return
             }
-            
+
             const qtd = parseInt(grupo.qtd) || 0
             const valor = parseFloat(grupo.valor) || 0
-            
+
             // Só processar se quantidade e valor forem válidos
             if (qtd > 0 && valor > 0) {
               for (let i = 0; i < qtd; i++) {
+                const dataOverrideBalao2 = (vendaForm.datas_balao_override || {})[numeroBalao - 1]
+                const periBalao2 = parseInt(vendaForm.periodicidade_balao) || 6
+                const dataAutoBalao2 = dataBaseCalculo2
+                  ? addMonthsSafe(dataBaseCalculo2, numeroBalao * periBalao2)
+                  : undefined
                 pagamentos.push({
                   venda_id: vendaId,
                   tipo: 'balao',
                   numero_parcela: numeroBalao,
                   valor: valor,
+                  data_prevista: dataOverrideBalao2 || dataAutoBalao2 || undefined,
                   comissao_gerada: calcularComissaoPagamento(valor, fatorTotal),
                   fator_comissao_aplicado: fatorTotal,
                   percentual_comissao_total: percentualTotal
@@ -2472,6 +2519,10 @@ const AdminDashboard = () => {
       valor_venda: '',
       tipo_corretor: 'externo',
       data_venda: new Date().toISOString().split('T')[0],
+      data_entrada: '',
+      data_sinal: '',
+      datas_parcelas_override: {},
+      datas_balao_override: {},
       descricao: '',
       status: 'pendente',
       teve_sinal: false,
@@ -2479,8 +2530,10 @@ const AdminDashboard = () => {
       teve_entrada: false,
       valor_entrada: '',
       parcelou_entrada: false,
+      periodicidade_parcelas: 1,
       grupos_parcelas_entrada: [{ qtd: '', valor: '' }],
       teve_balao: 'nao',
+      periodicidade_balao: 6,
       grupos_balao: [{ qtd: '', valor: '' }],
       teve_permuta: false,
       tipo_permuta: '',
@@ -2902,6 +2955,29 @@ const AdminDashboard = () => {
       }]
     }
     
+    // Extrair data do sinal e datas de parcelas/balões dos pagamentos
+    let dataSinalCarregada = ''
+    const datasParcelasOverride = {}
+    const datasBalaoOverride = {}
+    if (pagamentosVenda) {
+      const pagSinal = pagamentosVenda.find(p => p.tipo === 'sinal')
+      if (pagSinal?.data_prevista) dataSinalCarregada = pagSinal.data_prevista
+
+      const parcelasOrdenadas = pagamentosVenda
+        .filter(p => p.tipo === 'parcela_entrada')
+        .sort((a, b) => (a.numero_parcela || 0) - (b.numero_parcela || 0))
+      parcelasOrdenadas.forEach((p, i) => {
+        if (p.data_prevista) datasParcelasOverride[i] = p.data_prevista
+      })
+
+      const baloesOrdenados = pagamentosVenda
+        .filter(p => p.tipo === 'balao')
+        .sort((a, b) => (a.numero_parcela || 0) - (b.numero_parcela || 0))
+      baloesOrdenados.forEach((p, i) => {
+        if (p.data_prevista) datasBalaoOverride[i] = p.data_prevista
+      })
+    }
+
     setVendaForm({
       corretor_id: venda.corretor_id,
       empreendimento_id: venda.empreendimento_id || '',
@@ -2912,6 +2988,10 @@ const AdminDashboard = () => {
       valor_venda: venda.valor_venda.toString(),
       tipo_corretor: venda.tipo_corretor,
       data_venda: venda.data_venda,
+      data_entrada: venda.data_entrada || venda.data_venda || '',
+      data_sinal: dataSinalCarregada,
+      datas_parcelas_override: datasParcelasOverride,
+      datas_balao_override: datasBalaoOverride,
       descricao: venda.descricao || '',
       status: venda.status,
       teve_sinal: venda.teve_sinal || false,
@@ -2919,8 +2999,10 @@ const AdminDashboard = () => {
       teve_entrada: venda.teve_entrada || false,
       valor_entrada: venda.valor_entrada?.toString() || '',
       parcelou_entrada: venda.parcelou_entrada || false,
+      periodicidade_parcelas: venda.periodicidade_parcelas || 1,
       grupos_parcelas_entrada: gruposParcelasEntrada,
       teve_balao: venda.teve_balao || 'nao',
+      periodicidade_balao: venda.periodicidade_balao || 6,
       grupos_balao: gruposBalao,
       teve_permuta: venda.teve_permuta || false,
       tipo_permuta: venda.tipo_permuta || '',
@@ -2963,6 +3045,26 @@ const AdminDashboard = () => {
       style: 'currency',
       currency: 'BRL'
     }).format(value)
+  }
+
+  // Formatar data YYYY-MM-DD para DD/MM/YYYY (pt-BR)
+  const formatDateBR = (dateStr) => {
+    if (!dateStr) return ''
+    const parts = dateStr.split('-')
+    if (parts.length !== 3) return dateStr
+    return `${parts[2]}/${parts[1]}/${parts[0]}`
+  }
+
+  // Adicionar N meses a uma data YYYY-MM-DD sem bugs de timezone ou setMonth
+  // Preserva o dia; se o mês destino tiver menos dias, usa o último dia do mês
+  const addMonthsSafe = (dateStr, months) => {
+    const [y, m, d] = dateStr.split('-').map(Number)
+    const totalMonths = (m - 1) + months
+    const newYear = y + Math.floor(totalMonths / 12)
+    const newMonth = totalMonths % 12 // 0-indexed
+    const daysInMonth = new Date(newYear, newMonth + 1, 0).getDate()
+    const newDay = Math.min(d, daysInMonth)
+    return `${newYear}-${String(newMonth + 1).padStart(2, '0')}-${String(newDay).padStart(2, '0')}`
   }
 
   // Formatar nome com primeira letra maiúscula (Title Case)
@@ -7403,6 +7505,24 @@ const AdminDashboard = () => {
                         onChange={(e) => setVendaForm({...vendaForm, data_venda: e.target.value})}
                       />
                     </div>
+                    <div className="form-group">
+                      <label>Data da Entrada *</label>
+                      <input
+                        type="date"
+                        value={vendaForm.data_entrada}
+                        onChange={(e) => {
+                          const novaData = e.target.value
+                          setVendaForm({
+                            ...vendaForm,
+                            data_entrada: novaData,
+                            data_sinal: vendaForm.data_sinal || '',
+                            datas_parcelas_override: {},
+                            datas_balao_override: {}
+                          })
+                        }}
+                        required
+                      />
+                    </div>
                   </div>
 
                   <div className="form-row">
@@ -7524,7 +7644,7 @@ const AdminDashboard = () => {
                       <label>Teve Sinal?</label>
                       <select
                         value={vendaForm.teve_sinal ? 'sim' : 'nao'}
-                        onChange={(e) => setVendaForm({...vendaForm, teve_sinal: e.target.value === 'sim', valor_sinal: e.target.value === 'nao' ? '' : vendaForm.valor_sinal})}
+                        onChange={(e) => setVendaForm({...vendaForm, teve_sinal: e.target.value === 'sim', valor_sinal: e.target.value === 'nao' ? '' : vendaForm.valor_sinal, data_sinal: e.target.value === 'nao' ? '' : vendaForm.data_sinal})}
                       >
                         <option value="nao">Não</option>
                         <option value="sim">Sim</option>
@@ -7545,6 +7665,54 @@ const AdminDashboard = () => {
                       </div>
                     )}
                   </div>
+                  {vendaForm.teve_sinal && (
+                    <div className="form-row">
+                      <div className="form-group">
+                        <label>Data do Sinal</label>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          {editandoDataSinal ? (
+                            <>
+                              <input
+                                type="date"
+                                value={dataSinalTemp}
+                                onChange={(e) => setDataSinalTemp(e.target.value)}
+                                style={{ flex: 1 }}
+                              />
+                              <button
+                                type="button"
+                                onClick={() => { setVendaForm({ ...vendaForm, data_sinal: dataSinalTemp }); setEditandoDataSinal(false) }}
+                                style={{ background: '#22c55e', color: 'white', border: 'none', borderRadius: '4px', padding: '6px 10px', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+                              >
+                                <Save size={14} />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setEditandoDataSinal(false)}
+                                style={{ background: '#ef4444', color: 'white', border: 'none', borderRadius: '4px', padding: '6px 10px', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+                              >
+                                <X size={14} />
+                              </button>
+                            </>
+                          ) : (
+                            <>
+                              <span style={{ flex: 1, color: vendaForm.data_sinal ? '#e2e8f0' : '#64748b' }}>
+                                {vendaForm.data_sinal
+                                  ? formatDateBR(vendaForm.data_sinal)
+                                  : (vendaForm.data_entrada ? `${formatDateBR(vendaForm.data_entrada)} (padrão)` : '—')}
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => { setEditandoDataSinal(true); setDataSinalTemp(vendaForm.data_sinal || vendaForm.data_entrada || '') }}
+                                style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#c9a962', display: 'flex', alignItems: 'center' }}
+                              >
+                                <Edit2 size={16} />
+                              </button>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
                   {/* ENTRADA */}
                   <div className="form-row">
@@ -7568,14 +7736,107 @@ const AdminDashboard = () => {
                         <label>Parcelou a Entrada?</label>
                         <select
                           value={vendaForm.parcelou_entrada ? 'sim' : 'nao'}
-                          onChange={(e) => setVendaForm({...vendaForm, parcelou_entrada: e.target.value === 'sim'})}
+                          onChange={(e) => setVendaForm({...vendaForm, parcelou_entrada: e.target.value === 'sim', datas_parcelas_override: {}})}
                         >
                           <option value="nao">Não (à vista)</option>
                           <option value="sim">Sim</option>
                         </select>
                       </div>
                     )}
+                    {vendaForm.teve_entrada && vendaForm.parcelou_entrada && (
+                      <div className="form-group">
+                        <label>Periodicidade das Parcelas</label>
+                        <select
+                          value={vendaForm.periodicidade_parcelas}
+                          onChange={(e) => setVendaForm({ ...vendaForm, periodicidade_parcelas: parseInt(e.target.value), datas_parcelas_override: {} })}
+                        >
+                          <option value={1}>Mensal (1 mês)</option>
+                          <option value={3}>Trimestral (3 meses)</option>
+                          <option value={4}>Quadrimestral (4 meses)</option>
+                          <option value={6}>Semestral (6 meses)</option>
+                          <option value={12}>Anual (12 meses)</option>
+                        </select>
+                      </div>
+                    )}
                   </div>
+
+                  {/* Datas das Próximas Parcelas (calculadas a partir de data_entrada + periodicidade) */}
+                  {vendaForm.teve_entrada && vendaForm.parcelou_entrada && (() => {
+                    const periodicidade = parseInt(vendaForm.periodicidade_parcelas) || 1
+                    let numeroParcela = 0
+                    const parcelasCalc = []
+                    ;(vendaForm.grupos_parcelas_entrada || []).forEach(grupo => {
+                      const qtd = parseInt(grupo.qtd) || 0
+                      const valor = parseFloat(grupo.valor) || 0
+                      if (qtd > 0) {
+                        for (let i = 0; i < qtd; i++) {
+                          const idx = numeroParcela
+                          const override = (vendaForm.datas_parcelas_override || {})[idx]
+                          const dataAuto = vendaForm.data_entrada
+                            ? addMonthsSafe(vendaForm.data_entrada, (idx + 1) * periodicidade)
+                            : ''
+                          const dataFinal = override || dataAuto
+                          parcelasCalc.push({ idx, valor, dataFinal, isOverride: !!override })
+                          numeroParcela++
+                        }
+                      }
+                    })
+                    return parcelasCalc.length > 0 ? (
+                      <div className="form-group">
+                        <label style={{ marginBottom: '8px', display: 'block' }}>Datas das Próximas Parcelas</label>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                          {parcelasCalc.map(({ idx, valor, dataFinal, isOverride }) => (
+                            <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 12px', background: '#1e2433', borderRadius: '8px' }}>
+                              <span style={{ color: '#94a3b8', fontSize: '13px', minWidth: '140px' }}>
+                                Parcela {idx + 1}{valor > 0 ? ` — ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(valor)}` : ''}
+                              </span>
+                              {editandoDataParcela === idx ? (
+                                <>
+                                  <input
+                                    type="date"
+                                    value={dataParcelaTemp}
+                                    onChange={(e) => setDataParcelaTemp(e.target.value)}
+                                    style={{ flex: 1 }}
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setVendaForm({ ...vendaForm, datas_parcelas_override: { ...(vendaForm.datas_parcelas_override || {}), [idx]: dataParcelaTemp } })
+                                      setEditandoDataParcela(null)
+                                    }}
+                                    style={{ background: '#22c55e', color: 'white', border: 'none', borderRadius: '4px', padding: '6px 10px', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+                                  >
+                                    <Save size={14} />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => setEditandoDataParcela(null)}
+                                    style={{ background: '#ef4444', color: 'white', border: 'none', borderRadius: '4px', padding: '6px 10px', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+                                  >
+                                    <X size={14} />
+                                  </button>
+                                </>
+                              ) : (
+                                <>
+                                  <span style={{ flex: 1, color: isOverride ? '#c9a962' : (dataFinal ? '#e2e8f0' : '#64748b'), fontSize: '14px' }}>
+                                    {dataFinal ? formatDateBR(dataFinal) : (vendaForm.data_entrada ? '—' : 'Defina a Data da Entrada')}
+                                    {isOverride && <span style={{ color: '#64748b', fontSize: '12px', marginLeft: '6px' }}>(editado)</span>}
+                                  </span>
+                                  <button
+                                    type="button"
+                                    onClick={() => { setEditandoDataParcela(idx); setDataParcelaTemp(dataFinal || '') }}
+                                    style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#c9a962', display: 'flex', alignItems: 'center' }}
+                                  >
+                                    <Edit2 size={16} />
+                                  </button>
+                                </>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ) : null
+                  })()}
 
                   {/* Valor entrada à vista */}
                   {vendaForm.teve_entrada && !vendaForm.parcelou_entrada && (
@@ -7691,10 +7952,11 @@ const AdminDashboard = () => {
                       <select
                         value={vendaForm.teve_balao}
                         onChange={(e) => setVendaForm({
-                          ...vendaForm, 
+                          ...vendaForm,
                           teve_balao: e.target.value,
                           qtd_balao: e.target.value === 'nao' ? '' : vendaForm.qtd_balao,
-                          valor_balao: e.target.value === 'nao' ? '' : vendaForm.valor_balao
+                          valor_balao: e.target.value === 'nao' ? '' : vendaForm.valor_balao,
+                          datas_balao_override: {}
                         })}
                       >
                         <option value="nao">Não</option>
@@ -7702,6 +7964,20 @@ const AdminDashboard = () => {
                         <option value="pendente">Ainda não (pendente)</option>
                       </select>
                     </div>
+                    {vendaForm.teve_balao === 'sim' && (
+                      <div className="form-group">
+                        <label>Periodicidade dos Balões</label>
+                        <select
+                          value={vendaForm.periodicidade_balao}
+                          onChange={(e) => setVendaForm({ ...vendaForm, periodicidade_balao: parseInt(e.target.value), datas_balao_override: {} })}
+                        >
+                          <option value={3}>Trimestral (3 meses)</option>
+                          <option value={4}>Quadrimestral (4 meses)</option>
+                          <option value={6}>Semestral (6 meses)</option>
+                          <option value={12}>Anual (12 meses)</option>
+                        </select>
+                      </div>
+                    )}
                   </div>
 
                   {(vendaForm.teve_balao === 'sim' || vendaForm.teve_balao === 'pendente') && (
@@ -7793,6 +8069,84 @@ const AdminDashboard = () => {
                       </div>
                     </div>
                   )}
+
+                  {/* Datas dos Balões — calculadas conforme periodicidade a partir da Data da Entrada */}
+                  {vendaForm.teve_balao === 'sim' && (() => {
+                    const periBalaoUI = parseInt(vendaForm.periodicidade_balao) || 6
+                    let numeroBalao = 0
+                    const baloesCalc = []
+                    ;(vendaForm.grupos_balao || []).forEach(grupo => {
+                      const qtd = parseInt(grupo.qtd) || 0
+                      const valor = parseFloat(grupo.valor) || 0
+                      if (qtd > 0) {
+                        for (let i = 0; i < qtd; i++) {
+                          const idx = numeroBalao
+                          const override = (vendaForm.datas_balao_override || {})[idx]
+                          const dataAuto = vendaForm.data_entrada
+                            ? addMonthsSafe(vendaForm.data_entrada, (idx + 1) * periBalaoUI)
+                            : ''
+                          const dataFinal = override || dataAuto
+                          baloesCalc.push({ idx, valor, dataFinal, isOverride: !!override })
+                          numeroBalao++
+                        }
+                      }
+                    })
+                    return baloesCalc.length > 0 ? (
+                      <div className="form-group">
+                        <label style={{ marginBottom: '8px', display: 'block' }}>Data do Balão</label>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                          {baloesCalc.map(({ idx, valor, dataFinal, isOverride }) => (
+                            <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 12px', background: '#1e2433', borderRadius: '8px' }}>
+                              <span style={{ color: '#94a3b8', fontSize: '13px', minWidth: '140px' }}>
+                                Balão {idx + 1}{valor > 0 ? ` — ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(valor)}` : ''}
+                              </span>
+                              {editandoDataBalao === idx ? (
+                                <>
+                                  <input
+                                    type="date"
+                                    value={dataBalaoTemp}
+                                    onChange={(e) => setDataBalaoTemp(e.target.value)}
+                                    style={{ flex: 1 }}
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setVendaForm({ ...vendaForm, datas_balao_override: { ...(vendaForm.datas_balao_override || {}), [idx]: dataBalaoTemp } })
+                                      setEditandoDataBalao(null)
+                                    }}
+                                    style={{ background: '#22c55e', color: 'white', border: 'none', borderRadius: '4px', padding: '6px 10px', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+                                  >
+                                    <Save size={14} />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => setEditandoDataBalao(null)}
+                                    style={{ background: '#ef4444', color: 'white', border: 'none', borderRadius: '4px', padding: '6px 10px', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+                                  >
+                                    <X size={14} />
+                                  </button>
+                                </>
+                              ) : (
+                                <>
+                                  <span style={{ flex: 1, color: isOverride ? '#c9a962' : (dataFinal ? '#e2e8f0' : '#64748b'), fontSize: '14px' }}>
+                                    {dataFinal ? formatDateBR(dataFinal) : (vendaForm.data_entrada ? '—' : 'Defina a Data da Entrada')}
+                                    {isOverride && <span style={{ color: '#64748b', fontSize: '12px', marginLeft: '6px' }}>(editado)</span>}
+                                  </span>
+                                  <button
+                                    type="button"
+                                    onClick={() => { setEditandoDataBalao(idx); setDataBalaoTemp(dataFinal || '') }}
+                                    style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#c9a962', display: 'flex', alignItems: 'center' }}
+                                  >
+                                    <Edit2 size={16} />
+                                  </button>
+                                </>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ) : null
+                  })()}
 
                   {/* PERMUTA */}
                   <div className="form-row">
