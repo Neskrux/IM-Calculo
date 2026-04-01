@@ -1509,6 +1509,13 @@
   border: 1px solid rgba(59, 130, 246, 0.25);
 }
 
+.status-badge.distrato {
+  background: rgba(220, 38, 38, 0.12);
+  color: #dc2626;
+  border: 1px solid rgba(220, 38, 38, 0.3);
+  font-weight: 700;
+}
+
 .action-buttons {
   display: flex;
   gap: 8px;
@@ -3355,6 +3362,14 @@
   font-size: 14px;
   font-weight: 600;
   color: #fff;
+}
+
+.preview-item.saldo-positivo span:last-child {
+  color: var(--im-success);
+}
+
+.preview-item.saldo-negativo span:last-child {
+  color: var(--im-danger);
 }
 
 .modal-footer {
@@ -6357,4 +6372,898 @@
   margin: 0;
   color: var(--im-text-muted);
   font-size: 14px;
+}
+
+/* ============================================
+   MODAL EXCLUSÃO / DISTRATO DE VENDA
+   ============================================ */
+
+.modal-excluir-venda {
+  max-width: 460px;
+}
+
+.modal-excluir-descricao {
+  font-size: 14px;
+  color: var(--im-text-secondary);
+  line-height: 1.65;
+  margin-bottom: 4px;
+}
+
+.modal-excluir-descricao strong {
+  color: var(--im-text-primary);
+  font-weight: 600;
+}
+
+/* Opções empilhadas */
+.modal-excluir-opcoes {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 4px 0 4px;
+}
+
+/* Botão de opção grande */
+.btn-opcao-modal {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 18px 20px;
+  border-radius: 12px;
+  border: 1px solid transparent;
+  text-align: left;
+  cursor: pointer;
+  transition: all var(--im-transition);
+  width: 100%;
+}
+
+.btn-opcao-modal:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+.btn-opcao-modal-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.btn-opcao-modal-desc {
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.5;
+  padding-left: 28px;
+  opacity: 0.8;
+}
+
+/* Variante vermelha — Exclusão do Sistema */
+.btn-opcao-modal.danger {
+  background: rgba(239, 68, 68, 0.08);
+  border-color: rgba(239, 68, 68, 0.25);
+  color: #ef4444;
+}
+
+.btn-opcao-modal.danger:hover:not(:disabled) {
+  background: rgba(239, 68, 68, 0.14);
+  border-color: rgba(239, 68, 68, 0.45);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(239, 68, 68, 0.18);
+}
+
+/* Variante dourada — Distrato do Contrato */
+.btn-opcao-modal.gold {
+  background: var(--im-accent-subtle);
+  border-color: var(--im-border-accent);
+  color: var(--im-accent);
+}
+
+.btn-opcao-modal.gold:hover:not(:disabled) {
+  background: var(--im-bg-hover);
+  border-color: var(--im-accent);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px var(--im-accent-glow);
+}
+
+/* Campo de data no passo 2 */
+.modal-distrato-data {
+  background: var(--im-bg-tertiary);
+  border-radius: 12px;
+  padding: 20px !important;
+  border: 1px solid var(--im-border) !important;
+  margin-bottom: 0 !important;
+  padding-bottom: 20px !important;
+}
+
+.modal-distrato-data label span {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--im-text-secondary);
+  letter-spacing: 0.3px;
+}
+
+.form-section input[type="date"] {
+  padding: 12px 16px;
+  background: var(--im-bg-secondary);
+  border: 1px solid var(--im-border);
+  border-radius: 10px;
+  color: var(--im-text-primary);
+  font-size: 14px;
+  width: 100%;
+  transition: all var(--im-transition);
+  color-scheme: dark;
+}
+
+.form-section input[type="date"]:focus {
+  outline: none;
+  border-color: var(--im-accent);
+  box-shadow: 0 0 0 3px var(--im-accent-subtle);
+}
+
+/* Botão confirmar distrato — dourado idêntico ao btn-primary */
+.btn-confirmar-distrato {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 22px;
+  background: linear-gradient(135deg, var(--im-accent) 0%, var(--im-accent-dark) 100%);
+  color: #1a1200;
+  border: none;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--im-transition);
+  box-shadow: 0 4px 15px rgba(201, 169, 98, 0.25);
+}
+
+.btn-confirmar-distrato:hover:not(:disabled) {
+  background: linear-gradient(135deg, var(--im-accent-light) 0%, var(--im-accent) 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(201, 169, 98, 0.35);
+}
+
+.btn-confirmar-distrato:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* =============================================
+   ABAS DO MODAL VISUALIZAR-VENDA
+   ============================================= */
+
+.visualizar-venda-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 12px 24px 0;
+  border-bottom: 1px solid var(--im-border);
+  background: var(--im-bg-secondary);
+}
+
+.visualizar-venda-tab {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 18px;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  border-radius: 8px 8px 0 0;
+  color: var(--im-text-secondary);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--im-transition);
+  margin-bottom: -1px;
+}
+
+.visualizar-venda-tab:hover {
+  color: var(--im-text-primary);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.visualizar-venda-tab.active {
+  color: var(--im-accent);
+  border-bottom-color: var(--im-accent);
+  background: rgba(201, 169, 98, 0.06);
+}
+
+/* =============================================
+   RENEGOCIAÇÃO — SEÇÃO DE SELEÇÃO (MODAL EDITAR)
+   ============================================= */
+
+.renegociacao-section {
+  border: 1px solid rgba(201, 169, 98, 0.25);
+  border-radius: 12px;
+  padding: 16px;
+  margin: 16px 0;
+  background: rgba(201, 169, 98, 0.04);
+}
+
+.renegociacao-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  color: var(--im-accent);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.renegociacao-hint {
+  color: var(--im-text-secondary);
+  font-weight: 400;
+  font-size: 12px;
+  margin-left: auto;
+}
+
+.renegociacao-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 200px;
+  overflow-y: auto;
+  margin-bottom: 12px;
+}
+
+.renegociacao-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: var(--im-bg-secondary);
+  border: 1px solid var(--im-border);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all var(--im-transition);
+  font-size: 13px;
+}
+
+.renegociacao-item:hover {
+  border-color: var(--im-accent);
+  background: rgba(201, 169, 98, 0.05);
+}
+
+.renegociacao-item.selected {
+  border-color: var(--im-accent);
+  background: rgba(201, 169, 98, 0.1);
+}
+
+.renegociacao-item input[type="checkbox"] {
+  accent-color: var(--im-accent);
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+.renegociacao-item-tipo {
+  font-weight: 500;
+  min-width: 120px;
+}
+
+.renegociacao-item-valor {
+  color: var(--im-accent);
+  font-weight: 600;
+  min-width: 90px;
+}
+
+.renegociacao-item-data {
+  color: var(--im-text-secondary);
+  font-size: 12px;
+  min-width: 80px;
+}
+
+.renegociacao-item-comissao {
+  color: var(--im-text-secondary);
+  font-size: 12px;
+  margin-left: auto;
+}
+
+.btn-renegociar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  background: linear-gradient(135deg, var(--im-accent) 0%, var(--im-accent-dark) 100%);
+  color: #1a1200;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--im-transition);
+  box-shadow: 0 4px 12px rgba(201, 169, 98, 0.2);
+}
+
+.btn-renegociar:hover {
+  background: linear-gradient(135deg, var(--im-accent-light) 0%, var(--im-accent) 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(201, 169, 98, 0.3);
+}
+
+/* =============================================
+   RENEGOCIAÇÃO — MODAL DE RENEGOCIAÇÃO
+   ============================================= */
+
+.modal-renegociacao {
+  max-width: 780px;
+  width: 95vw;
+}
+
+/* Prévia antes/depois */
+.renego-previa {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 12px;
+  align-items: start;
+  padding: 16px;
+  background: var(--im-bg-secondary);
+  border-radius: 10px;
+  border: 1px solid var(--im-border);
+  margin-bottom: 20px;
+}
+
+.renego-previa-col {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.renego-previa-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  margin: 0 0 6px 0;
+}
+
+.renego-previa-title.antes {
+  color: var(--im-text-secondary);
+}
+
+.renego-previa-title.depois {
+  color: var(--im-accent);
+}
+
+.renego-previa-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 10px;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 6px;
+  font-size: 12px;
+  border-left: 2px solid var(--im-border);
+}
+
+.renego-previa-item.depois {
+  border-left-color: var(--im-accent);
+  background: rgba(201, 169, 98, 0.06);
+}
+
+.renego-previa-total {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 10px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 6px;
+  color: var(--im-text-secondary);
+  margin-top: 4px;
+}
+
+.renego-previa-total.depois {
+  color: var(--im-accent);
+  background: rgba(201, 169, 98, 0.1);
+}
+
+.renego-seta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  color: var(--im-accent);
+  padding-top: 24px;
+}
+
+/* Formulário novas condições */
+.renego-form-section {
+  margin-bottom: 20px;
+}
+
+.renego-form-titulo {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--im-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin: 0 0 12px 0;
+}
+
+.renego-cond-row {
+  padding: 12px 14px;
+  background: var(--im-bg-secondary);
+  border: 1px solid var(--im-border);
+  border-radius: 8px;
+  margin-bottom: 8px;
+}
+
+.renego-cond-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--im-accent);
+  margin-bottom: 8px;
+}
+
+.renego-cond-fields {
+  display: grid;
+  grid-template-columns: 80px 1fr 1fr;
+  gap: 10px;
+}
+
+.renego-cond-fields label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.renego-cond-fields label span {
+  font-size: 11px;
+  color: var(--im-text-secondary);
+}
+
+.renego-cond-fields input {
+  padding: 8px 10px;
+  background: var(--im-bg-card);
+  border: 1px solid var(--im-border);
+  border-radius: 6px;
+  color: var(--im-text-primary);
+  font-size: 13px;
+  transition: border-color var(--im-transition);
+  color-scheme: dark;
+}
+
+.renego-cond-fields input:focus {
+  outline: none;
+  border-color: var(--im-accent);
+}
+
+/* Motivo */
+.renego-motivo-section {
+  margin-bottom: 4px;
+}
+
+.renego-motivo-section label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.renego-motivo-section label span {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--im-text-secondary);
+}
+
+.renego-motivo-input {
+  padding: 10px 14px;
+  background: var(--im-bg-secondary);
+  border: 1px solid var(--im-border);
+  border-radius: 8px;
+  color: var(--im-text-primary);
+  font-size: 14px;
+  resize: vertical;
+  min-height: 70px;
+  transition: border-color var(--im-transition);
+  font-family: inherit;
+}
+
+.renego-motivo-input:focus {
+  outline: none;
+  border-color: var(--im-accent);
+  box-shadow: 0 0 0 3px var(--im-accent-subtle);
+}
+
+/* =============================================
+   RENEGOCIAÇÃO — HISTÓRICO (ABA RENEGOCIAÇÕES)
+   ============================================= */
+
+.renego-historico {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 4px 0;
+}
+
+.renego-historico-card {
+  background: var(--im-bg-secondary);
+  border: 1px solid var(--im-border);
+  border-radius: 12px;
+  padding: 16px;
+  transition: border-color var(--im-transition);
+}
+
+.renego-historico-card:hover {
+  border-color: rgba(201, 169, 98, 0.3);
+}
+
+.renego-historico-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.renego-historico-data {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  color: var(--im-text-secondary);
+}
+
+.renego-historico-motivo {
+  font-size: 13px;
+  font-style: italic;
+  color: var(--im-text-primary);
+  opacity: 0.85;
+}
+
+.renego-historico-diff {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 10px;
+  align-items: start;
+  margin-bottom: 12px;
+}
+
+.renego-historico-lado {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.renego-historico-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  margin-bottom: 4px;
+  display: block;
+}
+
+.renego-historico-lado.antes .renego-historico-label {
+  color: var(--im-text-secondary);
+}
+
+.renego-historico-lado.depois .renego-historico-label {
+  color: var(--im-accent);
+}
+
+.renego-historico-item {
+  display: flex;
+  gap: 8px;
+  font-size: 12px;
+  padding: 5px 8px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 5px;
+}
+
+.renego-historico-item span:first-child {
+  flex: 1;
+  color: var(--im-text-secondary);
+}
+
+.renego-historico-item span:nth-child(2) {
+  font-weight: 500;
+  min-width: 70px;
+  text-align: right;
+}
+
+.renego-historico-item .renego-data {
+  color: var(--im-text-secondary);
+  font-size: 11px;
+  min-width: 60px;
+  text-align: right;
+}
+
+.renego-historico-subtotal {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 5px 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 5px;
+  color: var(--im-text-secondary);
+  margin-top: 2px;
+}
+
+.renego-historico-subtotal.depois {
+  color: var(--im-accent);
+  background: rgba(201, 169, 98, 0.08);
+}
+
+.renego-seta-hist {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  color: var(--im-accent);
+  padding-top: 16px;
+}
+
+.renego-historico-delta {
+  display: flex;
+  gap: 16px;
+  padding: 8px 10px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 6px;
+  border-top: 1px solid var(--im-border);
+}
+
+.delta-positivo {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--im-success);
+}
+
+.delta-negativo {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--im-danger);
+}
+
+/* Estado vazio na aba renegociações */
+.empty-state-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  color: var(--im-text-secondary);
+  text-align: center;
+  gap: 8px;
+}
+
+.empty-state-box p {
+  margin: 0;
+  font-size: 14px;
+}
+
+/* =====================================================
+   RENEGOCIAÇÃO AGRUPADA — NOVO MODAL
+   ===================================================== */
+
+.renego-resumo-antes {
+  background: rgba(16, 185, 129, 0.08);
+  border: 1px solid rgba(16, 185, 129, 0.2);
+  border-radius: 10px;
+  padding: 16px;
+  margin-bottom: 20px;
+}
+
+.renego-section-title {
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--im-text-secondary);
+  margin: 0 0 12px 0;
+}
+
+.renego-info-box {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.renego-info-linha {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.renego-info-linha:last-child {
+  border-bottom: none;
+}
+
+.renego-info-linha .label {
+  font-size: 12px;
+  color: var(--im-text-secondary);
+}
+
+.renego-info-linha .valor {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--im-text-primary);
+}
+
+.renego-info-linha .valor.destaque {
+  color: var(--im-success);
+  font-size: 16px;
+}
+
+.renego-section-distribuicao {
+  margin-bottom: 20px;
+}
+
+.renego-distribuicao-info {
+  font-size: 12px;
+  color: var(--im-text-secondary);
+  margin-bottom: 12px;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 6px;
+}
+
+.renego-distribuicao-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.renego-dist-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 12px;
+  align-items: start;
+  padding: 12px;
+  background: var(--im-bg-secondary);
+  border: 1px solid var(--im-border);
+  border-radius: 8px;
+}
+
+.renego-dist-inputs {
+  display: grid;
+  grid-template-columns: 70px 1fr 1fr;
+  gap: 10px;
+}
+
+.renego-dist-inputs label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.renego-dist-inputs label span {
+  font-size: 11px;
+  color: var(--im-text-secondary);
+  font-weight: 500;
+}
+
+.renego-dist-inputs input {
+  padding: 8px 10px;
+  background: var(--im-bg-card);
+  border: 1px solid var(--im-border);
+  border-radius: 6px;
+  color: var(--im-text-primary);
+  font-size: 13px;
+  transition: border-color var(--im-transition);
+  color-scheme: dark;
+}
+
+.renego-dist-inputs input:focus,
+.renego-dist-inputs input:disabled {
+  outline: none;
+}
+
+.renego-dist-inputs input:focus {
+  border-color: var(--im-accent);
+}
+
+.renego-dist-inputs input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.input-wide {
+  grid-column: span 1 !important;
+}
+
+.renego-dist-resumo {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.dist-total {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--im-accent);
+}
+
+.dist-comissao {
+  font-size: 11px;
+  color: var(--im-text-secondary);
+}
+
+.btn-remove-dist {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 6px;
+  color: var(--im-danger);
+  cursor: pointer;
+  transition: all var(--im-transition);
+  padding: 0;
+  margin-top: 4px;
+}
+
+.btn-remove-dist:hover:not(:disabled) {
+  background: rgba(239, 68, 68, 0.2);
+  border-color: var(--im-danger);
+}
+
+.btn-remove-dist:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.btn-add-dist {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 10px 14px;
+  background: rgba(201, 169, 98, 0.08);
+  border: 1px dashed rgba(201, 169, 98, 0.4);
+  border-radius: 8px;
+  color: var(--im-accent);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--im-transition);
+}
+
+.btn-add-dist:hover:not(:disabled) {
+  background: rgba(201, 169, 98, 0.15);
+  border-color: var(--im-accent);
+}
+
+.btn-add-dist:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.renego-dist-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 14px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--im-border);
+  border-radius: 8px;
+  font-weight: 600;
+}
+
+.renego-dist-total .label {
+  font-size: 12px;
+  color: var(--im-text-secondary);
+}
+
+.renego-dist-total .valor {
+  font-size: 15px;
+  color: var(--im-accent);
+}
+
+.renego-dist-total .valor.correto {
+  color: var(--im-success);
+}
+
+.renego-dist-total .valor.alerta {
+  color: var(--im-danger);
 }
