@@ -7267,3 +7267,91 @@
 .renego-dist-total .valor.alerta {
   color: var(--im-danger);
 }
+
+/* Validação de totais */
+.renego-dist-total {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 14px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--im-border);
+  border-radius: 8px;
+  font-weight: 600;
+}
+
+.renego-dist-total-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 0;
+}
+
+.renego-dist-total-row:last-child {
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  padding-top: 8px;
+}
+
+.renego-dist-total-row .label {
+  font-size: 12px;
+  color: var(--im-text-secondary);
+  font-weight: 500;
+}
+
+.renego-dist-total-row .valor {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--im-accent);
+}
+
+.renego-dist-total-row .valor.correto {
+  color: var(--im-success);
+}
+
+.renego-dist-total-row .valor.alerta {
+  color: var(--im-danger);
+}
+
+/* Alerta visual */
+.renego-alerta-total {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 8px;
+  color: var(--im-danger);
+  font-size: 13px;
+  margin-top: 8px;
+}
+
+.renego-alerta-total svg {
+  flex-shrink: 0;
+  color: var(--im-danger);
+}
+
+.renego-alerta-total strong {
+  font-weight: 700;
+  color: var(--im-danger);
+}
+
+/* Confirmação visual */
+.renego-confirmacao-total {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  border-radius: 8px;
+  color: var(--im-success);
+  font-size: 13px;
+  margin-top: 8px;
+  font-weight: 500;
+}
+
+.renego-confirmacao-total svg {
+  flex-shrink: 0;
+  color: var(--im-success);
+}
