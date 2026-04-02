@@ -22,6 +22,212 @@ import '../styles/EmpreendimentosPage.css'
 import { LayoutGrid, List } from 'lucide-react'
 import { safeGet, safeSet } from '../utils/storage'
 import { calcularFatorComissao, calcularComissaoPagamento } from '../utils/comissaoCalculator'
+
+// ─── SPEC: Preservação de pagamentos auditados ───────────────────────────────
+// Ref: docs/SPEC_PRESERVACAO_PAGAMENTOS_AUDITADOS.md
+//
+// Campos da tabela "vendas" que NÃO disparam recriação da grade de pagamentos
+// (edição puramente cadastral — RF-2 / §5.1).
+const CAMPOS_CADASTRAIS_VENDA = new Set([
+  'descricao',
+  'bloco',
+  'andar',
+  'unidade',
+  'contrato_url',
+  'contrato_nome',
+])
+
+// Campos da grade financeira: qualquer mudança nesses campos pode exigir
+// recriação / propagação de pagamentos (RF-3 / §5.2).
+const CAMPOS_FINANCEIROS_VENDA = new Set([
+  'valor_venda',
+  'tipo_corretor',
+  'data_venda',
+  'data_entrada',
+  'teve_sinal',
+  'valor_sinal',
+  'teve_entrada',
+  'valor_entrada',
+  'parcelou_entrada',
+  'periodicidade_parcelas',
+  'qtd_parcelas_entrada',
+  'valor_parcela_entrada',
+  'teve_balao',
+  'periodicidade_balao',
+  'qtd_balao',
+  'valor_balao',
+  'teve_permuta',
+  'valor_permuta',
+  'tipo_permuta',
+  'valor_pro_soluto',
+  'fator_comissao',
+  'empreendimento_id',
+  'corretor_id',
+  'grupos_parcelas_entrada', // estado do form (não coluna direta)
+  'grupos_balao',            // estado do form (não coluna direta)
+  'datas_parcelas_override', // estado do form (não coluna direta)
+  'datas_balao_override',    // estado do form (não coluna direta)
+  'dia_pagamento_parcelas',
+  'dia_pagamento_balao',
+])
+
+// Colunas imutáveis em linha pago (§B da SPEC).
+// O trigger 017 garante no banco; esta lista documenta a intenção no frontend.
+const COLUNAS_IMUTAVEIS_PAGO = [
+  'tipo', 'status', 'comissao_gerada',
+  'fator_comissao_aplicado', 'percentual_comissao_total',
+  'created_at', 'valor', 'data_pagamento',
+]
+
+/**
+ * Verifica se uma venda possui ao menos uma parcela auditada (status='pago').
+ * RF-1 da SPEC.
+ */
+async function verificarBaixasExistentes(supabaseClient, vendaId) {
+  const { data, error } = await supabaseClient
+    .from('pagamentos_prosoluto')
+    .select('id')
+    .eq('venda_id', vendaId)
+    .eq('status', 'pago')
+    .limit(1)
+  if (error) throw error
+  return (data?.length ?? 0) > 0
+}
+
+/**
+ * Detecta se o formulário de venda mudou algum campo financeiro em relação
+ * ao estado persistido (selectedItem). Usado para decidir entre caminho
+ * cadastral (RF-2) e propagação/bloqueio (RF-3/RF-4).
+ */
+function detectarMudancaFinanceira(vendaForm, selectedItem, gruposParcelasEntrada, gruposBalao) {
+  if (!selectedItem) return false
+
+  const camposSimples = [
+    'valor_venda', 'tipo_corretor', 'data_venda', 'data_entrada',
+    'teve_sinal', 'valor_sinal', 'teve_entrada', 'valor_entrada',
+    'parcelou_entrada', 'periodicidade_parcelas', 'qtd_parcelas_entrada',
+    'valor_parcela_entrada', 'teve_balao', 'periodicidade_balao',
+    'qtd_balao', 'valor_balao', 'teve_permuta', 'valor_permuta',
+    'tipo_permuta', 'empreendimento_id', 'corretor_id',
+    'dia_pagamento_parcelas', 'dia_pagamento_balao',
+  ]
+
+  for (const campo of camposSimples) {
+    const formVal = vendaForm[campo] ?? null
+    const dbVal   = selectedItem[campo] ?? null
+    // Comparação tolerante a string vs number
+    if (String(formVal ?? '') !== String(dbVal ?? '')) return true
+  }
+
+  // Overrides de datas (estado do form, não existe no selectedItem — qualquer
+  // override não vazio é considerado mudança de cronograma)
+  const temOverrideParcelas = Object.keys(vendaForm.datas_parcelas_override || {}).length > 0
+  const temOverrideBalao    = Object.keys(vendaForm.datas_balao_override || {}).length > 0
+  if (temOverrideParcelas || temOverrideBalao) return true
+
+  return false
+}
+
+/**
+ * Detecta se a mudança financeira é "estrutural" — ou seja, incompatível com
+ * propagação cirúrgica (§G / RF-4): muda tipo de fluxo (integral ↔ parcelado)
+ * quando já existem parcelas pago.
+ *
+ * Recebe a lista de pagamentos existentes da venda e o novo estado do form.
+ */
+function detectarMudancaEstrutural(pagamentosExistentes, vendaForm) {
+  const temIntegralPago = pagamentosExistentes.some(
+    p => p.status === 'pago' && p.tipo === 'comissao_integral'
+  )
+  const temParcelasPagas = pagamentosExistentes.some(
+    p => p.status === 'pago' && p.tipo !== 'comissao_integral'
+  )
+
+  const valorEntradaParaCalculo =
+    (vendaForm.teve_sinal ? (parseFloat(vendaForm.valor_sinal) || 0) : 0) +
+    (vendaForm.teve_entrada && !vendaForm.parcelou_entrada
+      ? (parseFloat(vendaForm.valor_entrada) || 0)
+      : 0)
+  const valorVenda = parseFloat(vendaForm.valor_venda) || 0
+  const percentualEntrada = valorVenda > 0 ? (valorEntradaParaCalculo / valorVenda) * 100 : 0
+  const novoSeriaIntegral = percentualEntrada >= 20 && !vendaForm.parcelou_entrada
+
+  // Mudança de estrutura: tinha integral pago e agora seria parcelado (ou vice-versa)
+  if (temIntegralPago && !novoSeriaIntegral) return true
+  if (temParcelasPagas && novoSeriaIntegral) return true
+
+  return false
+}
+
+/**
+ * Propaga mudanças de cronograma (data_entrada, periodicidade, overrides)
+ * para pagamentos existentes, atualizando APENAS data_prevista das linhas pago
+ * e substituindo linhas pendente. RF-3 / §E da SPEC.
+ */
+async function propagarCronogramaCirurgico({
+  supabaseClient,
+  vendaId,
+  pagamentosExistentes,
+  pagamentosNovos, // grade teórica gerada pelo motor
+}) {
+  const pagosPorOrdem = pagamentosExistentes
+    .filter(p => p.status === 'pago')
+    .sort((a, b) => {
+      if (a.tipo !== b.tipo) return a.tipo.localeCompare(b.tipo)
+      return (a.numero_parcela ?? 0) - (b.numero_parcela ?? 0)
+    })
+
+  const novosPorOrdem = pagamentosNovos
+    .slice()
+    .sort((a, b) => {
+      if (a.tipo !== b.tipo) return a.tipo.localeCompare(b.tipo)
+      return (a.numero_parcela ?? 0) - (b.numero_parcela ?? 0)
+    })
+
+  // Atualizar data_prevista das linhas pago (único campo mutável neste fluxo)
+  for (const pago of pagosPorOrdem) {
+    const correspondente = novosPorOrdem.find(
+      n => n.tipo === pago.tipo &&
+           (n.numero_parcela ?? null) === (pago.numero_parcela ?? null)
+    )
+    if (correspondente && correspondente.data_prevista !== pago.data_prevista) {
+      await supabaseClient
+        .from('pagamentos_prosoluto')
+        .update({ data_prevista: correspondente.data_prevista })
+        .eq('id', pago.id)
+    }
+  }
+
+  // Substituir apenas as linhas pendente
+  const idsPendentes = pagamentosExistentes
+    .filter(p => p.status !== 'pago')
+    .map(p => p.id)
+
+  if (idsPendentes.length > 0) {
+    await supabaseClient
+      .from('pagamentos_prosoluto')
+      .delete()
+      .in('id', idsPendentes)
+  }
+
+  // Inserir pendentes novos (excluindo os que já têm correspondente pago)
+  const tiposComPago = new Set(
+    pagosPorOrdem.map(p => `${p.tipo}__${p.numero_parcela ?? ''}`)
+  )
+  const pendentesParaInserir = pagamentosNovos.filter(n => {
+    const chave = `${n.tipo}__${n.numero_parcela ?? ''}`
+    return !tiposComPago.has(chave)
+  })
+
+  if (pendentesParaInserir.length > 0) {
+    const { error } = await supabaseClient
+      .from('pagamentos_prosoluto')
+      .insert(pendentesParaInserir)
+    if (error) throw error
+  }
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
 const AdminDashboard = () => {
   const { userProfile, signOut, loading: authLoading } = useAuth()
   const { tab } = useParams()
@@ -1286,14 +1492,168 @@ const AdminDashboard = () => {
       throw new Error(error.message || 'Erro ao salvar venda no banco de dados')
     }
 
-    // Se é edição, recriar pagamentos
+    // ── SPEC RF-1 a RF-4: Edição de venda com proteção de pagamentos auditados ──
+    // Ref: docs/SPEC_PRESERVACAO_PAGAMENTOS_AUDITADOS.md
     if (selectedItem && vendaId) {
-      console.log('✏️ Edição detectada. Deletando e recriando pagamentos...')
-      // Deletar pagamentos antigos
-      await supabase
-        .from('pagamentos_prosoluto')
-        .delete()
-        .eq('venda_id', vendaId)
+      const temBaixas = await verificarBaixasExistentes(supabase, vendaId)
+      const mudouFinanceiro = detectarMudancaFinanceira(vendaForm, selectedItem, gruposParcelasEntrada, gruposBalao)
+
+      if (temBaixas && !mudouFinanceiro) {
+        // RF-2: só campos cadastrais mudaram — atualiza apenas vendas, não toca em pagamentos
+        console.log('✅ Edição cadastral com baixas: pagamentos preservados.')
+        // (UPDATE em vendas já foi feito acima; nada a fazer em pagamentos)
+      } else if (temBaixas && mudouFinanceiro) {
+        // Buscar pagamentos existentes para checar mudança estrutural
+        const { data: pagamentosAtuais } = await supabase
+          .from('pagamentos_prosoluto')
+          .select('*')
+          .eq('venda_id', vendaId)
+
+        const ehEstrutural = detectarMudancaEstrutural(pagamentosAtuais || [], vendaForm)
+
+        if (ehEstrutural) {
+          // RF-4 / §G: mudança incompatível com linhas pago — bloquear
+          setSaving(false)
+          setMessage({
+            type: 'error',
+            text: '⚠️ Esta venda possui parcelas já auditadas (pagas) e a alteração solicitada mudaria a estrutura dos pagamentos de forma incompatível. Para prosseguir, envie um print desta tela e uma descrição detalhada do que precisa ser alterado para o responsável pelo sistema.'
+          })
+          return
+        }
+
+        // RF-3 / §E: mudança de cronograma compatível — propagação cirúrgica
+        console.log('✏️ Edição financeira com baixas: propagação cirúrgica de cronograma...')
+
+        // Gerar grade teórica (mesmo motor de antes, sem deletar nada ainda)
+        const pagamentosNovos = []
+        const valorEntradaParaCalculo = valorSinal + valorEntradaTotal
+        const percentualEntrada = valorVenda > 0 ? (valorEntradaParaCalculo / valorVenda) * 100 : 0
+        const entradaNoAto = !vendaForm.parcelou_entrada
+        const aplicarComissaoIntegral = percentualEntrada >= 20 && entradaNoAto
+        const dataBaseCalculo = vendaForm.data_entrada || vendaForm.data_venda
+
+        if (aplicarComissaoIntegral) {
+          const comissaoTotal = comissoesDinamicas.total || (valorProSoluto * fatorTotal)
+          pagamentosNovos.push({
+            venda_id: vendaId,
+            tipo: 'comissao_integral',
+            valor: valorEntradaParaCalculo,
+            data_prevista: dataBaseCalculo,
+            comissao_gerada: comissaoTotal,
+          })
+        } else {
+          if (valorSinal > 0) {
+            pagamentosNovos.push({
+              venda_id: vendaId,
+              tipo: 'sinal',
+              valor: valorSinal,
+              data_prevista: vendaForm.data_sinal || dataBaseCalculo,
+              comissao_gerada: calcularComissaoPagamento(valorSinal, fatorTotal),
+            })
+          }
+          if (vendaForm.teve_entrada && !vendaForm.parcelou_entrada) {
+            const valorEntradaAvista = parseFloat(vendaForm.valor_entrada) || 0
+            if (valorEntradaAvista > 0) {
+              pagamentosNovos.push({
+                venda_id: vendaId,
+                tipo: 'entrada',
+                valor: valorEntradaAvista,
+                data_prevista: dataBaseCalculo,
+                comissao_gerada: calcularComissaoPagamento(valorEntradaAvista, fatorTotal),
+              })
+            }
+          }
+          if (vendaForm.teve_entrada && vendaForm.parcelou_entrada) {
+            let numeroParcela = 1
+            gruposParcelasEntrada.forEach((grupo) => {
+              if (!grupo || typeof grupo !== 'object') return
+              const qtd = parseInt(grupo.qtd) || 0
+              const valor = parseFloat(grupo.valor) || 0
+              if (qtd > 0 && valor > 0) {
+                for (let i = 0; i < qtd; i++) {
+                  const idxParcela = numeroParcela - 1
+                  const dataOverride = (vendaForm.datas_parcelas_override || {})[idxParcela]
+                  const periodicidade = parseInt(vendaForm.periodicidade_parcelas) || 1
+                  const diaFixo = vendaForm.dia_pagamento_parcelas === 0
+                    ? (parseInt(vendaForm.dia_pagamento_parcelas_outro) || 1)
+                    : (vendaForm.dia_pagamento_parcelas || 1)
+                  const dataPrevista = dataOverride || (dataBaseCalculo
+                    ? getDataComDiaFixo(dataBaseCalculo, numeroParcela * periodicidade, diaFixo)
+                    : undefined)
+                  pagamentosNovos.push({
+                    venda_id: vendaId,
+                    tipo: 'parcela_entrada',
+                    numero_parcela: numeroParcela,
+                    valor,
+                    data_prevista: dataPrevista,
+                    comissao_gerada: calcularComissaoPagamento(valor, fatorTotal),
+                  })
+                  numeroParcela++
+                }
+              }
+            })
+          }
+          if (vendaForm.teve_balao === 'sim') {
+            let numeroBalao = 1
+            gruposBalao.forEach((grupo) => {
+              if (!grupo || typeof grupo !== 'object') return
+              const qtd = parseInt(grupo.qtd) || 0
+              const valor = parseFloat(grupo.valor) || 0
+              if (qtd > 0 && valor > 0) {
+                for (let i = 0; i < qtd; i++) {
+                  const dataOverrideBalao = (vendaForm.datas_balao_override || {})[numeroBalao - 1]
+                  const periBalao = parseInt(vendaForm.periodicidade_balao) || 6
+                  const diaFixoBalao = vendaForm.dia_pagamento_balao === 0
+                    ? (parseInt(vendaForm.dia_pagamento_balao_outro) || 1)
+                    : (vendaForm.dia_pagamento_balao || 1)
+                  const dataAutoBalao = dataBaseCalculo
+                    ? getDataComDiaFixo(dataBaseCalculo, numeroBalao * periBalao, diaFixoBalao)
+                    : undefined
+                  pagamentosNovos.push({
+                    venda_id: vendaId,
+                    tipo: 'balao',
+                    numero_parcela: numeroBalao,
+                    valor,
+                    data_prevista: dataOverrideBalao || dataAutoBalao || undefined,
+                    comissao_gerada: calcularComissaoPagamento(valor, fatorTotal),
+                  })
+                  numeroBalao++
+                }
+              }
+            })
+          }
+        }
+
+        await propagarCronogramaCirurgico({
+          supabaseClient: supabase,
+          vendaId,
+          pagamentosExistentes: pagamentosAtuais || [],
+          pagamentosNovos,
+        })
+
+        // RF-5: recalcular totais no cabeçalho da venda a partir das linhas atuais
+        const { data: linhasAtualizadas } = await supabase
+          .from('pagamentos_prosoluto')
+          .select('comissao_gerada')
+          .eq('venda_id', vendaId)
+        if (linhasAtualizadas) {
+          const novaComissaoTotal = linhasAtualizadas.reduce(
+            (s, p) => s + (parseFloat(p.comissao_gerada) || 0), 0
+          )
+          await supabase
+            .from('vendas')
+            .update({ comissao_total: novaComissaoTotal })
+            .eq('id', vendaId)
+        }
+
+        console.log('✅ Propagação cirúrgica concluída.')
+      } else {
+        // Sem baixas: comportamento original — deletar tudo e recriar
+        console.log('✏️ Edição sem baixas: recriando grade de pagamentos...')
+        await supabase
+          .from('pagamentos_prosoluto')
+          .delete()
+          .eq('venda_id', vendaId)
       
       // Recriar pagamentos com novos valores
       const pagamentos = []
@@ -1442,7 +1802,8 @@ const AdminDashboard = () => {
       } else {
         console.log('⚠️ Edição sem novos pagamentos. Pro-soluto:', valorProSoluto)
       }
-    }
+      } // fecha else (sem baixas)
+    } // fecha if (selectedItem && vendaId)
 
     // Se é nova venda, salvar comissões por cargo e pagamentos pro-soluto
     if (!selectedItem && vendaId) {
