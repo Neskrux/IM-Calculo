@@ -22,6 +22,212 @@ import '../styles/EmpreendimentosPage.css'
 import { LayoutGrid, List } from 'lucide-react'
 import { safeGet, safeSet } from '../utils/storage'
 import { calcularFatorComissao, calcularComissaoPagamento } from '../utils/comissaoCalculator'
+
+// ─── SPEC: Preservação de pagamentos auditados ───────────────────────────────
+// Ref: docs/SPEC_PRESERVACAO_PAGAMENTOS_AUDITADOS.md
+//
+// Campos da tabela "vendas" que NÃO disparam recriação da grade de pagamentos
+// (edição puramente cadastral — RF-2 / §5.1).
+const CAMPOS_CADASTRAIS_VENDA = new Set([
+  'descricao',
+  'bloco',
+  'andar',
+  'unidade',
+  'contrato_url',
+  'contrato_nome',
+])
+
+// Campos da grade financeira: qualquer mudança nesses campos pode exigir
+// recriação / propagação de pagamentos (RF-3 / §5.2).
+const CAMPOS_FINANCEIROS_VENDA = new Set([
+  'valor_venda',
+  'tipo_corretor',
+  'data_venda',
+  'data_entrada',
+  'teve_sinal',
+  'valor_sinal',
+  'teve_entrada',
+  'valor_entrada',
+  'parcelou_entrada',
+  'periodicidade_parcelas',
+  'qtd_parcelas_entrada',
+  'valor_parcela_entrada',
+  'teve_balao',
+  'periodicidade_balao',
+  'qtd_balao',
+  'valor_balao',
+  'teve_permuta',
+  'valor_permuta',
+  'tipo_permuta',
+  'valor_pro_soluto',
+  'fator_comissao',
+  'empreendimento_id',
+  'corretor_id',
+  'grupos_parcelas_entrada', // estado do form (não coluna direta)
+  'grupos_balao',            // estado do form (não coluna direta)
+  'datas_parcelas_override', // estado do form (não coluna direta)
+  'datas_balao_override',    // estado do form (não coluna direta)
+  'dia_pagamento_parcelas',
+  'dia_pagamento_balao',
+])
+
+// Colunas imutáveis em linha pago (§B da SPEC).
+// O trigger 017 garante no banco; esta lista documenta a intenção no frontend.
+const COLUNAS_IMUTAVEIS_PAGO = [
+  'tipo', 'status', 'comissao_gerada',
+  'fator_comissao_aplicado', 'percentual_comissao_total',
+  'created_at', 'valor', 'data_pagamento',
+]
+
+/**
+ * Verifica se uma venda possui ao menos uma parcela auditada (status='pago').
+ * RF-1 da SPEC.
+ */
+async function verificarBaixasExistentes(supabaseClient, vendaId) {
+  const { data, error } = await supabaseClient
+    .from('pagamentos_prosoluto')
+    .select('id')
+    .eq('venda_id', vendaId)
+    .eq('status', 'pago')
+    .limit(1)
+  if (error) throw error
+  return (data?.length ?? 0) > 0
+}
+
+/**
+ * Detecta se o formulário de venda mudou algum campo financeiro em relação
+ * ao estado persistido (selectedItem). Usado para decidir entre caminho
+ * cadastral (RF-2) e propagação/bloqueio (RF-3/RF-4).
+ */
+function detectarMudancaFinanceira(vendaForm, selectedItem, gruposParcelasEntrada, gruposBalao) {
+  if (!selectedItem) return false
+
+  const camposSimples = [
+    'valor_venda', 'tipo_corretor', 'data_venda', 'data_entrada',
+    'teve_sinal', 'valor_sinal', 'teve_entrada', 'valor_entrada',
+    'parcelou_entrada', 'periodicidade_parcelas', 'qtd_parcelas_entrada',
+    'valor_parcela_entrada', 'teve_balao', 'periodicidade_balao',
+    'qtd_balao', 'valor_balao', 'teve_permuta', 'valor_permuta',
+    'tipo_permuta', 'empreendimento_id', 'corretor_id',
+    'dia_pagamento_parcelas', 'dia_pagamento_balao',
+  ]
+
+  for (const campo of camposSimples) {
+    const formVal = vendaForm[campo] ?? null
+    const dbVal   = selectedItem[campo] ?? null
+    // Comparação tolerante a string vs number
+    if (String(formVal ?? '') !== String(dbVal ?? '')) return true
+  }
+
+  // Overrides de datas (estado do form, não existe no selectedItem — qualquer
+  // override não vazio é considerado mudança de cronograma)
+  const temOverrideParcelas = Object.keys(vendaForm.datas_parcelas_override || {}).length > 0
+  const temOverrideBalao    = Object.keys(vendaForm.datas_balao_override || {}).length > 0
+  if (temOverrideParcelas || temOverrideBalao) return true
+
+  return false
+}
+
+/**
+ * Detecta se a mudança financeira é "estrutural" — ou seja, incompatível com
+ * propagação cirúrgica (§G / RF-4): muda tipo de fluxo (integral ↔ parcelado)
+ * quando já existem parcelas pago.
+ *
+ * Recebe a lista de pagamentos existentes da venda e o novo estado do form.
+ */
+function detectarMudancaEstrutural(pagamentosExistentes, vendaForm) {
+  const temIntegralPago = pagamentosExistentes.some(
+    p => p.status === 'pago' && p.tipo === 'comissao_integral'
+  )
+  const temParcelasPagas = pagamentosExistentes.some(
+    p => p.status === 'pago' && p.tipo !== 'comissao_integral'
+  )
+
+  const valorEntradaParaCalculo =
+    (vendaForm.teve_sinal ? (parseFloat(vendaForm.valor_sinal) || 0) : 0) +
+    (vendaForm.teve_entrada && !vendaForm.parcelou_entrada
+      ? (parseFloat(vendaForm.valor_entrada) || 0)
+      : 0)
+  const valorVenda = parseFloat(vendaForm.valor_venda) || 0
+  const percentualEntrada = valorVenda > 0 ? (valorEntradaParaCalculo / valorVenda) * 100 : 0
+  const novoSeriaIntegral = percentualEntrada >= 20 && !vendaForm.parcelou_entrada
+
+  // Mudança de estrutura: tinha integral pago e agora seria parcelado (ou vice-versa)
+  if (temIntegralPago && !novoSeriaIntegral) return true
+  if (temParcelasPagas && novoSeriaIntegral) return true
+
+  return false
+}
+
+/**
+ * Propaga mudanças de cronograma (data_entrada, periodicidade, overrides)
+ * para pagamentos existentes, atualizando APENAS data_prevista das linhas pago
+ * e substituindo linhas pendente. RF-3 / §E da SPEC.
+ */
+async function propagarCronogramaCirurgico({
+  supabaseClient,
+  vendaId,
+  pagamentosExistentes,
+  pagamentosNovos, // grade teórica gerada pelo motor
+}) {
+  const pagosPorOrdem = pagamentosExistentes
+    .filter(p => p.status === 'pago')
+    .sort((a, b) => {
+      if (a.tipo !== b.tipo) return a.tipo.localeCompare(b.tipo)
+      return (a.numero_parcela ?? 0) - (b.numero_parcela ?? 0)
+    })
+
+  const novosPorOrdem = pagamentosNovos
+    .slice()
+    .sort((a, b) => {
+      if (a.tipo !== b.tipo) return a.tipo.localeCompare(b.tipo)
+      return (a.numero_parcela ?? 0) - (b.numero_parcela ?? 0)
+    })
+
+  // Atualizar data_prevista das linhas pago (único campo mutável neste fluxo)
+  for (const pago of pagosPorOrdem) {
+    const correspondente = novosPorOrdem.find(
+      n => n.tipo === pago.tipo &&
+           (n.numero_parcela ?? null) === (pago.numero_parcela ?? null)
+    )
+    if (correspondente && correspondente.data_prevista !== pago.data_prevista) {
+      await supabaseClient
+        .from('pagamentos_prosoluto')
+        .update({ data_prevista: correspondente.data_prevista })
+        .eq('id', pago.id)
+    }
+  }
+
+  // Substituir apenas as linhas pendente
+  const idsPendentes = pagamentosExistentes
+    .filter(p => p.status !== 'pago')
+    .map(p => p.id)
+
+  if (idsPendentes.length > 0) {
+    await supabaseClient
+      .from('pagamentos_prosoluto')
+      .delete()
+      .in('id', idsPendentes)
+  }
+
+  // Inserir pendentes novos (excluindo os que já têm correspondente pago)
+  const tiposComPago = new Set(
+    pagosPorOrdem.map(p => `${p.tipo}__${p.numero_parcela ?? ''}`)
+  )
+  const pendentesParaInserir = pagamentosNovos.filter(n => {
+    const chave = `${n.tipo}__${n.numero_parcela ?? ''}`
+    return !tiposComPago.has(chave)
+  })
+
+  if (pendentesParaInserir.length > 0) {
+    const { error } = await supabaseClient
+      .from('pagamentos_prosoluto')
+      .insert(pendentesParaInserir)
+    if (error) throw error
+  }
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
 const AdminDashboard = () => {
   const { userProfile, signOut, loading: authLoading } = useAuth()
   const { tab } = useParams()
@@ -131,6 +337,13 @@ const AdminDashboard = () => {
   const [pagamentoParaExcluir, setPagamentoParaExcluir] = useState(null)
   const [excluindoBaixa, setExcluindoBaixa] = useState(false)
   const [pagamentoParaConfirmar, setPagamentoParaConfirmar] = useState(null)
+
+  // Estados para modal de Exclusão/Distrato de Venda
+  const [showModalExcluirVenda, setShowModalExcluirVenda] = useState(false)
+  const [vendaParaExcluir, setVendaParaExcluir] = useState(null)
+  const [modalExcluirVendaStep, setModalExcluirVendaStep] = useState(1) // 1: escolha, 2: data distrato
+  const [dataDistrato, setDataDistrato] = useState('')
+  const [processandoExclusaoVenda, setProcessandoExclusaoVenda] = useState(false)
   const [formConfirmarPagamento, setFormConfirmarPagamento] = useState({
     valorPersonalizado: '',
     dataPagamento: ''
@@ -144,7 +357,23 @@ const AdminDashboard = () => {
   const [empreendimentoVisualizar, setEmpreendimentoVisualizar] = useState(null) // Empreendimento para visualização detalhada
   const [clientes, setClientes] = useState([])
   const [uploadingDoc, setUploadingDoc] = useState(false)
-  
+
+  // Estados para Renegociação de Parcelas
+  const [pagamentosVendaEditando, setPagamentosVendaEditando] = useState([])
+  const [parcelasSelecionadas, setParcelasSelecionadas] = useState([])
+  const [showModalRenegociacao, setShowModalRenegociacao] = useState(false)
+  const [renegociacaoForm, setRenegociacaoForm] = useState({
+    motivo: '',
+    distribuicoesNovas: [], // nova estrutura: { qtd, valor, data_prevista }
+    totalSelecionado: 0,    // total consolidado das parcelas selecionadas
+    quantidadeParcelas: 0   // quantidade de parcelas selecionadas
+  })
+  const [salvandoRenegociacao, setSalvandoRenegociacao] = useState(false)
+  const [renegociacoesVenda, setRenegociacoesVenda] = useState([])
+  const [loadingRenegociacoes, setLoadingRenegociacoes] = useState(false)
+  const [abaVisualizarVenda, setAbaVisualizarVenda] = useState('detalhes')
+  const [pagamentosVisualizacao, setPagamentosVisualizacao] = useState([])
+
   // Estados para solicitações
   const [solicitacoes, setSolicitacoes] = useState([])
   const [loadingSolicitacoes, setLoadingSolicitacoes] = useState(false)
@@ -259,6 +488,14 @@ const AdminDashboard = () => {
   })
   const [uploadingLogo, setUploadingLogo] = useState(false)
 
+  // Estados de edição de datas (sinal, parcelas, balões)
+  const [editandoDataSinal, setEditandoDataSinal] = useState(false)
+  const [dataSinalTemp, setDataSinalTemp] = useState('')
+  const [editandoDataParcela, setEditandoDataParcela] = useState(null)
+  const [dataParcelaTemp, setDataParcelaTemp] = useState('')
+  const [editandoDataBalao, setEditandoDataBalao] = useState(null)
+  const [dataBalaoTemp, setDataBalaoTemp] = useState('')
+
   // Dados do formulário de venda
   const [vendaForm, setVendaForm] = useState({
     corretor_id: '',
@@ -270,6 +507,14 @@ const AdminDashboard = () => {
     valor_venda: '',
     tipo_corretor: 'externo',
     data_venda: new Date().toISOString().split('T')[0],
+    data_entrada: '',
+    data_sinal: '',
+    datas_parcelas_override: {},
+    datas_balao_override: {},
+    dia_pagamento_parcelas: 1,      // novo: dia fixo das parcelas (1-30, ou '0' para "Outro")
+    dia_pagamento_parcelas_outro: '', // novo: dia customizado quando "Outro" é selecionado
+    dia_pagamento_balao: 1,         // novo: dia fixo dos balões
+    dia_pagamento_balao_outro: '',  // novo: dia customizado para balões
     descricao: '',
     status: 'pendente',
     // Campos pro-soluto
@@ -278,8 +523,10 @@ const AdminDashboard = () => {
     teve_entrada: false,
     valor_entrada: '',
     parcelou_entrada: false,
+    periodicidade_parcelas: 1,
     grupos_parcelas_entrada: [{ qtd: '', valor: '' }], // Array de grupos: [{ qtd: '4', valor: '500' }, { qtd: '5', valor: '1000' }]
     teve_balao: 'nao', // 'nao', 'sim', 'pendente'
+    periodicidade_balao: 6,
     grupos_balao: [{ qtd: '', valor: '' }], // Array de grupos: [{ qtd: '2', valor: '10000' }, { qtd: '1', valor: '5000' }]
     teve_permuta: false,
     tipo_permuta: '',
@@ -630,7 +877,7 @@ const AdminDashboard = () => {
         { data: clientesData, error: clientesError }
       ] = await Promise.all([
         supabase.from('usuarios').select('*').eq('tipo', 'corretor'),
-        supabase.from('vendas').select('*'),
+        supabase.from('vendas').select('*').or('excluido.eq.false,excluido.is.null'),
         supabase.from('empreendimentos').select('*'),
         supabase.from('clientes').select('*').or('ativo.eq.true,ativo.is.null')
       ])
@@ -1164,6 +1411,14 @@ const AdminDashboard = () => {
       }
     }
 
+    // Extrai o valor de um cargo pelo nome (busca parcial, case-insensitive). Fallback: 0.
+    const getComissaoCargo = (...termos) => {
+      const cargo = comissoesDinamicas.cargos?.find(c =>
+        termos.some(t => c.nome_cargo?.toLowerCase().includes(t.toLowerCase()))
+      )
+      return cargo?.valor ?? 0
+    }
+
     const vendaData = {
       corretor_id: vendaForm.corretor_id,
       empreendimento_id: isCorretorAutonomo ? null : (vendaForm.empreendimento_id || null),
@@ -1174,6 +1429,7 @@ const AdminDashboard = () => {
       valor_venda: valorVenda,
       tipo_corretor: vendaForm.tipo_corretor,
       data_venda: vendaForm.data_venda,
+      data_entrada: vendaForm.data_entrada || null,
       descricao: vendaForm.descricao,
       status: vendaForm.status,
       teve_sinal: vendaForm.teve_sinal,
@@ -1181,9 +1437,11 @@ const AdminDashboard = () => {
       teve_entrada: vendaForm.teve_entrada,
       valor_entrada: parseFloat(vendaForm.valor_entrada) || null,
       parcelou_entrada: vendaForm.parcelou_entrada,
+      periodicidade_parcelas: parseInt(vendaForm.periodicidade_parcelas) || 1,
       qtd_parcelas_entrada: qtdParcelasEntradaPayload,
       valor_parcela_entrada: valorParcelaEntradaPayload,
       teve_balao: vendaForm.teve_balao,
+      periodicidade_balao: parseInt(vendaForm.periodicidade_balao) || 6,
       qtd_balao: parseInt(vendaForm.qtd_balao) || null,
       valor_balao: parseFloat(vendaForm.valor_balao) || null,
       teve_permuta: vendaForm.teve_permuta,
@@ -1193,6 +1451,11 @@ const AdminDashboard = () => {
       fator_comissao: fatorTotal || null,
       comissao_total: comissoesDinamicas.total,
       comissao_corretor: comissaoCorretor,
+      comissao_diretor: getComissaoCargo('diretor'),
+      comissao_nohros_imobiliaria: getComissaoCargo('imobili'),
+      comissao_nohros_gestao: getComissaoCargo('gest'),
+      comissao_wsc: getComissaoCargo('wsc', 'beton'),
+      comissao_coordenadora: getComissaoCargo('coordenad'),
       contrato_url: vendaForm.contrato_url || null,
       contrato_nome: vendaForm.contrato_nome || null
     }
@@ -1229,13 +1492,168 @@ const AdminDashboard = () => {
       throw new Error(error.message || 'Erro ao salvar venda no banco de dados')
     }
 
-    // Se é edição, recriar pagamentos
+    // ── SPEC RF-1 a RF-4: Edição de venda com proteção de pagamentos auditados ──
+    // Ref: docs/SPEC_PRESERVACAO_PAGAMENTOS_AUDITADOS.md
     if (selectedItem && vendaId) {
-      // Deletar pagamentos antigos
-      await supabase
-        .from('pagamentos_prosoluto')
-        .delete()
-        .eq('venda_id', vendaId)
+      const temBaixas = await verificarBaixasExistentes(supabase, vendaId)
+      const mudouFinanceiro = detectarMudancaFinanceira(vendaForm, selectedItem, gruposParcelasEntrada, gruposBalao)
+
+      if (temBaixas && !mudouFinanceiro) {
+        // RF-2: só campos cadastrais mudaram — atualiza apenas vendas, não toca em pagamentos
+        console.log('✅ Edição cadastral com baixas: pagamentos preservados.')
+        // (UPDATE em vendas já foi feito acima; nada a fazer em pagamentos)
+      } else if (temBaixas && mudouFinanceiro) {
+        // Buscar pagamentos existentes para checar mudança estrutural
+        const { data: pagamentosAtuais } = await supabase
+          .from('pagamentos_prosoluto')
+          .select('*')
+          .eq('venda_id', vendaId)
+
+        const ehEstrutural = detectarMudancaEstrutural(pagamentosAtuais || [], vendaForm)
+
+        if (ehEstrutural) {
+          // RF-4 / §G: mudança incompatível com linhas pago — bloquear
+          setSaving(false)
+          setMessage({
+            type: 'error',
+            text: '⚠️ Esta venda possui parcelas já auditadas (pagas) e a alteração solicitada mudaria a estrutura dos pagamentos de forma incompatível. Para prosseguir, envie um print desta tela e uma descrição detalhada do que precisa ser alterado para o responsável pelo sistema.'
+          })
+          return
+        }
+
+        // RF-3 / §E: mudança de cronograma compatível — propagação cirúrgica
+        console.log('✏️ Edição financeira com baixas: propagação cirúrgica de cronograma...')
+
+        // Gerar grade teórica (mesmo motor de antes, sem deletar nada ainda)
+        const pagamentosNovos = []
+        const valorEntradaParaCalculo = valorSinal + valorEntradaTotal
+        const percentualEntrada = valorVenda > 0 ? (valorEntradaParaCalculo / valorVenda) * 100 : 0
+        const entradaNoAto = !vendaForm.parcelou_entrada
+        const aplicarComissaoIntegral = percentualEntrada >= 20 && entradaNoAto
+        const dataBaseCalculo = vendaForm.data_entrada || vendaForm.data_venda
+
+        if (aplicarComissaoIntegral) {
+          const comissaoTotal = comissoesDinamicas.total || (valorProSoluto * fatorTotal)
+          pagamentosNovos.push({
+            venda_id: vendaId,
+            tipo: 'comissao_integral',
+            valor: valorEntradaParaCalculo,
+            data_prevista: dataBaseCalculo,
+            comissao_gerada: comissaoTotal,
+          })
+        } else {
+          if (valorSinal > 0) {
+            pagamentosNovos.push({
+              venda_id: vendaId,
+              tipo: 'sinal',
+              valor: valorSinal,
+              data_prevista: vendaForm.data_sinal || dataBaseCalculo,
+              comissao_gerada: calcularComissaoPagamento(valorSinal, fatorTotal),
+            })
+          }
+          if (vendaForm.teve_entrada && !vendaForm.parcelou_entrada) {
+            const valorEntradaAvista = parseFloat(vendaForm.valor_entrada) || 0
+            if (valorEntradaAvista > 0) {
+              pagamentosNovos.push({
+                venda_id: vendaId,
+                tipo: 'entrada',
+                valor: valorEntradaAvista,
+                data_prevista: dataBaseCalculo,
+                comissao_gerada: calcularComissaoPagamento(valorEntradaAvista, fatorTotal),
+              })
+            }
+          }
+          if (vendaForm.teve_entrada && vendaForm.parcelou_entrada) {
+            let numeroParcela = 1
+            gruposParcelasEntrada.forEach((grupo) => {
+              if (!grupo || typeof grupo !== 'object') return
+              const qtd = parseInt(grupo.qtd) || 0
+              const valor = parseFloat(grupo.valor) || 0
+              if (qtd > 0 && valor > 0) {
+                for (let i = 0; i < qtd; i++) {
+                  const idxParcela = numeroParcela - 1
+                  const dataOverride = (vendaForm.datas_parcelas_override || {})[idxParcela]
+                  const periodicidade = parseInt(vendaForm.periodicidade_parcelas) || 1
+                  const diaFixo = vendaForm.dia_pagamento_parcelas === 0
+                    ? (parseInt(vendaForm.dia_pagamento_parcelas_outro) || 1)
+                    : (vendaForm.dia_pagamento_parcelas || 1)
+                  const dataPrevista = dataOverride || (dataBaseCalculo
+                    ? getDataComDiaFixo(dataBaseCalculo, numeroParcela * periodicidade, diaFixo)
+                    : undefined)
+                  pagamentosNovos.push({
+                    venda_id: vendaId,
+                    tipo: 'parcela_entrada',
+                    numero_parcela: numeroParcela,
+                    valor,
+                    data_prevista: dataPrevista,
+                    comissao_gerada: calcularComissaoPagamento(valor, fatorTotal),
+                  })
+                  numeroParcela++
+                }
+              }
+            })
+          }
+          if (vendaForm.teve_balao === 'sim') {
+            let numeroBalao = 1
+            gruposBalao.forEach((grupo) => {
+              if (!grupo || typeof grupo !== 'object') return
+              const qtd = parseInt(grupo.qtd) || 0
+              const valor = parseFloat(grupo.valor) || 0
+              if (qtd > 0 && valor > 0) {
+                for (let i = 0; i < qtd; i++) {
+                  const dataOverrideBalao = (vendaForm.datas_balao_override || {})[numeroBalao - 1]
+                  const periBalao = parseInt(vendaForm.periodicidade_balao) || 6
+                  const diaFixoBalao = vendaForm.dia_pagamento_balao === 0
+                    ? (parseInt(vendaForm.dia_pagamento_balao_outro) || 1)
+                    : (vendaForm.dia_pagamento_balao || 1)
+                  const dataAutoBalao = dataBaseCalculo
+                    ? getDataComDiaFixo(dataBaseCalculo, numeroBalao * periBalao, diaFixoBalao)
+                    : undefined
+                  pagamentosNovos.push({
+                    venda_id: vendaId,
+                    tipo: 'balao',
+                    numero_parcela: numeroBalao,
+                    valor,
+                    data_prevista: dataOverrideBalao || dataAutoBalao || undefined,
+                    comissao_gerada: calcularComissaoPagamento(valor, fatorTotal),
+                  })
+                  numeroBalao++
+                }
+              }
+            })
+          }
+        }
+
+        await propagarCronogramaCirurgico({
+          supabaseClient: supabase,
+          vendaId,
+          pagamentosExistentes: pagamentosAtuais || [],
+          pagamentosNovos,
+        })
+
+        // RF-5: recalcular totais no cabeçalho da venda a partir das linhas atuais
+        const { data: linhasAtualizadas } = await supabase
+          .from('pagamentos_prosoluto')
+          .select('comissao_gerada')
+          .eq('venda_id', vendaId)
+        if (linhasAtualizadas) {
+          const novaComissaoTotal = linhasAtualizadas.reduce(
+            (s, p) => s + (parseFloat(p.comissao_gerada) || 0), 0
+          )
+          await supabase
+            .from('vendas')
+            .update({ comissao_total: novaComissaoTotal })
+            .eq('id', vendaId)
+        }
+
+        console.log('✅ Propagação cirúrgica concluída.')
+      } else {
+        // Sem baixas: comportamento original — deletar tudo e recriar
+        console.log('✏️ Edição sem baixas: recriando grade de pagamentos...')
+        await supabase
+          .from('pagamentos_prosoluto')
+          .delete()
+          .eq('venda_id', vendaId)
       
       // Recriar pagamentos com novos valores
       const pagamentos = []
@@ -1246,35 +1664,33 @@ const AdminDashboard = () => {
       const entradaNoAto = !vendaForm.parcelou_entrada
       const aplicarComissaoIntegral = percentualEntrada >= 20 && entradaNoAto
       
+      const dataBaseCalculo = vendaForm.data_entrada || vendaForm.data_venda
+
       if (aplicarComissaoIntegral) {
         // Entrada >= 20% e paga no ato (não parcelada): 1 parcela com comissão total
         const comissaoTotal = comissoesDinamicas.total || (valorProSoluto * fatorTotal)
         const fatorIntegral = valorEntradaParaCalculo > 0 ? comissaoTotal / valorEntradaParaCalculo : 0
-        
+
         pagamentos.push({
           venda_id: vendaId,
           tipo: 'comissao_integral',
           valor: valorEntradaParaCalculo,
-          data_prevista: vendaForm.data_venda,
+          data_prevista: dataBaseCalculo,
           comissao_gerada: comissaoTotal,
-          fator_comissao_aplicado: fatorIntegral,
-          percentual_comissao_total: percentualTotal
         })
-        
+
         console.log(`✅ Edição: Entrada >= 20% no ato (${percentualEntrada.toFixed(1)}%). Comissão integral: R$ ${comissaoTotal.toFixed(2)}`)
       } else {
         // Entrada < 20% ou entrada parcelada: gerar parcelas normalmente
-        
+
         // Sinal
         if (valorSinal > 0) {
           pagamentos.push({
             venda_id: vendaId,
             tipo: 'sinal',
             valor: valorSinal,
-            data_prevista: vendaForm.data_venda,
+            data_prevista: vendaForm.data_sinal || dataBaseCalculo,
             comissao_gerada: calcularComissaoPagamento(valorSinal, fatorTotal),
-            fator_comissao_aplicado: fatorTotal,
-            percentual_comissao_total: percentualTotal
           })
         }
 
@@ -1286,14 +1702,12 @@ const AdminDashboard = () => {
               venda_id: vendaId,
               tipo: 'entrada',
               valor: valorEntradaAvista,
-              data_prevista: vendaForm.data_venda,
+              data_prevista: dataBaseCalculo,
               comissao_gerada: calcularComissaoPagamento(valorEntradaAvista, fatorTotal),
-              fator_comissao_aplicado: fatorTotal,
-              percentual_comissao_total: percentualTotal
             })
           }
         }
-        
+
         // Parcelas da entrada - só se teve entrada E parcelou
         if (vendaForm.teve_entrada && vendaForm.parcelou_entrada) {
           let numeroParcela = 1
@@ -1304,32 +1718,40 @@ const AdminDashboard = () => {
               console.warn('Grupo de parcela inválido ignorado:', grupo)
               return
             }
-            
+
             const qtd = parseInt(grupo.qtd) || 0
             const valor = parseFloat(grupo.valor) || 0
-            
+
             // Só processar se quantidade e valor forem válidos
             if (qtd > 0 && valor > 0) {
               for (let i = 0; i < qtd; i++) {
-                const dataParcela = new Date(vendaForm.data_venda)
-                dataParcela.setMonth(dataParcela.getMonth() + numeroParcela)
-                
+                const idxParcela = numeroParcela - 1
+                const dataOverride = (vendaForm.datas_parcelas_override || {})[idxParcela]
+                let dataPrevistaParcela
+                if (dataOverride) {
+                  dataPrevistaParcela = dataOverride
+                } else {
+                  const periodicidade = parseInt(vendaForm.periodicidade_parcelas) || 1
+                  const diaFixo = vendaForm.dia_pagamento_parcelas === 0
+                    ? (parseInt(vendaForm.dia_pagamento_parcelas_outro) || 1)
+                    : (vendaForm.dia_pagamento_parcelas || 1)
+                  dataPrevistaParcela = getDataComDiaFixo(dataBaseCalculo, numeroParcela * periodicidade, diaFixo)
+                }
+
                 pagamentos.push({
                   venda_id: vendaId,
                   tipo: 'parcela_entrada',
                   numero_parcela: numeroParcela,
                   valor: valor,
-                  data_prevista: dataParcela.toISOString().split('T')[0],
+                  data_prevista: dataPrevistaParcela,
                   comissao_gerada: calcularComissaoPagamento(valor, fatorTotal),
-                  fator_comissao_aplicado: fatorTotal,
-                  percentual_comissao_total: percentualTotal
                 })
                 numeroParcela++
               }
             }
           })
         }
-        
+
         // Balões
         if (vendaForm.teve_balao === 'sim') {
           let numeroBalao = 1
@@ -1340,21 +1762,28 @@ const AdminDashboard = () => {
               console.warn('Grupo de balão inválido ignorado:', grupo)
               return
             }
-            
+
             const qtd = parseInt(grupo.qtd) || 0
             const valor = parseFloat(grupo.valor) || 0
-            
+
             // Só processar se quantidade e valor forem válidos
             if (qtd > 0 && valor > 0) {
               for (let i = 0; i < qtd; i++) {
+                const dataOverrideBalao = (vendaForm.datas_balao_override || {})[numeroBalao - 1]
+                const periBalao = parseInt(vendaForm.periodicidade_balao) || 6
+                const diaFixoBalao = vendaForm.dia_pagamento_balao === 0
+                  ? (parseInt(vendaForm.dia_pagamento_balao_outro) || 1)
+                  : (vendaForm.dia_pagamento_balao || 1)
+                const dataAutoBalao = dataBaseCalculo
+                  ? getDataComDiaFixo(dataBaseCalculo, numeroBalao * periBalao, diaFixoBalao)
+                  : undefined
                 pagamentos.push({
                   venda_id: vendaId,
                   tipo: 'balao',
                   numero_parcela: numeroBalao,
                   valor: valor,
+                  data_prevista: dataOverrideBalao || dataAutoBalao || undefined,
                   comissao_gerada: calcularComissaoPagamento(valor, fatorTotal),
-                  fator_comissao_aplicado: fatorTotal,
-                  percentual_comissao_total: percentualTotal
                 })
                 numeroBalao++
               }
@@ -1366,13 +1795,19 @@ const AdminDashboard = () => {
       if (pagamentos.length > 0) {
         const { error: pagError } = await supabase.from('pagamentos_prosoluto').insert(pagamentos)
         if (pagError) {
-          console.error('Erro ao recriar pagamentos:', pagError)
+          console.error('❌ Erro ao recriar pagamentos:', pagError)
+        } else {
+          console.log('✅ Pagamentos recriados para edição:', pagamentos.length)
         }
+      } else {
+        console.log('⚠️ Edição sem novos pagamentos. Pro-soluto:', valorProSoluto)
       }
-    }
+      } // fecha else (sem baixas)
+    } // fecha if (selectedItem && vendaId)
 
     // Se é nova venda, salvar comissões por cargo e pagamentos pro-soluto
     if (!selectedItem && vendaId) {
+      console.log('🆕 Nova venda detectada. Salvando comissões e pagamentos...')
       // Salvar comissões por cargo
       if (comissoesDinamicas.cargos.length > 0) {
         const comissoesData = comissoesDinamicas.cargos.map(c => ({
@@ -1388,6 +1823,8 @@ const AdminDashboard = () => {
       // Criar pagamentos pro-soluto
       // Fórmula: Comissão da Parcela = Valor da Parcela × Fcom
       const pagamentos = []
+
+      console.log('📊 Iniciando criação de pagamentos. Sinal:', valorSinal, 'Entrada:', valorEntradaTotal, 'Balão:', valorTotalBalao, 'Pro-soluto:', valorProSoluto)
       
       // ===== REGRA ESPECIAL: ENTRADA >= 20% NO ATO (ver .cursor/rules/comissao-integral-20.mdc) =====
       const valorEntradaParaCalculo = valorSinal + valorEntradaTotal
@@ -1395,35 +1832,34 @@ const AdminDashboard = () => {
       const entradaNoAto = !vendaForm.parcelou_entrada
       const aplicarComissaoIntegral = percentualEntrada >= 20 && entradaNoAto
       
+      const dataBaseCalculo2 = vendaForm.data_entrada || vendaForm.data_venda
+
       if (aplicarComissaoIntegral) {
         // Entrada >= 20% e paga no ato (não parcelada): 1 parcela com comissão total
         const comissaoTotal = comissoesDinamicas.total || (valorProSoluto * fatorTotal)
         const fatorIntegral = valorEntradaParaCalculo > 0 ? comissaoTotal / valorEntradaParaCalculo : 0
-        
+
         pagamentos.push({
           venda_id: vendaId,
           tipo: 'comissao_integral',
-          valor: valorEntradaParaCalculo, // Valor da entrada
-          data_prevista: vendaForm.data_venda,
-          comissao_gerada: comissaoTotal, // Comissão TOTAL do corretor
-          fator_comissao_aplicado: fatorIntegral,
-          percentual_comissao_total: percentualTotal
+          valor: valorEntradaParaCalculo,
+          data_prevista: dataBaseCalculo2,
+          comissao_gerada: comissaoTotal,
+          numero_parcela: null
         })
-        
+
         console.log(`✅ Entrada >= 20% no ato (${percentualEntrada.toFixed(1)}%). Comissão integral: R$ ${comissaoTotal.toFixed(2)}`)
       } else {
         // Entrada < 20% ou entrada parcelada: gerar parcelas normalmente
-        
+
         // Sinal
         if (valorSinal > 0) {
           pagamentos.push({
             venda_id: vendaId,
             tipo: 'sinal',
             valor: valorSinal,
-            data_prevista: vendaForm.data_venda,
+            data_prevista: vendaForm.data_sinal || dataBaseCalculo2,
             comissao_gerada: calcularComissaoPagamento(valorSinal, fatorTotal),
-            fator_comissao_aplicado: fatorTotal,
-            percentual_comissao_total: percentualTotal
           })
         }
 
@@ -1435,14 +1871,12 @@ const AdminDashboard = () => {
               venda_id: vendaId,
               tipo: 'entrada',
               valor: valorEntradaAvista,
-              data_prevista: vendaForm.data_venda,
+              data_prevista: dataBaseCalculo2,
               comissao_gerada: calcularComissaoPagamento(valorEntradaAvista, fatorTotal),
-              fator_comissao_aplicado: fatorTotal,
-              percentual_comissao_total: percentualTotal
             })
           }
         }
-        
+
         // Parcelas da entrada - só se teve entrada E parcelou
         if (vendaForm.teve_entrada && vendaForm.parcelou_entrada) {
           let numeroParcela = 1
@@ -1453,32 +1887,40 @@ const AdminDashboard = () => {
               console.warn('Grupo de parcela inválido ignorado:', grupo)
               return
             }
-            
+
             const qtd = parseInt(grupo.qtd) || 0
             const valor = parseFloat(grupo.valor) || 0
-            
+
             // Só processar se quantidade e valor forem válidos
             if (qtd > 0 && valor > 0) {
               for (let i = 0; i < qtd; i++) {
-                const dataParcela = new Date(vendaForm.data_venda)
-                dataParcela.setMonth(dataParcela.getMonth() + numeroParcela)
-                
+                const idxParcela2 = numeroParcela - 1
+                const dataOverride2 = (vendaForm.datas_parcelas_override || {})[idxParcela2]
+                let dataPrevistaParcela2
+                if (dataOverride2) {
+                  dataPrevistaParcela2 = dataOverride2
+                } else {
+                  const periodicidade2 = parseInt(vendaForm.periodicidade_parcelas) || 1
+                  const diaFixo = vendaForm.dia_pagamento_parcelas === 0
+                    ? (parseInt(vendaForm.dia_pagamento_parcelas_outro) || 1)
+                    : (vendaForm.dia_pagamento_parcelas || 1)
+                  dataPrevistaParcela2 = getDataComDiaFixo(dataBaseCalculo2, numeroParcela * periodicidade2, diaFixo)
+                }
+
                 pagamentos.push({
                   venda_id: vendaId,
                   tipo: 'parcela_entrada',
                   numero_parcela: numeroParcela,
                   valor: valor,
-                  data_prevista: dataParcela.toISOString().split('T')[0],
+                  data_prevista: dataPrevistaParcela2,
                   comissao_gerada: calcularComissaoPagamento(valor, fatorTotal),
-                  fator_comissao_aplicado: fatorTotal,
-                  percentual_comissao_total: percentualTotal
                 })
                 numeroParcela++
               }
             }
           })
         }
-        
+
         // Balões
         if (vendaForm.teve_balao === 'sim') {
           let numeroBalao = 1
@@ -1489,21 +1931,28 @@ const AdminDashboard = () => {
               console.warn('Grupo de balão inválido ignorado:', grupo)
               return
             }
-            
+
             const qtd = parseInt(grupo.qtd) || 0
             const valor = parseFloat(grupo.valor) || 0
-            
+
             // Só processar se quantidade e valor forem válidos
             if (qtd > 0 && valor > 0) {
               for (let i = 0; i < qtd; i++) {
+                const dataOverrideBalao2 = (vendaForm.datas_balao_override || {})[numeroBalao - 1]
+                const periBalao2 = parseInt(vendaForm.periodicidade_balao) || 6
+                const diaFixoBalao = vendaForm.dia_pagamento_balao === 0
+                  ? (parseInt(vendaForm.dia_pagamento_balao_outro) || 1)
+                  : (vendaForm.dia_pagamento_balao || 1)
+                const dataAutoBalao2 = dataBaseCalculo2
+                  ? getDataComDiaFixo(dataBaseCalculo2, numeroBalao * periBalao2, diaFixoBalao)
+                  : undefined
                 pagamentos.push({
                   venda_id: vendaId,
                   tipo: 'balao',
                   numero_parcela: numeroBalao,
                   valor: valor,
+                  data_prevista: dataOverrideBalao2 || dataAutoBalao2 || undefined,
                   comissao_gerada: calcularComissaoPagamento(valor, fatorTotal),
-                  fator_comissao_aplicado: fatorTotal,
-                  percentual_comissao_total: percentualTotal
                 })
                 numeroBalao++
               }
@@ -1515,12 +1964,12 @@ const AdminDashboard = () => {
       if (pagamentos.length > 0) {
         const { error: pagError } = await supabase.from('pagamentos_prosoluto').insert(pagamentos)
         if (pagError) {
-          console.error('Erro ao criar pagamentos:', pagError)
+          console.error('❌ Erro ao criar pagamentos:', pagError)
         } else {
-         // console.log('Pagamentos criados:', pagamentos.length)
+          console.log('✅ Pagamentos criados:', pagamentos.length)
         }
       } else {
-       // console.log('Nenhum pagamento para criar. Pro-soluto:', valorProSoluto)
+        console.log('⚠️ Nenhum pagamento para criar. Pro-soluto:', valorProSoluto)
       }
     }
 
@@ -1748,11 +2197,78 @@ const AdminDashboard = () => {
     }
   }
 
-  const handleDeleteVenda = async (id) => {
-    if (confirm('Tem certeza que deseja excluir esta venda?')) {
-      await supabase.from('vendas').delete().eq('id', id)
+  const handleDeleteVenda = (venda) => {
+    const hoje = new Date().toISOString().split('T')[0]
+    setVendaParaExcluir(venda)
+    setDataDistrato(hoje)
+    setModalExcluirVendaStep(1)
+    setShowModalExcluirVenda(true)
+  }
+
+  const processarExclusaoVenda = async () => {
+    if (!vendaParaExcluir) return
+    setProcessandoExclusaoVenda(true)
+    try {
+      const { error } = await supabase
+        .from('vendas')
+        .update({ excluido: true })
+        .eq('id', vendaParaExcluir.id)
+      if (error) throw error
+      setShowModalExcluirVenda(false)
+      setVendaParaExcluir(null)
       fetchData()
+      setMessage({ type: 'success', text: 'Venda excluída do sistema com sucesso!' })
+      clearMessageAfter(3000)
+    } catch (err) {
+      setMessage({ type: 'error', text: 'Erro ao excluir venda: ' + err.message })
+      clearMessageAfter(5000)
+    } finally {
+      setProcessandoExclusaoVenda(false)
     }
+  }
+
+  const processarDistratoVenda = async () => {
+    if (!vendaParaExcluir || !dataDistrato) return
+    setProcessandoExclusaoVenda(true)
+    try {
+      const { error } = await supabase
+        .from('vendas')
+        .update({ status: 'distrato', data_distrato: dataDistrato })
+        .eq('id', vendaParaExcluir.id)
+      if (error) throw error
+      setShowModalExcluirVenda(false)
+      setVendaParaExcluir(null)
+      fetchData()
+      setMessage({ type: 'success', text: 'Distrato registrado com sucesso!' })
+      clearMessageAfter(3000)
+    } catch (err) {
+      setMessage({ type: 'error', text: 'Erro ao registrar distrato: ' + err.message })
+      clearMessageAfter(5000)
+    } finally {
+      setProcessandoExclusaoVenda(false)
+    }
+  }
+
+  // Calcula comissão de uma venda em distrato: considera apenas parcelas pagas
+  // ou com data de vencimento <= data do distrato
+  const calcularComissaoVendaDistrato = (vendaId, dataDistratoVenda) => {
+    const grupo = listaVendasComPagamentos.find(g => String(g.venda_id) === String(vendaId))
+    if (!grupo?.pagamentos?.length) return { comissaoTotal: 0, comissaoCorretor: 0 }
+    const dataLimite = new Date(dataDistratoVenda + 'T23:59:59')
+    let comissaoTotal = 0
+    let comissaoCorretor = 0
+    grupo.pagamentos.forEach(pag => {
+      const isPago = pag.status === 'pago'
+      const dataPrevista = pag.data_prevista ? new Date(pag.data_prevista) : null
+      const isVencidoAteDistrato = dataPrevista && dataPrevista <= dataLimite
+      if (isPago || isVencidoAteDistrato) {
+        comissaoTotal += parseFloat(pag.comissao_gerada) || 0
+        const cargos = calcularComissaoPorCargoPagamento(pag)
+        const cargoCorretor = cargos.find(c => c.nome_cargo === 'Corretor' || c.nome_cargo?.toLowerCase().includes('corretor'))
+        comissaoCorretor += cargoCorretor?.valor ?? 0
+      }
+    })
+    return { comissaoTotal, comissaoCorretor }
   }
 
   const handleDeleteCorretor = async (corretor) => {
@@ -2232,8 +2748,6 @@ const AdminDashboard = () => {
         valor: valorEntradaParaCalculo, // Valor da entrada
         data_prevista: venda.data_venda,
         comissao_gerada: comissaoTotal, // Comissão TOTAL do corretor
-        fator_comissao_aplicado: fatorIntegral,
-        percentual_comissao_total: percentualTotal
       })
       
       console.log(`✅ Entrada >= 20% no ato (${percentualEntrada.toFixed(1)}%). Comissão integral: R$ ${comissaoTotal.toFixed(2)}`)
@@ -2248,8 +2762,6 @@ const AdminDashboard = () => {
           valor: valorSinal,
           data_prevista: venda.data_venda,
           comissao_gerada: calcularComissaoPagamento(valorSinal, fatorTotal),
-          fator_comissao_aplicado: fatorTotal,
-          percentual_comissao_total: percentualTotal
         })
       }
 
@@ -2263,8 +2775,6 @@ const AdminDashboard = () => {
             valor: valorEntradaAvista,
             data_prevista: venda.data_venda,
             comissao_gerada: calcularComissaoPagamento(valorEntradaAvista, fatorTotal),
-            fator_comissao_aplicado: fatorTotal,
-            percentual_comissao_total: percentualTotal
           })
         }
       }
@@ -2285,8 +2795,6 @@ const AdminDashboard = () => {
             valor: valorParcelaEnt,
             data_prevista: dataParcela.toISOString().split('T')[0],
             comissao_gerada: calcularComissaoPagamento(valorParcelaEnt, fatorTotal),
-            fator_comissao_aplicado: fatorTotal,
-            percentual_comissao_total: percentualTotal
           })
         }
       }
@@ -2302,8 +2810,6 @@ const AdminDashboard = () => {
             numero_parcela: i,
             valor: valorBalaoUnit,
             comissao_gerada: calcularComissaoPagamento(valorBalaoUnit, fatorTotal),
-            fator_comissao_aplicado: fatorTotal,
-            percentual_comissao_total: percentualTotal
           })
         }
       }
@@ -2472,6 +2978,10 @@ const AdminDashboard = () => {
       valor_venda: '',
       tipo_corretor: 'externo',
       data_venda: new Date().toISOString().split('T')[0],
+      data_entrada: '',
+      data_sinal: '',
+      datas_parcelas_override: {},
+      datas_balao_override: {},
       descricao: '',
       status: 'pendente',
       teve_sinal: false,
@@ -2479,9 +2989,15 @@ const AdminDashboard = () => {
       teve_entrada: false,
       valor_entrada: '',
       parcelou_entrada: false,
+      periodicidade_parcelas: 1,
       grupos_parcelas_entrada: [{ qtd: '', valor: '' }],
+      dia_pagamento_parcelas: 1,
+      dia_pagamento_parcelas_outro: '',
       teve_balao: 'nao',
+      periodicidade_balao: 6,
       grupos_balao: [{ qtd: '', valor: '' }],
+      dia_pagamento_balao: 1,
+      dia_pagamento_balao_outro: '',
       teve_permuta: false,
       tipo_permuta: '',
       valor_permuta: '',
@@ -2829,109 +3345,405 @@ const AdminDashboard = () => {
   }
 
   const openEditModal = async (venda) => {
+    console.log('📝 Abrindo edição de venda:', venda.id)
     setSelectedItem(venda)
-    
-    // Buscar pagamentos da venda para detectar grupos
-    const { data: pagamentosVenda } = await supabase
-      .from('pagamentos_prosoluto')
-      .select('*')
-      .eq('venda_id', venda.id)
-      .order('numero_parcela', { ascending: true })
-    
-    // Agrupar parcelas de entrada por valor
-    let gruposParcelasEntrada = [{ qtd: '', valor: '' }]
-    if (venda.parcelou_entrada && pagamentosVenda) {
-      const parcelasEntrada = pagamentosVenda
-        .filter(p => p.tipo === 'parcela_entrada')
-        .sort((a, b) => (a.numero_parcela || 0) - (b.numero_parcela || 0))
-      
-      if (parcelasEntrada.length > 0) {
-        // Agrupar por valor
-        const grupos = {}
-        parcelasEntrada.forEach(p => {
-          const valor = parseFloat(p.valor) || 0
-          const key = valor.toFixed(2)
-          if (!grupos[key]) {
-            grupos[key] = { valor: valor.toString(), qtd: 0 }
-          }
-          grupos[key].qtd++
-        })
-        
-        gruposParcelasEntrada = Object.values(grupos).map(g => ({
-          qtd: g.qtd.toString(),
-          valor: g.valor
-        }))
+    setParcelasSelecionadas([]) // Reset de parcelas selecionadas
+    setRenegociacaoForm({
+      motivo: '',
+      distribuicoesNovas: [],
+      totalSelecionado: 0,
+      quantidadeParcelas: 0
+    }) // Reset de form de renegociação
+
+    try {
+      // Buscar pagamentos da venda para detectar grupos
+      const { data: pagamentosVenda, error } = await supabase
+        .from('pagamentos_prosoluto')
+        .select('*')
+        .eq('venda_id', venda.id)
+        .order('numero_parcela', { ascending: true })
+
+      console.log('💰 Pagamentos buscados:', pagamentosVenda?.length || 0, 'erro:', error?.message)
+
+      if (error) {
+        console.error('❌ Erro ao buscar pagamentos:', error)
+        setPagamentosVendaEditando([])
+      } else {
+        const pags = pagamentosVenda || []
+        console.log('✅ SetPagamentosVendaEditando com', pags.length, 'pagamentos')
+        setPagamentosVendaEditando(pags)
       }
-    } else if (venda.parcelou_entrada) {
-      // Se não tem pagamentos mas parcelou, usar valores do banco
-      gruposParcelasEntrada = [{
-        qtd: venda.qtd_parcelas_entrada?.toString() || '',
-        valor: venda.valor_parcela_entrada?.toString() || ''
-      }]
-    }
-    
-    // Agrupar balões por valor
-    let gruposBalao = [{ qtd: '', valor: '' }]
-    if (venda.teve_balao === 'sim' && pagamentosVenda) {
-      const baloes = pagamentosVenda
-        .filter(p => p.tipo === 'balao')
-        .sort((a, b) => (a.numero_parcela || 0) - (b.numero_parcela || 0))
-      
-      if (baloes.length > 0) {
-        // Agrupar por valor
-        const grupos = {}
-        baloes.forEach(p => {
-          const valor = parseFloat(p.valor) || 0
-          const key = valor.toFixed(2)
-          if (!grupos[key]) {
-            grupos[key] = { valor: valor.toString(), qtd: 0 }
-          }
-          grupos[key].qtd++
-        })
-        
-        gruposBalao = Object.values(grupos).map(g => ({
-          qtd: g.qtd.toString(),
-          valor: g.valor
-        }))
+
+      // Continuar com o resto do carregamento mesmo se houver erro nos pagamentos
+      const actualPagamentos = pagamentosVenda || []
+
+      // Agrupar parcelas de entrada por valor
+      let gruposParcelasEntrada = [{ qtd: '', valor: '' }]
+      if (venda.parcelou_entrada && actualPagamentos) {
+        const parcelasEntrada = actualPagamentos
+          .filter(p => p.tipo === 'parcela_entrada')
+          .sort((a, b) => (a.numero_parcela || 0) - (b.numero_parcela || 0))
+
+        if (parcelasEntrada.length > 0) {
+          const grupos = {}
+          parcelasEntrada.forEach(p => {
+            const valor = parseFloat(p.valor) || 0
+            const key = valor.toFixed(2)
+            if (!grupos[key]) {
+              grupos[key] = { valor: valor.toString(), qtd: 0 }
+            }
+            grupos[key].qtd++
+          })
+
+          gruposParcelasEntrada = Object.values(grupos).map(g => ({
+            qtd: g.qtd.toString(),
+            valor: g.valor
+          }))
+        }
+      } else if (venda.parcelou_entrada) {
+        gruposParcelasEntrada = [{
+          qtd: venda.qtd_parcelas_entrada?.toString() || '',
+          valor: venda.valor_parcela_entrada?.toString() || ''
+        }]
       }
-    } else if (venda.teve_balao === 'sim') {
-      // Se não tem pagamentos mas tem balão, usar valores do banco
-      gruposBalao = [{
-        qtd: venda.qtd_balao?.toString() || '',
-        valor: venda.valor_balao?.toString() || ''
-      }]
+
+      // Agrupar balões por valor
+      let gruposBalao = [{ qtd: '', valor: '' }]
+      if (venda.teve_balao === 'sim' && actualPagamentos) {
+        const baloes = actualPagamentos
+          .filter(p => p.tipo === 'balao')
+          .sort((a, b) => (a.numero_parcela || 0) - (b.numero_parcela || 0))
+
+        if (baloes.length > 0) {
+          const grupos = {}
+          baloes.forEach(p => {
+            const valor = parseFloat(p.valor) || 0
+            const key = valor.toFixed(2)
+            if (!grupos[key]) {
+              grupos[key] = { valor: valor.toString(), qtd: 0 }
+            }
+            grupos[key].qtd++
+          })
+
+          gruposBalao = Object.values(grupos).map(g => ({
+            qtd: g.qtd.toString(),
+            valor: g.valor
+          }))
+        }
+      } else if (venda.teve_balao === 'sim') {
+        gruposBalao = [{
+          qtd: venda.qtd_balao?.toString() || '',
+          valor: venda.valor_balao?.toString() || ''
+        }]
+      }
+
+      // Extrair datas dos pagamentos
+      let dataSinalCarregada = ''
+      const datasParcelasOverride = {}
+      const datasBalaoOverride = {}
+      if (actualPagamentos) {
+        const pagSinal = actualPagamentos.find(p => p.tipo === 'sinal')
+        if (pagSinal?.data_prevista) dataSinalCarregada = pagSinal.data_prevista
+
+        const parcelasOrdenadas = actualPagamentos
+          .filter(p => p.tipo === 'parcela_entrada')
+          .sort((a, b) => (a.numero_parcela || 0) - (b.numero_parcela || 0))
+        parcelasOrdenadas.forEach((p, i) => {
+          if (p.data_prevista) datasParcelasOverride[i] = p.data_prevista
+        })
+
+        const baloesOrdenados = actualPagamentos
+          .filter(p => p.tipo === 'balao')
+          .sort((a, b) => (a.numero_parcela || 0) - (b.numero_parcela || 0))
+        baloesOrdenados.forEach((p, i) => {
+          if (p.data_prevista) datasBalaoOverride[i] = p.data_prevista
+        })
+      }
+
+      setVendaForm({
+        corretor_id: venda.corretor_id,
+        empreendimento_id: venda.empreendimento_id || '',
+        cliente_id: venda.cliente_id || '',
+        unidade: venda.unidade || '',
+        bloco: venda.bloco || '',
+        andar: venda.andar || '',
+        valor_venda: venda.valor_venda?.toString() || '',
+        tipo_corretor: venda.tipo_corretor || 'externo',
+        data_venda: venda.data_venda || new Date().toISOString().split('T')[0],
+        data_entrada: venda.data_entrada || venda.data_venda || '',
+        data_sinal: dataSinalCarregada,
+        datas_parcelas_override: datasParcelasOverride,
+        datas_balao_override: datasBalaoOverride,
+        descricao: venda.descricao || '',
+        status: venda.status || 'pendente',
+        teve_sinal: venda.teve_sinal || false,
+        valor_sinal: venda.valor_sinal?.toString() || '',
+        teve_entrada: venda.teve_entrada || false,
+        valor_entrada: venda.valor_entrada?.toString() || '',
+        parcelou_entrada: venda.parcelou_entrada || false,
+        periodicidade_parcelas: venda.periodicidade_parcelas || 1,
+        grupos_parcelas_entrada: gruposParcelasEntrada,
+        dia_pagamento_parcelas: venda.dia_pagamento_parcelas || 1,
+        dia_pagamento_parcelas_outro: venda.dia_pagamento_parcelas_outro || '',
+        teve_balao: venda.teve_balao || 'nao',
+        periodicidade_balao: venda.periodicidade_balao || 6,
+        grupos_balao: gruposBalao,
+        dia_pagamento_balao: venda.dia_pagamento_balao || 1,
+        dia_pagamento_balao_outro: venda.dia_pagamento_balao_outro || '',
+        teve_permuta: venda.teve_permuta || false,
+        tipo_permuta: venda.tipo_permuta || '',
+        valor_permuta: venda.valor_permuta?.toString() || '',
+        valor_pro_soluto: venda.valor_pro_soluto?.toString() || '',
+        contrato_url: venda.contrato_url || '',
+        contrato_nome: venda.contrato_nome || ''
+      })
+      setContratoFile(null)
+      setModalType('venda')
+      console.log('🔓 Modal aberto. selectedItem:', !!venda, 'pagamentosVendaEditando será populado...')
+      setShowModal(true)
+    } catch (err) {
+      console.error('❌ Erro ao abrir modal de edição:', err)
+      setMessage({ type: 'error', text: 'Erro ao carregar dados da venda.' })
+      clearMessageAfter(4000)
     }
-    
-    setVendaForm({
-      corretor_id: venda.corretor_id,
-      empreendimento_id: venda.empreendimento_id || '',
-      cliente_id: venda.cliente_id || '',
-      unidade: venda.unidade || '',
-      bloco: venda.bloco || '',
-      andar: venda.andar || '',
-      valor_venda: venda.valor_venda.toString(),
-      tipo_corretor: venda.tipo_corretor,
-      data_venda: venda.data_venda,
-      descricao: venda.descricao || '',
-      status: venda.status,
-      teve_sinal: venda.teve_sinal || false,
-      valor_sinal: venda.valor_sinal?.toString() || '',
-      teve_entrada: venda.teve_entrada || false,
-      valor_entrada: venda.valor_entrada?.toString() || '',
-      parcelou_entrada: venda.parcelou_entrada || false,
-      grupos_parcelas_entrada: gruposParcelasEntrada,
-      teve_balao: venda.teve_balao || 'nao',
-      grupos_balao: gruposBalao,
-      teve_permuta: venda.teve_permuta || false,
-      tipo_permuta: venda.tipo_permuta || '',
-      valor_permuta: venda.valor_permuta?.toString() || '',
-      valor_pro_soluto: venda.valor_pro_soluto?.toString() || '',
-      contrato_url: venda.contrato_url || '',
-      contrato_nome: venda.contrato_nome || ''
+  }
+
+  // Buscar pagamentos de uma venda para exibir na aba de visualização (Condições de Pagamento)
+  const fetchPagamentosVisualizacao = async (vendaId) => {
+    try {
+      const { data } = await supabase
+        .from('pagamentos_prosoluto')
+        .select('*')
+        .eq('venda_id', vendaId)
+        .order('numero_parcela', { ascending: true })
+      setPagamentosVisualizacao(data || [])
+    } catch (err) {
+      console.error('Erro ao buscar pagamentos para visualização:', err)
+      setPagamentosVisualizacao([])
+    }
+  }
+
+  // Buscar renegociações de uma venda para a aba de visualização
+  const fetchRenegociacoes = async (vendaId) => {
+    setLoadingRenegociacoes(true)
+    try {
+      const { data, error } = await supabase
+        .from('renegociacoes')
+        .select('*')
+        .eq('venda_id', vendaId)
+        .order('data_renegociacao', { ascending: false })
+      if (!error) setRenegociacoesVenda(data || [])
+    } catch (err) {
+      console.error('Erro ao buscar renegociações:', err)
+    } finally {
+      setLoadingRenegociacoes(false)
+    }
+  }
+
+  // Abre o modal de renegociação inicializando novasCondicoes a partir das parcelas selecionadas
+  // Helper: calcular o total da distribuição nova
+  const calcularTotalDistribuicao = (distribuicoes) => {
+    return distribuicoes.reduce((s, d) => s + (parseInt(d.qtd) || 0) * (parseFloat(d.valor) || 0), 0)
+  }
+
+  // Helper: verificar se totais batem
+  const totalDistribuicaoAtual = calcularTotalDistribuicao(renegociacaoForm.distribuicoesNovas)
+  const totalsFechados = Math.abs(totalDistribuicaoAtual - renegociacaoForm.totalSelecionado) <= 0.01
+  const diferenca = totalDistribuicaoAtual - renegociacaoForm.totalSelecionado
+
+  const abrirModalRenegociacao = () => {
+    // Calcular totais consolidados
+    const totalSelecionado = parcelasSelecionadas.reduce((s, p) => s + (parseFloat(p.valor) || 0), 0)
+    const quantidadeParcelas = parcelasSelecionadas.length
+
+    // ✨ Sugestão automática inteligente:
+    // Manter a mesma quantidade de parcelas, distribuindo o total igualmente
+    const distribuicoesNovas = []
+
+    if (quantidadeParcelas > 0 && totalSelecionado > 0) {
+      const valorPorParcela = totalSelecionado / quantidadeParcelas
+      const valorUnitario = parseFloat(valorPorParcela.toFixed(2))
+
+      // Criar (N-1) parcelas com valor unitário igual
+      for (let i = 0; i < quantidadeParcelas - 1; i++) {
+        distribuicoesNovas.push({
+          qtd: '1',
+          valor: String(valorUnitario.toFixed(2)),
+          data_prevista: parcelasSelecionadas[i]?.data_prevista || ''
+        })
+      }
+
+      // Última parcela ajustada para fechar o total exatamente (evita problemas de arredondamento)
+      const somaAntes = distribuicoesNovas.reduce((s, d) => s + (parseInt(d.qtd) || 1) * (parseFloat(d.valor) || 0), 0)
+      const ultimoValor = parseFloat((totalSelecionado - somaAntes).toFixed(2))
+      distribuicoesNovas.push({
+        qtd: '1',
+        valor: String(ultimoValor.toFixed(2)),
+        data_prevista: parcelasSelecionadas[quantidadeParcelas - 1]?.data_prevista || ''
+      })
+    }
+
+    console.log('📋 Sugestão automática de renegociação:', {
+      quantidadeParcelas,
+      totalSelecionado,
+      distribuicoesNovas,
+      totalSugestao: distribuicoesNovas.reduce((s, d) => s + (parseInt(d.qtd) || 1) * (parseFloat(d.valor) || 0), 0)
     })
-    setContratoFile(null)
-    setModalType('venda')
-    setShowModal(true)
+
+    setRenegociacaoForm({
+      motivo: '',
+      distribuicoesNovas,
+      totalSelecionado,
+      quantidadeParcelas
+    })
+    setShowModalRenegociacao(true)
+  }
+
+  // Salva a renegociação: substitui pagamentos selecionados, grava histórico, recalcula comissão
+  const processarRenegociacao = async () => {
+    if (!renegociacaoForm.motivo.trim()) {
+      setMessage({ type: 'error', text: 'Informe o motivo da renegociação.' })
+      clearMessageAfter(4000)
+      return
+    }
+
+    // Validar distribuições novas
+    if (renegociacaoForm.distribuicoesNovas.length === 0 ||
+        renegociacaoForm.distribuicoesNovas.some(d => !d.qtd || !d.valor || parseInt(d.qtd) < 1 || parseFloat(d.valor) <= 0)) {
+      setMessage({ type: 'error', text: 'Preencha quantidade e valor válidos em todas as distribuições.' })
+      clearMessageAfter(4000)
+      return
+    }
+
+    // Validar que o total da nova distribuição bate com o selecionado (tolerância de centavos)
+    const totalNovaDistribuicao = renegociacaoForm.distribuicoesNovas.reduce((s, d) => {
+      return s + (parseInt(d.qtd) || 1) * (parseFloat(d.valor) || 0)
+    }, 0)
+
+    if (Math.abs(totalNovaDistribuicao - renegociacaoForm.totalSelecionado) > 0.01) {
+      setMessage({
+        type: 'error',
+        text: `Total da nova distribuição (R$${totalNovaDistribuicao.toFixed(2)}) não corresponde ao total selecionado (R$${renegociacaoForm.totalSelecionado.toFixed(2)})`
+      })
+      clearMessageAfter(6000)
+      return
+    }
+
+    setSalvandoRenegociacao(true)
+    try {
+      const venda = selectedItem
+      const fator = parseFloat(venda.fator_comissao) || 0
+
+      // 1. Snapshot das originais
+      const parcelasOriginais = parcelasSelecionadas.map(p => ({ ...p }))
+
+      // 2. Determinar o tipo das novas parcelas (usar tipo da primeira selecionada)
+      const tipoOriginal = parcelasSelecionadas[0]?.tipo || 'parcela_entrada'
+
+      // 3. Montar as novas parcelas a inserir (agrupadas)
+      const novasParcelas = []
+      let numeroSequencial = 0
+
+      // Pegar número inicial continuando a sequência existente
+      const jaExistentes = pagamentosVendaEditando
+        .filter(p => p.tipo === tipoOriginal && !parcelasSelecionadas.find(s => s.id === p.id))
+        .map(p => p.numero_parcela || 0)
+      numeroSequencial = jaExistentes.length > 0 ? Math.max(...jaExistentes) : 0
+
+      // Criar as novas parcelas baseadas na distribuição
+      renegociacaoForm.distribuicoesNovas.forEach(dist => {
+        const qtd = parseInt(dist.qtd) || 1
+        const valor = parseFloat(dist.valor) || 0
+
+        for (let i = 0; i < qtd; i++) {
+          numeroSequencial++
+          novasParcelas.push({
+            venda_id: venda.id,
+            tipo: tipoOriginal,
+            numero_parcela: tipoOriginal === 'sinal' || tipoOriginal === 'entrada' ? undefined : numeroSequencial,
+            valor,
+            data_prevista: dist.data_prevista || null,
+            comissao_gerada: calcularComissaoPagamento(valor, fator),
+            status: 'pendente'
+          })
+        }
+      })
+
+      console.log('💾 Processando renegociação agrupada:', {
+        parcelasOriginais: parcelasOriginais.length,
+        novasParcelas: novasParcelas.length,
+        totalOriginal: renegociacaoForm.totalSelecionado,
+        totalNovo: totalNovaDistribuicao
+      })
+
+      // 4. Calcular diferenças
+      const somaComissaoOriginal = parcelasOriginais.reduce((s, p) => s + (parseFloat(p.comissao_gerada) || 0), 0)
+      const somaComissaoNovas = novasParcelas.reduce((s, p) => s + (p.comissao_gerada || 0), 0)
+
+      // 5. Deletar as parcelas originais selecionadas
+      const idsParaDeletar = parcelasOriginais.map(p => p.id)
+      const { error: errDelete } = await supabase
+        .from('pagamentos_prosoluto')
+        .delete()
+        .in('id', idsParaDeletar)
+      if (errDelete) throw errDelete
+
+      // 6. Inserir novas parcelas
+      const { error: errInsert } = await supabase
+        .from('pagamentos_prosoluto')
+        .insert(novasParcelas)
+      if (errInsert) throw errInsert
+
+      // 7. Gravar histórico na tabela renegociacoes
+      const { error: errHist } = await supabase
+        .from('renegociacoes')
+        .insert([{
+          venda_id: venda.id,
+          usuario_id: userProfile?.id || null,
+          motivo: renegociacaoForm.motivo.trim(),
+          parcelas_originais: parcelasOriginais,
+          parcelas_novas: novasParcelas,
+          diferenca_valor: totalNovaDistribuicao - renegociacaoForm.totalSelecionado,
+          diferenca_comissao: somaComissaoNovas - somaComissaoOriginal
+        }])
+      if (errHist) throw errHist
+
+      // 8. Recalcular comissão da venda
+      const { data: todasParcelas } = await supabase
+        .from('pagamentos_prosoluto')
+        .select('comissao_gerada')
+        .eq('venda_id', venda.id)
+      if (todasParcelas) {
+        const novaComissaoTotal = todasParcelas.reduce((s, p) => s + (parseFloat(p.comissao_gerada) || 0), 0)
+        const comissoesDin = calcularComissoesDinamicas(parseFloat(venda.valor_venda), venda.empreendimento_id, venda.tipo_corretor)
+        const getVal = (...termos) => {
+          const c = comissoesDin.cargos?.find(x => termos.some(t => x.nome_cargo?.toLowerCase().includes(t)))
+          const prop = comissoesDin.percentualTotal > 0 && c ? (parseFloat(c.percentual) / comissoesDin.percentualTotal) : 0
+          return novaComissaoTotal * prop
+        }
+        await supabase.from('vendas').update({
+          comissao_total: novaComissaoTotal,
+          comissao_corretor: getVal('corretor'),
+          comissao_diretor: getVal('diretor'),
+          comissao_nohros_imobiliaria: getVal('imobili'),
+          comissao_nohros_gestao: getVal('gest'),
+          comissao_wsc: getVal('wsc', 'beton'),
+          comissao_coordenadora: getVal('coordenad')
+        }).eq('id', venda.id)
+      }
+
+      setShowModalRenegociacao(false)
+      setParcelasSelecionadas([])
+      setShowModal(false)
+      fetchData()
+      setMessage({ type: 'success', text: 'Renegociação salva com sucesso!' })
+      clearMessageAfter(4000)
+    } catch (err) {
+      setMessage({ type: 'error', text: 'Erro ao salvar renegociação: ' + (err.message || err) })
+      clearMessageAfter(6000)
+    } finally {
+      setSalvandoRenegociacao(false)
+    }
   }
 
   // Formatar CPF: 000.000.000-00
@@ -2963,6 +3775,44 @@ const AdminDashboard = () => {
       style: 'currency',
       currency: 'BRL'
     }).format(value)
+  }
+
+  // Formatar data YYYY-MM-DD para DD/MM/YYYY (pt-BR)
+  const formatDateBR = (dateStr) => {
+    if (!dateStr) return ''
+    const parts = dateStr.split('-')
+    if (parts.length !== 3) return dateStr
+    return `${parts[2]}/${parts[1]}/${parts[0]}`
+  }
+
+  // Adicionar N meses a uma data YYYY-MM-DD sem bugs de timezone ou setMonth
+  // Preserva o dia; se o mês destino tiver menos dias, usa o último dia do mês
+  const addMonthsSafe = (dateStr, months) => {
+    const [y, m, d] = dateStr.split('-').map(Number)
+    const totalMonths = (m - 1) + months
+    const newYear = y + Math.floor(totalMonths / 12)
+    const newMonth = totalMonths % 12 // 0-indexed
+    const daysInMonth = new Date(newYear, newMonth + 1, 0).getDate()
+    const newDay = Math.min(d, daysInMonth)
+    return `${newYear}-${String(newMonth + 1).padStart(2, '0')}-${String(newDay).padStart(2, '0')}`
+  }
+
+  // Novoo helper: Calcular data com dia fixo, ajustando para último dia do mês se inválido
+  const getDataComDiaFixo = (dateStr, months, diaFixo) => {
+    if (!diaFixo || diaFixo < 1 || diaFixo > 31) {
+      return addMonthsSafe(dateStr, months)
+    }
+
+    const [y, m, d] = dateStr.split('-').map(Number)
+    const totalMonths = (m - 1) + months
+    const newYear = y + Math.floor(totalMonths / 12)
+    const newMonth = totalMonths % 12 // 0-indexed
+    const daysInMonth = new Date(newYear, newMonth + 1, 0).getDate()
+
+    // Se o dia fixo não existe neste mês, usar o último dia do mês
+    const finalDay = Math.min(parseInt(diaFixo), daysInMonth)
+
+    return `${newYear}-${String(newMonth + 1).padStart(2, '0')}-${String(finalDay).padStart(2, '0')}`
   }
 
   // Formatar nome com primeira letra maiúscula (Title Case)
@@ -3784,8 +4634,11 @@ const AdminDashboard = () => {
     // Filtro por empreendimento
     const matchEmpreendimento = !filtrosVendas.empreendimento || venda.empreendimento_id === filtrosVendas.empreendimento
     
-    // Filtro por status
-    const matchStatus = filtrosVendas.status === 'todos' || venda.status === filtrosVendas.status
+    // Filtro por status (distrato só aparece quando filtrado explicitamente)
+    const matchStatus = (() => {
+      if (venda.status === 'distrato') return filtrosVendas.status === 'distrato'
+      return filtrosVendas.status === 'todos' || venda.status === filtrosVendas.status
+    })()
     
     // Filtro por bloco
     const matchBloco = !filtrosVendas.bloco || (venda.bloco && venda.bloco.toUpperCase() === filtrosVendas.bloco.toUpperCase())
@@ -4415,6 +5268,7 @@ const AdminDashboard = () => {
                     <option value="pendente">Pendente</option>
                     <option value="pago">Pago</option>
                     <option value="em_andamento">Em Andamento</option>
+                    <option value="distrato">Distrato</option>
                   </select>
                 </div>
                 
@@ -4488,6 +5342,7 @@ const AdminDashboard = () => {
                 <thead>
                   <tr>
                     <th>Corretor</th>
+                    <th>Cliente</th>
                     <th>Unidade</th>
                     <th>Tipo</th>
                     <th>Valor Venda</th>
@@ -4501,19 +5356,28 @@ const AdminDashboard = () => {
                 <tbody>
                   {loading ? (
                     <tr>
-                      <td colSpan="9" className="loading-cell">
+                      <td colSpan="10" className="loading-cell">
                         <div className="loading-spinner"></div>
                       </td>
                     </tr>
                   ) : filteredVendas.length === 0 ? (
                     <tr>
-                      <td colSpan="9" className="empty-cell">
+                      <td colSpan="10" className="empty-cell">
                         Nenhuma venda encontrada
                       </td>
                     </tr>
                   ) : (
                     filteredVendas.map((venda) => {
-                      const { comissaoTotal, comissaoCorretor } = calcularComissaoVendaPorPagamentos(venda.id)
+                      const { comissaoTotal, comissaoCorretor } = venda.status === 'distrato' && venda.data_distrato
+                        ? calcularComissaoVendaDistrato(venda.id, venda.data_distrato)
+                        : calcularComissaoVendaPorPagamentos(venda.id)
+                      const nomeCliente = venda.nome_cliente || venda.cliente?.nome || ''
+                      const dataDistratoFormatada = venda.data_distrato
+                        ? new Date(venda.data_distrato + 'T12:00:00').toLocaleDateString('pt-BR')
+                        : ''
+                      const nomeClienteExibicao = venda.status === 'distrato' && dataDistratoFormatada
+                        ? `${nomeCliente} - DISTRATO ${dataDistratoFormatada}`
+                        : nomeCliente
                       return (
                       <tr key={venda.id}>
                         <td>
@@ -4523,6 +5387,11 @@ const AdminDashboard = () => {
                             </div>
                             <span>{venda.corretor?.nome || 'N/A'}</span>
                           </div>
+                        </td>
+                        <td>
+                          <span style={venda.status === 'distrato' ? { color: '#dc2626', fontWeight: 600 } : {}}>
+                            {nomeClienteExibicao || '-'}
+                          </span>
                         </td>
                         <td>
                           <span className="unidade-bloco">
@@ -4545,35 +5414,38 @@ const AdminDashboard = () => {
                             {venda.status === 'pago' && <CheckCircle size={14} />}
                             {venda.status === 'pendente' && <Clock size={14} />}
                             {venda.status === 'em_andamento' && <Clock size={14} />}
+                            {venda.status === 'distrato' && <XCircle size={14} />}
                             {venda.status === 'pago' && 'Comissão Paga'}
                             {venda.status === 'pendente' && 'Pendente'}
                             {venda.status === 'em_andamento' && 'Em Andamento'}
+                            {venda.status === 'distrato' && 'DISTRATO'}
                           </span>
                         </td>
                         <td>
                           <div className="action-buttons">
-                            <button 
+                            <button
                               className="action-btn view"
                               onClick={() => {
                                 setSelectedItem(venda)
                                 setModalType('visualizar-venda')
                                 setShowModal(true)
+                                fetchPagamentosVisualizacao(venda.id)
                               }}
                               title="Visualizar"
                             >
                               <Eye size={16} />
                             </button>
-                            <button 
+                            <button
                               className="action-btn edit"
                               onClick={() => openEditModal(venda)}
                               title="Editar"
                             >
                               <Edit2 size={16} />
                             </button>
-                            <button 
+                            <button
                               className="action-btn delete"
-                              onClick={() => handleDeleteVenda(venda.id)}
-                              title="Excluir"
+                              onClick={() => handleDeleteVenda(venda)}
+                              title="Excluir / Distrato"
                             >
                               <Trash2 size={16} />
                             </button>
@@ -5731,6 +6603,7 @@ const AdminDashboard = () => {
                               setSelectedItem(vendaCompleta)
                               setModalType('visualizar-venda')
                               setShowModal(true)
+                              fetchPagamentosVisualizacao(grupo.venda_id)
                             }}
                             title="Visualizar Venda"
                             style={{ 
@@ -7133,9 +8006,96 @@ const AdminDashboard = () => {
                 <X size={24} />
               </button>
             </div>
+
+            {/* Abas */}
+            <div className="visualizar-venda-tabs">
+              <button
+                className={`visualizar-venda-tab${abaVisualizarVenda === 'detalhes' ? ' active' : ''}`}
+                onClick={() => setAbaVisualizarVenda('detalhes')}
+              >
+                <FileText size={15} />
+                Detalhes da Venda
+              </button>
+              <button
+                className={`visualizar-venda-tab${abaVisualizarVenda === 'renegociacoes' ? ' active' : ''}`}
+                onClick={() => {
+                  setAbaVisualizarVenda('renegociacoes')
+                  fetchRenegociacoes(selectedItem.id)
+                }}
+              >
+                <RefreshCw size={15} />
+                Renegociações
+              </button>
+            </div>
             
             <div className="modal-body" style={{ padding: '24px' }}>
-              {/* Informações Principais */}
+              {abaVisualizarVenda === 'renegociacoes' && (
+                <div className="renego-historico">
+                  {loadingRenegociacoes ? (
+                    <div style={{ textAlign: 'center', padding: '2rem' }}>
+                      <div className="loading-spinner" />
+                    </div>
+                  ) : renegociacoesVenda.length === 0 ? (
+                    <div className="empty-state-box">
+                      <RefreshCw size={32} style={{ opacity: 0.3, marginBottom: 8 }} />
+                      <p>Nenhuma renegociação registrada para esta venda.</p>
+                    </div>
+                  ) : renegociacoesVenda.map(renego => {
+                    const parcelasOriginais = Array.isArray(renego.parcelas_originais) ? renego.parcelas_originais : []
+                    const parcelasNovas = Array.isArray(renego.parcelas_novas) ? renego.parcelas_novas : []
+                    const somaOrig = parcelasOriginais.reduce((s, p) => s + (parseFloat(p.valor) || 0), 0)
+                    const somaNovas = parcelasNovas.reduce((s, p) => s + (parseFloat(p.valor) || 0), 0)
+                    const somaComOrig = parcelasOriginais.reduce((s, p) => s + (parseFloat(p.comissao_gerada) || 0), 0)
+                    const somaComNovas = parcelasNovas.reduce((s, p) => s + (parseFloat(p.comissao_gerada) || 0), 0)
+                    return (
+                      <div key={renego.id} className="renego-historico-card">
+                        <div className="renego-historico-meta">
+                          <span className="renego-historico-data">
+                            <Calendar size={13} />
+                            {new Date(renego.data_renegociacao).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                          <span className="renego-historico-motivo">"{renego.motivo}"</span>
+                        </div>
+                        <div className="renego-historico-diff">
+                          <div className="renego-historico-lado antes">
+                            <span className="renego-historico-label">Antes</span>
+                            {parcelasOriginais.map((p, i) => (
+                              <div key={i} className="renego-historico-item">
+                                <span>{p.tipo?.replace('_', ' ')} {p.numero_parcela ? `#${p.numero_parcela}` : ''}</span>
+                                <span>{formatCurrency(p.valor)}</span>
+                                <span className="renego-data">{p.data_prevista ? new Date(p.data_prevista + 'T12:00:00').toLocaleDateString('pt-BR') : '—'}</span>
+                              </div>
+                            ))}
+                            <div className="renego-historico-subtotal">Total: {formatCurrency(somaOrig)} | Com.: {formatCurrency(somaComOrig)}</div>
+                          </div>
+                          <div className="renego-seta-hist">→</div>
+                          <div className="renego-historico-lado depois">
+                            <span className="renego-historico-label">Depois</span>
+                            {parcelasNovas.map((p, i) => (
+                              <div key={i} className="renego-historico-item">
+                                <span>{p.tipo?.replace('_', ' ')} {p.numero_parcela ? `#${p.numero_parcela}` : ''}</span>
+                                <span>{formatCurrency(p.valor)}</span>
+                                <span className="renego-data">{p.data_prevista ? new Date(p.data_prevista + 'T12:00:00').toLocaleDateString('pt-BR') : '—'}</span>
+                              </div>
+                            ))}
+                            <div className="renego-historico-subtotal depois">Total: {formatCurrency(somaNovas)} | Com.: {formatCurrency(somaComNovas)}</div>
+                          </div>
+                        </div>
+                        <div className="renego-historico-delta">
+                          <span className={parseFloat(renego.diferenca_valor) >= 0 ? 'delta-positivo' : 'delta-negativo'}>
+                            Δ Valor: {parseFloat(renego.diferenca_valor) >= 0 ? '+' : ''}{formatCurrency(renego.diferenca_valor)}
+                          </span>
+                          <span className={parseFloat(renego.diferenca_comissao) >= 0 ? 'delta-positivo' : 'delta-negativo'}>
+                            Δ Comissão: {parseFloat(renego.diferenca_comissao) >= 0 ? '+' : ''}{formatCurrency(renego.diferenca_comissao)}
+                          </span>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+              {abaVisualizarVenda !== 'renegociacoes' && (
+              <>{/* Informações Principais */}
               <div style={{ 
                 display: 'grid', 
                 gridTemplateColumns: 'repeat(2, 1fr)', 
@@ -7276,18 +8236,47 @@ const AdminDashboard = () => {
                     <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '12px', display: 'block' }}>Entrada</span>
                     <span style={{ fontSize: '16px', fontWeight: '600' }}>
                       {selectedItem.teve_entrada ? (
-                        selectedItem.parcelou_entrada 
-                          ? `${selectedItem.qtd_parcelas_entrada}x ${formatCurrency(selectedItem.valor_parcela_entrada)}`
-                          : formatCurrency(selectedItem.valor_entrada)
+                        selectedItem.parcelou_entrada ? (() => {
+                          const parcelasEntrada = pagamentosVisualizacao.filter(p => p.tipo === 'parcela_entrada')
+                          if (parcelasEntrada.length > 0) {
+                            // Agrupa por valor para exibir grupos distintos
+                            const grupos = {}
+                            parcelasEntrada.forEach(p => {
+                              const v = parseFloat(p.valor) || 0
+                              const k = v.toFixed(2)
+                              grupos[k] = (grupos[k] || 0) + 1
+                            })
+                            return Object.entries(grupos).map(([v, qtd]) =>
+                              `${qtd}x ${formatCurrency(parseFloat(v))}`
+                            ).join(' + ')
+                          }
+                          // Fallback para campos escalares (dados legados)
+                          return `${selectedItem.qtd_parcelas_entrada || 1}x ${formatCurrency(selectedItem.valor_parcela_entrada)}`
+                        })()
+                        : formatCurrency(selectedItem.valor_entrada)
                       ) : 'Não teve'}
                     </span>
                   </div>
                   <div style={{ padding: '12px', background: 'rgba(0,0,0,0.2)', borderRadius: '8px' }}>
                     <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '12px', display: 'block' }}>Balão</span>
                     <span style={{ fontSize: '16px', fontWeight: '600' }}>
-                      {selectedItem.teve_balao === 'sim' ? (
-                        `${selectedItem.qtd_balao || 1}x ${formatCurrency(selectedItem.valor_balao)}`
-                      ) : 'Não teve'}
+                      {selectedItem.teve_balao === 'sim' ? (() => {
+                        const baloes = pagamentosVisualizacao.filter(p => p.tipo === 'balao')
+                        if (baloes.length > 0) {
+                          // Agrupa por valor para exibir grupos distintos
+                          const grupos = {}
+                          baloes.forEach(p => {
+                            const v = parseFloat(p.valor) || 0
+                            const k = v.toFixed(2)
+                            grupos[k] = (grupos[k] || 0) + 1
+                          })
+                          return Object.entries(grupos).map(([v, qtd]) =>
+                            `${qtd}x ${formatCurrency(parseFloat(v))}`
+                          ).join(' + ')
+                        }
+                        // Fallback para campos escalares (dados legados)
+                        return `${selectedItem.qtd_balao || 1}x ${formatCurrency(selectedItem.valor_balao)}`
+                      })() : 'Não teve'}
                     </span>
                   </div>
                 </div>
@@ -7312,24 +8301,27 @@ const AdminDashboard = () => {
                   </span>
                 </div>
               )}
+              </>
+              )}
             </div>
-            
-            <div className="modal-footer" style={{ 
+
+            <div className="modal-footer" style={{
               padding: '16px 24px',
               borderTop: '1px solid rgba(255,255,255,0.1)',
               display: 'flex',
               justifyContent: 'flex-end',
               gap: '12px'
             }}>
-              <button 
+              <button
                 className="btn-secondary"
-                onClick={() => setShowModal(false)}
+                onClick={() => { setShowModal(false); setAbaVisualizarVenda('detalhes') }}
               >
                 Fechar
               </button>
-              <button 
+              <button
                 className="btn-primary"
                 onClick={() => {
+                  setAbaVisualizarVenda('detalhes')
                   openEditModal(selectedItem)
                 }}
               >
@@ -7362,6 +8354,7 @@ const AdminDashboard = () => {
             {/* Modal de Venda */}
             {modalType === 'venda' && (
               <>
+                {console.log('📋 Renderizando modal venda. selectedItem:', !!selectedItem, 'pagamentos:', pagamentosVendaEditando.length)}
                 <div className="modal-body">
                   <div className="form-group">
                     <label>Corretor *</label>
@@ -7401,6 +8394,24 @@ const AdminDashboard = () => {
                         type="date"
                         value={vendaForm.data_venda}
                         onChange={(e) => setVendaForm({...vendaForm, data_venda: e.target.value})}
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>Data da Entrada *</label>
+                      <input
+                        type="date"
+                        value={vendaForm.data_entrada}
+                        onChange={(e) => {
+                          const novaData = e.target.value
+                          setVendaForm({
+                            ...vendaForm,
+                            data_entrada: novaData,
+                            data_sinal: vendaForm.data_sinal || '',
+                            datas_parcelas_override: {},
+                            datas_balao_override: {}
+                          })
+                        }}
+                        required
                       />
                     </div>
                   </div>
@@ -7524,7 +8535,7 @@ const AdminDashboard = () => {
                       <label>Teve Sinal?</label>
                       <select
                         value={vendaForm.teve_sinal ? 'sim' : 'nao'}
-                        onChange={(e) => setVendaForm({...vendaForm, teve_sinal: e.target.value === 'sim', valor_sinal: e.target.value === 'nao' ? '' : vendaForm.valor_sinal})}
+                        onChange={(e) => setVendaForm({...vendaForm, teve_sinal: e.target.value === 'sim', valor_sinal: e.target.value === 'nao' ? '' : vendaForm.valor_sinal, data_sinal: e.target.value === 'nao' ? '' : vendaForm.data_sinal})}
                       >
                         <option value="nao">Não</option>
                         <option value="sim">Sim</option>
@@ -7545,6 +8556,54 @@ const AdminDashboard = () => {
                       </div>
                     )}
                   </div>
+                  {vendaForm.teve_sinal && (
+                    <div className="form-row">
+                      <div className="form-group">
+                        <label>Data de recebimento do sinal</label>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          {editandoDataSinal ? (
+                            <>
+                              <input
+                                type="date"
+                                value={dataSinalTemp}
+                                onChange={(e) => setDataSinalTemp(e.target.value)}
+                                style={{ flex: 1 }}
+                              />
+                              <button
+                                type="button"
+                                onClick={() => { setVendaForm({ ...vendaForm, data_sinal: dataSinalTemp }); setEditandoDataSinal(false) }}
+                                style={{ background: '#22c55e', color: 'white', border: 'none', borderRadius: '4px', padding: '6px 10px', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+                              >
+                                <Save size={14} />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setEditandoDataSinal(false)}
+                                style={{ background: '#ef4444', color: 'white', border: 'none', borderRadius: '4px', padding: '6px 10px', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+                              >
+                                <X size={14} />
+                              </button>
+                            </>
+                          ) : (
+                            <>
+                              <span style={{ flex: 1, color: vendaForm.data_sinal ? '#e2e8f0' : '#64748b' }}>
+                                {vendaForm.data_sinal
+                                  ? formatDateBR(vendaForm.data_sinal)
+                                  : (vendaForm.data_entrada ? `${formatDateBR(vendaForm.data_entrada)} (padrão)` : '—')}
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => { setEditandoDataSinal(true); setDataSinalTemp(vendaForm.data_sinal || vendaForm.data_entrada || '') }}
+                                style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#c9a962', display: 'flex', alignItems: 'center' }}
+                              >
+                                <Edit2 size={16} />
+                              </button>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
                   {/* ENTRADA */}
                   <div className="form-row">
@@ -7568,14 +8627,150 @@ const AdminDashboard = () => {
                         <label>Parcelou a Entrada?</label>
                         <select
                           value={vendaForm.parcelou_entrada ? 'sim' : 'nao'}
-                          onChange={(e) => setVendaForm({...vendaForm, parcelou_entrada: e.target.value === 'sim'})}
+                          onChange={(e) => setVendaForm({...vendaForm, parcelou_entrada: e.target.value === 'sim', datas_parcelas_override: {}})}
                         >
                           <option value="nao">Não (à vista)</option>
                           <option value="sim">Sim</option>
                         </select>
                       </div>
                     )}
+                    {vendaForm.teve_entrada && vendaForm.parcelou_entrada && (
+                      <div className="form-row">
+                        <div className="form-group">
+                          <label>Periodicidade das Parcelas</label>
+                          <select
+                            value={vendaForm.periodicidade_parcelas}
+                            onChange={(e) => setVendaForm({ ...vendaForm, periodicidade_parcelas: parseInt(e.target.value), datas_parcelas_override: {} })}
+                          >
+                            <option value={1}>Mensal (1 mês)</option>
+                            <option value={3}>Trimestral (3 meses)</option>
+                            <option value={4}>Quadrimestral (4 meses)</option>
+                            <option value={6}>Semestral (6 meses)</option>
+                            <option value={12}>Anual (12 meses)</option>
+                          </select>
+                        </div>
+
+                        <div className="form-group">
+                          <label>Dia de pagamento das parcelas</label>
+                          <select
+                            value={vendaForm.dia_pagamento_parcelas === 0 ? '0' : vendaForm.dia_pagamento_parcelas}
+                            onChange={(e) => setVendaForm({ ...vendaForm, dia_pagamento_parcelas: parseInt(e.target.value), datas_parcelas_override: {} })}
+                          >
+                            <option value={1}>1</option>
+                            <option value={5}>5</option>
+                            <option value={10}>10</option>
+                            <option value={15}>15</option>
+                            <option value={20}>20</option>
+                            <option value={25}>25</option>
+                            <option value={30}>30</option>
+                            <option value={0}>Outro</option>
+                          </select>
+                        </div>
+                      </div>
+                    )}
+
+                    {vendaForm.teve_entrada && vendaForm.parcelou_entrada && vendaForm.dia_pagamento_parcelas === 0 && (
+                      <div className="form-group">
+                        <label>Digite o dia (1-31)</label>
+                        <input
+                          type="number"
+                          min="1"
+                          max="31"
+                          placeholder="Ex: 15"
+                          value={vendaForm.dia_pagamento_parcelas_outro}
+                          onChange={(e) => {
+                            const val = parseInt(e.target.value) || ''
+                            if (val === '' || (val >= 1 && val <= 31)) {
+                              setVendaForm({ ...vendaForm, dia_pagamento_parcelas_outro: val?.toString() || '', datas_parcelas_override: {} })
+                            }
+                          }}
+                        />
+                      </div>
+                    )}
                   </div>
+
+                  {/* Datas das Próximas Parcelas (calculadas a partir de data_entrada + periodicidade) */}
+                  {vendaForm.teve_entrada && vendaForm.parcelou_entrada && (() => {
+                    const periodicidade = parseInt(vendaForm.periodicidade_parcelas) || 1
+                    // Determinar qual dia usar (fixo ou customizado "Outro")
+                    const diaFixo = vendaForm.dia_pagamento_parcelas === 0
+                      ? (parseInt(vendaForm.dia_pagamento_parcelas_outro) || 1)
+                      : (vendaForm.dia_pagamento_parcelas || 1)
+
+                    let numeroParcela = 0
+                    const parcelasCalc = []
+                    ;(vendaForm.grupos_parcelas_entrada || []).forEach(grupo => {
+                      const qtd = parseInt(grupo.qtd) || 0
+                      const valor = parseFloat(grupo.valor) || 0
+                      if (qtd > 0) {
+                        for (let i = 0; i < qtd; i++) {
+                          const idx = numeroParcela
+                          const override = (vendaForm.datas_parcelas_override || {})[idx]
+                          const dataAuto = vendaForm.data_entrada
+                            ? getDataComDiaFixo(vendaForm.data_entrada, (idx + 1) * periodicidade, diaFixo)
+                            : ''
+                          const dataFinal = override || dataAuto
+                          parcelasCalc.push({ idx, valor, dataFinal, isOverride: !!override })
+                          numeroParcela++
+                        }
+                      }
+                    })
+                    return parcelasCalc.length > 0 ? (
+                      <div className="form-group">
+                        <label style={{ marginBottom: '8px', display: 'block' }}>Datas das Próximas Parcelas</label>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                          {parcelasCalc.map(({ idx, valor, dataFinal, isOverride }) => (
+                            <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 12px', background: '#1e2433', borderRadius: '8px' }}>
+                              <span style={{ color: '#94a3b8', fontSize: '13px', minWidth: '140px' }}>
+                                Parcela {idx + 1}{valor > 0 ? ` — ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(valor)}` : ''}
+                              </span>
+                              {editandoDataParcela === idx ? (
+                                <>
+                                  <input
+                                    type="date"
+                                    value={dataParcelaTemp}
+                                    onChange={(e) => setDataParcelaTemp(e.target.value)}
+                                    style={{ flex: 1 }}
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setVendaForm({ ...vendaForm, datas_parcelas_override: { ...(vendaForm.datas_parcelas_override || {}), [idx]: dataParcelaTemp } })
+                                      setEditandoDataParcela(null)
+                                    }}
+                                    style={{ background: '#22c55e', color: 'white', border: 'none', borderRadius: '4px', padding: '6px 10px', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+                                  >
+                                    <Save size={14} />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => setEditandoDataParcela(null)}
+                                    style={{ background: '#ef4444', color: 'white', border: 'none', borderRadius: '4px', padding: '6px 10px', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+                                  >
+                                    <X size={14} />
+                                  </button>
+                                </>
+                              ) : (
+                                <>
+                                  <span style={{ flex: 1, color: isOverride ? '#c9a962' : (dataFinal ? '#e2e8f0' : '#64748b'), fontSize: '14px' }}>
+                                    {dataFinal ? formatDateBR(dataFinal) : (vendaForm.data_entrada ? '—' : 'Defina a Data da Entrada')}
+                                    {isOverride && <span style={{ color: '#64748b', fontSize: '12px', marginLeft: '6px' }}>(editado)</span>}
+                                  </span>
+                                  <button
+                                    type="button"
+                                    onClick={() => { setEditandoDataParcela(idx); setDataParcelaTemp(dataFinal || '') }}
+                                    style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#c9a962', display: 'flex', alignItems: 'center' }}
+                                  >
+                                    <Edit2 size={16} />
+                                  </button>
+                                </>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ) : null
+                  })()}
 
                   {/* Valor entrada à vista */}
                   {vendaForm.teve_entrada && !vendaForm.parcelou_entrada && (
@@ -7691,10 +8886,11 @@ const AdminDashboard = () => {
                       <select
                         value={vendaForm.teve_balao}
                         onChange={(e) => setVendaForm({
-                          ...vendaForm, 
+                          ...vendaForm,
                           teve_balao: e.target.value,
                           qtd_balao: e.target.value === 'nao' ? '' : vendaForm.qtd_balao,
-                          valor_balao: e.target.value === 'nao' ? '' : vendaForm.valor_balao
+                          valor_balao: e.target.value === 'nao' ? '' : vendaForm.valor_balao,
+                          datas_balao_override: {}
                         })}
                       >
                         <option value="nao">Não</option>
@@ -7702,6 +8898,58 @@ const AdminDashboard = () => {
                         <option value="pendente">Ainda não (pendente)</option>
                       </select>
                     </div>
+                    {vendaForm.teve_balao === 'sim' && (
+                      <div className="form-row">
+                        <div className="form-group">
+                          <label>Periodicidade dos Balões</label>
+                          <select
+                            value={vendaForm.periodicidade_balao}
+                            onChange={(e) => setVendaForm({ ...vendaForm, periodicidade_balao: parseInt(e.target.value), datas_balao_override: {} })}
+                          >
+                            <option value={3}>Trimestral (3 meses)</option>
+                            <option value={4}>Quadrimestral (4 meses)</option>
+                            <option value={6}>Semestral (6 meses)</option>
+                            <option value={12}>Anual (12 meses)</option>
+                          </select>
+                        </div>
+
+                        <div className="form-group">
+                          <label>Dia de pagamento dos balões</label>
+                          <select
+                            value={vendaForm.dia_pagamento_balao === 0 ? '0' : vendaForm.dia_pagamento_balao}
+                            onChange={(e) => setVendaForm({ ...vendaForm, dia_pagamento_balao: parseInt(e.target.value), datas_balao_override: {} })}
+                          >
+                            <option value={1}>1</option>
+                            <option value={5}>5</option>
+                            <option value={10}>10</option>
+                            <option value={15}>15</option>
+                            <option value={20}>20</option>
+                            <option value={25}>25</option>
+                            <option value={30}>30</option>
+                            <option value={0}>Outro</option>
+                          </select>
+                        </div>
+                      </div>
+                    )}
+
+                    {vendaForm.teve_balao === 'sim' && vendaForm.dia_pagamento_balao === 0 && (
+                      <div className="form-group">
+                        <label>Digite o dia (1-31)</label>
+                        <input
+                          type="number"
+                          min="1"
+                          max="31"
+                          placeholder="Ex: 15"
+                          value={vendaForm.dia_pagamento_balao_outro}
+                          onChange={(e) => {
+                            const val = parseInt(e.target.value) || ''
+                            if (val === '' || (val >= 1 && val <= 31)) {
+                              setVendaForm({ ...vendaForm, dia_pagamento_balao_outro: val?.toString() || '', datas_balao_override: {} })
+                            }
+                          }}
+                        />
+                      </div>
+                    )}
                   </div>
 
                   {(vendaForm.teve_balao === 'sim' || vendaForm.teve_balao === 'pendente') && (
@@ -7793,6 +9041,89 @@ const AdminDashboard = () => {
                       </div>
                     </div>
                   )}
+
+                  {/* Datas dos Balões — calculadas conforme periodicidade a partir da Data da Entrada */}
+                  {vendaForm.teve_balao === 'sim' && (() => {
+                    const periBalaoUI = parseInt(vendaForm.periodicidade_balao) || 6
+                    // Determinar qual dia usar (fixo ou customizado "Outro")
+                    const diaFixoBalao = vendaForm.dia_pagamento_balao === 0
+                      ? (parseInt(vendaForm.dia_pagamento_balao_outro) || 1)
+                      : (vendaForm.dia_pagamento_balao || 1)
+
+                    let numeroBalao = 0
+                    const baloesCalc = []
+                    ;(vendaForm.grupos_balao || []).forEach(grupo => {
+                      const qtd = parseInt(grupo.qtd) || 0
+                      const valor = parseFloat(grupo.valor) || 0
+                      if (qtd > 0) {
+                        for (let i = 0; i < qtd; i++) {
+                          const idx = numeroBalao
+                          const override = (vendaForm.datas_balao_override || {})[idx]
+                          const dataAuto = vendaForm.data_entrada
+                            ? getDataComDiaFixo(vendaForm.data_entrada, (idx + 1) * periBalaoUI, diaFixoBalao)
+                            : ''
+                          const dataFinal = override || dataAuto
+                          baloesCalc.push({ idx, valor, dataFinal, isOverride: !!override })
+                          numeroBalao++
+                        }
+                      }
+                    })
+                    return baloesCalc.length > 0 ? (
+                      <div className="form-group">
+                        <label style={{ marginBottom: '8px', display: 'block' }}>Data do Balão</label>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                          {baloesCalc.map(({ idx, valor, dataFinal, isOverride }) => (
+                            <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 12px', background: '#1e2433', borderRadius: '8px' }}>
+                              <span style={{ color: '#94a3b8', fontSize: '13px', minWidth: '140px' }}>
+                                Balão {idx + 1}{valor > 0 ? ` — ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(valor)}` : ''}
+                              </span>
+                              {editandoDataBalao === idx ? (
+                                <>
+                                  <input
+                                    type="date"
+                                    value={dataBalaoTemp}
+                                    onChange={(e) => setDataBalaoTemp(e.target.value)}
+                                    style={{ flex: 1 }}
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setVendaForm({ ...vendaForm, datas_balao_override: { ...(vendaForm.datas_balao_override || {}), [idx]: dataBalaoTemp } })
+                                      setEditandoDataBalao(null)
+                                    }}
+                                    style={{ background: '#22c55e', color: 'white', border: 'none', borderRadius: '4px', padding: '6px 10px', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+                                  >
+                                    <Save size={14} />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => setEditandoDataBalao(null)}
+                                    style={{ background: '#ef4444', color: 'white', border: 'none', borderRadius: '4px', padding: '6px 10px', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+                                  >
+                                    <X size={14} />
+                                  </button>
+                                </>
+                              ) : (
+                                <>
+                                  <span style={{ flex: 1, color: isOverride ? '#c9a962' : (dataFinal ? '#e2e8f0' : '#64748b'), fontSize: '14px' }}>
+                                    {dataFinal ? formatDateBR(dataFinal) : (vendaForm.data_entrada ? '—' : 'Defina a Data da Entrada')}
+                                    {isOverride && <span style={{ color: '#64748b', fontSize: '12px', marginLeft: '6px' }}>(editado)</span>}
+                                  </span>
+                                  <button
+                                    type="button"
+                                    onClick={() => { setEditandoDataBalao(idx); setDataBalaoTemp(dataFinal || '') }}
+                                    style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#c9a962', display: 'flex', alignItems: 'center' }}
+                                  >
+                                    <Edit2 size={16} />
+                                  </button>
+                                </>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ) : null
+                  })()}
 
                   {/* PERMUTA */}
                   <div className="form-row">
@@ -7928,7 +9259,7 @@ const AdminDashboard = () => {
                           <span>{formatCurrency(
                             (parseFloat(vendaForm.valor_sinal) || 0) +
                             (vendaForm.teve_entrada
-                              ? (vendaForm.parcelou_entrada 
+                              ? (vendaForm.parcelou_entrada
                                   ? (vendaForm.grupos_parcelas_entrada || []).reduce((sum, grupo) => sum + ((parseFloat(grupo.qtd) || 0) * (parseFloat(grupo.valor) || 0)), 0)
                                   : (parseFloat(vendaForm.valor_entrada) || 0))
                               : 0) +
@@ -7937,6 +9268,25 @@ const AdminDashboard = () => {
                               : 0)
                           )}</span>
                         </div>
+                        {(() => {
+                          const valorVenda = parseFloat(vendaForm.valor_venda) || 0
+                          const sinal = vendaForm.teve_sinal ? (parseFloat(vendaForm.valor_sinal) || 0) : 0
+                          const parcelas = vendaForm.teve_entrada
+                            ? (vendaForm.parcelou_entrada
+                                ? (vendaForm.grupos_parcelas_entrada || []).reduce((sum, g) => sum + ((parseFloat(g.qtd) || 0) * (parseFloat(g.valor) || 0)), 0)
+                                : (parseFloat(vendaForm.valor_entrada) || 0))
+                            : 0
+                          const baloes = vendaForm.teve_balao === 'sim'
+                            ? (vendaForm.grupos_balao || []).reduce((sum, g) => sum + ((parseFloat(g.qtd) || 0) * (parseFloat(g.valor) || 0)), 0)
+                            : 0
+                          const saldo = valorVenda - sinal - parcelas - baloes
+                          return (
+                            <div className={`preview-item ${saldo < 0 ? 'saldo-negativo' : 'saldo-positivo'}`}>
+                              <span>Saldo Remanescente</span>
+                              <span>{formatCurrency(saldo)}</span>
+                            </div>
+                          )
+                        })()}
                         {getPreviewComissoes().cargos.map((cargo, idx) => (
                           <div key={idx} className="preview-item">
                             <span>{cargo.nome_cargo}</span>
@@ -7950,7 +9300,70 @@ const AdminDashboard = () => {
                       </div>
                     </div>
                   )}
+
+                  {/* Renegociação de Parcelas — só para edição de venda já salva */}
+                  {selectedItem && pagamentosVendaEditando.length > 0 && (() => {
+                    console.log('🔍 Verificando renegociação:', { selectedItem: !!selectedItem, pagamentos: pagamentosVendaEditando.length })
+                    const pendentes = pagamentosVendaEditando.filter(p => p.status !== 'pago')
+                    console.log('⏳ Pendentes:', pendentes.length)
+                    if (pendentes.length === 0) return null
+                    return (
+                      <div className="renegociacao-section">
+                        <div className="renegociacao-header">
+                          <ClipboardList size={16} />
+                          <span>Renegociação de Parcelas</span>
+                          <span className="renegociacao-hint">Selecione parcelas pendentes para renegociar</span>
+                        </div>
+                        <div className="renegociacao-lista">
+                          {pendentes.map(pag => {
+                            const checked = parcelasSelecionadas.some(s => s.id === pag.id)
+                            const labelTipo = {
+                              sinal: 'Sinal',
+                              entrada: 'Entrada',
+                              parcela_entrada: `Parcela Ent. ${pag.numero_parcela ?? ''}`,
+                              balao: `Balão ${pag.numero_parcela ?? ''}`,
+                              comissao_integral: 'Comissão Integral'
+                            }[pag.tipo] || pag.tipo
+                            return (
+                              <label key={pag.id} className={`renegociacao-item${checked ? ' selected' : ''}`}>
+                                <input
+                                  type="checkbox"
+                                  checked={checked}
+                                  onChange={e => {
+                                    if (e.target.checked) {
+                                      setParcelasSelecionadas(prev => [...prev, pag])
+                                    } else {
+                                      setParcelasSelecionadas(prev => prev.filter(s => s.id !== pag.id))
+                                    }
+                                  }}
+                                />
+                                <span className="renegociacao-item-tipo">{labelTipo}</span>
+                                <span className="renegociacao-item-valor">{formatCurrency(pag.valor)}</span>
+                                <span className="renegociacao-item-data">
+                                  {pag.data_prevista ? new Date(pag.data_prevista + 'T12:00:00').toLocaleDateString('pt-BR') : '—'}
+                                </span>
+                                <span className="renegociacao-item-comissao">
+                                  Comissão: {formatCurrency(pag.comissao_gerada)}
+                                </span>
+                              </label>
+                            )
+                          })}
+                        </div>
+                        {parcelasSelecionadas.length > 0 && (
+                          <button
+                            className="btn-renegociar"
+                            onClick={abrirModalRenegociacao}
+                            type="button"
+                          >
+                            <RefreshCw size={16} />
+                            Renegociar {parcelasSelecionadas.length} parcela{parcelasSelecionadas.length > 1 ? 's' : ''} selecionada{parcelasSelecionadas.length > 1 ? 's' : ''}
+                          </button>
+                        )}
+                      </div>
+                    )
+                  })()}
                 </div>
+
                 <div className="modal-footer">
                   <button className="btn-secondary" onClick={() => setShowModal(false)}>
                     Cancelar
@@ -9465,6 +10878,307 @@ const AdminDashboard = () => {
                 <Edit2 size={18} />
                 <span>Editar</span>
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Renegociação de Parcelas */}
+      {showModalRenegociacao && (
+        <div className="modal-overlay" onClick={() => !salvandoRenegociacao && setShowModalRenegociacao(false)}>
+          <div className="modal modal-renegociacao" onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2><RefreshCw size={18} style={{ marginRight: 8 }} />Renegociação de Parcelas</h2>
+              <button className="close-btn" onClick={() => !salvandoRenegociacao && setShowModalRenegociacao(false)}>
+                <X size={24} />
+              </button>
+            </div>
+            <div className="modal-body">
+
+              {/* Seção ANTES: resumo consolidado */}
+              <div className="renego-resumo-antes">
+                <h4 className="renego-section-title">📋 Seleção Consolidada</h4>
+                <div className="renego-info-box">
+                  <div className="renego-info-linha">
+                    <span className="label">Parcelas selecionadas:</span>
+                    <span className="valor">{renegociacaoForm.quantidadeParcelas}</span>
+                  </div>
+                  <div className="renego-info-linha">
+                    <span className="label">Total consolidado:</span>
+                    <span className="valor destaque">{formatCurrency(renegociacaoForm.totalSelecionado)}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Seção DEPOIS: definir nova distribuição */}
+              <div className="renego-section-distribuicao">
+                <h4 className="renego-section-title">📊 Nova Distribuição</h4>
+                <div className="renego-distribuicao-info">
+                  <small>Defina como redistribuir o total de <strong>{formatCurrency(renegociacaoForm.totalSelecionado)}</strong></small>
+                </div>
+
+                <div className="renego-distribuicao-lista">
+                  {renegociacaoForm.distribuicoesNovas.map((dist, idx) => {
+                    const fator = parseFloat(selectedItem?.fator_comissao) || 0
+                    const qtd = parseInt(dist.qtd) || 1
+                    const val = parseFloat(dist.valor) || 0
+                    const totalLinha = qtd * val
+                    const comissaoLinha = calcularComissaoPagamento(val * qtd, fator)
+
+                    return (
+                      <div key={idx} className="renego-dist-row">
+                        <div className="renego-dist-inputs">
+                          <label>
+                            <span>Qtd</span>
+                            <input
+                              type="number"
+                              min="1"
+                              value={dist.qtd}
+                              onChange={e => {
+                                const novo = [...renegociacaoForm.distribuicoesNovas]
+                                novo[idx] = { ...novo[idx], qtd: e.target.value }
+                                setRenegociacaoForm(f => ({ ...f, distribuicoesNovas: novo }))
+                              }}
+                              disabled={salvandoRenegociacao}
+                            />
+                          </label>
+
+                          <label className="input-wide">
+                            <span>Valor unitário (R$)</span>
+                            <input
+                              type="number"
+                              min="0"
+                              step="0.01"
+                              value={dist.valor}
+                              onChange={e => {
+                                const novo = [...renegociacaoForm.distribuicoesNovas]
+                                novo[idx] = { ...novo[idx], valor: e.target.value }
+                                setRenegociacaoForm(f => ({ ...f, distribuicoesNovas: novo }))
+                              }}
+                              disabled={salvandoRenegociacao}
+                            />
+                          </label>
+
+                          <label className="input-wide">
+                            <span>Data de vencimento</span>
+                            <input
+                              type="date"
+                              value={dist.data_prevista}
+                              onChange={e => {
+                                const novo = [...renegociacaoForm.distribuicoesNovas]
+                                novo[idx] = { ...novo[idx], data_prevista: e.target.value }
+                                setRenegociacaoForm(f => ({ ...f, distribuicoesNovas: novo }))
+                              }}
+                              disabled={salvandoRenegociacao}
+                            />
+                          </label>
+                        </div>
+
+                        <div className="renego-dist-resumo">
+                          <span className="dist-total">{qtd}× = {formatCurrency(totalLinha)}</span>
+                          <span className="dist-comissao">{formatCurrency(comissaoLinha)}</span>
+                          {renegociacaoForm.distribuicoesNovas.length > 1 && (
+                            <button
+                              type="button"
+                              className="btn-remove-dist"
+                              onClick={() => {
+                                const novo = renegociacaoForm.distribuicoesNovas.filter((_, i) => i !== idx)
+                                setRenegociacaoForm(f => ({ ...f, distribuicoesNovas: novo }))
+                              }}
+                              disabled={salvandoRenegociacao}
+                              title="Remover esta distribuição"
+                            >
+                              <X size={14} />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+
+                <button
+                  type="button"
+                  className="btn-add-dist"
+                  onClick={() => {
+                    const novo = [
+                      ...renegociacaoForm.distribuicoesNovas,
+                      { qtd: '1', valor: '0.00', data_prevista: '' }
+                    ]
+                    setRenegociacaoForm(f => ({ ...f, distribuicoesNovas: novo }))
+                  }}
+                  disabled={salvandoRenegociacao}
+                >
+                  <Plus size={14} /> Adicionar mais uma distribuição
+                </button>
+
+                <div className="renego-dist-total">
+                  <div className="renego-dist-total-row">
+                    <span className="label">Total original:</span>
+                    <span className="valor">{formatCurrency(renegociacaoForm.totalSelecionado)}</span>
+                  </div>
+                  <div className="renego-dist-total-row">
+                    <span className="label">Total renegociado:</span>
+                    <span className={`valor ${totalsFechados ? 'correto' : 'alerta'}`}>
+                      {formatCurrency(totalDistribuicaoAtual)}
+                    </span>
+                  </div>
+                </div>
+
+                {!totalsFechados && (
+                  <div className="renego-alerta-total">
+                    <AlertCircle size={16} />
+                    <span>
+                      Diferença: <strong>{formatCurrency(diferenca)}</strong> — Os totais devem ser iguais para salvar
+                    </span>
+                  </div>
+                )}
+
+                {totalsFechados && (
+                  <div className="renego-confirmacao-total">
+                    <Check size={16} />
+                    <span>Os totais batem corretamente ✓</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Motivo */}
+              <div className="renego-motivo-section">
+                <label>
+                  <span>Motivo da Renegociação *</span>
+                  <textarea
+                    className="renego-motivo-input"
+                    rows={3}
+                    placeholder="Descreva o motivo da renegociação..."
+                    value={renegociacaoForm.motivo}
+                    onChange={e => setRenegociacaoForm(f => ({ ...f, motivo: e.target.value }))}
+                    disabled={salvandoRenegociacao}
+                  />
+                </label>
+              </div>
+
+            </div>
+            <div className="modal-actions">
+              <button
+                className="btn-secondary"
+                onClick={() => setShowModalRenegociacao(false)}
+                disabled={salvandoRenegociacao}
+              >
+                Cancelar
+              </button>
+              <button
+                className="btn-confirmar-distrato"
+                onClick={processarRenegociacao}
+                disabled={salvandoRenegociacao || !renegociacaoForm.motivo.trim() || !totalsFechados}
+                title={!totalsFechados ? 'Os totais devem ser iguais para salvar' : ''}
+              >
+                {salvandoRenegociacao
+                  ? <><span className="btn-spinner" />Salvando...</>
+                  : !totalsFechados
+                  ? <><AlertCircle size={16} />Totais não batem</>
+                  : <><Save size={16} />Salvar Renegociação</>
+                }
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Exclusão / Distrato de Venda */}
+      {showModalExcluirVenda && vendaParaExcluir && (
+        <div className="modal-overlay" onClick={() => !processandoExclusaoVenda && setShowModalExcluirVenda(false)}>
+          <div className="modal modal-excluir-venda" onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>{modalExcluirVendaStep === 1 ? 'Excluir / Distrato de Venda' : 'Distrato do Contrato'}</h2>
+              <button className="close-btn" onClick={() => !processandoExclusaoVenda && setShowModalExcluirVenda(false)}>
+                <X size={24} />
+              </button>
+            </div>
+            <div className="modal-body">
+              {modalExcluirVendaStep === 1 && (
+                <>
+                  <p className="modal-excluir-descricao">
+                    Escolha como deseja proceder com a venda de{' '}
+                    <strong>{vendaParaExcluir.nome_cliente || vendaParaExcluir.cliente?.nome || 'este cliente'}</strong>:
+                  </p>
+                  <div className="modal-excluir-opcoes">
+                    <button
+                      className="btn-opcao-modal danger"
+                      onClick={processarExclusaoVenda}
+                      disabled={processandoExclusaoVenda}
+                    >
+                      <span className="btn-opcao-modal-title">
+                        {processandoExclusaoVenda
+                          ? <><span className="btn-spinner" />Excluindo...</>
+                          : <><Trash2 size={18} />Exclusão do Sistema</>
+                        }
+                      </span>
+                      <span className="btn-opcao-modal-desc">
+                        Arquiva a venda permanentemente. Some completamente da listagem.
+                      </span>
+                    </button>
+                    <button
+                      className="btn-opcao-modal gold"
+                      onClick={() => setModalExcluirVendaStep(2)}
+                      disabled={processandoExclusaoVenda}
+                    >
+                      <span className="btn-opcao-modal-title">
+                        <FileText size={18} />Distrato do Contrato
+                      </span>
+                      <span className="btn-opcao-modal-desc">
+                        Registra o distrato com data. A venda permanece no banco com status Distrato.
+                      </span>
+                    </button>
+                  </div>
+                  <div className="modal-actions">
+                    <button
+                      className="btn-secondary"
+                      onClick={() => setShowModalExcluirVenda(false)}
+                      disabled={processandoExclusaoVenda}
+                    >
+                      Cancelar
+                    </button>
+                  </div>
+                </>
+              )}
+              {modalExcluirVendaStep === 2 && (
+                <>
+                  <p className="modal-excluir-descricao">
+                    Informe a data do distrato para{' '}
+                    <strong>{vendaParaExcluir.nome_cliente || vendaParaExcluir.cliente?.nome || 'este cliente'}</strong>.
+                    A comissão será recalculada considerando apenas parcelas pagas ou vencidas até essa data.
+                  </p>
+                  <div className="form-section modal-distrato-data">
+                    <label>
+                      <span>Data do Distrato</span>
+                      <input
+                        type="date"
+                        value={dataDistrato}
+                        onChange={e => setDataDistrato(e.target.value)}
+                      />
+                    </label>
+                  </div>
+                  <div className="modal-actions">
+                    <button
+                      className="btn-secondary"
+                      onClick={() => setModalExcluirVendaStep(1)}
+                      disabled={processandoExclusaoVenda}
+                    >
+                      Voltar
+                    </button>
+                    <button
+                      className="btn-confirmar-distrato"
+                      onClick={processarDistratoVenda}
+                      disabled={processandoExclusaoVenda || !dataDistrato}
+                    >
+                      {processandoExclusaoVenda
+                        ? <><span className="btn-spinner" />Registrando...</>
+                        : <><CheckCircle size={16} />Confirmar Distrato</>
+                      }
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </div>
