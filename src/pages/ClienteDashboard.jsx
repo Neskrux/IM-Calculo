@@ -14,6 +14,7 @@ import logo from '../imgs/logo.png'
 import Ticker from '../components/Ticker'
 import '../styles/Dashboard.css'
 import '../styles/ClienteDashboard.css'
+import { sortParcelas } from '../utils/parcelasSort'
 
 const ClienteDashboard = () => {
   const { user, userProfile, signOut } = useAuth()
@@ -40,6 +41,7 @@ const ClienteDashboard = () => {
   const [uploadingDocType, setUploadingDocType] = useState(null)
   const [compraExpandida, setCompraExpandida] = useState(null)
   const [gruposExpandidos, setGruposExpandidos] = useState({})
+  const [visaoParcelas, setVisaoParcelas] = useState('contrato')
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
     const saved = safeGet('cliente-sidebar-collapsed')
     return saved === 'true'
@@ -858,95 +860,151 @@ const ClienteDashboard = () => {
                               )
                             }
                             
-                            const grupos = agruparPagamentosPorTipo(pagamentosCompra)
-                            const tiposOrdem = ['sinal', 'entrada', 'parcela_entrada', 'balao']
-                            
                             return (
                               <>
-                                <div className="parcelas-header">
+                                <div className="parcelas-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                   <h5>Detalhamento de Pagamentos</h5>
+                                  <div style={{ display: 'flex', gap: '4px' }}>
+                                    <button
+                                      onClick={() => setVisaoParcelas('contrato')}
+                                      style={{
+                                        padding: '4px 10px', fontSize: '11px', borderRadius: '5px', cursor: 'pointer',
+                                        border: visaoParcelas === 'contrato' ? '1px solid #c9a962' : '1px solid rgba(255,255,255,0.15)',
+                                        background: visaoParcelas === 'contrato' ? '#c9a962' : 'transparent',
+                                        color: visaoParcelas === 'contrato' ? '#000' : 'rgba(255,255,255,0.7)',
+                                        fontWeight: visaoParcelas === 'contrato' ? 600 : 400
+                                      }}
+                                    >Contrato</button>
+                                    <button
+                                      onClick={() => setVisaoParcelas('calendario')}
+                                      style={{
+                                        padding: '4px 10px', fontSize: '11px', borderRadius: '5px', cursor: 'pointer',
+                                        border: visaoParcelas === 'calendario' ? '1px solid #c9a962' : '1px solid rgba(255,255,255,0.15)',
+                                        background: visaoParcelas === 'calendario' ? '#c9a962' : 'transparent',
+                                        color: visaoParcelas === 'calendario' ? '#000' : 'rgba(255,255,255,0.7)',
+                                        fontWeight: visaoParcelas === 'calendario' ? 600 : 400
+                                      }}
+                                    >
+                                      <Calendar size={11} style={{ marginRight: '3px', verticalAlign: 'middle' }} />
+                                      Calendário
+                                    </button>
+                                  </div>
                                 </div>
                                 
-                                {tiposOrdem.map(tipo => {
-                                  const pagamentosGrupo = grupos[tipo]
-                                  if (!pagamentosGrupo || pagamentosGrupo.length === 0) return null
-                                  
-                                  // Calcular totais do grupo
-                                  const totalValor = pagamentosGrupo.reduce((acc, p) => acc + (parseFloat(p.valor) || 0), 0)
-                                  const pagos = pagamentosGrupo.filter(p => p.status === 'pago').length
-                                  const pendentes = pagamentosGrupo.filter(p => p.status === 'pendente').length
-                                  
-                                  // Verificar se tem mais de 10 itens e se está expandido
-                                  const temMaisDe10 = pagamentosGrupo.length > 10
-                                  const estaExpandido = isGrupoExpandido(compra.id, tipo)
-                                  const itensParaMostrar = temMaisDe10 && !estaExpandido ? 10 : pagamentosGrupo.length
-                                  const pagamentosExibidos = pagamentosGrupo.slice(0, itensParaMostrar)
-                                  
-                                  return (
-                                    <div key={tipo} className="pagamento-grupo">
-                                      <div className="grupo-header">
-                                        <h6 className="grupo-titulo">{getGrupoLabel(tipo)}</h6>
-                                        <div className="grupo-resumo">
-                                          <span className="grupo-total-valor">{formatCurrency(totalValor)}</span>
-                                          <span className="grupo-contador">
-                                            {pagamentosGrupo.length} {pagamentosGrupo.length === 1 ? 'item' : 'itens'}
-                                            {pagos > 0 && ` • ${pagos} pago${pagos > 1 ? 's' : ''}`}
-                                            {pendentes > 0 && ` • ${pendentes} pendente${pendentes > 1 ? 's' : ''}`}
+                                {visaoParcelas === 'calendario' ? (
+                                  <div className="parcelas-list">
+                                    {sortParcelas(pagamentosCompra, 'calendario').map((pagamento) => (
+                                      <div 
+                                        key={pagamento.id} 
+                                        className={`cliente-parcela-row ${pagamento.status === 'pago' ? 'pago' : ''}`}
+                                      >
+                                        <div className="cliente-parcela-tipo">
+                                          {pagamento.tipo === 'sinal' && 'Sinal'}
+                                          {pagamento.tipo === 'entrada' && 'Entrada'}
+                                          {pagamento.tipo === 'parcela_entrada' && `Parcela ${pagamento.numero_parcela || ''}`}
+                                          {pagamento.tipo === 'balao' && `Balão ${pagamento.numero_parcela || ''}`}
+                                        </div>
+                                        <div className="cliente-parcela-data">
+                                          {pagamento.data_prevista 
+                                            ? new Date(pagamento.data_prevista).toLocaleDateString('pt-BR')
+                                            : '-'
+                                          }
+                                        </div>
+                                        <div className="cliente-parcela-valor">
+                                          {formatCurrency(pagamento.valor)}
+                                        </div>
+                                        <div className="cliente-parcela-status">
+                                          <span className={`status-pill ${pagamento.status}`}>
+                                            {pagamento.status === 'pago' ? 'Pago' : 'Pendente'}
                                           </span>
                                         </div>
                                       </div>
-                                      <div className="parcelas-list">
-                                        {pagamentosExibidos.map((pagamento) => (
-                                          <div 
-                                            key={pagamento.id} 
-                                            className={`cliente-parcela-row ${pagamento.status === 'pago' ? 'pago' : ''}`}
-                                          >
-                                            <div className="cliente-parcela-tipo">
-                                              {pagamento.tipo === 'sinal' && 'Sinal'}
-                                              {pagamento.tipo === 'entrada' && 'Entrada'}
-                                              {pagamento.tipo === 'parcela_entrada' && `Parcela ${pagamento.numero_parcela || ''}`}
-                                              {pagamento.tipo === 'balao' && `Balão ${pagamento.numero_parcela || ''}`}
-                                            </div>
-                                            <div className="cliente-parcela-data">
-                                              {pagamento.data_prevista 
-                                                ? new Date(pagamento.data_prevista).toLocaleDateString('pt-BR')
-                                                : '-'
-                                              }
-                                            </div>
-                                            <div className="cliente-parcela-valor">
-                                              {formatCurrency(pagamento.valor)}
-                                            </div>
-                                            <div className="cliente-parcela-status">
-                                              <span className={`status-pill ${pagamento.status}`}>
-                                                {pagamento.status === 'pago' ? 'Pago' : 'Pendente'}
+                                    ))}
+                                  </div>
+                                ) : (
+                                  (() => {
+                                    const grupos = agruparPagamentosPorTipo(pagamentosCompra)
+                                    const tiposOrdem = ['sinal', 'entrada', 'parcela_entrada', 'balao']
+                                    return tiposOrdem.map(tipo => {
+                                      const pagamentosGrupo = grupos[tipo]
+                                      if (!pagamentosGrupo || pagamentosGrupo.length === 0) return null
+                                      
+                                      const totalValor = pagamentosGrupo.reduce((acc, p) => acc + (parseFloat(p.valor) || 0), 0)
+                                      const pagos = pagamentosGrupo.filter(p => p.status === 'pago').length
+                                      const pendentes = pagamentosGrupo.filter(p => p.status === 'pendente').length
+                                      
+                                      const temMaisDe10 = pagamentosGrupo.length > 10
+                                      const estaExpandido = isGrupoExpandido(compra.id, tipo)
+                                      const itensParaMostrar = temMaisDe10 && !estaExpandido ? 10 : pagamentosGrupo.length
+                                      const pagamentosExibidos = pagamentosGrupo.slice(0, itensParaMostrar)
+                                      
+                                      return (
+                                        <div key={tipo} className="pagamento-grupo">
+                                          <div className="grupo-header">
+                                            <h6 className="grupo-titulo">{getGrupoLabel(tipo)}</h6>
+                                            <div className="grupo-resumo">
+                                              <span className="grupo-total-valor">{formatCurrency(totalValor)}</span>
+                                              <span className="grupo-contador">
+                                                {pagamentosGrupo.length} {pagamentosGrupo.length === 1 ? 'item' : 'itens'}
+                                                {pagos > 0 && ` • ${pagos} pago${pagos > 1 ? 's' : ''}`}
+                                                {pendentes > 0 && ` • ${pendentes} pendente${pendentes > 1 ? 's' : ''}`}
                                               </span>
                                             </div>
                                           </div>
-                                        ))}
-                                      </div>
-                                      {temMaisDe10 && (
-                                        <div className="grupo-expand-btn-wrapper">
-                                          <button 
-                                            className="grupo-expand-btn"
-                                            onClick={() => toggleGrupoExpandido(compra.id, tipo)}
-                                          >
-                                            {estaExpandido ? (
-                                              <>
-                                                <ChevronDown size={16} className="rotated" />
-                                                <span>Ver menos ({pagamentosGrupo.length - 10} itens ocultos)</span>
-                                              </>
-                                            ) : (
-                                              <>
-                                                <ChevronDown size={16} />
-                                                <span>Ver mais ({pagamentosGrupo.length - 10} itens restantes)</span>
-                                              </>
-                                            )}
-                                          </button>
+                                          <div className="parcelas-list">
+                                            {pagamentosExibidos.map((pagamento) => (
+                                              <div 
+                                                key={pagamento.id} 
+                                                className={`cliente-parcela-row ${pagamento.status === 'pago' ? 'pago' : ''}`}
+                                              >
+                                                <div className="cliente-parcela-tipo">
+                                                  {pagamento.tipo === 'sinal' && 'Sinal'}
+                                                  {pagamento.tipo === 'entrada' && 'Entrada'}
+                                                  {pagamento.tipo === 'parcela_entrada' && `Parcela ${pagamento.numero_parcela || ''}`}
+                                                  {pagamento.tipo === 'balao' && `Balão ${pagamento.numero_parcela || ''}`}
+                                                </div>
+                                                <div className="cliente-parcela-data">
+                                                  {pagamento.data_prevista 
+                                                    ? new Date(pagamento.data_prevista).toLocaleDateString('pt-BR')
+                                                    : '-'
+                                                  }
+                                                </div>
+                                                <div className="cliente-parcela-valor">
+                                                  {formatCurrency(pagamento.valor)}
+                                                </div>
+                                                <div className="cliente-parcela-status">
+                                                  <span className={`status-pill ${pagamento.status}`}>
+                                                    {pagamento.status === 'pago' ? 'Pago' : 'Pendente'}
+                                                  </span>
+                                                </div>
+                                              </div>
+                                            ))}
+                                          </div>
+                                          {temMaisDe10 && (
+                                            <div className="grupo-expand-btn-wrapper">
+                                              <button 
+                                                className="grupo-expand-btn"
+                                                onClick={() => toggleGrupoExpandido(compra.id, tipo)}
+                                              >
+                                                {estaExpandido ? (
+                                                  <>
+                                                    <ChevronDown size={16} className="rotated" />
+                                                    <span>Ver menos ({pagamentosGrupo.length - 10} itens ocultos)</span>
+                                                  </>
+                                                ) : (
+                                                  <>
+                                                    <ChevronDown size={16} />
+                                                    <span>Ver mais ({pagamentosGrupo.length - 10} itens restantes)</span>
+                                                  </>
+                                                )}
+                                              </button>
+                                            </div>
+                                          )}
                                         </div>
-                                      )}
-                                    </div>
-                                  )
-                                })}
+                                      )
+                                    })
+                                  })()
+                                )}
                               </>
                             )
                           })()}

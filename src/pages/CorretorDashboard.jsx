@@ -20,6 +20,7 @@ import Ticker from '../components/Ticker'
 import '../styles/Dashboard.css'
 import '../styles/CorretorDashboard.css'
 import '../styles/EmpreendimentosPage.css'
+import { sortParcelas } from '../utils/parcelasSort'
 
 const CorretorDashboard = () => {
   const { user, userProfile, signOut, refreshProfile } = useAuth()
@@ -116,6 +117,7 @@ const CorretorDashboard = () => {
   const [showSenhaModal, setShowSenhaModal] = useState(false)
   const [uploadingDoc, setUploadingDoc] = useState(false)
   const [uploadingDocType, setUploadingDocType] = useState(null)
+  const [visaoParcelas, setVisaoParcelas] = useState('contrato')
   
   // Form de nova venda
   const [novaVendaForm, setNovaVendaForm] = useState({
@@ -2078,11 +2080,74 @@ const CorretorDashboard = () => {
                             <div className="venda-pagamentos-detalhes">
                               {pagamentosVenda[venda.id] && pagamentosVenda[venda.id].length > 0 ? (
                                 <>
-                                  <div className="parcelas-header">
+                                  <div className="parcelas-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                     <h5>Detalhamento de Pagamentos</h5>
-              </div>
+                                    <div style={{ display: 'flex', gap: '4px' }}>
+                                      <button
+                                        onClick={() => setVisaoParcelas('contrato')}
+                                        style={{
+                                          padding: '4px 10px', fontSize: '11px', borderRadius: '5px', cursor: 'pointer',
+                                          border: visaoParcelas === 'contrato' ? '1px solid #c9a962' : '1px solid rgba(255,255,255,0.15)',
+                                          background: visaoParcelas === 'contrato' ? '#c9a962' : 'transparent',
+                                          color: visaoParcelas === 'contrato' ? '#000' : 'rgba(255,255,255,0.7)',
+                                          fontWeight: visaoParcelas === 'contrato' ? 600 : 400
+                                        }}
+                                      >Contrato</button>
+                                      <button
+                                        onClick={() => setVisaoParcelas('calendario')}
+                                        style={{
+                                          padding: '4px 10px', fontSize: '11px', borderRadius: '5px', cursor: 'pointer',
+                                          border: visaoParcelas === 'calendario' ? '1px solid #c9a962' : '1px solid rgba(255,255,255,0.15)',
+                                          background: visaoParcelas === 'calendario' ? '#c9a962' : 'transparent',
+                                          color: visaoParcelas === 'calendario' ? '#000' : 'rgba(255,255,255,0.7)',
+                                          fontWeight: visaoParcelas === 'calendario' ? 600 : 400
+                                        }}
+                                      >
+                                        <Calendar size={11} style={{ marginRight: '3px', verticalAlign: 'middle' }} />
+                                        Calendário
+                                      </button>
+                                    </div>
+                                  </div>
                                   
-                                  {(() => {
+                                  {visaoParcelas === 'calendario' ? (
+                                    <div className="parcelas-list">
+                                      {sortParcelas(pagamentosVenda[venda.id], 'calendario').map((pagamento) => {
+                                        const comissaoParcela = calcularComissaoPagamento(pagamento)
+                                        return (
+                                          <div 
+                                            key={pagamento.id} 
+                                            className={`corretor-parcela-row ${pagamento.status === 'pago' ? 'pago' : ''}`}
+                                          >
+                                            <div className="corretor-parcela-tipo">
+                                              {pagamento.tipo === 'sinal' && 'Sinal'}
+                                              {pagamento.tipo === 'entrada' && 'Entrada'}
+                                              {pagamento.tipo === 'parcela_entrada' && `Parcela ${pagamento.numero_parcela || ''}`}
+                                              {pagamento.tipo === 'balao' && `Balão ${pagamento.numero_parcela || ''}`}
+                                              {pagamento.tipo === 'comissao_integral' && '✨ Comissão Integral'}
+                                            </div>
+                                            <div className="corretor-parcela-data">
+                                              {pagamento.data_prevista 
+                                                ? new Date(pagamento.data_prevista).toLocaleDateString('pt-BR')
+                                                : '-'
+                                              }
+                                            </div>
+                                            <div className="corretor-parcela-valor">
+                                              {formatCurrency(pagamento.valor)}
+                                            </div>
+                                            <div className="corretor-parcela-comissao">
+                                              {formatCurrency(comissaoParcela)}
+                                            </div>
+                                            <div className="corretor-parcela-status">
+                                              <span className={`status-pill ${pagamento.status}`}>
+                                                {pagamento.status === 'pago' ? 'Pago' : 'Pendente'}
+                                              </span>
+                                            </div>
+                                          </div>
+                                        )
+                                      })}
+                                    </div>
+                                  ) : (
+                                    (() => {
                                     const grupos = agruparPagamentosPorTipo(pagamentosVenda[venda.id])
                                     const tiposOrdem = ['sinal', 'entrada', 'parcela_entrada', 'balao']
                                     
@@ -2090,13 +2155,11 @@ const CorretorDashboard = () => {
                                       const pagamentosGrupo = grupos[tipo]
                                       if (!pagamentosGrupo || pagamentosGrupo.length === 0) return null
                                       
-                                      // Calcular totais do grupo
                                       const totalValor = pagamentosGrupo.reduce((acc, p) => acc + (parseFloat(p.valor) || 0), 0)
                                       const totalComissao = pagamentosGrupo.reduce((acc, p) => acc + calcularComissaoPagamento(p), 0)
                                       const pagos = pagamentosGrupo.filter(p => p.status === 'pago').length
                                       const pendentes = pagamentosGrupo.filter(p => p.status === 'pendente').length
                                       
-                                      // Verificar se tem mais de 10 itens e se está expandido
                                       const temMaisDe10 = pagamentosGrupo.length > 10
                                       const estaExpandido = isGrupoExpandido(venda.id, tipo)
                                       const itensParaMostrar = temMaisDe10 && !estaExpandido ? 10 : pagamentosGrupo.length
@@ -2175,7 +2238,8 @@ const CorretorDashboard = () => {
                                         </div>
                                       )
                                     })
-                                  })()}
+                                  })()
+                                  )}
                                 </>
                               ) : (
                                 <div className="parcelas-empty">
@@ -2339,6 +2403,43 @@ const CorretorDashboard = () => {
                     </div>
                   </div>
 
+                  {/* Toggle Visão: Contrato / Calendário */}
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '12px', gap: '4px' }}>
+                    <button
+                      onClick={() => setVisaoParcelas('contrato')}
+                      style={{
+                        padding: '5px 14px',
+                        fontSize: '12px',
+                        borderRadius: '6px',
+                        cursor: 'pointer',
+                        border: visaoParcelas === 'contrato' ? '1px solid #c9a962' : '1px solid rgba(255,255,255,0.15)',
+                        background: visaoParcelas === 'contrato' ? '#c9a962' : 'transparent',
+                        color: visaoParcelas === 'contrato' ? '#000' : 'rgba(255,255,255,0.7)',
+                        fontWeight: visaoParcelas === 'contrato' ? 600 : 400,
+                        transition: 'all 0.2s'
+                      }}
+                    >
+                      Contrato
+                    </button>
+                    <button
+                      onClick={() => setVisaoParcelas('calendario')}
+                      style={{
+                        padding: '5px 14px',
+                        fontSize: '12px',
+                        borderRadius: '6px',
+                        cursor: 'pointer',
+                        border: visaoParcelas === 'calendario' ? '1px solid #c9a962' : '1px solid rgba(255,255,255,0.15)',
+                        background: visaoParcelas === 'calendario' ? '#c9a962' : 'transparent',
+                        color: visaoParcelas === 'calendario' ? '#000' : 'rgba(255,255,255,0.7)',
+                        fontWeight: visaoParcelas === 'calendario' ? 600 : 400,
+                        transition: 'all 0.2s'
+                      }}
+                    >
+                      <Calendar size={12} style={{ marginRight: '4px', verticalAlign: 'middle' }} />
+                      Calendário
+                    </button>
+                  </div>
+
                   {/* Vendas Agrupadas */}
                   <div className="vendas-pagamentos-lista">
                     {filteredPagamentosAgrupados.length === 0 ? (
@@ -2407,12 +2508,7 @@ const CorretorDashboard = () => {
                             {/* Lista de Parcelas - Expandível */}
                             {pagamentoVendaExpandida === grupo.venda_id && (
                               <div className="venda-pagamento-body">
-                                {grupo.pagamentos
-                                  .sort((a, b) => {
-                                    const ordem = { sinal: 0, entrada: 1, parcela_entrada: 2, balao: 3, comissao_integral: 4 }
-                                    if (ordem[a.tipo] !== ordem[b.tipo]) return (ordem[a.tipo] || 5) - (ordem[b.tipo] || 5)
-                                    return (a.numero_parcela || 0) - (b.numero_parcela || 0)
-                                  })
+                                {sortParcelas(grupo.pagamentos, visaoParcelas)
                                   .map((pag) => {
                                     const minhaComissao = venda ? calcularComissaoPagamento(pag) : 0
                                     

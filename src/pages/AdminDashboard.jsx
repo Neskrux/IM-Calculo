@@ -22,6 +22,7 @@ import '../styles/EmpreendimentosPage.css'
 import { LayoutGrid, List } from 'lucide-react'
 import { safeGet, safeSet } from '../utils/storage'
 import { calcularFatorComissao, calcularComissaoPagamento } from '../utils/comissaoCalculator'
+import { sortParcelas } from '../utils/parcelasSort'
 
 // ─── SPEC: Preservação de pagamentos auditados ───────────────────────────────
 // Ref: docs/SPEC_PRESERVACAO_PAGAMENTOS_AUDITADOS.md
@@ -373,6 +374,7 @@ const AdminDashboard = () => {
   const [loadingRenegociacoes, setLoadingRenegociacoes] = useState(false)
   const [abaVisualizarVenda, setAbaVisualizarVenda] = useState('detalhes')
   const [pagamentosVisualizacao, setPagamentosVisualizacao] = useState([])
+  const [visaoParcelas, setVisaoParcelas] = useState('contrato')
 
   // Estados para solicitações
   const [solicitacoes, setSolicitacoes] = useState([])
@@ -4303,9 +4305,11 @@ const AdminDashboard = () => {
         let pctColIdx
         let comissaoColIdx
         
+        const pagamentosOrdenados = sortParcelas(grupo.pagamentos, 'calendario')
+
         if (mostrarTodosCargos) {
           parcelas = []
-          grupo.pagamentos.forEach(pag => {
+          pagamentosOrdenados.forEach(pag => {
             const valorParcela = parseFloat(pag.valor) || 0
             const cargos = calcularComissaoPorCargoPagamento(pag)
             const tipoFormatado = formatTipo(pag)
@@ -4331,7 +4335,7 @@ const AdminDashboard = () => {
             6: { cellWidth: tabelaW * 0.17, halign: 'right', fontStyle: 'bold' }
           }
         } else {
-          parcelas = grupo.pagamentos.map(pag => {
+          parcelas = pagamentosOrdenados.map(pag => {
             const valorParcela = parseFloat(pag.valor) || 0
             let comissaoExibir = 0
             let percentualUsado = 0
@@ -6529,6 +6533,43 @@ const AdminDashboard = () => {
                   </div>
                 </div>
 
+                {/* Toggle Visão: Contrato / Calendário */}
+                <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '12px', gap: '4px' }}>
+                  <button
+                    onClick={() => setVisaoParcelas('contrato')}
+                    style={{
+                      padding: '5px 14px',
+                      fontSize: '12px',
+                      borderRadius: '6px',
+                      cursor: 'pointer',
+                      border: visaoParcelas === 'contrato' ? '1px solid #c9a962' : '1px solid rgba(255,255,255,0.15)',
+                      background: visaoParcelas === 'contrato' ? '#c9a962' : 'transparent',
+                      color: visaoParcelas === 'contrato' ? '#000' : 'rgba(255,255,255,0.7)',
+                      fontWeight: visaoParcelas === 'contrato' ? 600 : 400,
+                      transition: 'all 0.2s'
+                    }}
+                  >
+                    Contrato
+                  </button>
+                  <button
+                    onClick={() => setVisaoParcelas('calendario')}
+                    style={{
+                      padding: '5px 14px',
+                      fontSize: '12px',
+                      borderRadius: '6px',
+                      cursor: 'pointer',
+                      border: visaoParcelas === 'calendario' ? '1px solid #c9a962' : '1px solid rgba(255,255,255,0.15)',
+                      background: visaoParcelas === 'calendario' ? '#c9a962' : 'transparent',
+                      color: visaoParcelas === 'calendario' ? '#000' : 'rgba(255,255,255,0.7)',
+                      fontWeight: visaoParcelas === 'calendario' ? 600 : 400,
+                      transition: 'all 0.2s'
+                    }}
+                  >
+                    <Calendar size={12} style={{ marginRight: '4px', verticalAlign: 'middle' }} />
+                    Calendário
+                  </button>
+                </div>
+
                 {/* Vendas Agrupadas */}
                 <div className="vendas-pagamentos-lista">
                   {filteredPagamentos.length === 0 ? (
@@ -6631,12 +6672,7 @@ const AdminDashboard = () => {
                       {/* Lista de Parcelas - Expandível */}
                       {vendaExpandida === grupo.venda_id && (
                         <div className="venda-pagamento-body">
-                          {grupo.pagamentos
-                            .sort((a, b) => {
-                              const ordem = { sinal: 0, entrada: 1, parcela_entrada: 2, balao: 3 }
-                              if (ordem[a.tipo] !== ordem[b.tipo]) return ordem[a.tipo] - ordem[b.tipo]
-                              return (a.numero_parcela || 0) - (b.numero_parcela || 0)
-                            })
+                          {sortParcelas(grupo.pagamentos, visaoParcelas)
                             .map((pag) => (
                             <div key={pag.id} className={`parcela-row ${pag.status === 'pago' ? 'pago' : ''}`}>
                               <div className="parcela-main">
