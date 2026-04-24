@@ -1,0 +1,148 @@
+{
+  "meta": {
+    "titulo": "P3 - Vendas com Divergencia Estrutural de Fator",
+    "data_relatorio": "2026-04-21",
+    "banco": "Calculo IM",
+    "project_ref": "jdkkusrxullttyeakwib",
+    "status": "AGUARDANDO_DECISAO_NEGOCIO",
+    "nenhuma_alteracao_em_comissao_gerada": true,
+    "escopo": "6 vendas no empreendimento FIGUEIRA GARCIA com parcelas pagas geradas por fatores diferentes"
+  },
+  "causa_raiz": {
+    "tipo": "Mudanca de tipo_corretor na venda seguida de regeneracao de grade",
+    "descricao": "As 6 vendas foram importadas em janeiro/2026 como tipo_corretor=externo (7% total). Entre janeiro e abril/2026 algumas parcelas foram pagas com fator externo (~0.35). Em abril/2026 alguem editou tipo_corretor para interno (6.5% total) e o sistema regerou a grade. A regeneracao substituiu as parcelas nao pagas, mas as pagas foram trancadas pelo trigger 017 e permaneceram com o fator externo antigo.",
+    "evidencia": "pagamentos_prosoluto.created_at das parcelas 'antigas' eh jan/2026; das 'novas' eh o mesmo minuto que vendas.updated_at em abr/2026. cargos_empreendimento_historico esta vazio (nao houve alteracao de percentual no cargo).",
+    "caso_especial_1005_A": "Esta venda tem TRES estados. Alem do padrao externo->interno, teve uma regeneracao intermediaria em 10-abr as 19:18 com fator 0.3035 (aproximadamente 6.06%), provavelmente um erro de cadastro transitorio corrigido em 13-abr as 14:23 para 0.3253 (6.5% correto). As 10 parcelas pagas no intervalo de 10-abr a 13-abr ficaram congeladas com fator errado."
+  },
+  "resumo_agregado": {
+    "total_vendas_afetadas": 6,
+    "total_parcelas_divergentes": 25,
+    "todas_pagas": true,
+    "empreendimento_unico": "FIGUEIRA GARCIA",
+    "tipo_corretor_hoje": "interno",
+    "delta_total_positivo_rs": 336.00,
+    "delta_total_negativo_rs": -476.20,
+    "delta_liquido_rs": -140.20,
+    "interpretacao_delta_liquido": "Se todas as parcelas fossem realinhadas ao fator atual das vendas, a empresa teria saldo liquido a pagar de R$ 140,20."
+  },
+  "timeline_por_venda": [
+    {"unidade": "404 A", "venda_criada": "2026-01-15 14:55", "venda_editada": "2026-04-10 17:29", "fator_antigo": 0.3505, "fator_novo": 0.3255, "padrao": "externo_para_interno_simples"},
+    {"unidade": "802 A", "venda_criada": "2026-01-15 14:56", "venda_editada": "2026-04-10 18:10", "fator_antigo": 0.3500, "fator_novo": 0.3250, "padrao": "externo_para_interno_simples"},
+    {"unidade": "805 A", "venda_criada": "2026-01-15 14:56", "venda_editada": "2026-04-10 19:45", "fator_antigo": 0.3507, "fator_novo": 0.3256, "padrao": "externo_para_interno_simples"},
+    {"unidade": "1005 B", "venda_criada": "2026-01-15 14:58", "venda_editada": "2026-04-13 20:52", "fator_antigo": 0.3502, "fator_novo": 0.3252, "padrao": "externo_para_interno_simples"},
+    {"unidade": "1106 A", "venda_criada": "2026-01-15 14:57", "venda_editada": "2026-04-13 20:34", "fator_antigo": 0.1891, "fator_novo": 0.1756, "padrao": "externo_para_interno_simples"},
+    {"unidade": "1005 A", "venda_criada": "2026-01-15 14:56", "venda_editada": "2026-04-13 14:23", "fator_original": 0.3269, "fator_intermediario": 0.3035, "fator_atual": 0.3253, "padrao": "dupla_regeneracao_com_erro_intermediario"}
+  ],
+  "vendas": [
+    {
+      "unidade": "1005 A",
+      "venda_id": "fbaad3e1-ab0f-451a-a90e-b015d6845368",
+      "tipo_corretor_hoje": "interno",
+      "fator_venda_atual": 0.325274,
+      "valor_venda": 349191.04,
+      "valor_pro_soluto": 69779.40,
+      "parcelas_divergentes_qtd": 13,
+      "delta_total_rs": -476.20,
+      "interpretacao": "10 parcelas foram pagas com fator 0.3035 (erro intermediario 6.06%). Empresa pagou a MENOS. Se realinhado, empresa DEVE R$ 476,20 para corretores/beneficiarios.",
+      "parcelas": [
+        {"tipo": "sinal", "numero_parcela": null, "valor": 17500.00, "comissao_atual": 5311.69, "ratio": 0.303525, "comissao_se_fator_atual": 5692.30, "delta_rs": -380.61, "data_pagamento": "2025-04-22"},
+        {"tipo": "parcela_entrada", "numero_parcela": 1, "valor": 537.99, "comissao_atual": 163.29, "ratio": 0.303519, "comissao_se_fator_atual": 174.99, "delta_rs": -11.70, "data_pagamento": "2025-05-20"},
+        {"tipo": "parcela_entrada", "numero_parcela": 2, "valor": 537.99, "comissao_atual": 163.29, "ratio": 0.303519, "comissao_se_fator_atual": 174.99, "delta_rs": -11.70, "data_pagamento": "2025-06-20"},
+        {"tipo": "parcela_entrada", "numero_parcela": 3, "valor": 537.99, "comissao_atual": 163.29, "ratio": 0.303519, "comissao_se_fator_atual": 174.99, "delta_rs": -11.70, "data_pagamento": "2025-07-21"},
+        {"tipo": "parcela_entrada", "numero_parcela": 4, "valor": 537.99, "comissao_atual": 163.29, "ratio": 0.303519, "comissao_se_fator_atual": 174.99, "delta_rs": -11.70, "data_pagamento": "2025-08-20"},
+        {"tipo": "parcela_entrada", "numero_parcela": 5, "valor": 537.99, "comissao_atual": 163.29, "ratio": 0.303519, "comissao_se_fator_atual": 174.99, "delta_rs": -11.70, "data_pagamento": "2025-09-22"},
+        {"tipo": "parcela_entrada", "numero_parcela": 6, "valor": 537.99, "comissao_atual": 163.29, "ratio": 0.303519, "comissao_se_fator_atual": 174.99, "delta_rs": -11.70, "data_pagamento": "2025-10-20"},
+        {"tipo": "parcela_entrada", "numero_parcela": 7, "valor": 537.99, "comissao_atual": 163.29, "ratio": 0.303519, "comissao_se_fator_atual": 174.99, "delta_rs": -11.70, "data_pagamento": "2025-11-21"},
+        {"tipo": "parcela_entrada", "numero_parcela": 8, "valor": 537.99, "comissao_atual": 175.85, "ratio": 0.326865, "comissao_se_fator_atual": 174.99, "delta_rs": 0.86, "data_pagamento": "2025-12-22"},
+        {"tipo": "parcela_entrada", "numero_parcela": 9, "valor": 537.99, "comissao_atual": 163.29, "ratio": 0.303519, "comissao_se_fator_atual": 174.99, "delta_rs": -11.70, "data_pagamento": "2026-01-20"},
+        {"tipo": "parcela_entrada", "numero_parcela": 10, "valor": 537.99, "comissao_atual": 175.85, "ratio": 0.326865, "comissao_se_fator_atual": 174.99, "delta_rs": 0.86, "data_pagamento": "2026-02-20"},
+        {"tipo": "parcela_entrada", "numero_parcela": 11, "valor": 537.99, "comissao_atual": 163.29, "ratio": 0.303519, "comissao_se_fator_atual": 174.99, "delta_rs": -11.70, "data_pagamento": "2026-03-20"},
+        {"tipo": "balao", "numero_parcela": 1, "valor": 5000.00, "comissao_atual": 1634.36, "ratio": 0.326872, "comissao_se_fator_atual": 1626.37, "delta_rs": 7.99, "data_pagamento": "2025-12-10"}
+      ]
+    },
+    {
+      "unidade": "805 A",
+      "venda_id": "85f070c7-e436-482c-ac8a-2242602aa984",
+      "tipo_corretor_hoje": "interno",
+      "fator_venda_atual": 0.325618,
+      "parcelas_divergentes_qtd": 3,
+      "delta_total_rs": 115.06,
+      "interpretacao": "Parcelas pagas com fator externo (7%) antes da reclassificacao para interno. Empresa pagou A MAIS. Se realinhado, empresa RECEBE de volta R$ 115,06.",
+      "parcelas": [
+        {"tipo": "parcela_entrada", "numero_parcela": 8, "valor": 296.67, "comissao_atual": 104.03, "ratio": 0.350659, "comissao_se_fator_atual": 96.60, "delta_rs": 7.43, "data_pagamento": "2025-12-22"},
+        {"tipo": "parcela_entrada", "numero_parcela": 10, "valor": 296.67, "comissao_atual": 104.03, "ratio": 0.350659, "comissao_se_fator_atual": 96.60, "delta_rs": 7.43, "data_pagamento": "2026-02-20"},
+        {"tipo": "balao", "numero_parcela": 1, "valor": 4000.00, "comissao_atual": 1402.67, "ratio": 0.350668, "comissao_se_fator_atual": 1302.47, "delta_rs": 100.20, "data_pagamento": "2026-01-19"}
+      ]
+    },
+    {
+      "unidade": "802 A",
+      "venda_id": "99b07752-8baf-406f-96a8-4932f2010e99",
+      "tipo_corretor_hoje": "interno",
+      "fator_venda_atual": 0.325016,
+      "parcelas_divergentes_qtd": 4,
+      "delta_total_rs": 83.62,
+      "interpretacao": "Parcelas pagas com fator externo (7%) antes da reclassificacao. Empresa pagou A MAIS. Se realinhado, empresa RECEBE R$ 83,62.",
+      "parcelas": [
+        {"tipo": "sinal", "numero_parcela": null, "valor": 1000.00, "comissao_atual": 350.02, "ratio": 0.350020, "comissao_se_fator_atual": 325.02, "delta_rs": 25.00, "data_pagamento": "2025-04-18"},
+        {"tipo": "parcela_entrada", "numero_parcela": 8, "valor": 781.48, "comissao_atual": 273.53, "ratio": 0.350015, "comissao_se_fator_atual": 253.99, "delta_rs": 19.54, "data_pagamento": "2025-12-09"},
+        {"tipo": "parcela_entrada", "numero_parcela": 9, "valor": 781.48, "comissao_atual": 273.53, "ratio": 0.350015, "comissao_se_fator_atual": 253.99, "delta_rs": 19.54, "data_pagamento": "2026-01-09"},
+        {"tipo": "parcela_entrada", "numero_parcela": 10, "valor": 781.48, "comissao_atual": 273.53, "ratio": 0.350015, "comissao_se_fator_atual": 253.99, "delta_rs": 19.54, "data_pagamento": "2026-02-10"}
+      ]
+    },
+    {
+      "unidade": "1005 B",
+      "venda_id": "fc6ffa37-4354-4f2b-842f-19f4779986d3",
+      "tipo_corretor_hoje": "interno",
+      "fator_venda_atual": 0.325177,
+      "parcelas_divergentes_qtd": 2,
+      "delta_total_rs": 57.36,
+      "interpretacao": "Parcelas pagas com fator externo antes da reclassificacao. Empresa pagou A MAIS. Se realinhado, empresa RECEBE R$ 57,36.",
+      "parcelas": [
+        {"tipo": "parcela_entrada", "numero_parcela": 8, "valor": 1146.67, "comissao_atual": 401.55, "ratio": 0.350188, "comissao_se_fator_atual": 372.87, "delta_rs": 28.68, "data_pagamento": "2025-12-02"},
+        {"tipo": "parcela_entrada", "numero_parcela": 10, "valor": 1146.67, "comissao_atual": 401.55, "ratio": 0.350188, "comissao_se_fator_atual": 372.87, "delta_rs": 28.68, "data_pagamento": "2026-02-05"}
+      ]
+    },
+    {
+      "unidade": "1106 A",
+      "venda_id": "47edf23c-182a-49a7-b136-e017e1b9a3f4",
+      "tipo_corretor_hoje": "interno",
+      "fator_venda_atual": 0.175621,
+      "parcelas_divergentes_qtd": 2,
+      "delta_total_rs": 54.92,
+      "interpretacao": "Parcelas pagas com fator externo (0.189) antes da reclassificacao para interno (0.176). Empresa pagou A MAIS. Se realinhado, empresa RECEBE R$ 54,92.",
+      "parcelas": [
+        {"tipo": "parcela_entrada", "numero_parcela": 1, "valor": 2033.33, "comissao_atual": 384.56, "ratio": 0.189128, "comissao_se_fator_atual": 357.10, "delta_rs": 27.46, "data_pagamento": "2025-06-24"},
+        {"tipo": "parcela_entrada", "numero_parcela": 7, "valor": 2033.33, "comissao_atual": 384.56, "ratio": 0.189128, "comissao_se_fator_atual": 357.10, "delta_rs": 27.46, "data_pagamento": "2025-12-15"}
+      ]
+    },
+    {
+      "unidade": "404 A",
+      "venda_id": "dd6819f1-94a7-4394-822e-f86bcd42e8c2",
+      "tipo_corretor_hoje": "interno",
+      "fator_venda_atual": 0.325462,
+      "parcelas_divergentes_qtd": 1,
+      "delta_total_rs": 25.04,
+      "interpretacao": "Sinal pago com fator externo antes da reclassificacao. Empresa pagou A MAIS. Se realinhado, empresa RECEBE R$ 25,04.",
+      "parcelas": [
+        {"tipo": "sinal", "numero_parcela": null, "valor": 1000.00, "comissao_atual": 350.50, "ratio": 0.350500, "comissao_se_fator_atual": 325.46, "delta_rs": 25.04, "data_pagamento": "2025-04-20"}
+      ]
+    }
+  ],
+  "caminhos_decisao": [
+    {"id": "A", "nome": "Manter como esta", "risco": "baixo", "dinheiro_movimentado": "R$ 0"},
+    {"id": "B", "nome": "Compensar em parcelas pendentes", "risco": "medio", "dinheiro_movimentado": "prospectivo, sem retroativo"},
+    {"id": "C", "nome": "Realinhar pagas retroativamente", "risco": "alto", "dinheiro_movimentado": "R$ 140,20 liquido (empresa paga)"},
+    {"id": "D", "nome": "Reverter fator da venda", "risco": "medio", "dinheiro_movimentado": "nenhum retroativo"}
+  ],
+  "perguntas_para_controladoria": [
+    "A mudanca de tipo_corretor de externo para interno foi correcao de erro de cadastro ou reclassificacao efetiva?",
+    "Se foi correcao de erro: as comissoes ja pagas com fator externo precisam ser ajustadas?",
+    "Na venda 1005 A: o fator 0.3035 (6.06%) era intencional ou bug? As 10 parcelas pagas nesse fator estao comprovadamente com comissao a menor.",
+    "A regeracao automatica ao mudar tipo_corretor deveria ser bloqueada se houver parcelas pagas?"
+  ],
+  "melhorias_no_fluxo_sugeridas": [
+    "Ao mudar tipo_corretor, exibir warning listando quantas parcelas pagas existem com fator divergente antes de confirmar",
+    "Registrar evento em tabela vendas_reclassificacoes com antes/depois/usuario/motivo",
+    "Bloquear mudanca automatica se houver parcelas pagas com fator divergente do novo"
+  ]
+}

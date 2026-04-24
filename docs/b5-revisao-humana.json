@@ -1,0 +1,1465 @@
+{
+  "meta": {
+    "geradoEm": "2026-04-24T15:01:28.758Z",
+    "total": 34,
+    "motivos": {
+      "perdedor_pago_em_outro_periodo": 17,
+      "vencedor_nao_bate_sienge": 17
+    },
+    "regra": "delicado se vencedor nao bate Sienge (dist>30d) OU algum perdedor pago tem dist>30d. Cancelar esses perdedores = perder registro unico de pagamento. Precisa confirmacao humana (se pagamento foi estornado no Sienge pela renegociacao, OK cancelar; se nao foi, realocar para outra seq)."
+  },
+  "casos": [
+    {
+      "venda_id": "7c3ca9b3-8251-469b-ae71-5f8a433a6d3e",
+      "sienge_contract_id": "163",
+      "numero_contrato": "73",
+      "unidade": "1603 A",
+      "cliente": "DIOGO DA LUZ DOS SANTOS",
+      "cliente_cpf": "09233207927",
+      "cliente_telefone": "(47)99724-4138",
+      "corretor": "MATHEUS DE S. PIRES NEGOCIOS IMOBILIARIOS",
+      "corretor_telefone": "1192003475",
+      "valor_venda": "346440.81",
+      "valor_pro_soluto": "69200.00",
+      "billId": 235,
+      "numero_parcela": 3,
+      "sienge_due_atual": "2026-10-20",
+      "vencedor": {
+        "id": "3610f473-7120-4f5f-908f-05b6a60af281",
+        "status": "pendente",
+        "data_prevista": "2026-10-20",
+        "data_pagamento": null,
+        "valor": "1275.07",
+        "created_at": "2026-01-15 22:01:51.734066+00",
+        "dist_dias": 0
+      },
+      "perdedores": [
+        {
+          "id": "806f0a27-33bd-4dd6-a497-8b3fdee07707",
+          "status": "pago",
+          "data_prevista": "2025-12-20",
+          "data_pagamento": "2026-01-19",
+          "valor": "500.00",
+          "created_at": "2026-01-15 22:01:51.734066+00",
+          "dist_dias": 304,
+          "acao": "cancelar"
+        },
+        {
+          "id": "0125c10a-a31d-4402-b746-68fa88e0a83a",
+          "status": "pago",
+          "data_prevista": "2025-12-20",
+          "data_pagamento": "2025-08-20",
+          "valor": "500.00",
+          "created_at": "2026-01-15 22:01:51.734066+00",
+          "dist_dias": 304,
+          "acao": "cancelar"
+        }
+      ],
+      "motivo_delicado": "perdedor_pago_em_outro_periodo"
+    },
+    {
+      "venda_id": "7c3ca9b3-8251-469b-ae71-5f8a433a6d3e",
+      "sienge_contract_id": "163",
+      "numero_contrato": "73",
+      "unidade": "1603 A",
+      "cliente": "DIOGO DA LUZ DOS SANTOS",
+      "cliente_cpf": "09233207927",
+      "cliente_telefone": "(47)99724-4138",
+      "corretor": "MATHEUS DE S. PIRES NEGOCIOS IMOBILIARIOS",
+      "corretor_telefone": "1192003475",
+      "valor_venda": "346440.81",
+      "valor_pro_soluto": "69200.00",
+      "billId": 235,
+      "numero_parcela": 5,
+      "sienge_due_atual": "2026-12-20",
+      "vencedor": {
+        "id": "9a9c284b-08e9-43dd-905e-f6985a34ee4f",
+        "status": "pendente",
+        "data_prevista": "2026-12-20",
+        "data_pagamento": null,
+        "valor": "1275.07",
+        "created_at": "2026-01-15 22:01:51.734066+00",
+        "dist_dias": 0
+      },
+      "perdedores": [
+        {
+          "id": "3b60e5fd-6a99-489a-aa4c-06e0abc32e2b",
+          "status": "pago",
+          "data_prevista": "2026-02-20",
+          "data_pagamento": "2026-02-20",
+          "valor": "500.00",
+          "created_at": "2026-01-15 22:01:51.734066+00",
+          "dist_dias": 303,
+          "acao": "cancelar"
+        }
+      ],
+      "motivo_delicado": "perdedor_pago_em_outro_periodo"
+    },
+    {
+      "venda_id": "7c3ca9b3-8251-469b-ae71-5f8a433a6d3e",
+      "sienge_contract_id": "163",
+      "numero_contrato": "73",
+      "unidade": "1603 A",
+      "cliente": "DIOGO DA LUZ DOS SANTOS",
+      "cliente_cpf": "09233207927",
+      "cliente_telefone": "(47)99724-4138",
+      "corretor": "MATHEUS DE S. PIRES NEGOCIOS IMOBILIARIOS",
+      "corretor_telefone": "1192003475",
+      "valor_venda": "346440.81",
+      "valor_pro_soluto": "69200.00",
+      "billId": 235,
+      "numero_parcela": 6,
+      "sienge_due_atual": "2027-01-20",
+      "vencedor": {
+        "id": "afbf5d28-df3a-4af3-a6df-62e819b986e9",
+        "status": "pago",
+        "data_prevista": "2026-03-20",
+        "data_pagamento": "2026-03-20",
+        "valor": "500.00",
+        "created_at": "2026-01-15 22:01:51.734066+00",
+        "dist_dias": 306
+      },
+      "perdedores": [
+        {
+          "id": "b23b29f9-ca32-4a67-b946-fb3a85e78d57",
+          "status": "pendente",
+          "data_prevista": "2026-03-20",
+          "data_pagamento": null,
+          "valor": "500.00",
+          "created_at": "2026-01-15 22:01:51.734066+00",
+          "dist_dias": 306,
+          "acao": "cancelar"
+        }
+      ],
+      "motivo_delicado": "vencedor_nao_bate_sienge"
+    },
+    {
+      "venda_id": "7c3ca9b3-8251-469b-ae71-5f8a433a6d3e",
+      "sienge_contract_id": "163",
+      "numero_contrato": "73",
+      "unidade": "1603 A",
+      "cliente": "DIOGO DA LUZ DOS SANTOS",
+      "cliente_cpf": "09233207927",
+      "cliente_telefone": "(47)99724-4138",
+      "corretor": "MATHEUS DE S. PIRES NEGOCIOS IMOBILIARIOS",
+      "corretor_telefone": "1192003475",
+      "valor_venda": "346440.81",
+      "valor_pro_soluto": "69200.00",
+      "billId": 235,
+      "numero_parcela": 7,
+      "sienge_due_atual": "2027-02-20",
+      "vencedor": {
+        "id": "39425ddc-b170-45a0-a391-356d9892897a",
+        "status": "pago",
+        "data_prevista": "2027-02-20",
+        "data_pagamento": "2026-04-20",
+        "valor": "1275.07",
+        "created_at": "2026-01-15 22:01:51.734066+00",
+        "dist_dias": 0
+      },
+      "perdedores": [
+        {
+          "id": "ca2ba8be-f89d-44de-a9cc-2b4ea9eb1068",
+          "status": "pago",
+          "data_prevista": "2026-04-20",
+          "data_pagamento": "2026-04-20",
+          "valor": "500.00",
+          "created_at": "2026-01-15 22:01:51.734066+00",
+          "dist_dias": 306,
+          "acao": "cancelar"
+        }
+      ],
+      "motivo_delicado": "perdedor_pago_em_outro_periodo"
+    },
+    {
+      "venda_id": "137d0df9-2c8e-49da-b3a3-528129babfd2",
+      "sienge_contract_id": "166",
+      "numero_contrato": "76",
+      "unidade": "1607 A",
+      "cliente": "GHIZIERI JENNINFER FREITAS COSTA BOSZCZOWSKI",
+      "cliente_cpf": "08401031907",
+      "cliente_telefone": "(47)988623130",
+      "corretor": "CARLOS BRUNO NEGOCIOS IMOBILIARIOS LTDA",
+      "corretor_telefone": "4797071735",
+      "valor_venda": "440166.26",
+      "valor_pro_soluto": "88033.20",
+      "billId": 276,
+      "numero_parcela": 5,
+      "sienge_due_atual": "2026-05-20",
+      "vencedor": {
+        "id": "08b0c7b5-7b2e-4957-8966-13aa00adfbbb",
+        "status": "pago",
+        "data_prevista": "2026-05-20",
+        "data_pagamento": "2025-12-12",
+        "valor": "1604.40",
+        "created_at": "2026-01-15 22:01:55.764277+00",
+        "dist_dias": 0
+      },
+      "perdedores": [
+        {
+          "id": "cc995316-69c2-486a-b34b-4579acbf93e8",
+          "status": "pago",
+          "data_prevista": "2025-12-20",
+          "data_pagamento": "2026-01-19",
+          "valor": "600.00",
+          "created_at": "2026-01-15 22:01:55.764277+00",
+          "dist_dias": 151,
+          "acao": "cancelar"
+        }
+      ],
+      "motivo_delicado": "perdedor_pago_em_outro_periodo"
+    },
+    {
+      "venda_id": "ac1c4423-44f2-4c1d-b09c-866fcf326fe3",
+      "sienge_contract_id": "246",
+      "numero_contrato": "154",
+      "unidade": "1302 C",
+      "cliente": "MARIA VITORIA DA SILVA FRANCISCO",
+      "cliente_cpf": "11625933932",
+      "cliente_telefone": "(43)99669-8714",
+      "corretor": "CARLOS BRUNO NEGOCIOS IMOBILIARIOS LTDA",
+      "corretor_telefone": "4797071735",
+      "valor_venda": "427221.03",
+      "valor_pro_soluto": "85444.15",
+      "billId": 240,
+      "numero_parcela": 3,
+      "sienge_due_atual": "2026-03-20",
+      "vencedor": {
+        "id": "ed2779b2-1a25-4693-ac85-021a0cf3c8ab",
+        "status": "cancelado",
+        "data_prevista": "2026-03-20",
+        "data_pagamento": null,
+        "valor": "1553.53",
+        "created_at": "2026-01-15 22:03:36.617601+00",
+        "dist_dias": 0
+      },
+      "perdedores": [
+        {
+          "id": "2eec3d3e-d868-4700-8893-8be8ad73f778",
+          "status": "pago",
+          "data_prevista": "2025-12-20",
+          "data_pagamento": "2026-01-13",
+          "valor": "500.00",
+          "created_at": "2026-01-15 22:03:36.617601+00",
+          "dist_dias": 90,
+          "acao": "cancelar"
+        }
+      ],
+      "motivo_delicado": "perdedor_pago_em_outro_periodo"
+    },
+    {
+      "venda_id": "84b74c27-fa97-4cb0-9e22-be95f88237d2",
+      "sienge_contract_id": "255",
+      "numero_contrato": "163",
+      "unidade": "1405 C",
+      "cliente": "ANDREY LUIZ MESSIAS SANTOS",
+      "cliente_cpf": "05319809522",
+      "cliente_telefone": "(47)99282-8064",
+      "corretor": "CARLOS BRUNO NEGOCIOS IMOBILIARIOS LTDA",
+      "corretor_telefone": "4797071735",
+      "valor_venda": "363369.59",
+      "valor_pro_soluto": "73581.34",
+      "billId": 143,
+      "numero_parcela": 1,
+      "sienge_due_atual": "2026-01-20",
+      "vencedor": {
+        "id": "83a2658a-b52e-452b-9fdb-f7ed14e93e98",
+        "status": "cancelado",
+        "data_prevista": "2026-01-20",
+        "data_pagamento": null,
+        "valor": "1221.23",
+        "created_at": "2026-01-15 22:03:48.189555+00",
+        "dist_dias": 0
+      },
+      "perdedores": [
+        {
+          "id": "1c96c993-331c-43f7-a340-6e7e244dbbcf",
+          "status": "pago",
+          "data_prevista": "2025-06-20",
+          "data_pagamento": "2025-08-27",
+          "valor": "400.00",
+          "created_at": "2026-01-15 22:03:48.189555+00",
+          "dist_dias": 214,
+          "acao": "cancelar"
+        }
+      ],
+      "motivo_delicado": "perdedor_pago_em_outro_periodo"
+    },
+    {
+      "venda_id": "84b74c27-fa97-4cb0-9e22-be95f88237d2",
+      "sienge_contract_id": "255",
+      "numero_contrato": "163",
+      "unidade": "1405 C",
+      "cliente": "ANDREY LUIZ MESSIAS SANTOS",
+      "cliente_cpf": "05319809522",
+      "cliente_telefone": "(47)99282-8064",
+      "corretor": "CARLOS BRUNO NEGOCIOS IMOBILIARIOS LTDA",
+      "corretor_telefone": "4797071735",
+      "valor_venda": "363369.59",
+      "valor_pro_soluto": "73581.34",
+      "billId": 143,
+      "numero_parcela": 2,
+      "sienge_due_atual": "2026-02-20",
+      "vencedor": {
+        "id": "38a31eac-31b6-4983-823d-fc50c6c5d068",
+        "status": "pago",
+        "data_prevista": "2025-07-20",
+        "data_pagamento": "2025-09-05",
+        "valor": "400.00",
+        "created_at": "2026-01-15 22:03:48.189555+00",
+        "dist_dias": 215
+      },
+      "perdedores": [
+        {
+          "id": "677fcfba-e92e-4c0b-a7c9-94013705b059",
+          "status": "cancelado",
+          "data_prevista": "2025-07-20",
+          "data_pagamento": null,
+          "valor": "400.00",
+          "created_at": "2026-01-15 22:03:48.189555+00",
+          "dist_dias": 215,
+          "acao": "ja_cancelado_skip"
+        }
+      ],
+      "motivo_delicado": "vencedor_nao_bate_sienge"
+    },
+    {
+      "venda_id": "84b74c27-fa97-4cb0-9e22-be95f88237d2",
+      "sienge_contract_id": "255",
+      "numero_contrato": "163",
+      "unidade": "1405 C",
+      "cliente": "ANDREY LUIZ MESSIAS SANTOS",
+      "cliente_cpf": "05319809522",
+      "cliente_telefone": "(47)99282-8064",
+      "corretor": "CARLOS BRUNO NEGOCIOS IMOBILIARIOS LTDA",
+      "corretor_telefone": "4797071735",
+      "valor_venda": "363369.59",
+      "valor_pro_soluto": "73581.34",
+      "billId": 143,
+      "numero_parcela": 3,
+      "sienge_due_atual": "2026-03-20",
+      "vencedor": {
+        "id": "50abac0a-83f5-4805-ac59-364f31d4d79a",
+        "status": "pago",
+        "data_prevista": "2025-08-20",
+        "data_pagamento": "2025-09-05",
+        "valor": "400.00",
+        "created_at": "2026-01-15 22:03:48.189555+00",
+        "dist_dias": 212
+      },
+      "perdedores": [
+        {
+          "id": "aff25c2b-9bb7-4dc0-954c-91c23561b506",
+          "status": "cancelado",
+          "data_prevista": "2025-08-20",
+          "data_pagamento": null,
+          "valor": "400.00",
+          "created_at": "2026-01-15 22:03:48.189555+00",
+          "dist_dias": 212,
+          "acao": "ja_cancelado_skip"
+        }
+      ],
+      "motivo_delicado": "vencedor_nao_bate_sienge"
+    },
+    {
+      "venda_id": "84b74c27-fa97-4cb0-9e22-be95f88237d2",
+      "sienge_contract_id": "255",
+      "numero_contrato": "163",
+      "unidade": "1405 C",
+      "cliente": "ANDREY LUIZ MESSIAS SANTOS",
+      "cliente_cpf": "05319809522",
+      "cliente_telefone": "(47)99282-8064",
+      "corretor": "CARLOS BRUNO NEGOCIOS IMOBILIARIOS LTDA",
+      "corretor_telefone": "4797071735",
+      "valor_venda": "363369.59",
+      "valor_pro_soluto": "73581.34",
+      "billId": 143,
+      "numero_parcela": 4,
+      "sienge_due_atual": "2026-04-20",
+      "vencedor": {
+        "id": "366df36b-ab73-472f-9c3d-a56bb1ea6bfb",
+        "status": "pago",
+        "data_prevista": "2025-09-20",
+        "data_pagamento": "2025-12-29",
+        "valor": "400.00",
+        "created_at": "2026-01-15 22:03:48.189555+00",
+        "dist_dias": 212
+      },
+      "perdedores": [
+        {
+          "id": "cf0336c4-55c7-4d68-8863-794a285d5f2a",
+          "status": "cancelado",
+          "data_prevista": "2025-09-20",
+          "data_pagamento": null,
+          "valor": "400.00",
+          "created_at": "2026-01-15 22:03:48.189555+00",
+          "dist_dias": 212,
+          "acao": "ja_cancelado_skip"
+        }
+      ],
+      "motivo_delicado": "vencedor_nao_bate_sienge"
+    },
+    {
+      "venda_id": "84b74c27-fa97-4cb0-9e22-be95f88237d2",
+      "sienge_contract_id": "255",
+      "numero_contrato": "163",
+      "unidade": "1405 C",
+      "cliente": "ANDREY LUIZ MESSIAS SANTOS",
+      "cliente_cpf": "05319809522",
+      "cliente_telefone": "(47)99282-8064",
+      "corretor": "CARLOS BRUNO NEGOCIOS IMOBILIARIOS LTDA",
+      "corretor_telefone": "4797071735",
+      "valor_venda": "363369.59",
+      "valor_pro_soluto": "73581.34",
+      "billId": 143,
+      "numero_parcela": 6,
+      "sienge_due_atual": "2026-06-20",
+      "vencedor": {
+        "id": "1f72cf9f-f999-4bf4-8e23-4ce77dfa58d7",
+        "status": "pago",
+        "data_prevista": "2025-11-20",
+        "data_pagamento": "2025-12-29",
+        "valor": "400.00",
+        "created_at": "2026-01-15 22:03:48.189555+00",
+        "dist_dias": 212
+      },
+      "perdedores": [
+        {
+          "id": "ea476302-4200-4e8e-86ff-aad25d17d07b",
+          "status": "cancelado",
+          "data_prevista": "2025-11-20",
+          "data_pagamento": null,
+          "valor": "400.00",
+          "created_at": "2026-01-15 22:03:48.189555+00",
+          "dist_dias": 212,
+          "acao": "ja_cancelado_skip"
+        }
+      ],
+      "motivo_delicado": "vencedor_nao_bate_sienge"
+    },
+    {
+      "venda_id": "84b74c27-fa97-4cb0-9e22-be95f88237d2",
+      "sienge_contract_id": "255",
+      "numero_contrato": "163",
+      "unidade": "1405 C",
+      "cliente": "ANDREY LUIZ MESSIAS SANTOS",
+      "cliente_cpf": "05319809522",
+      "cliente_telefone": "(47)99282-8064",
+      "corretor": "CARLOS BRUNO NEGOCIOS IMOBILIARIOS LTDA",
+      "corretor_telefone": "4797071735",
+      "valor_venda": "363369.59",
+      "valor_pro_soluto": "73581.34",
+      "billId": 143,
+      "numero_parcela": 7,
+      "sienge_due_atual": "2026-07-20",
+      "vencedor": {
+        "id": "a2ef8370-ba56-424c-b628-7dcc09cbec3c",
+        "status": "pago",
+        "data_prevista": "2025-12-20",
+        "data_pagamento": "2025-12-29",
+        "valor": "400.00",
+        "created_at": "2026-01-15 22:03:48.189555+00",
+        "dist_dias": 212
+      },
+      "perdedores": [
+        {
+          "id": "c7bdae4a-a7f5-4787-8b03-a93d71c32186",
+          "status": "cancelado",
+          "data_prevista": "2025-12-20",
+          "data_pagamento": null,
+          "valor": "400.00",
+          "created_at": "2026-01-15 22:03:48.189555+00",
+          "dist_dias": 212,
+          "acao": "ja_cancelado_skip"
+        }
+      ],
+      "motivo_delicado": "vencedor_nao_bate_sienge"
+    },
+    {
+      "venda_id": "a7fe850b-0b89-44ab-b222-68cf877febfe",
+      "sienge_contract_id": "256",
+      "numero_contrato": "164",
+      "unidade": "1406 C",
+      "cliente": "WANDERLEY ROSA GUIMARÃES JÚNIOR",
+      "cliente_cpf": "05204505903",
+      "cliente_telefone": "(47)99617-9440",
+      "corretor": "CARLOS BRUNO NEGOCIOS IMOBILIARIOS LTDA",
+      "corretor_telefone": "4797071735",
+      "valor_venda": "431493.25",
+      "valor_pro_soluto": "86298.50",
+      "billId": 226,
+      "numero_parcela": 3,
+      "sienge_due_atual": "2026-05-20",
+      "vencedor": {
+        "id": "a7818932-5577-403f-b291-4bc26b6679a1",
+        "status": "pago",
+        "data_prevista": "2025-12-20",
+        "data_pagamento": "2026-01-19",
+        "valor": "500.00",
+        "created_at": "2026-01-15 22:03:49.450054+00",
+        "dist_dias": 151
+      },
+      "perdedores": [
+        {
+          "id": "7d1a5e3a-16c2-4af9-92c3-d47d5450a2dd",
+          "status": "pago",
+          "data_prevista": "2025-12-20",
+          "data_pagamento": "2025-12-18",
+          "valor": "500.00",
+          "created_at": "2026-01-15 22:03:49.450054+00",
+          "dist_dias": 151,
+          "acao": "cancelar"
+        }
+      ],
+      "motivo_delicado": "vencedor_nao_bate_sienge"
+    },
+    {
+      "venda_id": "a7fe850b-0b89-44ab-b222-68cf877febfe",
+      "sienge_contract_id": "256",
+      "numero_contrato": "164",
+      "unidade": "1406 C",
+      "cliente": "WANDERLEY ROSA GUIMARÃES JÚNIOR",
+      "cliente_cpf": "05204505903",
+      "cliente_telefone": "(47)99617-9440",
+      "corretor": "CARLOS BRUNO NEGOCIOS IMOBILIARIOS LTDA",
+      "corretor_telefone": "4797071735",
+      "valor_venda": "431493.25",
+      "valor_pro_soluto": "86298.50",
+      "billId": 226,
+      "numero_parcela": 4,
+      "sienge_due_atual": "2026-06-20",
+      "vencedor": {
+        "id": "0cc7dc02-5fce-43b4-beda-e09aed48f776",
+        "status": "pago",
+        "data_prevista": "2026-06-20",
+        "data_pagamento": "2026-01-19",
+        "valor": "875.97",
+        "created_at": "2026-01-15 22:03:49.450054+00",
+        "dist_dias": 0
+      },
+      "perdedores": [
+        {
+          "id": "dd109942-e8ef-4792-b3a4-33acb9ed6d54",
+          "status": "pago",
+          "data_prevista": "2026-01-20",
+          "data_pagamento": "2026-02-03",
+          "valor": "500.00",
+          "created_at": "2026-01-15 22:03:49.450054+00",
+          "dist_dias": 151,
+          "acao": "cancelar"
+        }
+      ],
+      "motivo_delicado": "perdedor_pago_em_outro_periodo"
+    },
+    {
+      "venda_id": "a7fe850b-0b89-44ab-b222-68cf877febfe",
+      "sienge_contract_id": "256",
+      "numero_contrato": "164",
+      "unidade": "1406 C",
+      "cliente": "WANDERLEY ROSA GUIMARÃES JÚNIOR",
+      "cliente_cpf": "05204505903",
+      "cliente_telefone": "(47)99617-9440",
+      "corretor": "CARLOS BRUNO NEGOCIOS IMOBILIARIOS LTDA",
+      "corretor_telefone": "4797071735",
+      "valor_venda": "431493.25",
+      "valor_pro_soluto": "86298.50",
+      "billId": 226,
+      "numero_parcela": 5,
+      "sienge_due_atual": "2026-07-20",
+      "vencedor": {
+        "id": "c2102544-5a93-46c2-ad22-cb635f36d1d3",
+        "status": "pendente",
+        "data_prevista": "2026-07-20",
+        "data_pagamento": null,
+        "valor": "875.97",
+        "created_at": "2026-01-15 22:03:49.450054+00",
+        "dist_dias": 0
+      },
+      "perdedores": [
+        {
+          "id": "2bb10257-20e7-4960-85ca-900b2d495393",
+          "status": "pago",
+          "data_prevista": "2026-02-20",
+          "data_pagamento": "2026-02-20",
+          "valor": "500.00",
+          "created_at": "2026-01-15 22:03:49.450054+00",
+          "dist_dias": 150,
+          "acao": "cancelar"
+        }
+      ],
+      "motivo_delicado": "perdedor_pago_em_outro_periodo"
+    },
+    {
+      "venda_id": "3771951d-5221-4a3d-8b2f-6a0c5b076b12",
+      "sienge_contract_id": "269",
+      "numero_contrato": "177",
+      "unidade": "609 D",
+      "cliente": "DIEGO RAMOS",
+      "cliente_cpf": "10099686961",
+      "cliente_telefone": "(47)99629-9164",
+      "corretor": "ALECXANDER SOUZA E SILVA",
+      "corretor_telefone": "47999580426",
+      "valor_venda": "383188.92",
+      "valor_pro_soluto": "124200.00",
+      "billId": 236,
+      "numero_parcela": 3,
+      "sienge_due_atual": "2030-09-10",
+      "vencedor": {
+        "id": "cbb4e9cd-b655-41f8-91a8-1789db7fabc8",
+        "status": "pendente",
+        "data_prevista": "2030-09-10",
+        "data_pagamento": null,
+        "valor": "2800.00",
+        "created_at": "2026-01-15 22:04:06.609222+00",
+        "dist_dias": 0
+      },
+      "perdedores": [
+        {
+          "id": "9d254307-caf7-43aa-a8a1-daf22ba5ebfd",
+          "status": "pendente",
+          "data_prevista": "2030-09-10",
+          "data_pagamento": null,
+          "valor": "2500.00",
+          "created_at": "2026-01-15 22:04:06.609222+00",
+          "dist_dias": 0,
+          "acao": "cancelar"
+        },
+        {
+          "id": "25bf7945-0408-4ec8-9f7a-87f6215dd63a",
+          "status": "pendente",
+          "data_prevista": "2030-09-10",
+          "data_pagamento": null,
+          "valor": "2500.00",
+          "created_at": "2026-01-15 22:04:06.609222+00",
+          "dist_dias": 0,
+          "acao": "cancelar"
+        },
+        {
+          "id": "c52f9338-b1ad-4e03-bbfe-37631c49489e",
+          "status": "pendente",
+          "data_prevista": "2030-09-10",
+          "data_pagamento": null,
+          "valor": "1900.00",
+          "created_at": "2026-01-15 22:04:06.609222+00",
+          "dist_dias": 0,
+          "acao": "cancelar"
+        },
+        {
+          "id": "8cd3246a-2efc-4edf-b898-2695f7a65ea6",
+          "status": "pendente",
+          "data_prevista": "2030-09-10",
+          "data_pagamento": null,
+          "valor": "2200.00",
+          "created_at": "2026-01-15 22:04:06.609222+00",
+          "dist_dias": 0,
+          "acao": "cancelar"
+        },
+        {
+          "id": "a67262d8-f627-41ce-aac6-56b810f52a49",
+          "status": "pendente",
+          "data_prevista": "2030-09-10",
+          "data_pagamento": null,
+          "valor": "1600.00",
+          "created_at": "2026-01-15 22:04:06.609222+00",
+          "dist_dias": 0,
+          "acao": "cancelar"
+        },
+        {
+          "id": "11bcc3e2-45d7-4369-a31d-10cc5f69a976",
+          "status": "pago",
+          "data_prevista": "2025-09-10",
+          "data_pagamento": "2025-09-10",
+          "valor": "1300.00",
+          "created_at": "2026-01-15 22:04:06.609222+00",
+          "dist_dias": 1826,
+          "acao": "cancelar"
+        }
+      ],
+      "motivo_delicado": "perdedor_pago_em_outro_periodo"
+    },
+    {
+      "venda_id": "3771951d-5221-4a3d-8b2f-6a0c5b076b12",
+      "sienge_contract_id": "269",
+      "numero_contrato": "177",
+      "unidade": "609 D",
+      "cliente": "DIEGO RAMOS",
+      "cliente_cpf": "10099686961",
+      "cliente_telefone": "(47)99629-9164",
+      "corretor": "ALECXANDER SOUZA E SILVA",
+      "corretor_telefone": "47999580426",
+      "valor_venda": "383188.92",
+      "valor_pro_soluto": "124200.00",
+      "billId": 236,
+      "numero_parcela": 4,
+      "sienge_due_atual": "2030-10-10",
+      "vencedor": {
+        "id": "9ad7c4a5-224c-4790-8ce7-15b568706367",
+        "status": "pendente",
+        "data_prevista": "2030-10-10",
+        "data_pagamento": null,
+        "valor": "1900.00",
+        "created_at": "2026-01-15 22:04:06.609222+00",
+        "dist_dias": 0
+      },
+      "perdedores": [
+        {
+          "id": "c464a5b2-bc6e-4239-8e26-5c3dac0954ec",
+          "status": "pendente",
+          "data_prevista": "2030-10-10",
+          "data_pagamento": null,
+          "valor": "2500.00",
+          "created_at": "2026-01-15 22:04:06.609222+00",
+          "dist_dias": 0,
+          "acao": "cancelar"
+        },
+        {
+          "id": "5d86983d-bbaf-4697-9558-712bd5f7179a",
+          "status": "pendente",
+          "data_prevista": "2030-10-10",
+          "data_pagamento": null,
+          "valor": "3200.00",
+          "created_at": "2026-01-15 22:04:06.609222+00",
+          "dist_dias": 0,
+          "acao": "cancelar"
+        },
+        {
+          "id": "1fac5e55-f484-4477-b703-98dc40af8934",
+          "status": "pendente",
+          "data_prevista": "2030-10-10",
+          "data_pagamento": null,
+          "valor": "1600.00",
+          "created_at": "2026-01-15 22:04:06.609222+00",
+          "dist_dias": 0,
+          "acao": "cancelar"
+        },
+        {
+          "id": "c3211f78-6174-4915-8ed8-378b442367ad",
+          "status": "pendente",
+          "data_prevista": "2030-10-10",
+          "data_pagamento": null,
+          "valor": "2200.00",
+          "created_at": "2026-01-15 22:04:06.609222+00",
+          "dist_dias": 0,
+          "acao": "cancelar"
+        },
+        {
+          "id": "046418cd-d5ac-4821-b6f2-a3534524ad80",
+          "status": "pago",
+          "data_prevista": "2025-10-10",
+          "data_pagamento": "2025-10-06",
+          "valor": "1300.00",
+          "created_at": "2026-01-15 22:04:06.609222+00",
+          "dist_dias": 1826,
+          "acao": "cancelar"
+        },
+        {
+          "id": "394499d1-fbce-4cca-917d-f5e0e132859b",
+          "status": "pendente",
+          "data_prevista": "2025-10-10",
+          "data_pagamento": null,
+          "valor": "1300.00",
+          "created_at": "2026-01-15 22:04:06.609222+00",
+          "dist_dias": 1826,
+          "acao": "cancelar"
+        }
+      ],
+      "motivo_delicado": "perdedor_pago_em_outro_periodo"
+    },
+    {
+      "venda_id": "3771951d-5221-4a3d-8b2f-6a0c5b076b12",
+      "sienge_contract_id": "269",
+      "numero_contrato": "177",
+      "unidade": "609 D",
+      "cliente": "DIEGO RAMOS",
+      "cliente_cpf": "10099686961",
+      "cliente_telefone": "(47)99629-9164",
+      "corretor": "ALECXANDER SOUZA E SILVA",
+      "corretor_telefone": "47999580426",
+      "valor_venda": "383188.92",
+      "valor_pro_soluto": "124200.00",
+      "billId": 236,
+      "numero_parcela": 6,
+      "sienge_due_atual": "2030-12-10",
+      "vencedor": {
+        "id": "66f92043-017a-4c27-9de2-19979af25de4",
+        "status": "pago",
+        "data_prevista": "2030-12-10",
+        "data_pagamento": "2025-12-05",
+        "valor": "2200.00",
+        "created_at": "2026-01-15 22:04:06.609222+00",
+        "dist_dias": 0
+      },
+      "perdedores": [
+        {
+          "id": "d2f52dcc-3c0b-4238-af0c-c27ba3f4119b",
+          "status": "pendente",
+          "data_prevista": "2030-12-10",
+          "data_pagamento": null,
+          "valor": "2500.00",
+          "created_at": "2026-01-15 22:04:06.609222+00",
+          "dist_dias": 0,
+          "acao": "cancelar"
+        },
+        {
+          "id": "8d7ed18c-a26c-4817-aeb1-f26cc529add0",
+          "status": "pendente",
+          "data_prevista": "2030-12-10",
+          "data_pagamento": null,
+          "valor": "1600.00",
+          "created_at": "2026-01-15 22:04:06.609222+00",
+          "dist_dias": 0,
+          "acao": "cancelar"
+        },
+        {
+          "id": "c984e704-5a93-4f23-99cb-d8d15e3622de",
+          "status": "pendente",
+          "data_prevista": "2030-12-10",
+          "data_pagamento": null,
+          "valor": "2200.00",
+          "created_at": "2026-01-15 22:04:06.609222+00",
+          "dist_dias": 0,
+          "acao": "cancelar"
+        },
+        {
+          "id": "d0c895e7-ecad-46ba-bbe7-dec8cde84062",
+          "status": "pendente",
+          "data_prevista": "2030-12-10",
+          "data_pagamento": null,
+          "valor": "1900.00",
+          "created_at": "2026-01-15 22:04:06.609222+00",
+          "dist_dias": 0,
+          "acao": "cancelar"
+        },
+        {
+          "id": "ed95bc38-c7fa-439b-8da7-a49213747d37",
+          "status": "pendente",
+          "data_prevista": "2030-12-10",
+          "data_pagamento": null,
+          "valor": "2800.00",
+          "created_at": "2026-01-15 22:04:06.609222+00",
+          "dist_dias": 0,
+          "acao": "cancelar"
+        },
+        {
+          "id": "feea43a4-3738-45ad-b66e-e107d39b3ff1",
+          "status": "pago",
+          "data_prevista": "2025-12-10",
+          "data_pagamento": "2026-01-19",
+          "valor": "1300.00",
+          "created_at": "2026-01-15 22:04:06.609222+00",
+          "dist_dias": 1826,
+          "acao": "cancelar"
+        }
+      ],
+      "motivo_delicado": "perdedor_pago_em_outro_periodo"
+    },
+    {
+      "venda_id": "1d7772d4-ee1e-4d72-92ec-3e67460880cc",
+      "sienge_contract_id": "275",
+      "numero_contrato": "183",
+      "unidade": "803 D",
+      "cliente": "SAMUEL MUELLER LEMOS",
+      "cliente_cpf": "11319608906",
+      "cliente_telefone": "(47) 99660-0856",
+      "corretor": "RONAL RESMINI BALENA",
+      "corretor_telefone": "4830948119",
+      "valor_venda": "410443.77",
+      "valor_pro_soluto": "150850.00",
+      "billId": 178,
+      "numero_parcela": 1,
+      "sienge_due_atual": "2027-05-10",
+      "vencedor": {
+        "id": "b375a2e3-6635-4941-b124-ba7c23f419eb",
+        "status": "pendente",
+        "data_prevista": "2027-05-10",
+        "data_pagamento": null,
+        "valor": "1500.00",
+        "created_at": "2026-01-15 22:04:14.641258+00",
+        "dist_dias": 0
+      },
+      "perdedores": [
+        {
+          "id": "7a00436d-9a09-456a-ab29-cb55e21327a5",
+          "status": "pago",
+          "data_prevista": "2025-10-10",
+          "data_pagamento": "2025-10-10",
+          "valor": "2650.00",
+          "created_at": "2026-01-15 22:04:14.641258+00",
+          "dist_dias": 577,
+          "acao": "cancelar"
+        }
+      ],
+      "motivo_delicado": "perdedor_pago_em_outro_periodo"
+    },
+    {
+      "venda_id": "1d7772d4-ee1e-4d72-92ec-3e67460880cc",
+      "sienge_contract_id": "275",
+      "numero_contrato": "183",
+      "unidade": "803 D",
+      "cliente": "SAMUEL MUELLER LEMOS",
+      "cliente_cpf": "11319608906",
+      "cliente_telefone": "(47) 99660-0856",
+      "corretor": "RONAL RESMINI BALENA",
+      "corretor_telefone": "4830948119",
+      "valor_venda": "410443.77",
+      "valor_pro_soluto": "150850.00",
+      "billId": 178,
+      "numero_parcela": 4,
+      "sienge_due_atual": "2027-08-10",
+      "vencedor": {
+        "id": "199baa63-5706-4ecf-bf1d-7937845e0da8",
+        "status": "pendente",
+        "data_prevista": "2027-08-10",
+        "data_pagamento": null,
+        "valor": "1500.00",
+        "created_at": "2026-01-15 22:04:14.641258+00",
+        "dist_dias": 0
+      },
+      "perdedores": [
+        {
+          "id": "17221424-67e2-4b52-a93b-5c758c52ea10",
+          "status": "pago",
+          "data_prevista": "2026-01-10",
+          "data_pagamento": "2026-01-12",
+          "valor": "2650.00",
+          "created_at": "2026-01-15 22:04:14.641258+00",
+          "dist_dias": 577,
+          "acao": "cancelar"
+        }
+      ],
+      "motivo_delicado": "perdedor_pago_em_outro_periodo"
+    },
+    {
+      "venda_id": "1d7772d4-ee1e-4d72-92ec-3e67460880cc",
+      "sienge_contract_id": "275",
+      "numero_contrato": "183",
+      "unidade": "803 D",
+      "cliente": "SAMUEL MUELLER LEMOS",
+      "cliente_cpf": "11319608906",
+      "cliente_telefone": "(47) 99660-0856",
+      "corretor": "RONAL RESMINI BALENA",
+      "corretor_telefone": "4830948119",
+      "valor_venda": "410443.77",
+      "valor_pro_soluto": "150850.00",
+      "billId": 178,
+      "numero_parcela": 5,
+      "sienge_due_atual": "2027-09-10",
+      "vencedor": {
+        "id": "9960e98d-74bb-41cc-a31b-bb8fcd04e9e8",
+        "status": "pendente",
+        "data_prevista": "2027-09-10",
+        "data_pagamento": null,
+        "valor": "1500.00",
+        "created_at": "2026-01-15 22:04:14.641258+00",
+        "dist_dias": 0
+      },
+      "perdedores": [
+        {
+          "id": "0d277496-f5a1-45ea-a635-a6dfa5460ce8",
+          "status": "pago",
+          "data_prevista": "2026-02-10",
+          "data_pagamento": "2026-02-10",
+          "valor": "2650.00",
+          "created_at": "2026-01-15 22:04:14.641258+00",
+          "dist_dias": 577,
+          "acao": "cancelar"
+        }
+      ],
+      "motivo_delicado": "perdedor_pago_em_outro_periodo"
+    },
+    {
+      "venda_id": "37357039-b2ed-404a-b8f9-5162019eb51f",
+      "sienge_contract_id": "346",
+      "numero_contrato": "246",
+      "unidade": "508 A",
+      "cliente": "MICHEL CHRISTIAN BORBA",
+      "cliente_cpf": "09786118960",
+      "cliente_telefone": "(47)99713-2318",
+      "corretor": "CARLOS BRUNO NEGOCIOS IMOBILIARIOS LTDA",
+      "corretor_telefone": "4797071735",
+      "valor_venda": "295289.72",
+      "valor_pro_soluto": "62800.00",
+      "billId": 422,
+      "numero_parcela": 2,
+      "sienge_due_atual": "2026-05-10",
+      "vencedor": {
+        "id": "3fe24d3d-e074-41b7-93a2-6259c1eb7f51",
+        "status": "pago",
+        "data_prevista": "2026-01-10",
+        "data_pagamento": "2026-02-02",
+        "valor": "700.00",
+        "created_at": "2026-01-15 22:05:36.364044+00",
+        "dist_dias": 120
+      },
+      "perdedores": [
+        {
+          "id": "0595a8cf-968d-40a1-8ec5-dc06c8a9be1d",
+          "status": "pago",
+          "data_prevista": "2026-01-10",
+          "data_pagamento": "2026-01-06",
+          "valor": "700.00",
+          "created_at": "2026-01-15 22:05:36.364044+00",
+          "dist_dias": 120,
+          "acao": "cancelar"
+        }
+      ],
+      "motivo_delicado": "vencedor_nao_bate_sienge"
+    },
+    {
+      "venda_id": "37357039-b2ed-404a-b8f9-5162019eb51f",
+      "sienge_contract_id": "346",
+      "numero_contrato": "246",
+      "unidade": "508 A",
+      "cliente": "MICHEL CHRISTIAN BORBA",
+      "cliente_cpf": "09786118960",
+      "cliente_telefone": "(47)99713-2318",
+      "corretor": "CARLOS BRUNO NEGOCIOS IMOBILIARIOS LTDA",
+      "corretor_telefone": "4797071735",
+      "valor_venda": "295289.72",
+      "valor_pro_soluto": "62800.00",
+      "billId": 422,
+      "numero_parcela": 3,
+      "sienge_due_atual": "2026-06-10",
+      "vencedor": {
+        "id": "502e4c30-cd73-4528-87d7-da94e0cbaf0c",
+        "status": "pago",
+        "data_prevista": "2026-06-10",
+        "data_pagamento": "2026-02-06",
+        "valor": "1200.00",
+        "created_at": "2026-01-15 22:05:36.364044+00",
+        "dist_dias": 0
+      },
+      "perdedores": [
+        {
+          "id": "e89abb8e-0711-4856-8404-2873b2949da2",
+          "status": "pago",
+          "data_prevista": "2026-02-10",
+          "data_pagamento": "2026-02-06",
+          "valor": "700.00",
+          "created_at": "2026-01-15 22:05:36.364044+00",
+          "dist_dias": 120,
+          "acao": "cancelar"
+        }
+      ],
+      "motivo_delicado": "perdedor_pago_em_outro_periodo"
+    },
+    {
+      "venda_id": "cffb2c73-edb7-4127-8f74-18f382efbe78",
+      "sienge_contract_id": "351",
+      "numero_contrato": "249",
+      "unidade": "506 A",
+      "cliente": "LILIAM THAINE CARVALHO",
+      "cliente_cpf": "11043972935",
+      "cliente_telefone": "(47)99765-1106",
+      "corretor": "CARLOS BRUNO NEGOCIOS IMOBILIARIOS LTDA",
+      "corretor_telefone": "4797071735",
+      "valor_venda": "232413.12",
+      "valor_pro_soluto": "46482.63",
+      "billId": 418,
+      "numero_parcela": 1,
+      "sienge_due_atual": "2026-04-10",
+      "vencedor": {
+        "id": "0a0bc466-eab2-4153-9029-f8ebfdbf14cc",
+        "status": "pago",
+        "data_prevista": "2026-05-20",
+        "data_pagamento": "2026-03-26",
+        "valor": "500.00",
+        "created_at": "2026-01-15 22:05:40.13161+00",
+        "dist_dias": 40
+      },
+      "perdedores": [
+        {
+          "id": "5c6a89ec-ba1c-45af-ba34-f10825dc82a3",
+          "status": "pendente",
+          "data_prevista": "2026-05-20",
+          "data_pagamento": null,
+          "valor": "500.00",
+          "created_at": "2026-01-15 22:05:40.13161+00",
+          "dist_dias": 40,
+          "acao": "cancelar"
+        }
+      ],
+      "motivo_delicado": "vencedor_nao_bate_sienge"
+    },
+    {
+      "venda_id": "cffb2c73-edb7-4127-8f74-18f382efbe78",
+      "sienge_contract_id": "351",
+      "numero_contrato": "249",
+      "unidade": "506 A",
+      "cliente": "LILIAM THAINE CARVALHO",
+      "cliente_cpf": "11043972935",
+      "cliente_telefone": "(47)99765-1106",
+      "corretor": "CARLOS BRUNO NEGOCIOS IMOBILIARIOS LTDA",
+      "corretor_telefone": "4797071735",
+      "valor_venda": "232413.12",
+      "valor_pro_soluto": "46482.63",
+      "billId": 418,
+      "numero_parcela": 2,
+      "sienge_due_atual": "2026-05-10",
+      "vencedor": {
+        "id": "3979b42a-39d1-4e30-bafd-97c9288df1df",
+        "status": "pendente",
+        "data_prevista": "2026-06-20",
+        "data_pagamento": null,
+        "valor": "775.00",
+        "created_at": "2026-01-15 22:05:40.13161+00",
+        "dist_dias": 41
+      },
+      "perdedores": [
+        {
+          "id": "2426c7b3-3e28-4742-b65b-0c9b5a5840a9",
+          "status": "pago",
+          "data_prevista": "2026-01-20",
+          "data_pagamento": "2025-08-06",
+          "valor": "500.00",
+          "created_at": "2026-01-15 22:05:40.13161+00",
+          "dist_dias": 110,
+          "acao": "cancelar"
+        }
+      ],
+      "motivo_delicado": "vencedor_nao_bate_sienge"
+    },
+    {
+      "venda_id": "cffb2c73-edb7-4127-8f74-18f382efbe78",
+      "sienge_contract_id": "351",
+      "numero_contrato": "249",
+      "unidade": "506 A",
+      "cliente": "LILIAM THAINE CARVALHO",
+      "cliente_cpf": "11043972935",
+      "cliente_telefone": "(47)99765-1106",
+      "corretor": "CARLOS BRUNO NEGOCIOS IMOBILIARIOS LTDA",
+      "corretor_telefone": "4797071735",
+      "valor_venda": "232413.12",
+      "valor_pro_soluto": "46482.63",
+      "billId": 418,
+      "numero_parcela": 3,
+      "sienge_due_atual": "2026-06-10",
+      "vencedor": {
+        "id": "6d0ef07d-26a4-4690-b0c6-d6e7ce95106a",
+        "status": "pago",
+        "data_prevista": "2026-02-20",
+        "data_pagamento": "2025-09-01",
+        "valor": "500.00",
+        "created_at": "2026-01-15 22:05:40.13161+00",
+        "dist_dias": 110
+      },
+      "perdedores": [
+        {
+          "id": "fa268601-ed3f-414c-912a-f22ee57e809e",
+          "status": "pendente",
+          "data_prevista": "2026-02-20",
+          "data_pagamento": null,
+          "valor": "500.00",
+          "created_at": "2026-01-15 22:05:40.13161+00",
+          "dist_dias": 110,
+          "acao": "cancelar"
+        }
+      ],
+      "motivo_delicado": "vencedor_nao_bate_sienge"
+    },
+    {
+      "venda_id": "cffb2c73-edb7-4127-8f74-18f382efbe78",
+      "sienge_contract_id": "351",
+      "numero_contrato": "249",
+      "unidade": "506 A",
+      "cliente": "LILIAM THAINE CARVALHO",
+      "cliente_cpf": "11043972935",
+      "cliente_telefone": "(47)99765-1106",
+      "corretor": "CARLOS BRUNO NEGOCIOS IMOBILIARIOS LTDA",
+      "corretor_telefone": "4797071735",
+      "valor_venda": "232413.12",
+      "valor_pro_soluto": "46482.63",
+      "billId": 418,
+      "numero_parcela": 4,
+      "sienge_due_atual": "2026-07-10",
+      "vencedor": {
+        "id": "8cf05574-d2bf-4b2a-bf63-c11850bfb3a5",
+        "status": "pago",
+        "data_prevista": "2026-08-20",
+        "data_pagamento": "2025-09-01",
+        "valor": "500.00",
+        "created_at": "2026-01-15 22:05:40.13161+00",
+        "dist_dias": 41
+      },
+      "perdedores": [
+        {
+          "id": "ef650f69-36a5-41eb-b2c9-594bc4453d04",
+          "status": "pendente",
+          "data_prevista": "2026-08-20",
+          "data_pagamento": null,
+          "valor": "500.00",
+          "created_at": "2026-01-15 22:05:40.13161+00",
+          "dist_dias": 41,
+          "acao": "cancelar"
+        }
+      ],
+      "motivo_delicado": "vencedor_nao_bate_sienge"
+    },
+    {
+      "venda_id": "cffb2c73-edb7-4127-8f74-18f382efbe78",
+      "sienge_contract_id": "351",
+      "numero_contrato": "249",
+      "unidade": "506 A",
+      "cliente": "LILIAM THAINE CARVALHO",
+      "cliente_cpf": "11043972935",
+      "cliente_telefone": "(47)99765-1106",
+      "corretor": "CARLOS BRUNO NEGOCIOS IMOBILIARIOS LTDA",
+      "corretor_telefone": "4797071735",
+      "valor_venda": "232413.12",
+      "valor_pro_soluto": "46482.63",
+      "billId": 418,
+      "numero_parcela": 5,
+      "sienge_due_atual": "2026-04-20",
+      "vencedor": {
+        "id": "aad52246-f697-47ea-add7-8149b37c4f74",
+        "status": "pago",
+        "data_prevista": "2025-09-20",
+        "data_pagamento": "2025-09-22",
+        "valor": "500.00",
+        "created_at": "2026-01-15 22:05:40.13161+00",
+        "dist_dias": 212
+      },
+      "perdedores": [
+        {
+          "id": "bff736eb-343f-4293-861d-a3a38a0b6b97",
+          "status": "pendente",
+          "data_prevista": "2025-09-20",
+          "data_pagamento": null,
+          "valor": "500.00",
+          "created_at": "2026-01-15 22:05:40.13161+00",
+          "dist_dias": 212,
+          "acao": "cancelar"
+        }
+      ],
+      "motivo_delicado": "vencedor_nao_bate_sienge"
+    },
+    {
+      "venda_id": "cffb2c73-edb7-4127-8f74-18f382efbe78",
+      "sienge_contract_id": "351",
+      "numero_contrato": "249",
+      "unidade": "506 A",
+      "cliente": "LILIAM THAINE CARVALHO",
+      "cliente_cpf": "11043972935",
+      "cliente_telefone": "(47)99765-1106",
+      "corretor": "CARLOS BRUNO NEGOCIOS IMOBILIARIOS LTDA",
+      "corretor_telefone": "4797071735",
+      "valor_venda": "232413.12",
+      "valor_pro_soluto": "46482.63",
+      "billId": 418,
+      "numero_parcela": 6,
+      "sienge_due_atual": "2026-10-20",
+      "vencedor": {
+        "id": "908fe6b6-c0c5-411f-b0b7-9a81e05b6659",
+        "status": "pago",
+        "data_prevista": "2025-10-20",
+        "data_pagamento": "2025-10-22",
+        "valor": "500.00",
+        "created_at": "2026-01-15 22:05:40.13161+00",
+        "dist_dias": 365
+      },
+      "perdedores": [
+        {
+          "id": "b5879193-526d-4385-ad24-16ebbc0b8595",
+          "status": "pendente",
+          "data_prevista": "2025-10-20",
+          "data_pagamento": null,
+          "valor": "500.00",
+          "created_at": "2026-01-15 22:05:40.13161+00",
+          "dist_dias": 365,
+          "acao": "cancelar"
+        }
+      ],
+      "motivo_delicado": "vencedor_nao_bate_sienge"
+    },
+    {
+      "venda_id": "cffb2c73-edb7-4127-8f74-18f382efbe78",
+      "sienge_contract_id": "351",
+      "numero_contrato": "249",
+      "unidade": "506 A",
+      "cliente": "LILIAM THAINE CARVALHO",
+      "cliente_cpf": "11043972935",
+      "cliente_telefone": "(47)99765-1106",
+      "corretor": "CARLOS BRUNO NEGOCIOS IMOBILIARIOS LTDA",
+      "corretor_telefone": "4797071735",
+      "valor_venda": "232413.12",
+      "valor_pro_soluto": "46482.63",
+      "billId": 418,
+      "numero_parcela": 7,
+      "sienge_due_atual": "2026-11-20",
+      "vencedor": {
+        "id": "069a0d0b-42de-4974-a297-01ff4d31b73b",
+        "status": "pago",
+        "data_prevista": "2025-11-20",
+        "data_pagamento": "2025-11-21",
+        "valor": "500.00",
+        "created_at": "2026-01-15 22:05:40.13161+00",
+        "dist_dias": 365
+      },
+      "perdedores": [
+        {
+          "id": "ecac3d68-6af8-44b0-928c-d91a2c406e1b",
+          "status": "pendente",
+          "data_prevista": "2025-11-20",
+          "data_pagamento": null,
+          "valor": "500.00",
+          "created_at": "2026-01-15 22:05:40.13161+00",
+          "dist_dias": 365,
+          "acao": "cancelar"
+        }
+      ],
+      "motivo_delicado": "vencedor_nao_bate_sienge"
+    },
+    {
+      "venda_id": "cffb2c73-edb7-4127-8f74-18f382efbe78",
+      "sienge_contract_id": "351",
+      "numero_contrato": "249",
+      "unidade": "506 A",
+      "cliente": "LILIAM THAINE CARVALHO",
+      "cliente_cpf": "11043972935",
+      "cliente_telefone": "(47)99765-1106",
+      "corretor": "CARLOS BRUNO NEGOCIOS IMOBILIARIOS LTDA",
+      "corretor_telefone": "4797071735",
+      "valor_venda": "232413.12",
+      "valor_pro_soluto": "46482.63",
+      "billId": 418,
+      "numero_parcela": 8,
+      "sienge_due_atual": "2026-12-20",
+      "vencedor": {
+        "id": "715346c8-6fb2-4817-8951-b2866c829d81",
+        "status": "pendente",
+        "data_prevista": "2026-12-20",
+        "data_pagamento": null,
+        "valor": "775.00",
+        "created_at": "2026-01-15 22:05:40.13161+00",
+        "dist_dias": 0
+      },
+      "perdedores": [
+        {
+          "id": "5887a33d-c977-4107-b8b6-53339883a39a",
+          "status": "pago",
+          "data_prevista": "2025-12-20",
+          "data_pagamento": "2025-12-20",
+          "valor": "500.00",
+          "created_at": "2026-01-15 22:05:40.13161+00",
+          "dist_dias": 365,
+          "acao": "cancelar"
+        }
+      ],
+      "motivo_delicado": "perdedor_pago_em_outro_periodo"
+    },
+    {
+      "venda_id": "e476bbdb-88ce-464d-9238-ebbe6badb81b",
+      "sienge_contract_id": "382",
+      "numero_contrato": "268",
+      "unidade": "1305 A",
+      "cliente": "(sem cliente vinculado)",
+      "cliente_cpf": null,
+      "cliente_telefone": null,
+      "corretor": "MATEUS GABRIEL DE OLIVEIRA",
+      "corretor_telefone": "47999033809",
+      "valor_venda": "457103.88",
+      "valor_pro_soluto": "93143.41",
+      "billId": 454,
+      "numero_parcela": 1,
+      "sienge_due_atual": "2027-01-10",
+      "vencedor": {
+        "id": "d999a0e8-bc0c-4702-9190-9f2ee5ef1808",
+        "status": "pendente",
+        "data_prevista": "2027-01-10",
+        "data_pagamento": null,
+        "valor": "1723.01",
+        "created_at": "2026-04-22 14:17:49.502+00",
+        "dist_dias": 0
+      },
+      "perdedores": [
+        {
+          "id": "b2f9b97a-8fd2-4c05-ae6a-beea929e7748",
+          "status": "pago",
+          "data_prevista": "2026-02-10",
+          "data_pagamento": "2026-02-03",
+          "valor": "875.00",
+          "created_at": "2026-04-22 14:17:49.502+00",
+          "dist_dias": 334,
+          "acao": "cancelar"
+        }
+      ],
+      "motivo_delicado": "perdedor_pago_em_outro_periodo"
+    },
+    {
+      "venda_id": "c9e6358d-2aab-4743-8358-e7628f761350",
+      "sienge_contract_id": "87",
+      "numero_contrato": "40",
+      "unidade": "908 A",
+      "cliente": "LEANDRO DE OLIVEIRA VICENTIN",
+      "cliente_cpf": "18757055890",
+      "cliente_telefone": "(47)98420-3075",
+      "corretor": "CARLOS BRUNO NEGOCIOS IMOBILIARIOS LTDA",
+      "corretor_telefone": "4797071735",
+      "valor_venda": "418341.97",
+      "valor_pro_soluto": "83668.30",
+      "billId": 381,
+      "numero_parcela": 5,
+      "sienge_due_atual": "2026-06-20",
+      "vencedor": {
+        "id": "b4e3480f-e28c-4a45-ac0f-ba2e063072fd",
+        "status": "pago",
+        "data_prevista": "2025-10-20",
+        "data_pagamento": "2025-10-06",
+        "valor": "1000.00",
+        "created_at": "2026-01-16 11:59:56.45806+00",
+        "dist_dias": 243
+      },
+      "perdedores": [
+        {
+          "id": "e3d17880-33dd-40c3-bfc6-edd454eb4bf3",
+          "status": "pendente",
+          "data_prevista": "2025-10-20",
+          "data_pagamento": null,
+          "valor": "1000.00",
+          "created_at": "2026-01-16 11:59:56.45806+00",
+          "dist_dias": 243,
+          "acao": "cancelar"
+        }
+      ],
+      "motivo_delicado": "vencedor_nao_bate_sienge"
+    },
+    {
+      "venda_id": "c9e6358d-2aab-4743-8358-e7628f761350",
+      "sienge_contract_id": "87",
+      "numero_contrato": "40",
+      "unidade": "908 A",
+      "cliente": "LEANDRO DE OLIVEIRA VICENTIN",
+      "cliente_cpf": "18757055890",
+      "cliente_telefone": "(47)98420-3075",
+      "corretor": "CARLOS BRUNO NEGOCIOS IMOBILIARIOS LTDA",
+      "corretor_telefone": "4797071735",
+      "valor_venda": "418341.97",
+      "valor_pro_soluto": "83668.30",
+      "billId": 381,
+      "numero_parcela": 7,
+      "sienge_due_atual": "2026-08-20",
+      "vencedor": {
+        "id": "11379464-ce56-45ea-a50a-8453d940a08f",
+        "status": "pago",
+        "data_prevista": "2025-12-20",
+        "data_pagamento": "2025-12-01",
+        "valor": "1000.00",
+        "created_at": "2026-01-16 11:59:56.45806+00",
+        "dist_dias": 243
+      },
+      "perdedores": [
+        {
+          "id": "f916ad4b-0155-4346-8210-31ddb762d250",
+          "status": "pendente",
+          "data_prevista": "2025-12-20",
+          "data_pagamento": null,
+          "valor": "1000.00",
+          "created_at": "2026-01-16 11:59:56.45806+00",
+          "dist_dias": 243,
+          "acao": "cancelar"
+        }
+      ],
+      "motivo_delicado": "vencedor_nao_bate_sienge"
+    }
+  ]
+}

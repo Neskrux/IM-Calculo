@@ -1,0 +1,28 @@
+Valor comissão da IM 
+O percentual médio total de comissão no Figueira Garcia é de 7% sobre o 
+valor total da venda. Contudo, os valores das comissões serão pagos no fluxo de 
+pro soluto do comprador. Neste casso o pro soluto compreende os seguintes 
+(sinal+parcela+balão).  
+Dentro do percentual de comissões existe uma divisão de valores, como 
+segue:  
+COMISSÃO  
+7% 
+CORRETOR 4,00% 
+DIRETOR 0,50% 
+NOHROS 0,50% 
+FERRETI 1,00% 
+BETON 0,50% 
+PROMOTORA 
+0,50% 
+Como estes valores serão pagos no fluxo de pro soluto temos que fazer uma 
+proporcionalidade nos recebimentos das comissões, pois elas serão pagas 
+mensalmente ao longo do empreendimento.  
+A lógica é dividir o Vcom (Valor da Comissão) pelo Vsoluto (valor do pro 
+soluto), assim isso gera um Fcom (fator de comissão mensal). Este fator é aplicado 
+a cada recebimento do pro soluto. Para facilitar segue a fórmula: 
+Vcom 
+dividido
+Vsoluto
+=   Fcom 
+Logo, para o cálculo da comissão mensal é usar o valor do pro soluto pago 
+no mês, sendo parcela ou sinal ou balão, e multiplicar pelo fator da comissão. 

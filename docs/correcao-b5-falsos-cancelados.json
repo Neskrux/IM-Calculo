@@ -1,0 +1,191 @@
+{
+  "meta": {
+    "geradoEm": "2026-04-24T17:53:53.155Z",
+    "totalAlvos": 281,
+    "bucketA": 232,
+    "bucketB": 49,
+    "acao": "UPDATE status=pendente (e data_prevista=dueDate Sienge quando diverge). Pre-condicao: status atual=cancelado (guard no filtro da query)."
+  },
+  "counts": {
+    "updated": 281,
+    "falhas_http": 0,
+    "skip_estado_mudou": 0
+  },
+  "falhas": [],
+  "amostraUpdates": [
+    {
+      "bucket": "A",
+      "id": "dbe2d5a0-cad1-4400-9234-7c73d78eb06f",
+      "tipo": "parcela_entrada",
+      "numero_parcela": 13,
+      "status_novo": "pendente"
+    },
+    {
+      "bucket": "A",
+      "id": "575aaf28-9913-473d-b88e-395aca5f1623",
+      "tipo": "parcela_entrada",
+      "numero_parcela": 8,
+      "status_novo": "pendente"
+    },
+    {
+      "bucket": "A",
+      "id": "009a2868-41ae-40ca-a8db-7032c9485fb6",
+      "tipo": "parcela_entrada",
+      "numero_parcela": 50,
+      "status_novo": "pendente"
+    },
+    {
+      "bucket": "B",
+      "id": "92d8bbee-776f-4912-91ca-8e86a1d7626f",
+      "tipo": "parcela_entrada",
+      "numero_parcela": 10,
+      "status_novo": "pendente",
+      "data_prevista_nova": "2026-04-10",
+      "data_prevista_antiga": "2026-04-20"
+    },
+    {
+      "bucket": "B",
+      "id": "e265a1f5-955d-4081-97b3-6262d2013023",
+      "tipo": "parcela_entrada",
+      "numero_parcela": 11,
+      "status_novo": "pendente",
+      "data_prevista_nova": "2026-05-10",
+      "data_prevista_antiga": "2026-05-20"
+    },
+    {
+      "bucket": "B",
+      "id": "f02264fc-6937-4746-9838-afc499b49317",
+      "tipo": "parcela_entrada",
+      "numero_parcela": 12,
+      "status_novo": "pendente",
+      "data_prevista_nova": "2026-06-10",
+      "data_prevista_antiga": "2026-06-20"
+    },
+    {
+      "bucket": "B",
+      "id": "74cf854d-3cc7-48c0-acec-61ec44449f08",
+      "tipo": "parcela_entrada",
+      "numero_parcela": 13,
+      "status_novo": "pendente",
+      "data_prevista_nova": "2026-07-10",
+      "data_prevista_antiga": "2026-07-20"
+    },
+    {
+      "bucket": "B",
+      "id": "1a065836-214c-4e0b-9d4e-50189064c099",
+      "tipo": "parcela_entrada",
+      "numero_parcela": 14,
+      "status_novo": "pendente",
+      "data_prevista_nova": "2026-08-10",
+      "data_prevista_antiga": "2026-08-20"
+    },
+    {
+      "bucket": "B",
+      "id": "a5e661d7-d90d-49c0-b5fc-a57e5fe6532b",
+      "tipo": "parcela_entrada",
+      "numero_parcela": 15,
+      "status_novo": "pendente",
+      "data_prevista_nova": "2026-09-10",
+      "data_prevista_antiga": "2026-09-20"
+    },
+    {
+      "bucket": "B",
+      "id": "cd88d400-814c-4784-b63b-1d07c519c194",
+      "tipo": "parcela_entrada",
+      "numero_parcela": 16,
+      "status_novo": "pendente",
+      "data_prevista_nova": "2026-10-10",
+      "data_prevista_antiga": "2026-10-20"
+    },
+    {
+      "bucket": "B",
+      "id": "f74afe43-a1c2-4b5a-ba97-6e92ffef93d4",
+      "tipo": "parcela_entrada",
+      "numero_parcela": 17,
+      "status_novo": "pendente",
+      "data_prevista_nova": "2026-11-10",
+      "data_prevista_antiga": "2026-11-20"
+    },
+    {
+      "bucket": "B",
+      "id": "dac143df-29f4-43ea-8c11-597df9c45bf6",
+      "tipo": "parcela_entrada",
+      "numero_parcela": 18,
+      "status_novo": "pendente",
+      "data_prevista_nova": "2026-12-10",
+      "data_prevista_antiga": "2026-12-20"
+    },
+    {
+      "bucket": "B",
+      "id": "45c3da19-28d3-4fc6-9c0a-e2f11edc6cc8",
+      "tipo": "parcela_entrada",
+      "numero_parcela": 19,
+      "status_novo": "pendente",
+      "data_prevista_nova": "2027-01-10",
+      "data_prevista_antiga": "2027-01-20"
+    },
+    {
+      "bucket": "B",
+      "id": "fdb0c29a-c881-466f-9f0d-89a232b77aed",
+      "tipo": "parcela_entrada",
+      "numero_parcela": 20,
+      "status_novo": "pendente",
+      "data_prevista_nova": "2027-02-10",
+      "data_prevista_antiga": "2027-02-20"
+    },
+    {
+      "bucket": "B",
+      "id": "6a940a88-0054-4d60-989c-82c036df259f",
+      "tipo": "parcela_entrada",
+      "numero_parcela": 21,
+      "status_novo": "pendente",
+      "data_prevista_nova": "2027-03-10",
+      "data_prevista_antiga": "2027-03-20"
+    },
+    {
+      "bucket": "B",
+      "id": "14e1585f-0f48-4793-b1bd-753da1553757",
+      "tipo": "parcela_entrada",
+      "numero_parcela": 22,
+      "status_novo": "pendente",
+      "data_prevista_nova": "2027-04-10",
+      "data_prevista_antiga": "2027-04-20"
+    },
+    {
+      "bucket": "B",
+      "id": "c8e18982-55b3-48ec-9fba-054a92771e2e",
+      "tipo": "parcela_entrada",
+      "numero_parcela": 23,
+      "status_novo": "pendente",
+      "data_prevista_nova": "2027-05-10",
+      "data_prevista_antiga": "2027-05-20"
+    },
+    {
+      "bucket": "B",
+      "id": "6a0d5487-3782-40c0-a4c8-4e18136cb5fb",
+      "tipo": "parcela_entrada",
+      "numero_parcela": 24,
+      "status_novo": "pendente",
+      "data_prevista_nova": "2027-06-10",
+      "data_prevista_antiga": "2027-06-20"
+    },
+    {
+      "bucket": "B",
+      "id": "e15f22f0-b424-463c-9f37-411f191089c5",
+      "tipo": "parcela_entrada",
+      "numero_parcela": 25,
+      "status_novo": "pendente",
+      "data_prevista_nova": "2027-07-10",
+      "data_prevista_antiga": "2027-07-20"
+    },
+    {
+      "bucket": "B",
+      "id": "32d5a68f-a498-468f-b592-dbb8ce1ab207",
+      "tipo": "parcela_entrada",
+      "numero_parcela": 26,
+      "status_novo": "pendente",
+      "data_prevista_nova": "2027-08-10",
+      "data_prevista_antiga": "2027-08-20"
+    }
+  ]
+}

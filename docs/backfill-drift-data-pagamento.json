@@ -1,0 +1,312 @@
+{
+  "meta": {
+    "geradoEm": "2026-04-23T20:52:36.814Z",
+    "total": 38
+  },
+  "rows": [
+    {
+      "pagamento_id": "5c2a8800-1708-4170-845b-c2bd9441760b",
+      "data_pagamento_local": "2026-02-27",
+      "data_pagamento_sienge": "2026-03-13",
+      "dDias": 14,
+      "_billId": 8,
+      "_numeroParcela": 1
+    },
+    {
+      "pagamento_id": "1c96c993-331c-43f7-a340-6e7e244dbbcf",
+      "data_pagamento_local": "2025-08-27",
+      "data_pagamento_sienge": "2025-12-29",
+      "dDias": 124,
+      "_billId": 143,
+      "_numeroParcela": 1
+    },
+    {
+      "pagamento_id": "38a31eac-31b6-4983-823d-fc50c6c5d068",
+      "data_pagamento_local": "2025-09-05",
+      "data_pagamento_sienge": "2025-12-29",
+      "dDias": 115,
+      "_billId": 143,
+      "_numeroParcela": 2
+    },
+    {
+      "pagamento_id": "50abac0a-83f5-4805-ac59-364f31d4d79a",
+      "data_pagamento_local": "2025-09-05",
+      "data_pagamento_sienge": "2025-12-29",
+      "dDias": 115,
+      "_billId": 143,
+      "_numeroParcela": 3
+    },
+    {
+      "pagamento_id": "30d6cafa-c29d-4a48-be9e-167a58d8788d",
+      "data_pagamento_local": "2025-11-24",
+      "data_pagamento_sienge": "2025-07-28",
+      "dDias": 119,
+      "_billId": 146,
+      "_numeroParcela": 1
+    },
+    {
+      "pagamento_id": "486a164e-05b3-4d74-8d93-46dda9785dd2",
+      "data_pagamento_local": "2026-02-23",
+      "data_pagamento_sienge": "2025-11-06",
+      "dDias": 109,
+      "_billId": 146,
+      "_numeroParcela": 4
+    },
+    {
+      "pagamento_id": "ab621c00-1aeb-4141-bc23-0fd644f50f6b",
+      "data_pagamento_local": "2025-08-20",
+      "data_pagamento_sienge": "2025-11-24",
+      "dDias": 96,
+      "_billId": 146,
+      "_numeroParcela": 2
+    },
+    {
+      "pagamento_id": "19e0fd03-43c2-493d-ab03-cd769261e078",
+      "data_pagamento_local": "2025-09-18",
+      "data_pagamento_sienge": "2026-01-21",
+      "dDias": 125,
+      "_billId": 146,
+      "_numeroParcela": 3
+    },
+    {
+      "pagamento_id": "46c6b6b3-384b-45f5-9304-7f2e695637cb",
+      "data_pagamento_local": "2025-10-20",
+      "data_pagamento_sienge": "2026-03-20",
+      "dDias": 151,
+      "_billId": 226,
+      "_numeroParcela": 1
+    },
+    {
+      "pagamento_id": "6e5bbe8b-9876-4c33-baf7-d5d9d150df49",
+      "data_pagamento_local": "2025-11-19",
+      "data_pagamento_sienge": "2026-04-20",
+      "dDias": 152,
+      "_billId": 226,
+      "_numeroParcela": 2
+    },
+    {
+      "pagamento_id": "28995b60-7469-40f6-9531-08e6aeb3473d",
+      "data_pagamento_local": "2025-10-20",
+      "data_pagamento_sienge": "2025-06-21",
+      "dDias": 121,
+      "_billId": 235,
+      "_numeroParcela": 1
+    },
+    {
+      "pagamento_id": "144128fb-352f-4471-9f75-90af259b0942",
+      "data_pagamento_local": "2025-11-21",
+      "data_pagamento_sienge": "2025-06-21",
+      "dDias": 153,
+      "_billId": 235,
+      "_numeroParcela": 2
+    },
+    {
+      "pagamento_id": "0125c10a-a31d-4402-b746-68fa88e0a83a",
+      "data_pagamento_local": "2025-08-20",
+      "data_pagamento_sienge": "2025-12-22",
+      "dDias": 124,
+      "_billId": 235,
+      "_numeroParcela": 3
+    },
+    {
+      "pagamento_id": "14f0a657-dfba-46f2-935f-4e55d3366429",
+      "data_pagamento_local": "2025-09-22",
+      "data_pagamento_sienge": "2026-01-19",
+      "dDias": 119,
+      "_billId": 235,
+      "_numeroParcela": 4
+    },
+    {
+      "pagamento_id": "08e5d409-00c6-43f4-b2a3-77aaa902c632",
+      "data_pagamento_local": "2026-02-09",
+      "data_pagamento_sienge": "2025-11-21",
+      "dDias": 80,
+      "_billId": 240,
+      "_numeroParcela": 2
+    },
+    {
+      "pagamento_id": "625bc9bb-1c57-4ad0-b5b9-c88a6230806c",
+      "data_pagamento_local": "2025-11-11",
+      "data_pagamento_sienge": "2026-01-20",
+      "dDias": 70,
+      "_billId": 240,
+      "_numeroParcela": 1
+    },
+    {
+      "pagamento_id": "2eec3d3e-d868-4700-8893-8be8ad73f778",
+      "data_pagamento_local": "2026-01-13",
+      "data_pagamento_sienge": "2026-03-05",
+      "dDias": 51,
+      "_billId": 240,
+      "_numeroParcela": 3
+    },
+    {
+      "pagamento_id": "b358e194-ec12-4e0c-9b83-28250c7dc742",
+      "data_pagamento_local": "2026-02-10",
+      "data_pagamento_sienge": "2025-07-22",
+      "dDias": 203,
+      "_billId": 246,
+      "_numeroParcela": 1
+    },
+    {
+      "pagamento_id": "88da941d-a580-447d-acc9-b0b00fe591f2",
+      "data_pagamento_local": "2026-01-12",
+      "data_pagamento_sienge": "2026-02-11",
+      "dDias": 30,
+      "_billId": 246,
+      "_numeroParcela": 2
+    },
+    {
+      "pagamento_id": "bf1ed368-c020-4063-a0cc-659c05e50a14",
+      "data_pagamento_local": "2026-01-12",
+      "data_pagamento_sienge": "2026-04-02",
+      "dDias": 80,
+      "_billId": 246,
+      "_numeroParcela": 3
+    },
+    {
+      "pagamento_id": "4e3fb34c-f55e-4354-9194-9e63cd4a1a59",
+      "data_pagamento_local": "2026-01-19",
+      "data_pagamento_sienge": "2025-07-18",
+      "dDias": 185,
+      "_billId": 268,
+      "_numeroParcela": 1
+    },
+    {
+      "pagamento_id": "7c2d0087-ff0e-470d-84b2-208bc1b4a65c",
+      "data_pagamento_local": "2026-04-20",
+      "data_pagamento_sienge": "2025-10-13",
+      "dDias": 189,
+      "_billId": 268,
+      "_numeroParcela": 4
+    },
+    {
+      "pagamento_id": "b8a11dfc-cf1a-4b8a-a428-235d1d9c2ffb",
+      "data_pagamento_local": "2025-08-20",
+      "data_pagamento_sienge": "2026-02-19",
+      "dDias": 183,
+      "_billId": 268,
+      "_numeroParcela": 2
+    },
+    {
+      "pagamento_id": "6970cb43-5901-43f1-a30f-b6439ce87814",
+      "data_pagamento_local": "2025-09-19",
+      "data_pagamento_sienge": "2026-03-20",
+      "dDias": 182,
+      "_billId": 268,
+      "_numeroParcela": 3
+    },
+    {
+      "pagamento_id": "1e222d1e-794e-4cee-8eda-e48afc36e191",
+      "data_pagamento_local": "2026-01-13",
+      "data_pagamento_sienge": "2025-08-11",
+      "dDias": 155,
+      "_billId": 276,
+      "_numeroParcela": 1
+    },
+    {
+      "pagamento_id": "1e485197-9c74-4d35-8926-6c40507c686c",
+      "data_pagamento_local": "2026-01-21",
+      "data_pagamento_sienge": "2025-09-01",
+      "dDias": 142,
+      "_billId": 276,
+      "_numeroParcela": 2
+    },
+    {
+      "pagamento_id": "4481a544-c09c-4578-be6e-946e7986dc77",
+      "data_pagamento_local": "2026-03-04",
+      "data_pagamento_sienge": "2025-10-01",
+      "dDias": 154,
+      "_billId": 276,
+      "_numeroParcela": 3
+    },
+    {
+      "pagamento_id": "2fb61463-67e3-4abe-9bf5-721abc9ca7da",
+      "data_pagamento_local": "2025-11-03",
+      "data_pagamento_sienge": "2026-04-07",
+      "dDias": 155,
+      "_billId": 276,
+      "_numeroParcela": 4
+    },
+    {
+      "pagamento_id": "62aa05d7-38fe-446a-8c9d-2ab62ef5d311",
+      "data_pagamento_local": "2026-02-03",
+      "data_pagamento_sienge": "2025-06-20",
+      "dDias": 228,
+      "_billId": 381,
+      "_numeroParcela": 1
+    },
+    {
+      "pagamento_id": "62aa05d7-38fe-446a-8c9d-2ab62ef5d311",
+      "data_pagamento_local": "2026-02-03",
+      "data_pagamento_sienge": "2026-01-13",
+      "dDias": 21,
+      "_billId": 381,
+      "_numeroParcela": 1
+    },
+    {
+      "pagamento_id": "865aa881-a691-41a1-92c6-b6aa3113bc20",
+      "data_pagamento_local": "2025-07-20",
+      "data_pagamento_sienge": "2026-03-03",
+      "dDias": 226,
+      "_billId": 381,
+      "_numeroParcela": 2
+    },
+    {
+      "pagamento_id": "844eaa70-2c4c-4957-9abb-7087d44d3f12",
+      "data_pagamento_local": "2025-08-10",
+      "data_pagamento_sienge": "2026-04-09",
+      "dDias": 242,
+      "_billId": 381,
+      "_numeroParcela": 3
+    },
+    {
+      "pagamento_id": "0a0bc466-eab2-4153-9029-f8ebfdbf14cc",
+      "data_pagamento_local": "2026-03-26",
+      "data_pagamento_sienge": "2025-08-06",
+      "dDias": 232,
+      "_billId": 418,
+      "_numeroParcela": 1
+    },
+    {
+      "pagamento_id": "2426c7b3-3e28-4742-b65b-0c9b5a5840a9",
+      "data_pagamento_local": "2025-08-06",
+      "data_pagamento_sienge": "2026-03-26",
+      "dDias": 232,
+      "_billId": 418,
+      "_numeroParcela": 2
+    },
+    {
+      "pagamento_id": "6d0ef07d-26a4-4690-b0c6-d6e7ce95106a",
+      "data_pagamento_local": "2025-09-01",
+      "data_pagamento_sienge": "2026-03-26",
+      "dDias": 206,
+      "_billId": 418,
+      "_numeroParcela": 3
+    },
+    {
+      "pagamento_id": "8cf05574-d2bf-4b2a-bf63-c11850bfb3a5",
+      "data_pagamento_local": "2025-09-01",
+      "data_pagamento_sienge": "2026-03-26",
+      "dDias": 206,
+      "_billId": 418,
+      "_numeroParcela": 4
+    },
+    {
+      "pagamento_id": "0a0bc466-eab2-4153-9029-f8ebfdbf14cc",
+      "data_pagamento_local": "2026-03-26",
+      "data_pagamento_sienge": "2026-04-09",
+      "dDias": 14,
+      "_billId": 418,
+      "_numeroParcela": 1
+    },
+    {
+      "pagamento_id": "045d5d72-ac21-43dc-9914-c31510f14abe",
+      "data_pagamento_local": "2026-04-06",
+      "data_pagamento_sienge": "2025-12-10",
+      "dDias": 117,
+      "_billId": 422,
+      "_numeroParcela": 1
+    }
+  ]
+}

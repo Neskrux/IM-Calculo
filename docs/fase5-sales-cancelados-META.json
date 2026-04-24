@@ -1,0 +1,19 @@
+{
+  "geradoEm": "2026-04-24T12:38:27.663Z",
+  "query": {
+    "enterpriseId": 2104,
+    "situation": "CANCELED",
+    "createdAfter": "2015-01-01",
+    "createdBefore": "2026-04-24",
+    "companyId": 5
+  },
+  "url": "https://api.sienge.com.br/imincorporadora/public/api/bulk-data/v1/sales?enterpriseId=2104&situation=CANCELED&createdAfter=2015-01-01&createdBefore=2026-04-24&companyId=5",
+  "status": 200,
+  "elapsedHeadersMs": 943,
+  "elapsedBodyMs": 135,
+  "totalElapsedMs": 1081,
+  "rateLimit": "7",
+  "retryAfter": null,
+  "contentLength": null,
+  "bytes": 65714
+}

@@ -1,0 +1,1346 @@
+{
+  "meta": {
+    "geradoEm": "2026-04-24T12:42:09.910Z",
+    "source": {
+      "bulkD": "docs/fase5-universo-dueDate-RAW.json",
+      "bulkCancelados": "docs/fase5-sales-cancelados-RAW.json"
+    },
+    "counts": {
+      "bulkD_rows": 17360,
+      "bulkD_indexed": 16353,
+      "cancelados_bulk": 31,
+      "cancelados_local_match": 31,
+      "vendas_local_bridge": 299,
+      "pagamentos_local": 18558,
+      "matched_em_D": 14925,
+      "drift_data_prevista": 785,
+      "plano_cancelados": 297,
+      "orfaos_pendente_sem_match": 147
+    }
+  },
+  "rows": [
+    {
+      "pagamento_id": "00e2f39c-d15a-4d06-a320-c55c25e2f7f7",
+      "venda_id": "e3bd5695-27ce-436b-a578-ce1bfac3d7aa",
+      "sienge_contract_id": "340",
+      "sienge_receivable_bill_id": 410,
+      "numero_parcela": 60,
+      "tipo": "parcela_entrada",
+      "data_prevista_atual": "2030-05-26"
+    },
+    {
+      "pagamento_id": "018d910b-36d0-4bb1-919d-d75e3a57920f",
+      "venda_id": "943b164d-ff42-45ce-90e0-80b481637f82",
+      "sienge_contract_id": "236",
+      "sienge_receivable_bill_id": 261,
+      "numero_parcela": 28,
+      "tipo": "parcela_entrada",
+      "data_prevista_atual": "2027-08-20"
+    },
+    {
+      "pagamento_id": "04c532cf-50f3-4f61-b1b1-02c3404012f6",
+      "venda_id": "30d53f3b-3306-41b4-a817-70de77ac3aff",
+      "sienge_contract_id": "191",
+      "sienge_receivable_bill_id": 243,
+      "numero_parcela": null,
+      "tipo": "bens",
+      "data_prevista_atual": "2025-05-28"
+    },
+    {
+      "pagamento_id": "053e0ccc-85e2-4aec-8f8c-1475f19e1c08",
+      "venda_id": "943b164d-ff42-45ce-90e0-80b481637f82",
+      "sienge_contract_id": "236",
+      "sienge_receivable_bill_id": 261,
+      "numero_parcela": 35,
+      "tipo": "parcela_entrada",
+      "data_prevista_atual": "2028-03-20"
+    },
+    {
+      "pagamento_id": "059c81c1-1417-4ee0-bcc9-56c47f075074",
+      "venda_id": "943b164d-ff42-45ce-90e0-80b481637f82",
+      "sienge_contract_id": "236",
+      "sienge_receivable_bill_id": 261,
+      "numero_parcela": 21,
+      "tipo": "parcela_entrada",
+      "data_prevista_atual": "2027-01-20"
+    },
+    {
+      "pagamento_id": "06c8a066-e11e-4e43-bd43-14f555716329",
+      "venda_id": "943b164d-ff42-45ce-90e0-80b481637f82",
+      "sienge_contract_id": "236",
+      "sienge_receivable_bill_id": 261,
+      "numero_parcela": 52,
+      "tipo": "parcela_entrada",
+      "data_prevista_atual": "2029-08-20"
+    },
+    {
+      "pagamento_id": "09a74b08-820e-4dcb-9023-d51d823119c1",
+      "venda_id": "45ea6703-2e75-4c9a-a572-27710936f03b",
+      "sienge_contract_id": "138",
+      "sienge_receivable_bill_id": 253,
+      "numero_parcela": null,
+      "tipo": "sinal",
+      "data_prevista_atual": "2025-07-02"
+    },
+    {
+      "pagamento_id": "09aeb550-332b-4725-a4e0-ca7bb3413be6",
+      "venda_id": "c9c377ab-05a4-4e3a-bb67-afa69af8ef98",
+      "sienge_contract_id": "15",
+      "sienge_receivable_bill_id": 367,
+      "numero_parcela": null,
+      "tipo": "sinal",
+      "data_prevista_atual": "2025-06-11"
+    },
+    {
+      "pagamento_id": "0bbf1db0-8a8f-47e3-b7cd-47013c528afb",
+      "venda_id": "943b164d-ff42-45ce-90e0-80b481637f82",
+      "sienge_contract_id": "236",
+      "sienge_receivable_bill_id": 261,
+      "numero_parcela": 24,
+      "tipo": "parcela_entrada",
+      "data_prevista_atual": "2027-04-20"
+    },
+    {
+      "pagamento_id": "0e24ed02-2258-47a2-b7a5-e6549f9bc9e3",
+      "venda_id": "bf92e73a-edce-4a19-a32a-02c7ed296f6d",
+      "sienge_contract_id": "381",
+      "sienge_receivable_bill_id": 453,
+      "numero_parcela": null,
+      "tipo": "sinal",
+      "data_prevista_atual": "2026-01-20"
+    },
+    {
+      "pagamento_id": "0fbab162-538f-414e-87c1-ae123d47eb16",
+      "venda_id": "d2847ce1-bc8f-4eb6-a95f-3bc1cab122d5",
+      "sienge_contract_id": "2",
+      "sienge_receivable_bill_id": 1,
+      "numero_parcela": null,
+      "tipo": "sinal",
+      "data_prevista_atual": "2025-07-16"
+    },
+    {
+      "pagamento_id": "1487216c-6352-40bd-a38f-54b6291fab58",
+      "venda_id": "943b164d-ff42-45ce-90e0-80b481637f82",
+      "sienge_contract_id": "236",
+      "sienge_receivable_bill_id": 261,
+      "numero_parcela": 27,
+      "tipo": "parcela_entrada",
+      "data_prevista_atual": "2027-07-20"
+    },
+    {
+      "pagamento_id": "17a745dc-3c58-4705-9b7d-f22d7b06f21d",
+      "venda_id": "63e2a133-4299-4429-9962-93e07db09494",
+      "sienge_contract_id": "375",
+      "sienge_receivable_bill_id": 445,
+      "numero_parcela": null,
+      "tipo": "sinal",
+      "data_prevista_atual": "2026-01-13"
+    },
+    {
+      "pagamento_id": "17fe8722-5b19-48d5-ad89-a93b78145478",
+      "venda_id": "e476bbdb-88ce-464d-9238-ebbe6badb81b",
+      "sienge_contract_id": "382",
+      "sienge_receivable_bill_id": 454,
+      "numero_parcela": null,
+      "tipo": "sinal",
+      "data_prevista_atual": "2026-01-16"
+    },
+    {
+      "pagamento_id": "181450ac-165b-43d3-8d21-8e8b850a8c96",
+      "venda_id": "943b164d-ff42-45ce-90e0-80b481637f82",
+      "sienge_contract_id": "236",
+      "sienge_receivable_bill_id": 261,
+      "numero_parcela": 4,
+      "tipo": "parcela_entrada",
+      "data_prevista_atual": "2025-08-20"
+    },
+    {
+      "pagamento_id": "199ace0b-1e15-4ec5-b0bf-8bfb2a6e6d32",
+      "venda_id": "e3bd5695-27ce-436b-a578-ce1bfac3d7aa",
+      "sienge_contract_id": "340",
+      "sienge_receivable_bill_id": 410,
+      "numero_parcela": 56,
+      "tipo": "parcela_entrada",
+      "data_prevista_atual": "2030-01-26"
+    },
+    {
+      "pagamento_id": "1aed8545-d49a-4eeb-b650-d55bea17d1a6",
+      "venda_id": "69833968-ed1a-4988-9a38-fa28a3c29512",
+      "sienge_contract_id": "5",
+      "sienge_receivable_bill_id": 286,
+      "numero_parcela": null,
+      "tipo": "sinal",
+      "data_prevista_atual": "2025-08-18"
+    },
+    {
+      "pagamento_id": "1bd49268-8d6a-446c-b649-4274f59556cc",
+      "venda_id": "943b164d-ff42-45ce-90e0-80b481637f82",
+      "sienge_contract_id": "236",
+      "sienge_receivable_bill_id": 261,
+      "numero_parcela": 41,
+      "tipo": "parcela_entrada",
+      "data_prevista_atual": "2028-09-20"
+    },
+    {
+      "pagamento_id": "1d8cd30e-3469-4e5d-b74f-774df7a98635",
+      "venda_id": "943b164d-ff42-45ce-90e0-80b481637f82",
+      "sienge_contract_id": "236",
+      "sienge_receivable_bill_id": 261,
+      "numero_parcela": 30,
+      "tipo": "parcela_entrada",
+      "data_prevista_atual": "2027-10-20"
+    },
+    {
+      "pagamento_id": "1e408cbe-dd06-4216-bec8-7d860e911e32",
+      "venda_id": "943b164d-ff42-45ce-90e0-80b481637f82",
+      "sienge_contract_id": "236",
+      "sienge_receivable_bill_id": 261,
+      "numero_parcela": 59,
+      "tipo": "parcela_entrada",
+      "data_prevista_atual": "2030-03-20"
+    },
+    {
+      "pagamento_id": "259785cf-f9eb-4032-abb9-5377eec6635f",
+      "venda_id": "943b164d-ff42-45ce-90e0-80b481637f82",
+      "sienge_contract_id": "236",
+      "sienge_receivable_bill_id": 261,
+      "numero_parcela": 17,
+      "tipo": "parcela_entrada",
+      "data_prevista_atual": "2026-09-20"
+    },
+    {
+      "pagamento_id": "26d725dc-d443-4909-8945-255487cc9d00",
+      "venda_id": "92142995-ce7f-4cb6-b5eb-d56e7949c72b",
+      "sienge_contract_id": "333",
+      "sienge_receivable_bill_id": 398,
+      "numero_parcela": null,
+      "tipo": "sinal",
+      "data_prevista_atual": "2025-11-21"
+    },
+    {
+      "pagamento_id": "279993c3-ce88-4510-8d86-5f4e99d702f6",
+      "venda_id": "943b164d-ff42-45ce-90e0-80b481637f82",
+      "sienge_contract_id": "236",
+      "sienge_receivable_bill_id": 261,
+      "numero_parcela": 44,
+      "tipo": "parcela_entrada",
+      "data_prevista_atual": "2028-12-20"
+    },
+    {
+      "pagamento_id": "29332d4f-9efb-490b-ab60-5e9abf33644e",
+      "venda_id": "943b164d-ff42-45ce-90e0-80b481637f82",
+      "sienge_contract_id": "236",
+      "sienge_receivable_bill_id": 261,
+      "numero_parcela": 53,
+      "tipo": "parcela_entrada",
+      "data_prevista_atual": "2029-09-20"
+    },
+    {
+      "pagamento_id": "2a0b93c0-f04a-46f8-a901-e33f8c4195a1",
+      "venda_id": "7a1c8aef-9e36-4eb7-9c36-4a46521ea514",
+      "sienge_contract_id": "126",
+      "sienge_receivable_bill_id": 34,
+      "numero_parcela": null,
+      "tipo": "sinal",
+      "data_prevista_atual": "2025-09-10"
+    },
+    {
+      "pagamento_id": "2bb11528-5818-455a-b6a8-457ab427b22d",
+      "venda_id": "63e023d8-2376-498e-9895-b497922f6b24",
+      "sienge_contract_id": "287",
+      "sienge_receivable_bill_id": 268,
+      "numero_parcela": 50,
+      "tipo": "parcela_entrada",
+      "data_prevista_atual": "2029-08-20"
+    },
+    {
+      "pagamento_id": "2dcc2d6c-b7b5-4ff2-8f5b-620bab223774",
+      "venda_id": "943b164d-ff42-45ce-90e0-80b481637f82",
+      "sienge_contract_id": "236",
+      "sienge_receivable_bill_id": 261,
+      "numero_parcela": 48,
+      "tipo": "parcela_entrada",
+      "data_prevista_atual": "2029-04-20"
+    },
+    {
+      "pagamento_id": "2e4fc69f-76eb-40c1-b9cf-07823d87c403",
+      "venda_id": "a4b242b6-d5cb-41fe-a501-70d91e50c3bf",
+      "sienge_contract_id": "9",
+      "sienge_receivable_bill_id": 9,
+      "numero_parcela": null,
+      "tipo": "sinal",
+      "data_prevista_atual": "2025-04-25"
+    },
+    {
+      "pagamento_id": "3239a219-8829-4aab-97d3-a5ebac5dcc34",
+      "venda_id": "7c3ca9b3-8251-469b-ae71-5f8a433a6d3e",
+      "sienge_contract_id": "163",
+      "sienge_receivable_bill_id": 235,
+      "numero_parcela": null,
+      "tipo": "sinal",
+      "data_prevista_atual": "2025-04-25"
+    },
+    {
+      "pagamento_id": "366e8127-3f43-43c4-8ec0-aac015b8dc2f",
+      "venda_id": "943b164d-ff42-45ce-90e0-80b481637f82",
+      "sienge_contract_id": "236",
+      "sienge_receivable_bill_id": 261,
+      "numero_parcela": 42,
+      "tipo": "parcela_entrada",
+      "data_prevista_atual": "2028-10-20"
+    },
+    {
+      "pagamento_id": "38819998-49c6-4294-9ff4-c85717221b70",
+      "venda_id": "943b164d-ff42-45ce-90e0-80b481637f82",
+      "sienge_contract_id": "236",
+      "sienge_receivable_bill_id": 261,
+      "numero_parcela": 1,
+      "tipo": "parcela_entrada",
+      "data_prevista_atual": "2025-05-20"
+    },
+    {
+      "pagamento_id": "39e86959-dac7-4677-98fd-f4343a36f98c",
+      "venda_id": "3fd94157-57b7-4981-a1d6-4c7aae0a0998",
+      "sienge_contract_id": "136",
+      "sienge_receivable_bill_id": 317,
+      "numero_parcela": null,
+      "tipo": "sinal",
+      "data_prevista_atual": "2025-05-26"
+    },
+    {
+      "pagamento_id": "3a76631d-7865-4c2b-8478-6000890f3bcd",
+      "venda_id": "63e023d8-2376-498e-9895-b497922f6b24",
+      "sienge_contract_id": "287",
+      "sienge_receivable_bill_id": 268,
+      "numero_parcela": 54,
+      "tipo": "parcela_entrada",
+      "data_prevista_atual": "2029-12-20"
+    },
+    {
+      "pagamento_id": "3ce91a62-64fc-41d6-bc1a-6d6d6d3ea802",
+      "venda_id": "943b164d-ff42-45ce-90e0-80b481637f82",
+      "sienge_contract_id": "236",
+      "sienge_receivable_bill_id": 261,
+      "numero_parcela": 40,
+      "tipo": "parcela_entrada",
+      "data_prevista_atual": "2028-08-20"
+    },
+    {
+      "pagamento_id": "3e2f0c03-a889-4a35-9c87-e29ad2c890f5",
+      "venda_id": "943b164d-ff42-45ce-90e0-80b481637f82",
+      "sienge_contract_id": "236",
+      "sienge_receivable_bill_id": 261,
+      "numero_parcela": 22,
+      "tipo": "parcela_entrada",
+      "data_prevista_atual": "2027-02-20"
+    },
+    {
+      "pagamento_id": "45a4568d-78dd-41a5-a0d5-f15c3b23524f",
+      "venda_id": "943b164d-ff42-45ce-90e0-80b481637f82",
+      "sienge_contract_id": "236",
+      "sienge_receivable_bill_id": 261,
+      "numero_parcela": 58,
+      "tipo": "parcela_entrada",
+      "data_prevista_atual": "2030-02-20"
+    },
+    {
+      "pagamento_id": "45dd79ea-8d80-4f5c-9a9a-e8b7b94b9fe1",
+      "venda_id": "9ca235ab-c4fc-42c8-9ab7-b772dc1c9932",
+      "sienge_contract_id": "157",
+      "sienge_receivable_bill_id": 269,
+      "numero_parcela": null,
+      "tipo": "sinal",
+      "data_prevista_atual": "2025-06-20"
+    },
+    {
+      "pagamento_id": "4c0742d3-f6ce-488a-bdc2-91304992a19e",
+      "venda_id": "943b164d-ff42-45ce-90e0-80b481637f82",
+      "sienge_contract_id": "236",
+      "sienge_receivable_bill_id": 261,
+      "numero_parcela": 55,
+      "tipo": "parcela_entrada",
+      "data_prevista_atual": "2029-11-20"
+    },
+    {
+      "pagamento_id": "4f466883-9397-43d4-bf89-810b1c34bfbe",
+      "venda_id": "3d611079-5ced-446f-a533-b32f185f1191",
+      "sienge_contract_id": "173",
+      "sienge_receivable_bill_id": 293,
+      "numero_parcela": 59,
+      "tipo": "parcela_entrada",
+      "data_prevista_atual": "2030-03-20"
+    },
+    {
+      "pagamento_id": "4f660076-5330-4ca5-a6be-4724fc95cf9b",
+      "venda_id": "4088a91d-401e-46ec-ab17-c044074d30fb",
+      "sienge_contract_id": "337",
+      "sienge_receivable_bill_id": 402,
+      "numero_parcela": null,
+      "tipo": "sinal",
+      "data_prevista_atual": "2025-11-24"
+    },
+    {
+      "pagamento_id": "50ad8395-2a5a-4301-9dfd-501209b7bef0",
+      "venda_id": "e9d137e5-e34d-4514-a15c-06382411dc1d",
+      "sienge_contract_id": "239",
+      "sienge_receivable_bill_id": 150,
+      "numero_parcela": null,
+      "tipo": "sinal",
+      "data_prevista_atual": "2025-05-28"
+    },
+    {
+      "pagamento_id": "5e0cc633-1719-4eec-9ecf-853a6a6c28df",
+      "venda_id": "3d611079-5ced-446f-a533-b32f185f1191",
+      "sienge_contract_id": "173",
+      "sienge_receivable_bill_id": 293,
+      "numero_parcela": 60,
+      "tipo": "parcela_entrada",
+      "data_prevista_atual": "2030-04-20"
+    },
+    {
+      "pagamento_id": "5ec53589-defa-4a1d-8a23-a3a1b37b9ef0",
+      "venda_id": "943b164d-ff42-45ce-90e0-80b481637f82",
+      "sienge_contract_id": "236",
+      "sienge_receivable_bill_id": 261,
+      "numero_parcela": 54,
+      "tipo": "parcela_entrada",
+      "data_prevista_atual": "2029-10-20"
+    },
+    {
+      "pagamento_id": "62170f15-4a8d-49e5-9b15-0615588006b4",
+      "venda_id": "943b164d-ff42-45ce-90e0-80b481637f82",
+      "sienge_contract_id": "236",
+      "sienge_receivable_bill_id": 261,
+      "numero_parcela": 18,
+      "tipo": "parcela_entrada",
+      "data_prevista_atual": "2026-10-20"
+    },
+    {
+      "pagamento_id": "653507f3-d1c8-48d5-b02a-b96dbc014814",
+      "venda_id": "943b164d-ff42-45ce-90e0-80b481637f82",
+      "sienge_contract_id": "236",
+      "sienge_receivable_bill_id": 261,
+      "numero_parcela": 57,
+      "tipo": "parcela_entrada",
+      "data_prevista_atual": "2030-01-20"
+    },
+    {
+      "pagamento_id": "6a6f1dea-382b-4155-a7bd-ce1fbac347c2",
+      "venda_id": "943b164d-ff42-45ce-90e0-80b481637f82",
+      "sienge_contract_id": "236",
+      "sienge_receivable_bill_id": 261,
+      "numero_parcela": 32,
+      "tipo": "parcela_entrada",
+      "data_prevista_atual": "2027-12-20"
+    },
+    {
+      "pagamento_id": "6e19eda3-0242-4ec0-a8de-19bd00900bf0",
+      "venda_id": "c5000de1-654b-42c5-9c9c-c0e29e439432",
+      "sienge_contract_id": "77",
+      "sienge_receivable_bill_id": 15,
+      "numero_parcela": null,
+      "tipo": "sinal",
+      "data_prevista_atual": "2025-05-22"
+    },
+    {
+      "pagamento_id": "707b2e4f-e48b-4a11-a8ce-95766b2e20f5",
+      "venda_id": "d645c7c0-6956-410f-ae8d-2ba56db29177",
+      "sienge_contract_id": "279",
+      "sienge_receivable_bill_id": 296,
+      "numero_parcela": null,
+      "tipo": "sinal",
+      "data_prevista_atual": "2025-08-25"
+    },
+    {
+      "pagamento_id": "70ab62bb-eff8-4f14-99c5-427a437c4b0a",
+      "venda_id": "803041f5-8778-4b59-ab73-63df35a8ac3e",
+      "sienge_contract_id": "148",
+      "sienge_receivable_bill_id": 191,
+      "numero_parcela": null,
+      "tipo": "sinal",
+      "data_prevista_atual": "2025-05-22"
+    },
+    {
+      "pagamento_id": "72c3cdc3-0cf6-477e-9003-38a58167ae6c",
+      "venda_id": "63e023d8-2376-498e-9895-b497922f6b24",
+      "sienge_contract_id": "287",
+      "sienge_receivable_bill_id": 268,
+      "numero_parcela": 52,
+      "tipo": "parcela_entrada",
+      "data_prevista_atual": "2029-10-20"
+    },
+    {
+      "pagamento_id": "73b32368-8edd-4fd9-85a2-24073981e525",
+      "venda_id": "943b164d-ff42-45ce-90e0-80b481637f82",
+      "sienge_contract_id": "236",
+      "sienge_receivable_bill_id": 261,
+      "numero_parcela": 37,
+      "tipo": "parcela_entrada",
+      "data_prevista_atual": "2028-05-20"
+    },
+    {
+      "pagamento_id": "7417813f-6f9c-41b1-8be5-f8f237836f7f",
+      "venda_id": "9e6bbd51-6eee-4372-a51f-4d43f572e97f",
+      "sienge_contract_id": "6",
+      "sienge_receivable_bill_id": 5,
+      "numero_parcela": null,
+      "tipo": "sinal",
+      "data_prevista_atual": "2025-08-20"
+    },
+    {
+      "pagamento_id": "746f9246-ee99-4de5-bef7-fe207f4b6011",
+      "venda_id": "63e023d8-2376-498e-9895-b497922f6b24",
+      "sienge_contract_id": "287",
+      "sienge_receivable_bill_id": 268,
+      "numero_parcela": 47,
+      "tipo": "parcela_entrada",
+      "data_prevista_atual": "2029-05-20"
+    },
+    {
+      "pagamento_id": "753dac48-065f-410d-ae2c-2317110802c2",
+      "venda_id": "63e023d8-2376-498e-9895-b497922f6b24",
+      "sienge_contract_id": "287",
+      "sienge_receivable_bill_id": 268,
+      "numero_parcela": 53,
+      "tipo": "parcela_entrada",
+      "data_prevista_atual": "2029-11-20"
+    },
+    {
+      "pagamento_id": "7604d768-a4ac-4b37-a154-eb54c1c29b78",
+      "venda_id": "63e023d8-2376-498e-9895-b497922f6b24",
+      "sienge_contract_id": "287",
+      "sienge_receivable_bill_id": 268,
+      "numero_parcela": 48,
+      "tipo": "parcela_entrada",
+      "data_prevista_atual": "2029-06-20"
+    },
+    {
+      "pagamento_id": "76cba3d5-01be-4045-b638-84f876af4385",
+      "venda_id": "943b164d-ff42-45ce-90e0-80b481637f82",
+      "sienge_contract_id": "236",
+      "sienge_receivable_bill_id": 261,
+      "numero_parcela": 56,
+      "tipo": "parcela_entrada",
+      "data_prevista_atual": "2029-12-20"
+    },
+    {
+      "pagamento_id": "77afbb87-3c6d-460b-b3d5-54e5bb46e027",
+      "venda_id": "ccfd72af-cd67-40a7-b1a6-e05527ebe793",
+      "sienge_contract_id": "170",
+      "sienge_receivable_bill_id": 299,
+      "numero_parcela": null,
+      "tipo": "sinal",
+      "data_prevista_atual": "2025-05-15"
+    },
+    {
+      "pagamento_id": "78d6a879-6e2f-4c60-9cae-6b0ef6f171da",
+      "venda_id": "c850d6b4-742b-412e-8477-33ec538fcdc4",
+      "sienge_contract_id": "427",
+      "sienge_receivable_bill_id": 499,
+      "numero_parcela": null,
+      "tipo": "sinal",
+      "data_prevista_atual": "2026-03-04"
+    },
+    {
+      "pagamento_id": "7a227645-bbd2-420e-806f-8c331f025e84",
+      "venda_id": "982f1c2a-b679-4992-bae6-f6aabac8646c",
+      "sienge_contract_id": "156",
+      "sienge_receivable_bill_id": 214,
+      "numero_parcela": null,
+      "tipo": "sinal",
+      "data_prevista_atual": "2025-08-15"
+    },
+    {
+      "pagamento_id": "7c87e17c-2d20-4939-85d4-f622253863a7",
+      "venda_id": "f03dc7d9-21e6-4db8-9ae5-e42b10b0b788",
+      "sienge_contract_id": "21",
+      "sienge_receivable_bill_id": 368,
+      "numero_parcela": null,
+      "tipo": "sinal",
+      "data_prevista_atual": "2025-06-05"
+    },
+    {
+      "pagamento_id": "7e5cc192-9d87-41c5-a3ba-76f7823c73e3",
+      "venda_id": "f3b338a7-2ed6-434b-92ba-c8fd254208b3",
+      "sienge_contract_id": "420",
+      "sienge_receivable_bill_id": 492,
+      "numero_parcela": null,
+      "tipo": "sinal",
+      "data_prevista_atual": "2026-02-19"
+    },
+    {
+      "pagamento_id": "7fed5f90-6356-446a-b96f-d897a98689a1",
+      "venda_id": "943b164d-ff42-45ce-90e0-80b481637f82",
+      "sienge_contract_id": "236",
+      "sienge_receivable_bill_id": 261,
+      "numero_parcela": 39,
+      "tipo": "parcela_entrada",
+      "data_prevista_atual": "2028-07-20"
+    },
+    {
+      "pagamento_id": "8265a6f1-0f77-4cc4-8cfb-6bcdcf07e785",
+      "venda_id": "943b164d-ff42-45ce-90e0-80b481637f82",
+      "sienge_contract_id": "236",
+      "sienge_receivable_bill_id": 261,
+      "numero_parcela": 5,
+      "tipo": "parcela_entrada",
+      "data_prevista_atual": "2025-09-20"
+    },
+    {
+      "pagamento_id": "832551f1-c3d6-4502-98e4-f248805a1c5e",
+      "venda_id": "1d7772d4-ee1e-4d72-92ec-3e67460880cc",
+      "sienge_contract_id": "275",
+      "sienge_receivable_bill_id": 178,
+      "numero_parcela": null,
+      "tipo": "sinal",
+      "data_prevista_atual": "2025-09-29"
+    },
+    {
+      "pagamento_id": "833affd2-c1d1-425a-93df-9f00c16d08ad",
+      "venda_id": "943b164d-ff42-45ce-90e0-80b481637f82",
+      "sienge_contract_id": "236",
+      "sienge_receivable_bill_id": 261,
+      "numero_parcela": 2,
+      "tipo": "parcela_entrada",
+      "data_prevista_atual": "2025-06-20"
+    },
+    {
+      "pagamento_id": "8390badf-ad68-42ab-ba0f-d5d5de8ba6fc",
+      "venda_id": "943b164d-ff42-45ce-90e0-80b481637f82",
+      "sienge_contract_id": "236",
+      "sienge_receivable_bill_id": 261,
+      "numero_parcela": 29,
+      "tipo": "parcela_entrada",
+      "data_prevista_atual": "2027-09-20"
+    },
+    {
+      "pagamento_id": "8aceea77-289a-4a5c-918e-5f4217efff34",
+      "venda_id": "943b164d-ff42-45ce-90e0-80b481637f82",
+      "sienge_contract_id": "236",
+      "sienge_receivable_bill_id": 261,
+      "numero_parcela": 51,
+      "tipo": "parcela_entrada",
+      "data_prevista_atual": "2029-07-20"
+    },
+    {
+      "pagamento_id": "8c48ce95-65c6-4f09-b5c1-111cba453ca9",
+      "venda_id": "e2b0dd05-7326-4963-be70-7e6a55a029be",
+      "sienge_contract_id": "405",
+      "sienge_receivable_bill_id": 476,
+      "numero_parcela": null,
+      "tipo": "sinal",
+      "data_prevista_atual": "2026-02-10"
+    },
+    {
+      "pagamento_id": "8f0c3dff-ba39-4360-a5f1-dc246337add4",
+      "venda_id": "f3293e5f-23a6-4b72-b39d-38de8d429190",
+      "sienge_contract_id": "407",
+      "sienge_receivable_bill_id": 479,
+      "numero_parcela": null,
+      "tipo": "sinal",
+      "data_prevista_atual": "2026-02-05"
+    },
+    {
+      "pagamento_id": "8f6422db-aea1-4040-84ad-e652d49b1645",
+      "venda_id": "943b164d-ff42-45ce-90e0-80b481637f82",
+      "sienge_contract_id": "236",
+      "sienge_receivable_bill_id": 261,
+      "numero_parcela": 49,
+      "tipo": "parcela_entrada",
+      "data_prevista_atual": "2029-05-20"
+    },
+    {
+      "pagamento_id": "8fc19126-ee77-4a5e-a90b-ee0b9a2e0d40",
+      "venda_id": "572c2c6c-99ca-45ec-b7ec-ce925179fd1c",
+      "sienge_contract_id": "383",
+      "sienge_receivable_bill_id": 455,
+      "numero_parcela": null,
+      "tipo": "sinal",
+      "data_prevista_atual": "2026-01-19"
+    },
+    {
+      "pagamento_id": "915e20e8-5a2f-45b3-93c0-39cb591d72de",
+      "venda_id": "943b164d-ff42-45ce-90e0-80b481637f82",
+      "sienge_contract_id": "236",
+      "sienge_receivable_bill_id": 261,
+      "numero_parcela": 36,
+      "tipo": "parcela_entrada",
+      "data_prevista_atual": "2028-04-20"
+    },
+    {
+      "pagamento_id": "918b2b5e-1d77-4206-98d6-4acdd92dc90a",
+      "venda_id": "943b164d-ff42-45ce-90e0-80b481637f82",
+      "sienge_contract_id": "236",
+      "sienge_receivable_bill_id": 261,
+      "numero_parcela": 23,
+      "tipo": "parcela_entrada",
+      "data_prevista_atual": "2027-03-20"
+    },
+    {
+      "pagamento_id": "92ccd648-c16f-4319-b429-a67edf2ad5d3",
+      "venda_id": "d2aa4822-4727-4e63-9824-76f892082852",
+      "sienge_contract_id": "167",
+      "sienge_receivable_bill_id": 171,
+      "numero_parcela": null,
+      "tipo": "sinal",
+      "data_prevista_atual": "2025-07-25"
+    },
+    {
+      "pagamento_id": "93bca2a6-9e76-4b2f-886d-e5e18b75b4b4",
+      "venda_id": "943b164d-ff42-45ce-90e0-80b481637f82",
+      "sienge_contract_id": "236",
+      "sienge_receivable_bill_id": 261,
+      "numero_parcela": 31,
+      "tipo": "parcela_entrada",
+      "data_prevista_atual": "2027-11-20"
+    },
+    {
+      "pagamento_id": "9544b64d-78f4-4384-b1a6-9198cd2a7365",
+      "venda_id": "943b164d-ff42-45ce-90e0-80b481637f82",
+      "sienge_contract_id": "236",
+      "sienge_receivable_bill_id": 261,
+      "numero_parcela": 6,
+      "tipo": "parcela_entrada",
+      "data_prevista_atual": "2025-10-20"
+    },
+    {
+      "pagamento_id": "958d6bd4-16ae-48e4-a815-c6e2358212af",
+      "venda_id": "943b164d-ff42-45ce-90e0-80b481637f82",
+      "sienge_contract_id": "236",
+      "sienge_receivable_bill_id": 261,
+      "numero_parcela": 34,
+      "tipo": "parcela_entrada",
+      "data_prevista_atual": "2028-02-20"
+    },
+    {
+      "pagamento_id": "97dc27a8-9f6c-4cd5-8631-17f192a86aa2",
+      "venda_id": "63e023d8-2376-498e-9895-b497922f6b24",
+      "sienge_contract_id": "287",
+      "sienge_receivable_bill_id": 268,
+      "numero_parcela": 51,
+      "tipo": "parcela_entrada",
+      "data_prevista_atual": "2029-09-20"
+    },
+    {
+      "pagamento_id": "991e6c8b-3c5b-4a61-bb78-84986b570e60",
+      "venda_id": "169d52ea-2062-477f-b2f4-218d32e66593",
+      "sienge_contract_id": "47",
+      "sienge_receivable_bill_id": 372,
+      "numero_parcela": null,
+      "tipo": "sinal",
+      "data_prevista_atual": "2025-06-11"
+    },
+    {
+      "pagamento_id": "995e0c4d-71b5-4e9d-b7be-fdd11175624e",
+      "venda_id": "63e023d8-2376-498e-9895-b497922f6b24",
+      "sienge_contract_id": "287",
+      "sienge_receivable_bill_id": 268,
+      "numero_parcela": 49,
+      "tipo": "parcela_entrada",
+      "data_prevista_atual": "2029-07-20"
+    },
+    {
+      "pagamento_id": "9998f4de-8a39-4070-984e-8dd82b747c55",
+      "venda_id": "6f7fec05-5a52-46e1-82f7-1b9a6ee9469c",
+      "sienge_contract_id": "3",
+      "sienge_receivable_bill_id": 21,
+      "numero_parcela": null,
+      "tipo": "sinal",
+      "data_prevista_atual": "2025-07-15"
+    },
+    {
+      "pagamento_id": "9a7d83db-5b78-480b-9f06-059d00842c74",
+      "venda_id": "5c6c8318-2dc3-4fd7-b4e0-756c90308af8",
+      "sienge_contract_id": "319",
+      "sienge_receivable_bill_id": 224,
+      "numero_parcela": null,
+      "tipo": "sinal",
+      "data_prevista_atual": "2025-05-22"
+    },
+    {
+      "pagamento_id": "9cac0c83-f787-4db7-baf6-87e43261f52f",
+      "venda_id": "199caf26-ce36-434e-a514-3d56c4c91b4f",
+      "sienge_contract_id": "296",
+      "sienge_receivable_bill_id": 265,
+      "numero_parcela": null,
+      "tipo": "sinal",
+      "data_prevista_atual": "2025-06-25"
+    },
+    {
+      "pagamento_id": "9e4c18ab-fb8e-47a6-9c32-ca4e7fc4f422",
+      "venda_id": "de177f50-a1e8-4650-a759-655d184a1c84",
+      "sienge_contract_id": "7",
+      "sienge_receivable_bill_id": 377,
+      "numero_parcela": null,
+      "tipo": "sinal",
+      "data_prevista_atual": "2025-04-25"
+    },
+    {
+      "pagamento_id": "9e87df2a-3b45-40c2-9517-bc3e11aaa496",
+      "venda_id": "52a15049-f506-4ae5-93f9-a2fca420b2ae",
+      "sienge_contract_id": "161",
+      "sienge_receivable_bill_id": 181,
+      "numero_parcela": null,
+      "tipo": "sinal",
+      "data_prevista_atual": "2025-06-16"
+    },
+    {
+      "pagamento_id": "a254cbe3-7ec0-4e65-a066-64a399d86a42",
+      "venda_id": "471bc996-5c8b-46be-b87c-a1cb329a9ff1",
+      "sienge_contract_id": "182",
+      "sienge_receivable_bill_id": 262,
+      "numero_parcela": null,
+      "tipo": "sinal",
+      "data_prevista_atual": "2025-06-11"
+    },
+    {
+      "pagamento_id": "a2b5134e-9746-4310-b5b5-d3e4c9ac7b47",
+      "venda_id": "b42ba471-b3e3-46e0-a344-dba77fb9020a",
+      "sienge_contract_id": "267",
+      "sienge_receivable_bill_id": 216,
+      "numero_parcela": null,
+      "tipo": "sinal",
+      "data_prevista_atual": "2025-07-20"
+    },
+    {
+      "pagamento_id": "a33f2d05-06ec-4be4-9f8c-4c4851e498ae",
+      "venda_id": "8daa3121-fcfa-42fa-8318-8e39fdac8800",
+      "sienge_contract_id": "80",
+      "sienge_receivable_bill_id": 272,
+      "numero_parcela": null,
+      "tipo": "sinal",
+      "data_prevista_atual": "2025-04-25"
+    },
+    {
+      "pagamento_id": "a5afa9ac-5ee9-48b4-bfac-8204725abf52",
+      "venda_id": "63e023d8-2376-498e-9895-b497922f6b24",
+      "sienge_contract_id": "287",
+      "sienge_receivable_bill_id": 268,
+      "numero_parcela": 56,
+      "tipo": "parcela_entrada",
+      "data_prevista_atual": "2030-02-20"
+    },
+    {
+      "pagamento_id": "a8f778e7-4831-4e02-9c16-737d48994ceb",
+      "venda_id": "943b164d-ff42-45ce-90e0-80b481637f82",
+      "sienge_contract_id": "236",
+      "sienge_receivable_bill_id": 261,
+      "numero_parcela": 14,
+      "tipo": "parcela_entrada",
+      "data_prevista_atual": "2026-06-20"
+    },
+    {
+      "pagamento_id": "a9563e57-df72-4b47-aa9d-92939f321a3b",
+      "venda_id": "893286ff-b29b-4c0b-bec5-1158a06191e3",
+      "sienge_contract_id": "335",
+      "sienge_receivable_bill_id": 400,
+      "numero_parcela": null,
+      "tipo": "sinal",
+      "data_prevista_atual": "2025-11-24"
+    },
+    {
+      "pagamento_id": "a988bfee-d5ba-4b6b-8b38-9c7f6aa4dfab",
+      "venda_id": "943b164d-ff42-45ce-90e0-80b481637f82",
+      "sienge_contract_id": "236",
+      "sienge_receivable_bill_id": 261,
+      "numero_parcela": 47,
+      "tipo": "parcela_entrada",
+      "data_prevista_atual": "2029-03-20"
+    },
+    {
+      "pagamento_id": "a9e8d08c-cfc5-4181-aa7a-606ef08590f3",
+      "venda_id": "6aa7d912-025b-476f-9179-bf516a2e5a0e",
+      "sienge_contract_id": "332",
+      "sienge_receivable_bill_id": 406,
+      "numero_parcela": null,
+      "tipo": "sinal",
+      "data_prevista_atual": "2025-11-13"
+    },
+    {
+      "pagamento_id": "aa6df48c-8b66-4306-bbf3-3b17d07cf752",
+      "venda_id": "943b164d-ff42-45ce-90e0-80b481637f82",
+      "sienge_contract_id": "236",
+      "sienge_receivable_bill_id": 261,
+      "numero_parcela": 13,
+      "tipo": "parcela_entrada",
+      "data_prevista_atual": "2026-05-20"
+    },
+    {
+      "pagamento_id": "ac1e3621-8090-4ec5-8a69-665579f8601c",
+      "venda_id": "943b164d-ff42-45ce-90e0-80b481637f82",
+      "sienge_contract_id": "236",
+      "sienge_receivable_bill_id": 261,
+      "numero_parcela": 38,
+      "tipo": "parcela_entrada",
+      "data_prevista_atual": "2028-06-20"
+    },
+    {
+      "pagamento_id": "ac479d35-7c88-4387-8873-6d99bc746dfd",
+      "venda_id": "943b164d-ff42-45ce-90e0-80b481637f82",
+      "sienge_contract_id": "236",
+      "sienge_receivable_bill_id": 261,
+      "numero_parcela": 43,
+      "tipo": "parcela_entrada",
+      "data_prevista_atual": "2028-11-20"
+    },
+    {
+      "pagamento_id": "ad35a41e-1a5d-48e0-80dd-6e03397f9d2e",
+      "venda_id": "8c5e1d12-92dd-4022-a94c-cc215d049bc6",
+      "sienge_contract_id": "192",
+      "sienge_receivable_bill_id": 303,
+      "numero_parcela": null,
+      "tipo": "sinal",
+      "data_prevista_atual": "2025-07-15"
+    },
+    {
+      "pagamento_id": "ae4c27ad-99cd-4d5c-a24c-cbbea394aeca",
+      "venda_id": "6aa7d912-025b-476f-9179-bf516a2e5a0e",
+      "sienge_contract_id": "332",
+      "sienge_receivable_bill_id": 406,
+      "numero_parcela": null,
+      "tipo": "bens",
+      "data_prevista_atual": "2025-11-13"
+    },
+    {
+      "pagamento_id": "ae86d9a9-8fa0-4f67-bc68-117487d7fe99",
+      "venda_id": "63e023d8-2376-498e-9895-b497922f6b24",
+      "sienge_contract_id": "287",
+      "sienge_receivable_bill_id": 268,
+      "numero_parcela": 58,
+      "tipo": "parcela_entrada",
+      "data_prevista_atual": "2030-04-20"
+    },
+    {
+      "pagamento_id": "b0a79bd3-3c09-407f-a20c-5f218d4b0c49",
+      "venda_id": "c3650d6d-f1e8-4afe-ad0f-f8ee30c19a16",
+      "sienge_contract_id": "411",
+      "sienge_receivable_bill_id": 483,
+      "numero_parcela": null,
+      "tipo": "sinal",
+      "data_prevista_atual": "2026-02-10"
+    },
+    {
+      "pagamento_id": "b43c2830-6830-4667-a858-e232852e6750",
+      "venda_id": "943b164d-ff42-45ce-90e0-80b481637f82",
+      "sienge_contract_id": "236",
+      "sienge_receivable_bill_id": 261,
+      "numero_parcela": 11,
+      "tipo": "parcela_entrada",
+      "data_prevista_atual": "2026-03-20"
+    },
+    {
+      "pagamento_id": "b4f34b5d-e933-4e44-9e0f-73604fd8e759",
+      "venda_id": "943b164d-ff42-45ce-90e0-80b481637f82",
+      "sienge_contract_id": "236",
+      "sienge_receivable_bill_id": 261,
+      "numero_parcela": 15,
+      "tipo": "parcela_entrada",
+      "data_prevista_atual": "2026-07-20"
+    },
+    {
+      "pagamento_id": "b7130c10-29e9-49e9-8483-f9f42a558f57",
+      "venda_id": "943b164d-ff42-45ce-90e0-80b481637f82",
+      "sienge_contract_id": "236",
+      "sienge_receivable_bill_id": 261,
+      "numero_parcela": 46,
+      "tipo": "parcela_entrada",
+      "data_prevista_atual": "2029-02-20"
+    },
+    {
+      "pagamento_id": "b7d2eb9e-717e-47b8-bc42-aae93f583f58",
+      "venda_id": "4064d711-da91-48a6-a497-82ef0cc59839",
+      "sienge_contract_id": "10",
+      "sienge_receivable_bill_id": 371,
+      "numero_parcela": null,
+      "tipo": "sinal",
+      "data_prevista_atual": "2025-07-10"
+    },
+    {
+      "pagamento_id": "b8636543-9a1e-4c68-b965-679074ee17a8",
+      "venda_id": "30d07c47-ea9b-42fa-8033-ebfdbcce86e4",
+      "sienge_contract_id": "326",
+      "sienge_receivable_bill_id": 375,
+      "numero_parcela": null,
+      "tipo": "sinal",
+      "data_prevista_atual": "2025-11-10"
+    },
+    {
+      "pagamento_id": "b976bba4-c24a-4bc3-9602-d72fe589b78c",
+      "venda_id": "3d611079-5ced-446f-a533-b32f185f1191",
+      "sienge_contract_id": "173",
+      "sienge_receivable_bill_id": 293,
+      "numero_parcela": 58,
+      "tipo": "parcela_entrada",
+      "data_prevista_atual": "2030-02-20"
+    },
+    {
+      "pagamento_id": "bfbe3c16-fde4-43de-8f4d-f90783eb5c4d",
+      "venda_id": "b517bfcf-2c3a-4b71-a4a7-dae26216d596",
+      "sienge_contract_id": "318",
+      "sienge_receivable_bill_id": 258,
+      "numero_parcela": null,
+      "tipo": "sinal",
+      "data_prevista_atual": "2025-08-07"
+    },
+    {
+      "pagamento_id": "c1479da5-d5cf-4bbf-b202-ead7ed0038cc",
+      "venda_id": "ef1b6708-e632-457a-94d5-3b424ce42d4e",
+      "sienge_contract_id": "410",
+      "sienge_receivable_bill_id": 482,
+      "numero_parcela": null,
+      "tipo": "sinal",
+      "data_prevista_atual": "2026-02-10"
+    },
+    {
+      "pagamento_id": "c1ae11ba-551a-4655-a6eb-5685045bac50",
+      "venda_id": "943b164d-ff42-45ce-90e0-80b481637f82",
+      "sienge_contract_id": "236",
+      "sienge_receivable_bill_id": 261,
+      "numero_parcela": 60,
+      "tipo": "parcela_entrada",
+      "data_prevista_atual": "2030-04-20"
+    },
+    {
+      "pagamento_id": "c1d48e85-8344-46bc-aa45-61fa0129ec33",
+      "venda_id": "82c32636-159d-44bc-9f74-b22820fcbb10",
+      "sienge_contract_id": "215",
+      "sienge_receivable_bill_id": 207,
+      "numero_parcela": null,
+      "tipo": "sinal",
+      "data_prevista_atual": "2025-06-30"
+    },
+    {
+      "pagamento_id": "c2185bc4-7ebc-4e62-aaa6-f0ab43399fff",
+      "venda_id": "8d0f8c63-a7e0-4715-9373-4cb09003e5b9",
+      "sienge_contract_id": "352",
+      "sienge_receivable_bill_id": 415,
+      "numero_parcela": null,
+      "tipo": "sinal",
+      "data_prevista_atual": "2025-09-26"
+    },
+    {
+      "pagamento_id": "c30114d6-1232-4c09-873e-98d894844cb5",
+      "venda_id": "1dfd5558-328f-483b-b19c-39ab45b43ed1",
+      "sienge_contract_id": "431",
+      "sienge_receivable_bill_id": 505,
+      "numero_parcela": null,
+      "tipo": "sinal",
+      "data_prevista_atual": "2026-03-17"
+    },
+    {
+      "pagamento_id": "c3029cb5-cc73-44e7-bc38-ac3e8823837e",
+      "venda_id": "62d4b34f-232f-4251-8ab1-9be0b87128e2",
+      "sienge_contract_id": "176",
+      "sienge_receivable_bill_id": 321,
+      "numero_parcela": null,
+      "tipo": "sinal",
+      "data_prevista_atual": "2025-06-22"
+    },
+    {
+      "pagamento_id": "c478ecd1-8882-4bc1-ae7a-6fe2fdd00528",
+      "venda_id": "61c1cbb3-7f05-437a-8fd2-1a1f63b3d8f9",
+      "sienge_contract_id": "217",
+      "sienge_receivable_bill_id": 209,
+      "numero_parcela": null,
+      "tipo": "sinal",
+      "data_prevista_atual": "2025-05-21"
+    },
+    {
+      "pagamento_id": "c621a6fd-a10f-411d-8b1a-b4cacf974a49",
+      "venda_id": "2a86cf94-1730-4d50-8e31-1af942fa0205",
+      "sienge_contract_id": "219",
+      "sienge_receivable_bill_id": 284,
+      "numero_parcela": 59,
+      "tipo": "parcela_entrada",
+      "data_prevista_atual": "2030-04-20"
+    },
+    {
+      "pagamento_id": "c7cfb580-1bce-494e-8d5e-8e364b178dd5",
+      "venda_id": "943b164d-ff42-45ce-90e0-80b481637f82",
+      "sienge_contract_id": "236",
+      "sienge_receivable_bill_id": 261,
+      "numero_parcela": 26,
+      "tipo": "parcela_entrada",
+      "data_prevista_atual": "2027-06-20"
+    },
+    {
+      "pagamento_id": "caef8483-93e2-4496-bd9d-fec26238697e",
+      "venda_id": "943b164d-ff42-45ce-90e0-80b481637f82",
+      "sienge_contract_id": "236",
+      "sienge_receivable_bill_id": 261,
+      "numero_parcela": 7,
+      "tipo": "parcela_entrada",
+      "data_prevista_atual": "2025-11-20"
+    },
+    {
+      "pagamento_id": "cdb43c4f-dfb7-4387-9616-358f155a4bd4",
+      "venda_id": "943b164d-ff42-45ce-90e0-80b481637f82",
+      "sienge_contract_id": "236",
+      "sienge_receivable_bill_id": 261,
+      "numero_parcela": 3,
+      "tipo": "parcela_entrada",
+      "data_prevista_atual": "2025-07-20"
+    },
+    {
+      "pagamento_id": "d10c98f2-be86-43d6-b36f-7b0bd5447c8a",
+      "venda_id": "a2501437-3de4-4b97-b2cc-93474077de6b",
+      "sienge_contract_id": "334",
+      "sienge_receivable_bill_id": 399,
+      "numero_parcela": null,
+      "tipo": "sinal",
+      "data_prevista_atual": "2025-11-21"
+    },
+    {
+      "pagamento_id": "d1fa2ec6-0e4f-4af2-8074-01c4ba8ff8ba",
+      "venda_id": "f62fedaa-c66a-4abf-b36e-ce12c46334d8",
+      "sienge_contract_id": "206",
+      "sienge_receivable_bill_id": 204,
+      "numero_parcela": null,
+      "tipo": "sinal",
+      "data_prevista_atual": "2025-07-21"
+    },
+    {
+      "pagamento_id": "d1fb2e66-9b42-49ff-a3ef-4962a96c28ab",
+      "venda_id": "0468889f-105f-4811-97e0-5fdaa2caf5ca",
+      "sienge_contract_id": "349",
+      "sienge_receivable_bill_id": 413,
+      "numero_parcela": null,
+      "tipo": "sinal",
+      "data_prevista_atual": "2025-06-16"
+    },
+    {
+      "pagamento_id": "d503fc1b-54b8-4aa7-a58b-062d652e3c34",
+      "venda_id": "63e023d8-2376-498e-9895-b497922f6b24",
+      "sienge_contract_id": "287",
+      "sienge_receivable_bill_id": 268,
+      "numero_parcela": 59,
+      "tipo": "parcela_entrada",
+      "data_prevista_atual": "2030-05-20"
+    },
+    {
+      "pagamento_id": "d53db51e-0ec2-43eb-ab1a-f8f1624d8c64",
+      "venda_id": "e3bd5695-27ce-436b-a578-ce1bfac3d7aa",
+      "sienge_contract_id": "340",
+      "sienge_receivable_bill_id": 410,
+      "numero_parcela": 58,
+      "tipo": "parcela_entrada",
+      "data_prevista_atual": "2030-03-26"
+    },
+    {
+      "pagamento_id": "d947b639-19c9-4fd1-91ae-41928367458f",
+      "venda_id": "943b164d-ff42-45ce-90e0-80b481637f82",
+      "sienge_contract_id": "236",
+      "sienge_receivable_bill_id": 261,
+      "numero_parcela": 12,
+      "tipo": "parcela_entrada",
+      "data_prevista_atual": "2026-04-20"
+    },
+    {
+      "pagamento_id": "da47bd3d-f9c0-4b18-8f8e-6c0d096d3be0",
+      "venda_id": "183085e7-9972-4a7f-bbc8-70a4b59ae1ef",
+      "sienge_contract_id": "22",
+      "sienge_receivable_bill_id": 369,
+      "numero_parcela": null,
+      "tipo": "sinal",
+      "data_prevista_atual": "2025-04-25"
+    },
+    {
+      "pagamento_id": "dc17aac6-1cba-460b-a1c2-8c8124897d3b",
+      "venda_id": "63e023d8-2376-498e-9895-b497922f6b24",
+      "sienge_contract_id": "287",
+      "sienge_receivable_bill_id": 268,
+      "numero_parcela": 57,
+      "tipo": "parcela_entrada",
+      "data_prevista_atual": "2030-03-20"
+    },
+    {
+      "pagamento_id": "ddab3438-97f4-45c9-9478-7ff1e59c8d99",
+      "venda_id": "350e54e6-023b-47cb-b4b0-7f82a0db3e07",
+      "sienge_contract_id": "424",
+      "sienge_receivable_bill_id": 497,
+      "numero_parcela": null,
+      "tipo": "sinal",
+      "data_prevista_atual": "2026-03-10"
+    },
+    {
+      "pagamento_id": "ddfd1b36-63b0-4abf-8bfb-6dd931002638",
+      "venda_id": "943b164d-ff42-45ce-90e0-80b481637f82",
+      "sienge_contract_id": "236",
+      "sienge_receivable_bill_id": 261,
+      "numero_parcela": 45,
+      "tipo": "parcela_entrada",
+      "data_prevista_atual": "2029-01-20"
+    },
+    {
+      "pagamento_id": "e1637fe9-6d15-42dc-8b98-8889d0f102da",
+      "venda_id": "e3bd5695-27ce-436b-a578-ce1bfac3d7aa",
+      "sienge_contract_id": "340",
+      "sienge_receivable_bill_id": 410,
+      "numero_parcela": 59,
+      "tipo": "parcela_entrada",
+      "data_prevista_atual": "2030-04-26"
+    },
+    {
+      "pagamento_id": "e3242429-466f-497d-ac95-13105c78f5e5",
+      "venda_id": "c6100456-03b1-44a9-8f1b-c47dd16997ad",
+      "sienge_contract_id": "230",
+      "sienge_receivable_bill_id": 247,
+      "numero_parcela": null,
+      "tipo": "comissao_integral",
+      "data_prevista_atual": "2025-07-02"
+    },
+    {
+      "pagamento_id": "e4e85426-4c79-4b52-b0a0-594b6bb5d750",
+      "venda_id": "63e023d8-2376-498e-9895-b497922f6b24",
+      "sienge_contract_id": "287",
+      "sienge_receivable_bill_id": 268,
+      "numero_parcela": 55,
+      "tipo": "parcela_entrada",
+      "data_prevista_atual": "2030-01-20"
+    },
+    {
+      "pagamento_id": "e7a6d18e-8386-4112-9e0b-712825d3823b",
+      "venda_id": "bae0add3-beee-45a2-aa70-e16d089232b2",
+      "sienge_contract_id": "71",
+      "sienge_receivable_bill_id": 7,
+      "numero_parcela": null,
+      "tipo": "sinal",
+      "data_prevista_atual": "2025-04-25"
+    },
+    {
+      "pagamento_id": "e9797fb0-b99b-4d29-a218-4e450eb3232c",
+      "venda_id": "d3b2e8a0-7706-4717-81e9-8ae6916a0e7d",
+      "sienge_contract_id": "429",
+      "sienge_receivable_bill_id": 501,
+      "numero_parcela": null,
+      "tipo": "sinal",
+      "data_prevista_atual": "2026-03-10"
+    },
+    {
+      "pagamento_id": "e9e27380-8801-4d66-ac21-a7c00898c305",
+      "venda_id": "943b164d-ff42-45ce-90e0-80b481637f82",
+      "sienge_contract_id": "236",
+      "sienge_receivable_bill_id": 261,
+      "numero_parcela": 20,
+      "tipo": "parcela_entrada",
+      "data_prevista_atual": "2026-12-20"
+    },
+    {
+      "pagamento_id": "ea37b87b-17c7-49af-b828-bd7155007638",
+      "venda_id": "0b70c65e-b201-48f8-b1a5-da454e8c90d1",
+      "sienge_contract_id": "127",
+      "sienge_receivable_bill_id": 228,
+      "numero_parcela": null,
+      "tipo": "sinal",
+      "data_prevista_atual": "2025-09-29"
+    },
+    {
+      "pagamento_id": "ea4f33f7-eb9d-46de-9d3f-7f36cb442d2f",
+      "venda_id": "e3bd5695-27ce-436b-a578-ce1bfac3d7aa",
+      "sienge_contract_id": "340",
+      "sienge_receivable_bill_id": 410,
+      "numero_parcela": 57,
+      "tipo": "parcela_entrada",
+      "data_prevista_atual": "2030-02-26"
+    },
+    {
+      "pagamento_id": "ebb973aa-fcc8-4b95-ab60-e8e388917462",
+      "venda_id": "14343044-f5cd-49b9-b445-66b78cee27a9",
+      "sienge_contract_id": "343",
+      "sienge_receivable_bill_id": 408,
+      "numero_parcela": null,
+      "tipo": "sinal",
+      "data_prevista_atual": "2025-11-29"
+    },
+    {
+      "pagamento_id": "ebf6f838-6b93-43cc-989b-33f235326afb",
+      "venda_id": "63e023d8-2376-498e-9895-b497922f6b24",
+      "sienge_contract_id": "287",
+      "sienge_receivable_bill_id": 268,
+      "numero_parcela": 60,
+      "tipo": "parcela_entrada",
+      "data_prevista_atual": "2030-06-20"
+    },
+    {
+      "pagamento_id": "edc2331c-28f0-478b-b818-b80280d24720",
+      "venda_id": "556ddcf8-acd6-4cb3-bbc3-084d90850026",
+      "sienge_contract_id": "320",
+      "sienge_receivable_bill_id": 232,
+      "numero_parcela": null,
+      "tipo": "sinal",
+      "data_prevista_atual": "2025-05-26"
+    },
+    {
+      "pagamento_id": "ef8ab275-b511-45db-aa4a-b984718fc2bc",
+      "venda_id": "a365d466-0bc4-49ef-a39f-d5fe958ab92a",
+      "sienge_contract_id": "265",
+      "sienge_receivable_bill_id": 169,
+      "numero_parcela": null,
+      "tipo": "sinal",
+      "data_prevista_atual": "2025-06-07"
+    },
+    {
+      "pagamento_id": "efc16f96-6556-473e-93e3-1f3210feaf70",
+      "venda_id": "943b164d-ff42-45ce-90e0-80b481637f82",
+      "sienge_contract_id": "236",
+      "sienge_receivable_bill_id": 261,
+      "numero_parcela": 50,
+      "tipo": "parcela_entrada",
+      "data_prevista_atual": "2029-06-20"
+    },
+    {
+      "pagamento_id": "f1b62ae6-1739-4148-ba82-45f9ae998da0",
+      "venda_id": "8d10b601-d088-4023-81bf-e136195fa8a9",
+      "sienge_contract_id": "150",
+      "sienge_receivable_bill_id": 246,
+      "numero_parcela": null,
+      "tipo": "sinal",
+      "data_prevista_atual": "2025-06-25"
+    },
+    {
+      "pagamento_id": "f4c4e3f3-4872-48fd-a749-d3d5810ad73a",
+      "venda_id": "943b164d-ff42-45ce-90e0-80b481637f82",
+      "sienge_contract_id": "236",
+      "sienge_receivable_bill_id": 261,
+      "numero_parcela": 33,
+      "tipo": "parcela_entrada",
+      "data_prevista_atual": "2028-01-20"
+    },
+    {
+      "pagamento_id": "f730ffcc-a57c-4722-80e4-b53b22a2cf42",
+      "venda_id": "943b164d-ff42-45ce-90e0-80b481637f82",
+      "sienge_contract_id": "236",
+      "sienge_receivable_bill_id": 261,
+      "numero_parcela": 16,
+      "tipo": "parcela_entrada",
+      "data_prevista_atual": "2026-08-20"
+    },
+    {
+      "pagamento_id": "faebd601-de8c-457c-b035-9bebf02778ed",
+      "venda_id": "943b164d-ff42-45ce-90e0-80b481637f82",
+      "sienge_contract_id": "236",
+      "sienge_receivable_bill_id": 261,
+      "numero_parcela": 19,
+      "tipo": "parcela_entrada",
+      "data_prevista_atual": "2026-11-20"
+    },
+    {
+      "pagamento_id": "fba75865-e8d2-4e2b-8d97-d85032be3821",
+      "venda_id": "8daa3121-fcfa-42fa-8318-8e39fdac8800",
+      "sienge_contract_id": "80",
+      "sienge_receivable_bill_id": 272,
+      "numero_parcela": null,
+      "tipo": "comissao_integral",
+      "data_prevista_atual": "2025-04-25"
+    },
+    {
+      "pagamento_id": "fc74b12a-e802-46eb-8aa6-6c95471e7d45",
+      "venda_id": "943b164d-ff42-45ce-90e0-80b481637f82",
+      "sienge_contract_id": "236",
+      "sienge_receivable_bill_id": 261,
+      "numero_parcela": 25,
+      "tipo": "parcela_entrada",
+      "data_prevista_atual": "2027-05-20"
+    }
+  ]
+}

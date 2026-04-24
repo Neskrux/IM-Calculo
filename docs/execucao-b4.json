@@ -1,0 +1,96 @@
+{
+  "meta": {
+    "geradoEm": "2026-04-24T14:38:13.195Z",
+    "input": "docs/plano-b4.json",
+    "heuristica": "vencedor = linha Sienge com maior dueDate; tiebreaker = installmentId maior",
+    "inputRows": 178,
+    "porStatus": {
+      "pago": 26,
+      "pendente": 152
+    },
+    "porTipo": {
+      "parcela_entrada": 176,
+      "balao": 2
+    }
+  },
+  "counts": {
+    "updated_pendente": 152,
+    "updated_pago": 26,
+    "failed_http": 0,
+    "skipado_cancelado": 0,
+    "retornou_vazio": 0
+  },
+  "falhas": [],
+  "sampleUpdates": [
+    {
+      "id": "0f1fe667-0053-4454-b5ac-0db9c98c0f74",
+      "tipo": "parcela_entrada",
+      "numero_parcela": 37,
+      "data_prevista_nova": "2029-04-20",
+      "status": "pendente"
+    },
+    {
+      "id": "0b11c5b8-0616-40d5-ab13-e28576bf9f86",
+      "tipo": "parcela_entrada",
+      "numero_parcela": 1,
+      "data_prevista_nova": "2030-07-10",
+      "status": "pago"
+    },
+    {
+      "id": "0b3451a7-c82e-4c1e-b5c1-792547d8a8fc",
+      "tipo": "parcela_entrada",
+      "numero_parcela": 17,
+      "data_prevista_nova": "2027-08-20",
+      "status": "pendente"
+    },
+    {
+      "id": "045d5d72-ac21-43dc-9914-c31510f14abe",
+      "tipo": "parcela_entrada",
+      "numero_parcela": 1,
+      "data_prevista_nova": "2026-04-10",
+      "status": "pago"
+    },
+    {
+      "id": "0efc8dcb-4117-49bc-b730-5e5354700331",
+      "tipo": "parcela_entrada",
+      "numero_parcela": 40,
+      "data_prevista_nova": "2029-07-20",
+      "status": "pendente"
+    },
+    {
+      "id": "0a0bc466-eab2-4153-9029-f8ebfdbf14cc",
+      "tipo": "parcela_entrada",
+      "numero_parcela": 1,
+      "data_prevista_nova": "2026-05-20",
+      "status": "pago"
+    },
+    {
+      "id": "0820bd69-1ee7-4ab2-b978-792fb958dab0",
+      "tipo": "parcela_entrada",
+      "numero_parcela": 25,
+      "data_prevista_nova": "2028-03-20",
+      "status": "pendente"
+    },
+    {
+      "id": "0bc0af61-dab7-4801-b3c9-1fbd4b220260",
+      "tipo": "parcela_entrada",
+      "numero_parcela": 10,
+      "data_prevista_nova": "2026-10-10",
+      "status": "pendente"
+    },
+    {
+      "id": "1e485197-9c74-4d35-8926-6c40507c686c",
+      "tipo": "parcela_entrada",
+      "numero_parcela": 2,
+      "data_prevista_nova": "2026-02-20",
+      "status": "pago"
+    },
+    {
+      "id": "18431d32-c510-413a-b20d-ae1d667ce53f",
+      "tipo": "parcela_entrada",
+      "numero_parcela": 19,
+      "data_prevista_nova": "2027-09-20",
+      "status": "pendente"
+    }
+  ]
+}

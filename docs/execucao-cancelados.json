@@ -1,0 +1,35 @@
+{
+  "meta": {
+    "geradoEm": "2026-04-24T13:51:54.924Z",
+    "input": "docs/fase5-plano-cancelados-v2.json",
+    "inputRows": 297,
+    "uniqueIds": 297
+  },
+  "counts": {
+    "updated": 297,
+    "failed_http": 0,
+    "retornou_vazio": 0,
+    "skipado_nao_pendente": 0
+  },
+  "falhas": [],
+  "sampleUpdates": [
+    {
+      "id": "075466b2-56c5-434a-8144-8f313e3af741",
+      "status_novo": "cancelado",
+      "venda_id": "e14ded4d-9161-4d65-bf6e-27d6518d199c",
+      "numero_parcela": 17
+    },
+    {
+      "id": "575aaf28-9913-473d-b88e-395aca5f1623",
+      "status_novo": "cancelado",
+      "venda_id": "e14ded4d-9161-4d65-bf6e-27d6518d199c",
+      "numero_parcela": 8
+    },
+    {
+      "id": "46838d16-a500-4ac8-ad69-74f33fc90ed9",
+      "status_novo": "cancelado",
+      "venda_id": "7787a154-ec62-469f-b330-d9b3b6142dd2",
+      "numero_parcela": 1
+    }
+  ]
+}

@@ -1,0 +1,68 @@
+{
+  "meta": {
+    "geradoEm": "2026-04-23T20:26:50.723Z",
+    "total": 2931
+  },
+  "counts": {
+    "pago_data_bate": 2910,
+    "pago_data_diverge": 21,
+    "nao_pago_final": 0,
+    "nao_encontrado": 0
+  },
+  "samples": {
+    "pago_data_diverge": [
+      {
+        "id": "5c2a8800-1708-4170-845b-c2bd9441760b",
+        "dataLocal": "2026-02-27",
+        "dataSienge": "2026-03-13"
+      },
+      {
+        "id": "1c96c993-331c-43f7-a340-6e7e244dbbcf",
+        "dataLocal": "2025-08-27",
+        "dataSienge": "2025-12-29"
+      },
+      {
+        "id": "38a31eac-31b6-4983-823d-fc50c6c5d068",
+        "dataLocal": "2025-09-05",
+        "dataSienge": "2025-12-29"
+      },
+      {
+        "id": "50abac0a-83f5-4805-ac59-364f31d4d79a",
+        "dataLocal": "2025-09-05",
+        "dataSienge": "2025-12-29"
+      },
+      {
+        "id": "ab621c00-1aeb-4141-bc23-0fd644f50f6b",
+        "dataLocal": "2025-08-20",
+        "dataSienge": "2025-11-24"
+      },
+      {
+        "id": "46c6b6b3-384b-45f5-9304-7f2e695637cb",
+        "dataLocal": "2025-10-20",
+        "dataSienge": "2026-03-20"
+      },
+      {
+        "id": "6e5bbe8b-9876-4c33-baf7-d5d9d150df49",
+        "dataLocal": "2025-11-19",
+        "dataSienge": "2026-04-20"
+      },
+      {
+        "id": "0125c10a-a31d-4402-b746-68fa88e0a83a",
+        "dataLocal": "2025-08-20",
+        "dataSienge": "2025-12-22"
+      },
+      {
+        "id": "14f0a657-dfba-46f2-935f-4e55d3366429",
+        "dataLocal": "2025-09-22",
+        "dataSienge": "2026-01-19"
+      },
+      {
+        "id": "88da941d-a580-447d-acc9-b0b00fe591f2",
+        "dataLocal": "2026-01-12",
+        "dataSienge": "2026-02-11"
+      }
+    ],
+    "nao_pago_final": [],
+    "nao_encontrado": []
+  }
+}

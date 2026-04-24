@@ -1,0 +1,268 @@
+{
+  "meta": {
+    "totalRows": 3721,
+    "tiposDistintos": 14
+  },
+  "tipos": [
+    {
+      "id": "PM",
+      "descricao": "Parcelas Mensais",
+      "parcelas": 3550,
+      "contratos": 285,
+      "valorOriginal": 4556636.58,
+      "pago": 4556939.71,
+      "ticketMedio": 1283.56,
+      "amostraNumero": [
+        "1/58",
+        "2/58",
+        "1/57"
+      ],
+      "amostraBillId": [
+        1,
+        1,
+        5
+      ]
+    },
+    {
+      "id": "AT",
+      "descricao": "Ato",
+      "parcelas": 54,
+      "contratos": 54,
+      "valorOriginal": 363561.12,
+      "pago": 362895.31,
+      "ticketMedio": 6732.61,
+      "amostraNumero": [
+        "1/1",
+        "1/1",
+        "1/1"
+      ],
+      "amostraBillId": [
+        7,
+        10,
+        13
+      ]
+    },
+    {
+      "id": "CA",
+      "descricao": "CREDITO ASSOCIATIVO",
+      "parcelas": 27,
+      "contratos": 27,
+      "valorOriginal": 8242052.92,
+      "pago": 8242052.92,
+      "ticketMedio": 305261.22,
+      "amostraNumero": [
+        "1/1",
+        "1/1",
+        "1/1"
+      ],
+      "amostraBillId": [
+        10,
+        25,
+        31
+      ]
+    },
+    {
+      "id": "B1",
+      "descricao": "BALÃO1",
+      "parcelas": 23,
+      "contratos": 22,
+      "valorOriginal": 140513.16,
+      "pago": 140513.16,
+      "ticketMedio": 6109.27,
+      "amostraNumero": [
+        "1/1",
+        "1/1",
+        "1/1"
+      ],
+      "amostraBillId": [
+        8,
+        8,
+        13
+      ]
+    },
+    {
+      "id": "SN",
+      "descricao": "SINAL",
+      "parcelas": 22,
+      "contratos": 22,
+      "valorOriginal": 114779.32,
+      "pago": 114779.32,
+      "ticketMedio": 5217.24,
+      "amostraNumero": [
+        "1/1",
+        "1/1",
+        "1/1"
+      ],
+      "amostraBillId": [
+        1,
+        5,
+        6
+      ]
+    },
+    {
+      "id": "BA",
+      "descricao": "BALÃO ANUAL",
+      "parcelas": 10,
+      "contratos": 4,
+      "valorOriginal": 66094.21,
+      "pago": 66094.21,
+      "ticketMedio": 6609.42,
+      "amostraNumero": [
+        "1/5",
+        "1/3",
+        "1/4"
+      ],
+      "amostraBillId": [
+        208,
+        418,
+        429
+      ]
+    },
+    {
+      "id": "PU",
+      "descricao": "PARCELA UNICA",
+      "parcelas": 9,
+      "contratos": 8,
+      "valorOriginal": 3002711.96,
+      "pago": 3002711.96,
+      "ticketMedio": 333634.66,
+      "amostraNumero": [
+        "1/1",
+        "1/1",
+        "1/1"
+      ],
+      "amostraBillId": [
+        284,
+        284,
+        465
+      ]
+    },
+    {
+      "id": "B2",
+      "descricao": "BALÃO2",
+      "parcelas": 5,
+      "contratos": 5,
+      "valorOriginal": 23711.23,
+      "pago": 23711.23,
+      "ticketMedio": 4742.25,
+      "amostraNumero": [
+        "1/1",
+        "1/1",
+        "1/1"
+      ],
+      "amostraBillId": [
+        8,
+        143,
+        145
+      ]
+    },
+    {
+      "id": "B3",
+      "descricao": "BALÃO3",
+      "parcelas": 5,
+      "contratos": 5,
+      "valorOriginal": 22482.23,
+      "pago": 22482.23,
+      "ticketMedio": 4496.45,
+      "amostraNumero": [
+        "1/1",
+        "1/1",
+        "1/1"
+      ],
+      "amostraBillId": [
+        8,
+        143,
+        145
+      ]
+    },
+    {
+      "id": "CV",
+      "descricao": "COMISSÃO DE VENDA",
+      "parcelas": 5,
+      "contratos": 1,
+      "valorOriginal": 1483.96,
+      "pago": 1483.96,
+      "ticketMedio": 296.79,
+      "amostraNumero": [
+        "1/57",
+        "2/57",
+        "3/57"
+      ],
+      "amostraBillId": [
+        406,
+        406,
+        406
+      ]
+    },
+    {
+      "id": "B4",
+      "descricao": "BALÃO4",
+      "parcelas": 4,
+      "contratos": 4,
+      "valorOriginal": 21211.23,
+      "pago": 21211.23,
+      "ticketMedio": 5302.81,
+      "amostraNumero": [
+        "1/1",
+        "1/1",
+        "1/1"
+      ],
+      "amostraBillId": [
+        143,
+        145,
+        238
+      ]
+    },
+    {
+      "id": "B5",
+      "descricao": "BALÃO5 ",
+      "parcelas": 4,
+      "contratos": 4,
+      "valorOriginal": 21211.23,
+      "pago": 21211.23,
+      "ticketMedio": 5302.81,
+      "amostraNumero": [
+        "1/1",
+        "1/1",
+        "1/1"
+      ],
+      "amostraBillId": [
+        143,
+        145,
+        404
+      ]
+    },
+    {
+      "id": "PA",
+      "descricao": "PARCELAS ANUAIS",
+      "parcelas": 2,
+      "contratos": 2,
+      "valorOriginal": 1000000,
+      "pago": 1000000,
+      "ticketMedio": 500000,
+      "amostraNumero": [
+        "1/1",
+        "1/1"
+      ],
+      "amostraBillId": [
+        466,
+        467
+      ]
+    },
+    {
+      "id": "BN",
+      "descricao": "BENS",
+      "parcelas": 1,
+      "contratos": 1,
+      "valorOriginal": 125000,
+      "pago": 125000,
+      "ticketMedio": 125000,
+      "amostraNumero": [
+        "1/1"
+      ],
+      "amostraBillId": [
+        243
+      ]
+    }
+  ]
+}

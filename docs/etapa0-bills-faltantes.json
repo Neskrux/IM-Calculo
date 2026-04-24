@@ -1,0 +1,60 @@
+{
+  "meta": {
+    "geradoEm": "2026-04-24T17:43:55.353Z",
+    "fonteSienge": "docs/fase5-universo-dueDate-RAW.json (bulk /v1/income, Figueira 2104)",
+    "siengeBillsTotal": 302,
+    "siengeBillsContratoCT": 298,
+    "bancoBillsTotal": 299,
+    "faltantesTotal": 4,
+    "faltantesContratoCT": 0,
+    "extrasTotal": 1,
+    "faltantesPorTipo": {
+      "PRV": 1,
+      "ADC": 1,
+      "MUT": 2
+    },
+    "regra": "faltante = billId no Sienge sem par no banco; CT = contrato de venda (unico tipo que deveria estar em vendas); PRV/ADC/MUT = receivables administrativos fora de escopo",
+    "conclusao": "OK: banco tem 100% dos contratos de venda (CT) que o Sienge tem para Figueira"
+  },
+  "faltantes": [
+    {
+      "billId": 2,
+      "docType": "PRV",
+      "docTypeName": "PREVISÃO DE PAGAMENTO/RECEBIMENTO",
+      "clientName": "SILVONILDO SANTANA EVANGELISTA DA CRUZ",
+      "companyId": 5,
+      "parcelas": 4,
+      "totalOriginalAmount": 1000
+    },
+    {
+      "billId": 33,
+      "docType": "ADC",
+      "docTypeName": "ADIANTAMENTO DE CLIENTE",
+      "clientName": "JULIANA FLAVIA AZEVEDO DOS SANTOS",
+      "companyId": 5,
+      "parcelas": 1,
+      "totalOriginalAmount": 5000
+    },
+    {
+      "billId": 394,
+      "docType": "MUT",
+      "docTypeName": "MUTUO ENTRE EMPRESAS",
+      "clientName": "IM EMPREENDIMENTO E INCORPORACAO SPE LTDA",
+      "companyId": 5,
+      "parcelas": 1,
+      "totalOriginalAmount": 2000
+    },
+    {
+      "billId": 516,
+      "docType": "MUT",
+      "docTypeName": "MUTUO ENTRE EMPRESAS",
+      "clientName": "IM EMPREENDIMENTO E INCORPORACAO SPE LTDA",
+      "companyId": 5,
+      "parcelas": 1,
+      "totalOriginalAmount": 4900
+    }
+  ],
+  "extras_sample": [
+    261
+  ]
+}

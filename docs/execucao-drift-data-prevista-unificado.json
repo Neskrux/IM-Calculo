@@ -1,0 +1,105 @@
+{
+  "meta": {
+    "geradoEm": "2026-04-24T14:23:05.975Z",
+    "input": "docs/fase5-plano-drift-data-prevista-v2.json",
+    "inputRows": 409,
+    "elegiveis": 193,
+    "colisoesExcluidas": 253,
+    "porTipo": {
+      "balao": 120,
+      "parcela_entrada": 73
+    },
+    "porStatus": {
+      "pendente": 169,
+      "pago": 24
+    },
+    "porDelta": {
+      "<=7d": 3,
+      "8-30d": 11,
+      "31-180d": 64,
+      "181-365d": 66,
+      ">365d": 49
+    },
+    "datasDistintas": 89
+  },
+  "counts": {
+    "updated_pendente": 169,
+    "updated_pago": 24,
+    "failed_http": 0,
+    "skipado_cancelado": 0,
+    "retornou_vazio": 0
+  },
+  "falhas": [],
+  "sampleUpdates": [
+    {
+      "id": "0cee25b4-4f90-4571-864c-5c3a313cd3ca",
+      "tipo": "parcela_entrada",
+      "numero_parcela": 52,
+      "data_prevista_nova": "2029-11-20",
+      "status": "pendente"
+    },
+    {
+      "id": "0e609a42-a64f-4d1c-85f9-3fc8c05bd05a",
+      "tipo": "balao",
+      "numero_parcela": 3,
+      "data_prevista_nova": "2028-01-10",
+      "status": "pago"
+    },
+    {
+      "id": "0013ed98-20f3-4100-a722-fffd24489237",
+      "tipo": "balao",
+      "numero_parcela": 5,
+      "data_prevista_nova": "2030-12-20",
+      "status": "pendente"
+    },
+    {
+      "id": "061f8343-db8f-49d1-b031-5a52311db74d",
+      "tipo": "balao",
+      "numero_parcela": 5,
+      "data_prevista_nova": "2029-12-20",
+      "status": "pendente"
+    },
+    {
+      "id": "075a8b02-c9e7-47b5-a9b6-2c5ab88fdea1",
+      "tipo": "balao",
+      "numero_parcela": 7,
+      "data_prevista_nova": "2028-12-20",
+      "status": "pendente"
+    },
+    {
+      "id": "0602d1a4-2f18-422f-8a16-3273611db132",
+      "tipo": "parcela_entrada",
+      "numero_parcela": 23,
+      "data_prevista_nova": "2028-03-20",
+      "status": "pendente"
+    },
+    {
+      "id": "0b9f5cf6-4f9f-49e0-ab5c-1d4fbb2f8298",
+      "tipo": "parcela_entrada",
+      "numero_parcela": 48,
+      "data_prevista_nova": "2030-04-20",
+      "status": "pendente"
+    },
+    {
+      "id": "09881fc2-dfd3-4924-b3d9-64ac8f388a7e",
+      "tipo": "balao",
+      "numero_parcela": 4,
+      "data_prevista_nova": "2028-12-25",
+      "status": "pendente"
+    },
+    {
+      "id": "16c5c5fd-cb0f-4466-b2d5-f20bb601d3fe",
+      "tipo": "balao",
+      "numero_parcela": 5,
+      "data_prevista_nova": "2029-12-25",
+      "status": "pendente"
+    },
+    {
+      "id": "1af88c72-4841-425e-ad3d-95a9455f1dce",
+      "tipo": "parcela_entrada",
+      "numero_parcela": 37,
+      "data_prevista_nova": "2029-05-20",
+      "status": "pendente"
+    }
+  ]
+}
