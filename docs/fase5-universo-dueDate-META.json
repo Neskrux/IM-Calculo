@@ -1,0 +1,18 @@
+{
+  "geradoEm": "2026-04-24T12:07:41.893Z",
+  "query": {
+    "selectionType": "D",
+    "startDate": "2015-01-01",
+    "endDate": "2045-12-31",
+    "companyId": 5
+  },
+  "url": "https://api.sienge.com.br/imincorporadora/public/api/bulk-data/v1/income?selectionType=D&startDate=2015-01-01&endDate=2045-12-31&companyId=5",
+  "status": 200,
+  "elapsedHeadersMs": 1169,
+  "elapsedBodyMs": 1973,
+  "totalElapsedMs": 3152,
+  "rateLimit": "9",
+  "retryAfter": null,
+  "contentLength": null,
+  "bytes": 32145901
+}

@@ -1,0 +1,25 @@
+{
+  "meta": {
+    "geradoEm": "2026-04-24T14:17:03.249Z",
+    "versao": "v2 (chave correta: billId+tipo+seq)",
+    "counts": {
+      "bulkD_rows": 17360,
+      "bulkD_mapped": 17002,
+      "bulkD_descartados": 358,
+      "bulkD_indexed": 16699,
+      "bulkD_colisoes": 303,
+      "cancelados_bulk": 31,
+      "cancelados_local_match": 31,
+      "vendas_local": 299,
+      "pagamentos_local": 18558,
+      "matched_em_D": 14924,
+      "drift_data_prevista": 409,
+      "plano_cancelados": 0,
+      "orfaos": 144,
+      "skip_por_cancelada": 1815,
+      "skip_sem_bridge": 1655,
+      "skip_tipo_nao_mapeavel": 4
+    }
+  },
+  "rows": []
+}

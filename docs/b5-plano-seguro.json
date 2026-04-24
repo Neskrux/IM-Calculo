@@ -1,0 +1,2016 @@
+{
+  "meta": {
+    "geradoEm": "2026-04-24T15:01:28.766Z",
+    "gruposSeguros": 55,
+    "gruposDelicados": 34,
+    "acao": "Em cada grupo, marcar perdedores com status=cancelado (pular ja cancelados).",
+    "invariante": "Preserva data_pagamento e valor (nao e delete, nao e reversao pago->pendente)."
+  },
+  "grupos": [
+    {
+      "venda_id": "7c3ca9b3-8251-469b-ae71-5f8a433a6d3e",
+      "contract": "163",
+      "billId": 235,
+      "seq": 1,
+      "sienge": {
+        "due": "2026-08-20",
+        "installmentId": 16,
+        "inst": "1/46"
+      },
+      "vencedor": {
+        "id": "28995b60-7469-40f6-9531-08e6aeb3473d",
+        "status": "pago",
+        "data_prevista": "2026-08-20",
+        "data_pagamento": "2025-10-20",
+        "valor": "1275.07",
+        "created_at": "2026-01-15 22:01:51.734066+00",
+        "dist_dias": 0
+      },
+      "perdedores": [
+        {
+          "id": "62e3edce-805a-42d8-a8ae-cd7754441cf0",
+          "status": "pendente",
+          "data_prevista": "2026-08-20",
+          "data_pagamento": null,
+          "valor": "1275.07",
+          "created_at": "2026-01-15 22:01:51.734066+00",
+          "dist_dias": 0,
+          "acao": "cancelar"
+        },
+        {
+          "id": "bdf11d77-22dd-4084-9d0a-ce2234ad5767",
+          "status": "pendente",
+          "data_prevista": "2026-08-20",
+          "data_pagamento": null,
+          "valor": "1275.07",
+          "created_at": "2026-01-15 22:01:51.734066+00",
+          "dist_dias": 0,
+          "acao": "cancelar"
+        }
+      ],
+      "tiebreakerUsado": "data_pagamento"
+    },
+    {
+      "venda_id": "7c3ca9b3-8251-469b-ae71-5f8a433a6d3e",
+      "contract": "163",
+      "billId": 235,
+      "seq": 2,
+      "sienge": {
+        "due": "2026-09-20",
+        "installmentId": 17,
+        "inst": "2/46"
+      },
+      "vencedor": {
+        "id": "144128fb-352f-4471-9f75-90af259b0942",
+        "status": "pago",
+        "data_prevista": "2026-09-20",
+        "data_pagamento": "2025-11-21",
+        "valor": "1275.07",
+        "created_at": "2026-01-15 22:01:51.734066+00",
+        "dist_dias": 0
+      },
+      "perdedores": [
+        {
+          "id": "cd119c34-ad7f-4101-bbe1-9c684577876f",
+          "status": "pendente",
+          "data_prevista": "2026-09-20",
+          "data_pagamento": null,
+          "valor": "1136.66",
+          "created_at": "2026-01-15 22:01:51.734066+00",
+          "dist_dias": 0,
+          "acao": "cancelar"
+        },
+        {
+          "id": "d98c8027-8a0e-4d37-80bd-ea75556997b1",
+          "status": "pendente",
+          "data_prevista": "2025-11-20",
+          "data_pagamento": null,
+          "valor": "500.00",
+          "created_at": "2026-01-15 22:01:51.734066+00",
+          "dist_dias": 304,
+          "acao": "cancelar"
+        }
+      ],
+      "tiebreakerUsado": null
+    },
+    {
+      "venda_id": "7c3ca9b3-8251-469b-ae71-5f8a433a6d3e",
+      "contract": "163",
+      "billId": 235,
+      "seq": 4,
+      "sienge": {
+        "due": "2026-11-20",
+        "installmentId": 19,
+        "inst": "4/46"
+      },
+      "vencedor": {
+        "id": "14f0a657-dfba-46f2-935f-4e55d3366429",
+        "status": "pago",
+        "data_prevista": "2026-11-20",
+        "data_pagamento": "2025-09-22",
+        "valor": "1275.07",
+        "created_at": "2026-01-15 22:01:51.734066+00",
+        "dist_dias": 0
+      },
+      "perdedores": [
+        {
+          "id": "d9e9b9ff-1552-4dc5-a696-0ea1d9d7f717",
+          "status": "pendente",
+          "data_prevista": "2026-11-20",
+          "data_pagamento": null,
+          "valor": "1136.66",
+          "created_at": "2026-01-15 22:01:51.734066+00",
+          "dist_dias": 0,
+          "acao": "cancelar"
+        },
+        {
+          "id": "abc12beb-d4d9-449d-b547-4b52f1290969",
+          "status": "pendente",
+          "data_prevista": "2026-11-20",
+          "data_pagamento": null,
+          "valor": "1275.07",
+          "created_at": "2026-01-15 22:01:51.734066+00",
+          "dist_dias": 0,
+          "acao": "cancelar"
+        }
+      ],
+      "tiebreakerUsado": "data_pagamento"
+    },
+    {
+      "venda_id": "7c3ca9b3-8251-469b-ae71-5f8a433a6d3e",
+      "contract": "163",
+      "billId": 235,
+      "seq": 8,
+      "sienge": {
+        "due": "2027-03-20",
+        "installmentId": 23,
+        "inst": "8/46"
+      },
+      "vencedor": {
+        "id": "22933353-2cd7-428f-9873-a100499c5da5",
+        "status": "pendente",
+        "data_prevista": "2027-03-20",
+        "data_pagamento": null,
+        "valor": "1275.07",
+        "created_at": "2026-01-15 22:01:51.734066+00",
+        "dist_dias": 0
+      },
+      "perdedores": [
+        {
+          "id": "1362bc8f-760a-4d70-b4d9-9014e1b15027",
+          "status": "pendente",
+          "data_prevista": "2027-03-20",
+          "data_pagamento": null,
+          "valor": "500.00",
+          "created_at": "2026-01-15 22:01:51.734066+00",
+          "dist_dias": 0,
+          "acao": "cancelar"
+        }
+      ],
+      "tiebreakerUsado": "created_at"
+    },
+    {
+      "venda_id": "7c3ca9b3-8251-469b-ae71-5f8a433a6d3e",
+      "contract": "163",
+      "billId": 235,
+      "seq": 9,
+      "sienge": {
+        "due": "2027-04-20",
+        "installmentId": 24,
+        "inst": "9/46"
+      },
+      "vencedor": {
+        "id": "e28b6989-1f4f-4ae0-8260-fe515e8b85ef",
+        "status": "pendente",
+        "data_prevista": "2027-04-20",
+        "data_pagamento": null,
+        "valor": "500.00",
+        "created_at": "2026-01-15 22:01:51.734066+00",
+        "dist_dias": 0
+      },
+      "perdedores": [
+        {
+          "id": "f9497d85-2a34-4dd5-ba44-eff77697f8c8",
+          "status": "pendente",
+          "data_prevista": "2027-04-20",
+          "data_pagamento": null,
+          "valor": "500.00",
+          "created_at": "2026-01-15 22:01:51.734066+00",
+          "dist_dias": 0,
+          "acao": "cancelar"
+        }
+      ],
+      "tiebreakerUsado": "created_at"
+    },
+    {
+      "venda_id": "7c3ca9b3-8251-469b-ae71-5f8a433a6d3e",
+      "contract": "163",
+      "billId": 235,
+      "seq": 10,
+      "sienge": {
+        "due": "2027-05-20",
+        "installmentId": 25,
+        "inst": "10/46"
+      },
+      "vencedor": {
+        "id": "309767e6-bd86-4fda-8492-05716e3b9dce",
+        "status": "pendente",
+        "data_prevista": "2027-05-20",
+        "data_pagamento": null,
+        "valor": "500.00",
+        "created_at": "2026-01-15 22:01:51.734066+00",
+        "dist_dias": 0
+      },
+      "perdedores": [
+        {
+          "id": "51eee67b-e1d3-40f8-a8ec-cf176a997a88",
+          "status": "pendente",
+          "data_prevista": "2027-05-20",
+          "data_pagamento": null,
+          "valor": "500.00",
+          "created_at": "2026-01-15 22:01:51.734066+00",
+          "dist_dias": 0,
+          "acao": "cancelar"
+        }
+      ],
+      "tiebreakerUsado": "created_at"
+    },
+    {
+      "venda_id": "137d0df9-2c8e-49da-b3a3-528129babfd2",
+      "contract": "166",
+      "billId": 276,
+      "seq": 1,
+      "sienge": {
+        "due": "2026-01-20",
+        "installmentId": 6,
+        "inst": "1/53"
+      },
+      "vencedor": {
+        "id": "e69bb2be-443a-46b5-ad02-4a83816cae19",
+        "status": "pago",
+        "data_prevista": "2026-01-20",
+        "data_pagamento": "2026-02-02",
+        "valor": "1604.40",
+        "created_at": "2026-01-15 22:01:55.764277+00",
+        "dist_dias": 0
+      },
+      "perdedores": [
+        {
+          "id": "1e222d1e-794e-4cee-8eda-e48afc36e191",
+          "status": "pago",
+          "data_prevista": "2026-01-20",
+          "data_pagamento": "2026-01-13",
+          "valor": "600.00",
+          "created_at": "2026-01-15 22:01:55.764277+00",
+          "dist_dias": 0,
+          "acao": "cancelar"
+        }
+      ],
+      "tiebreakerUsado": "data_pagamento"
+    },
+    {
+      "venda_id": "137d0df9-2c8e-49da-b3a3-528129babfd2",
+      "contract": "166",
+      "billId": 276,
+      "seq": 2,
+      "sienge": {
+        "due": "2026-02-20",
+        "installmentId": 7,
+        "inst": "2/53"
+      },
+      "vencedor": {
+        "id": "1e485197-9c74-4d35-8926-6c40507c686c",
+        "status": "pago",
+        "data_prevista": "2026-02-20",
+        "data_pagamento": "2026-01-21",
+        "valor": "600.00",
+        "created_at": "2026-01-15 22:01:55.764277+00",
+        "dist_dias": 0
+      },
+      "perdedores": [
+        {
+          "id": "1f597a7a-529a-4293-96fc-69bcb62e453c",
+          "status": "pendente",
+          "data_prevista": "2026-02-20",
+          "data_pagamento": null,
+          "valor": "1604.40",
+          "created_at": "2026-01-15 22:01:55.764277+00",
+          "dist_dias": 0,
+          "acao": "cancelar"
+        }
+      ],
+      "tiebreakerUsado": "data_pagamento"
+    },
+    {
+      "venda_id": "137d0df9-2c8e-49da-b3a3-528129babfd2",
+      "contract": "166",
+      "billId": 276,
+      "seq": 3,
+      "sienge": {
+        "due": "2026-03-20",
+        "installmentId": 8,
+        "inst": "3/53"
+      },
+      "vencedor": {
+        "id": "4481a544-c09c-4578-be6e-946e7986dc77",
+        "status": "pago",
+        "data_prevista": "2026-03-20",
+        "data_pagamento": "2026-03-04",
+        "valor": "1604.40",
+        "created_at": "2026-01-15 22:01:55.764277+00",
+        "dist_dias": 0
+      },
+      "perdedores": [
+        {
+          "id": "dbe916f4-7633-4b01-a879-8d4559f1cc48",
+          "status": "pendente",
+          "data_prevista": "2026-03-20",
+          "data_pagamento": null,
+          "valor": "1604.40",
+          "created_at": "2026-01-15 22:01:55.764277+00",
+          "dist_dias": 0,
+          "acao": "cancelar"
+        }
+      ],
+      "tiebreakerUsado": "data_pagamento"
+    },
+    {
+      "venda_id": "137d0df9-2c8e-49da-b3a3-528129babfd2",
+      "contract": "166",
+      "billId": 276,
+      "seq": 4,
+      "sienge": {
+        "due": "2026-04-20",
+        "installmentId": 9,
+        "inst": "4/53"
+      },
+      "vencedor": {
+        "id": "2fb61463-67e3-4abe-9bf5-721abc9ca7da",
+        "status": "pago",
+        "data_prevista": "2026-04-20",
+        "data_pagamento": "2025-11-03",
+        "valor": "600.00",
+        "created_at": "2026-01-15 22:01:55.764277+00",
+        "dist_dias": 0
+      },
+      "perdedores": [
+        {
+          "id": "9e8d4d84-cc4f-4548-a703-edf2a018ef12",
+          "status": "pendente",
+          "data_prevista": "2026-04-20",
+          "data_pagamento": null,
+          "valor": "1604.40",
+          "created_at": "2026-01-15 22:01:55.764277+00",
+          "dist_dias": 0,
+          "acao": "cancelar"
+        }
+      ],
+      "tiebreakerUsado": "data_pagamento"
+    },
+    {
+      "venda_id": "53d0c5f5-aa8e-4804-9c64-fef6ecdf04fc",
+      "contract": "204",
+      "billId": 146,
+      "seq": 1,
+      "sienge": {
+        "due": "2025-11-20",
+        "installmentId": 5,
+        "inst": "1/55"
+      },
+      "vencedor": {
+        "id": "30d6cafa-c29d-4a48-be9e-167a58d8788d",
+        "status": "pago",
+        "data_prevista": "2025-11-20",
+        "data_pagamento": "2025-11-24",
+        "valor": "1461.11",
+        "created_at": "2026-01-15 22:02:43.323439+00",
+        "dist_dias": 0
+      },
+      "perdedores": [
+        {
+          "id": "3bbecf37-58e7-485f-a2f1-0e3de4938beb",
+          "status": "pendente",
+          "data_prevista": "2025-11-20",
+          "data_pagamento": null,
+          "valor": "1000.00",
+          "created_at": "2026-01-15 22:02:43.323439+00",
+          "dist_dias": 0,
+          "acao": "cancelar"
+        }
+      ],
+      "tiebreakerUsado": "data_pagamento"
+    },
+    {
+      "venda_id": "53d0c5f5-aa8e-4804-9c64-fef6ecdf04fc",
+      "contract": "204",
+      "billId": 146,
+      "seq": 2,
+      "sienge": {
+        "due": "2025-12-20",
+        "installmentId": 6,
+        "inst": "2/55"
+      },
+      "vencedor": {
+        "id": "c408fa9e-0389-4767-a245-6b131f5208c0",
+        "status": "pago",
+        "data_prevista": "2025-12-20",
+        "data_pagamento": "2026-01-19",
+        "valor": "1000.00",
+        "created_at": "2026-01-15 22:02:43.323439+00",
+        "dist_dias": 0
+      },
+      "perdedores": [
+        {
+          "id": "ab621c00-1aeb-4141-bc23-0fd644f50f6b",
+          "status": "pago",
+          "data_prevista": "2025-12-20",
+          "data_pagamento": "2025-08-20",
+          "valor": "1461.11",
+          "created_at": "2026-01-15 22:02:43.323439+00",
+          "dist_dias": 0,
+          "acao": "cancelar"
+        }
+      ],
+      "tiebreakerUsado": "data_pagamento"
+    },
+    {
+      "venda_id": "53d0c5f5-aa8e-4804-9c64-fef6ecdf04fc",
+      "contract": "204",
+      "billId": 146,
+      "seq": 3,
+      "sienge": {
+        "due": "2026-01-20",
+        "installmentId": 7,
+        "inst": "3/55"
+      },
+      "vencedor": {
+        "id": "19e0fd03-43c2-493d-ab03-cd769261e078",
+        "status": "pago",
+        "data_prevista": "2026-01-20",
+        "data_pagamento": "2025-09-18",
+        "valor": "1000.00",
+        "created_at": "2026-01-15 22:02:43.323439+00",
+        "dist_dias": 0
+      },
+      "perdedores": [
+        {
+          "id": "91186e22-6c3a-404c-915e-b09e94325f85",
+          "status": "pendente",
+          "data_prevista": "2026-01-20",
+          "data_pagamento": null,
+          "valor": "1461.11",
+          "created_at": "2026-01-15 22:02:43.323439+00",
+          "dist_dias": 0,
+          "acao": "cancelar"
+        }
+      ],
+      "tiebreakerUsado": "data_pagamento"
+    },
+    {
+      "venda_id": "53d0c5f5-aa8e-4804-9c64-fef6ecdf04fc",
+      "contract": "204",
+      "billId": 146,
+      "seq": 4,
+      "sienge": {
+        "due": "2026-02-20",
+        "installmentId": 8,
+        "inst": "4/55"
+      },
+      "vencedor": {
+        "id": "486a164e-05b3-4d74-8d93-46dda9785dd2",
+        "status": "pago",
+        "data_prevista": "2026-02-20",
+        "data_pagamento": "2026-02-23",
+        "valor": "1461.11",
+        "created_at": "2026-01-15 22:02:43.323439+00",
+        "dist_dias": 0
+      },
+      "perdedores": [
+        {
+          "id": "50afdcce-e5a5-4594-90f5-dd47e470fada",
+          "status": "pago",
+          "data_prevista": "2026-02-20",
+          "data_pagamento": "2026-02-23",
+          "valor": "1000.00",
+          "created_at": "2026-01-15 22:02:43.323439+00",
+          "dist_dias": 0,
+          "acao": "cancelar"
+        }
+      ],
+      "tiebreakerUsado": "created_at"
+    },
+    {
+      "venda_id": "ac1c4423-44f2-4c1d-b09c-866fcf326fe3",
+      "contract": "246",
+      "billId": 240,
+      "seq": 1,
+      "sienge": {
+        "due": "2026-01-20",
+        "installmentId": 4,
+        "inst": "1/52"
+      },
+      "vencedor": {
+        "id": "625bc9bb-1c57-4ad0-b5b9-c88a6230806c",
+        "status": "pago",
+        "data_prevista": "2026-01-20",
+        "data_pagamento": "2025-11-11",
+        "valor": "1553.53",
+        "created_at": "2026-01-15 22:03:36.617601+00",
+        "dist_dias": 0
+      },
+      "perdedores": [
+        {
+          "id": "a238704a-718b-480a-86d3-fc5c5eb2675e",
+          "status": "cancelado",
+          "data_prevista": "2025-10-20",
+          "data_pagamento": null,
+          "valor": "500.00",
+          "created_at": "2026-01-15 22:03:36.617601+00",
+          "dist_dias": 92,
+          "acao": "ja_cancelado_skip"
+        }
+      ],
+      "tiebreakerUsado": null
+    },
+    {
+      "venda_id": "ac1c4423-44f2-4c1d-b09c-866fcf326fe3",
+      "contract": "246",
+      "billId": 240,
+      "seq": 2,
+      "sienge": {
+        "due": "2026-02-20",
+        "installmentId": 5,
+        "inst": "2/52"
+      },
+      "vencedor": {
+        "id": "08e5d409-00c6-43f4-b2a3-77aaa902c632",
+        "status": "pago",
+        "data_prevista": "2026-02-20",
+        "data_pagamento": "2026-02-09",
+        "valor": "1553.53",
+        "created_at": "2026-01-15 22:03:36.617601+00",
+        "dist_dias": 0
+      },
+      "perdedores": [
+        {
+          "id": "0c93c64b-93ae-44d7-a2ad-ac417ec856c8",
+          "status": "cancelado",
+          "data_prevista": "2025-11-20",
+          "data_pagamento": null,
+          "valor": "500.00",
+          "created_at": "2026-01-15 22:03:36.617601+00",
+          "dist_dias": 92,
+          "acao": "ja_cancelado_skip"
+        }
+      ],
+      "tiebreakerUsado": null
+    },
+    {
+      "venda_id": "84b74c27-fa97-4cb0-9e22-be95f88237d2",
+      "contract": "255",
+      "billId": 143,
+      "seq": 5,
+      "sienge": {
+        "due": "2026-05-20",
+        "installmentId": 12,
+        "inst": "5/53"
+      },
+      "vencedor": {
+        "id": "155df495-07db-4265-b651-a35203de35ff",
+        "status": "pago",
+        "data_prevista": "2026-05-20",
+        "data_pagamento": "2025-12-29",
+        "valor": "1221.23",
+        "created_at": "2026-01-15 22:03:48.189555+00",
+        "dist_dias": 0
+      },
+      "perdedores": [
+        {
+          "id": "bed2b393-a373-4525-9825-f83420a308df",
+          "status": "cancelado",
+          "data_prevista": "2025-10-20",
+          "data_pagamento": null,
+          "valor": "400.00",
+          "created_at": "2026-01-15 22:03:48.189555+00",
+          "dist_dias": 212,
+          "acao": "ja_cancelado_skip"
+        }
+      ],
+      "tiebreakerUsado": null
+    },
+    {
+      "venda_id": "a7fe850b-0b89-44ab-b222-68cf877febfe",
+      "contract": "256",
+      "billId": 226,
+      "seq": 1,
+      "sienge": {
+        "due": "2026-03-20",
+        "installmentId": 6,
+        "inst": "1/50"
+      },
+      "vencedor": {
+        "id": "46c6b6b3-384b-45f5-9304-7f2e695637cb",
+        "status": "pago",
+        "data_prevista": "2026-03-20",
+        "data_pagamento": "2025-10-20",
+        "valor": "500.00",
+        "created_at": "2026-01-15 22:03:49.450054+00",
+        "dist_dias": 0
+      },
+      "perdedores": [
+        {
+          "id": "cfe2d865-a047-46e5-b2b0-726e660d5c2d",
+          "status": "pendente",
+          "data_prevista": "2026-03-20",
+          "data_pagamento": null,
+          "valor": "500.00",
+          "created_at": "2026-01-15 22:03:49.450054+00",
+          "dist_dias": 0,
+          "acao": "cancelar"
+        }
+      ],
+      "tiebreakerUsado": "data_pagamento"
+    },
+    {
+      "venda_id": "a7fe850b-0b89-44ab-b222-68cf877febfe",
+      "contract": "256",
+      "billId": 226,
+      "seq": 2,
+      "sienge": {
+        "due": "2026-04-20",
+        "installmentId": 7,
+        "inst": "2/50"
+      },
+      "vencedor": {
+        "id": "abb904a7-7ed6-4931-b092-30fcd54ea70d",
+        "status": "pago",
+        "data_prevista": "2026-04-20",
+        "data_pagamento": "2026-04-20",
+        "valor": "875.97",
+        "created_at": "2026-01-15 22:03:49.450054+00",
+        "dist_dias": 0
+      },
+      "perdedores": [
+        {
+          "id": "6e5bbe8b-9876-4c33-baf7-d5d9d150df49",
+          "status": "pago",
+          "data_prevista": "2026-04-20",
+          "data_pagamento": "2025-11-19",
+          "valor": "500.00",
+          "created_at": "2026-01-15 22:03:49.450054+00",
+          "dist_dias": 0,
+          "acao": "cancelar"
+        }
+      ],
+      "tiebreakerUsado": "data_pagamento"
+    },
+    {
+      "venda_id": "3771951d-5221-4a3d-8b2f-6a0c5b076b12",
+      "contract": "269",
+      "billId": 236,
+      "seq": 1,
+      "sienge": {
+        "due": "2030-07-10",
+        "installmentId": 61,
+        "inst": "1/6"
+      },
+      "vencedor": {
+        "id": "0b11c5b8-0616-40d5-ab13-e28576bf9f86",
+        "status": "pago",
+        "data_prevista": "2030-07-10",
+        "data_pagamento": "2025-07-09",
+        "valor": "1600.00",
+        "created_at": "2026-01-15 22:04:06.609222+00",
+        "dist_dias": 0
+      },
+      "perdedores": [
+        {
+          "id": "b9f5fe37-e009-43b2-9351-09a81bb3cf08",
+          "status": "pendente",
+          "data_prevista": "2030-07-10",
+          "data_pagamento": null,
+          "valor": "1600.00",
+          "created_at": "2026-01-15 22:04:06.609222+00",
+          "dist_dias": 0,
+          "acao": "cancelar"
+        },
+        {
+          "id": "ad6c3fa8-52f2-4f77-8f1a-909a6c03881f",
+          "status": "pendente",
+          "data_prevista": "2030-07-10",
+          "data_pagamento": null,
+          "valor": "2800.00",
+          "created_at": "2026-01-15 22:04:06.609222+00",
+          "dist_dias": 0,
+          "acao": "cancelar"
+        },
+        {
+          "id": "5c7154e8-679f-4915-b009-9836ac62815a",
+          "status": "pendente",
+          "data_prevista": "2030-07-10",
+          "data_pagamento": null,
+          "valor": "3200.00",
+          "created_at": "2026-01-15 22:04:06.609222+00",
+          "dist_dias": 0,
+          "acao": "cancelar"
+        },
+        {
+          "id": "0db8f062-0e24-48f7-88b8-4e4f9e6f7169",
+          "status": "pendente",
+          "data_prevista": "2030-07-10",
+          "data_pagamento": null,
+          "valor": "2200.00",
+          "created_at": "2026-01-15 22:04:06.609222+00",
+          "dist_dias": 0,
+          "acao": "cancelar"
+        },
+        {
+          "id": "98d490bf-0ca3-4da9-9b54-4d5b98a9a1f9",
+          "status": "pendente",
+          "data_prevista": "2030-07-10",
+          "data_pagamento": null,
+          "valor": "1900.00",
+          "created_at": "2026-01-15 22:04:06.609222+00",
+          "dist_dias": 0,
+          "acao": "cancelar"
+        },
+        {
+          "id": "245b4ca9-0e74-4a66-9571-193c2c231264",
+          "status": "pendente",
+          "data_prevista": "2025-07-10",
+          "data_pagamento": null,
+          "valor": "1300.00",
+          "created_at": "2026-01-15 22:04:06.609222+00",
+          "dist_dias": 1826,
+          "acao": "cancelar"
+        }
+      ],
+      "tiebreakerUsado": null
+    },
+    {
+      "venda_id": "3771951d-5221-4a3d-8b2f-6a0c5b076b12",
+      "contract": "269",
+      "billId": 236,
+      "seq": 2,
+      "sienge": {
+        "due": "2030-08-10",
+        "installmentId": 63,
+        "inst": "2/6"
+      },
+      "vencedor": {
+        "id": "13122cfb-c6b3-41db-88c6-254fdf08e3ad",
+        "status": "pago",
+        "data_prevista": "2030-08-10",
+        "data_pagamento": "2025-08-08",
+        "valor": "2800.00",
+        "created_at": "2026-01-15 22:04:06.609222+00",
+        "dist_dias": 0
+      },
+      "perdedores": [
+        {
+          "id": "e7b03697-0548-42fe-89d2-874a9e4f84c7",
+          "status": "pendente",
+          "data_prevista": "2030-08-10",
+          "data_pagamento": null,
+          "valor": "2500.00",
+          "created_at": "2026-01-15 22:04:06.609222+00",
+          "dist_dias": 0,
+          "acao": "cancelar"
+        },
+        {
+          "id": "ce0088d1-357e-42ff-932d-3a6b3afe41c3",
+          "status": "pendente",
+          "data_prevista": "2030-08-10",
+          "data_pagamento": null,
+          "valor": "2200.00",
+          "created_at": "2026-01-15 22:04:06.609222+00",
+          "dist_dias": 0,
+          "acao": "cancelar"
+        },
+        {
+          "id": "59b36115-68ca-4aef-bf75-77a5eaa3c3b6",
+          "status": "pendente",
+          "data_prevista": "2030-08-10",
+          "data_pagamento": null,
+          "valor": "1600.00",
+          "created_at": "2026-01-15 22:04:06.609222+00",
+          "dist_dias": 0,
+          "acao": "cancelar"
+        },
+        {
+          "id": "cfec2ba5-82b5-4493-a5f6-4f9c4a38cc42",
+          "status": "pendente",
+          "data_prevista": "2030-08-10",
+          "data_pagamento": null,
+          "valor": "2500.00",
+          "created_at": "2026-01-15 22:04:06.609222+00",
+          "dist_dias": 0,
+          "acao": "cancelar"
+        },
+        {
+          "id": "ab0f8e86-ba0e-410e-9525-6720a3ba9847",
+          "status": "pendente",
+          "data_prevista": "2030-08-10",
+          "data_pagamento": null,
+          "valor": "1900.00",
+          "created_at": "2026-01-15 22:04:06.609222+00",
+          "dist_dias": 0,
+          "acao": "cancelar"
+        },
+        {
+          "id": "7eea81e1-041c-4b6a-af7d-36918cab203c",
+          "status": "pendente",
+          "data_prevista": "2025-08-10",
+          "data_pagamento": null,
+          "valor": "1300.00",
+          "created_at": "2026-01-15 22:04:06.609222+00",
+          "dist_dias": 1826,
+          "acao": "cancelar"
+        }
+      ],
+      "tiebreakerUsado": null
+    },
+    {
+      "venda_id": "3771951d-5221-4a3d-8b2f-6a0c5b076b12",
+      "contract": "269",
+      "billId": 236,
+      "seq": 5,
+      "sienge": {
+        "due": "2030-11-10",
+        "installmentId": 66,
+        "inst": "5/6"
+      },
+      "vencedor": {
+        "id": "3459ca50-fffd-49e5-b9c8-1ea7625786fa",
+        "status": "pago",
+        "data_prevista": "2030-11-10",
+        "data_pagamento": "2025-11-06",
+        "valor": "2500.00",
+        "created_at": "2026-01-15 22:04:06.609222+00",
+        "dist_dias": 0
+      },
+      "perdedores": [
+        {
+          "id": "585fe6b8-ed1b-4ed9-b854-4200439dfd79",
+          "status": "pendente",
+          "data_prevista": "2030-11-10",
+          "data_pagamento": null,
+          "valor": "1900.00",
+          "created_at": "2026-01-15 22:04:06.609222+00",
+          "dist_dias": 0,
+          "acao": "cancelar"
+        },
+        {
+          "id": "d8b4fbe9-6905-4d24-9fff-3040f9e89062",
+          "status": "pendente",
+          "data_prevista": "2030-11-10",
+          "data_pagamento": null,
+          "valor": "2500.00",
+          "created_at": "2026-01-15 22:04:06.609222+00",
+          "dist_dias": 0,
+          "acao": "cancelar"
+        },
+        {
+          "id": "e0603d4b-81fa-48d6-ba9a-899b339f8ad8",
+          "status": "pendente",
+          "data_prevista": "2030-11-10",
+          "data_pagamento": null,
+          "valor": "2800.00",
+          "created_at": "2026-01-15 22:04:06.609222+00",
+          "dist_dias": 0,
+          "acao": "cancelar"
+        },
+        {
+          "id": "6d9069a5-740d-4090-82a1-a3f8fd5b5220",
+          "status": "pendente",
+          "data_prevista": "2030-11-10",
+          "data_pagamento": null,
+          "valor": "3200.00",
+          "created_at": "2026-01-15 22:04:06.609222+00",
+          "dist_dias": 0,
+          "acao": "cancelar"
+        },
+        {
+          "id": "99413f2e-5557-47d8-923f-593008a1996c",
+          "status": "pendente",
+          "data_prevista": "2030-11-10",
+          "data_pagamento": null,
+          "valor": "1600.00",
+          "created_at": "2026-01-15 22:04:06.609222+00",
+          "dist_dias": 0,
+          "acao": "cancelar"
+        },
+        {
+          "id": "90ae68cc-ebe2-416a-8cc4-b3af2b2c5839",
+          "status": "pendente",
+          "data_prevista": "2025-11-10",
+          "data_pagamento": null,
+          "valor": "1300.00",
+          "created_at": "2026-01-15 22:04:06.609222+00",
+          "dist_dias": 1826,
+          "acao": "cancelar"
+        }
+      ],
+      "tiebreakerUsado": null
+    },
+    {
+      "venda_id": "1d7772d4-ee1e-4d72-92ec-3e67460880cc",
+      "contract": "275",
+      "billId": 178,
+      "seq": 2,
+      "sienge": {
+        "due": "2027-06-10",
+        "installmentId": 22,
+        "inst": "2/37"
+      },
+      "vencedor": {
+        "id": "9cb89990-01a2-4183-9a54-75b6de80383d",
+        "status": "pago",
+        "data_prevista": "2027-06-10",
+        "data_pagamento": "2025-11-10",
+        "valor": "1500.00",
+        "created_at": "2026-01-15 22:04:14.641258+00",
+        "dist_dias": 0
+      },
+      "perdedores": [
+        {
+          "id": "aea7b598-0b13-49a4-a4cb-211c6f2bd031",
+          "status": "pendente",
+          "data_prevista": "2025-11-10",
+          "data_pagamento": null,
+          "valor": "2650.00",
+          "created_at": "2026-01-15 22:04:14.641258+00",
+          "dist_dias": 577,
+          "acao": "cancelar"
+        }
+      ],
+      "tiebreakerUsado": null
+    },
+    {
+      "venda_id": "1d7772d4-ee1e-4d72-92ec-3e67460880cc",
+      "contract": "275",
+      "billId": 178,
+      "seq": 3,
+      "sienge": {
+        "due": "2027-07-10",
+        "installmentId": 23,
+        "inst": "3/37"
+      },
+      "vencedor": {
+        "id": "0441c4ef-389f-4f56-b98d-938e5380af6a",
+        "status": "pago",
+        "data_prevista": "2027-07-10",
+        "data_pagamento": "2025-12-10",
+        "valor": "1500.00",
+        "created_at": "2026-01-15 22:04:14.641258+00",
+        "dist_dias": 0
+      },
+      "perdedores": [
+        {
+          "id": "618b3c39-70cb-45f2-92e9-4591f8cd1341",
+          "status": "pendente",
+          "data_prevista": "2027-07-10",
+          "data_pagamento": null,
+          "valor": "1500.00",
+          "created_at": "2026-01-15 22:04:14.641258+00",
+          "dist_dias": 0,
+          "acao": "cancelar"
+        }
+      ],
+      "tiebreakerUsado": "data_pagamento"
+    },
+    {
+      "venda_id": "1d7772d4-ee1e-4d72-92ec-3e67460880cc",
+      "contract": "275",
+      "billId": 178,
+      "seq": 6,
+      "sienge": {
+        "due": "2027-10-10",
+        "installmentId": 26,
+        "inst": "6/37"
+      },
+      "vencedor": {
+        "id": "891de658-accc-45a6-9ada-162f13355ab5",
+        "status": "pago",
+        "data_prevista": "2027-10-10",
+        "data_pagamento": "2026-03-10",
+        "valor": "1500.00",
+        "created_at": "2026-01-15 22:04:14.641258+00",
+        "dist_dias": 0
+      },
+      "perdedores": [
+        {
+          "id": "e49ff307-2b8c-408a-b363-0efcdf832682",
+          "status": "pendente",
+          "data_prevista": "2027-10-10",
+          "data_pagamento": null,
+          "valor": "1500.00",
+          "created_at": "2026-01-15 22:04:14.641258+00",
+          "dist_dias": 0,
+          "acao": "cancelar"
+        }
+      ],
+      "tiebreakerUsado": "data_pagamento"
+    },
+    {
+      "venda_id": "1d7772d4-ee1e-4d72-92ec-3e67460880cc",
+      "contract": "275",
+      "billId": 178,
+      "seq": 7,
+      "sienge": {
+        "due": "2027-11-10",
+        "installmentId": 27,
+        "inst": "7/37"
+      },
+      "vencedor": {
+        "id": "7219de20-b5e3-449a-b3c8-ced28f2e3e74",
+        "status": "pago",
+        "data_prevista": "2027-11-10",
+        "data_pagamento": "2026-04-10",
+        "valor": "1500.00",
+        "created_at": "2026-01-15 22:04:14.641258+00",
+        "dist_dias": 0
+      },
+      "perdedores": [
+        {
+          "id": "acda1afe-7ac7-4afc-9003-96f05693d435",
+          "status": "pendente",
+          "data_prevista": "2027-11-10",
+          "data_pagamento": null,
+          "valor": "1500.00",
+          "created_at": "2026-01-15 22:04:14.641258+00",
+          "dist_dias": 0,
+          "acao": "cancelar"
+        }
+      ],
+      "tiebreakerUsado": "data_pagamento"
+    },
+    {
+      "venda_id": "1d7772d4-ee1e-4d72-92ec-3e67460880cc",
+      "contract": "275",
+      "billId": 178,
+      "seq": 8,
+      "sienge": {
+        "due": "2027-12-10",
+        "installmentId": 28,
+        "inst": "8/37"
+      },
+      "vencedor": {
+        "id": "f4be1a69-16ed-4ae0-84e3-7951dc63a9b4",
+        "status": "pendente",
+        "data_prevista": "2027-12-10",
+        "data_pagamento": null,
+        "valor": "1500.00",
+        "created_at": "2026-01-15 22:04:14.641258+00",
+        "dist_dias": 0
+      },
+      "perdedores": [
+        {
+          "id": "d6bd117a-b92d-4d21-a632-acecda073db1",
+          "status": "pendente",
+          "data_prevista": "2027-12-10",
+          "data_pagamento": null,
+          "valor": "1500.00",
+          "created_at": "2026-01-15 22:04:14.641258+00",
+          "dist_dias": 0,
+          "acao": "cancelar"
+        }
+      ],
+      "tiebreakerUsado": "created_at"
+    },
+    {
+      "venda_id": "1d7772d4-ee1e-4d72-92ec-3e67460880cc",
+      "contract": "275",
+      "billId": 178,
+      "seq": 9,
+      "sienge": {
+        "due": "2028-01-10",
+        "installmentId": 29,
+        "inst": "9/37"
+      },
+      "vencedor": {
+        "id": "6b5006ed-4eb7-4bb8-b84c-80949acfaad6",
+        "status": "pendente",
+        "data_prevista": "2028-01-10",
+        "data_pagamento": null,
+        "valor": "1500.00",
+        "created_at": "2026-01-15 22:04:14.641258+00",
+        "dist_dias": 0
+      },
+      "perdedores": [
+        {
+          "id": "aecd03ce-5ef8-4a4f-9be6-8714aa1edd51",
+          "status": "pendente",
+          "data_prevista": "2028-01-10",
+          "data_pagamento": null,
+          "valor": "1500.00",
+          "created_at": "2026-01-15 22:04:14.641258+00",
+          "dist_dias": 0,
+          "acao": "cancelar"
+        }
+      ],
+      "tiebreakerUsado": "created_at"
+    },
+    {
+      "venda_id": "1d7772d4-ee1e-4d72-92ec-3e67460880cc",
+      "contract": "275",
+      "billId": 178,
+      "seq": 10,
+      "sienge": {
+        "due": "2028-02-10",
+        "installmentId": 30,
+        "inst": "10/37"
+      },
+      "vencedor": {
+        "id": "08e7017d-4b8a-44ba-9fed-a3d663dea341",
+        "status": "pendente",
+        "data_prevista": "2028-02-10",
+        "data_pagamento": null,
+        "valor": "1500.00",
+        "created_at": "2026-01-15 22:04:14.641258+00",
+        "dist_dias": 0
+      },
+      "perdedores": [
+        {
+          "id": "02c004d3-e3c6-44b6-9dce-898bc610fec6",
+          "status": "pendente",
+          "data_prevista": "2028-02-10",
+          "data_pagamento": null,
+          "valor": "1500.00",
+          "created_at": "2026-01-15 22:04:14.641258+00",
+          "dist_dias": 0,
+          "acao": "cancelar"
+        }
+      ],
+      "tiebreakerUsado": "created_at"
+    },
+    {
+      "venda_id": "1d7772d4-ee1e-4d72-92ec-3e67460880cc",
+      "contract": "275",
+      "billId": 178,
+      "seq": 11,
+      "sienge": {
+        "due": "2028-03-10",
+        "installmentId": 31,
+        "inst": "11/37"
+      },
+      "vencedor": {
+        "id": "56d03c1f-ec71-49e8-8466-2441cea5bc28",
+        "status": "pendente",
+        "data_prevista": "2028-03-10",
+        "data_pagamento": null,
+        "valor": "2650.00",
+        "created_at": "2026-01-15 22:04:14.641258+00",
+        "dist_dias": 0
+      },
+      "perdedores": [
+        {
+          "id": "f80b7787-4d0e-4cce-8a7b-384c5d4329ce",
+          "status": "pendente",
+          "data_prevista": "2028-03-10",
+          "data_pagamento": null,
+          "valor": "1500.00",
+          "created_at": "2026-01-15 22:04:14.641258+00",
+          "dist_dias": 0,
+          "acao": "cancelar"
+        }
+      ],
+      "tiebreakerUsado": "created_at"
+    },
+    {
+      "venda_id": "1d7772d4-ee1e-4d72-92ec-3e67460880cc",
+      "contract": "275",
+      "billId": 178,
+      "seq": 12,
+      "sienge": {
+        "due": "2028-04-10",
+        "installmentId": 32,
+        "inst": "12/37"
+      },
+      "vencedor": {
+        "id": "cc2976b8-b8d7-4546-837b-f8617c77d3b6",
+        "status": "pendente",
+        "data_prevista": "2028-04-10",
+        "data_pagamento": null,
+        "valor": "1500.00",
+        "created_at": "2026-01-15 22:04:14.641258+00",
+        "dist_dias": 0
+      },
+      "perdedores": [
+        {
+          "id": "6ac3cd7a-ecdc-42b8-b037-ec481ccef6d3",
+          "status": "pendente",
+          "data_prevista": "2028-04-10",
+          "data_pagamento": null,
+          "valor": "2650.00",
+          "created_at": "2026-01-15 22:04:14.641258+00",
+          "dist_dias": 0,
+          "acao": "cancelar"
+        }
+      ],
+      "tiebreakerUsado": "created_at"
+    },
+    {
+      "venda_id": "1d7772d4-ee1e-4d72-92ec-3e67460880cc",
+      "contract": "275",
+      "billId": 178,
+      "seq": 13,
+      "sienge": {
+        "due": "2028-05-10",
+        "installmentId": 33,
+        "inst": "13/37"
+      },
+      "vencedor": {
+        "id": "73eff0d9-0bba-4b78-a7df-af44dad2806f",
+        "status": "pendente",
+        "data_prevista": "2028-05-10",
+        "data_pagamento": null,
+        "valor": "1500.00",
+        "created_at": "2026-01-15 22:04:14.641258+00",
+        "dist_dias": 0
+      },
+      "perdedores": [
+        {
+          "id": "36c358f0-40a3-4c2b-8395-9f91439ade13",
+          "status": "pendente",
+          "data_prevista": "2028-05-10",
+          "data_pagamento": null,
+          "valor": "2650.00",
+          "created_at": "2026-01-15 22:04:14.641258+00",
+          "dist_dias": 0,
+          "acao": "cancelar"
+        }
+      ],
+      "tiebreakerUsado": "created_at"
+    },
+    {
+      "venda_id": "1d7772d4-ee1e-4d72-92ec-3e67460880cc",
+      "contract": "275",
+      "billId": 178,
+      "seq": 14,
+      "sienge": {
+        "due": "2028-06-10",
+        "installmentId": 34,
+        "inst": "14/37"
+      },
+      "vencedor": {
+        "id": "f600d32f-551c-440d-94c7-d013ca89d036",
+        "status": "pendente",
+        "data_prevista": "2028-06-10",
+        "data_pagamento": null,
+        "valor": "2650.00",
+        "created_at": "2026-01-15 22:04:14.641258+00",
+        "dist_dias": 0
+      },
+      "perdedores": [
+        {
+          "id": "daa69664-8240-464e-b4c0-e6e486716e9b",
+          "status": "pendente",
+          "data_prevista": "2028-06-10",
+          "data_pagamento": null,
+          "valor": "1500.00",
+          "created_at": "2026-01-15 22:04:14.641258+00",
+          "dist_dias": 0,
+          "acao": "cancelar"
+        }
+      ],
+      "tiebreakerUsado": "created_at"
+    },
+    {
+      "venda_id": "1d7772d4-ee1e-4d72-92ec-3e67460880cc",
+      "contract": "275",
+      "billId": 178,
+      "seq": 15,
+      "sienge": {
+        "due": "2028-07-10",
+        "installmentId": 35,
+        "inst": "15/37"
+      },
+      "vencedor": {
+        "id": "ce0da6d6-86e3-46a3-bfd6-9c4e7b00c77c",
+        "status": "pendente",
+        "data_prevista": "2028-07-10",
+        "data_pagamento": null,
+        "valor": "1500.00",
+        "created_at": "2026-01-15 22:04:14.641258+00",
+        "dist_dias": 0
+      },
+      "perdedores": [
+        {
+          "id": "fb51eb4f-242e-47cf-9422-e8fb1b38aaec",
+          "status": "pendente",
+          "data_prevista": "2028-07-10",
+          "data_pagamento": null,
+          "valor": "2650.00",
+          "created_at": "2026-01-15 22:04:14.641258+00",
+          "dist_dias": 0,
+          "acao": "cancelar"
+        }
+      ],
+      "tiebreakerUsado": "created_at"
+    },
+    {
+      "venda_id": "1d7772d4-ee1e-4d72-92ec-3e67460880cc",
+      "contract": "275",
+      "billId": 178,
+      "seq": 16,
+      "sienge": {
+        "due": "2028-08-10",
+        "installmentId": 36,
+        "inst": "16/37"
+      },
+      "vencedor": {
+        "id": "5e5c3524-2359-4de5-8d62-f8df01b6ceb1",
+        "status": "pendente",
+        "data_prevista": "2028-08-10",
+        "data_pagamento": null,
+        "valor": "1500.00",
+        "created_at": "2026-01-15 22:04:14.641258+00",
+        "dist_dias": 0
+      },
+      "perdedores": [
+        {
+          "id": "7840a5f5-6d27-4ace-9a0a-48ca4e07b755",
+          "status": "pendente",
+          "data_prevista": "2028-08-10",
+          "data_pagamento": null,
+          "valor": "1500.00",
+          "created_at": "2026-01-15 22:04:14.641258+00",
+          "dist_dias": 0,
+          "acao": "cancelar"
+        }
+      ],
+      "tiebreakerUsado": "created_at"
+    },
+    {
+      "venda_id": "1d7772d4-ee1e-4d72-92ec-3e67460880cc",
+      "contract": "275",
+      "billId": 178,
+      "seq": 17,
+      "sienge": {
+        "due": "2028-09-10",
+        "installmentId": 37,
+        "inst": "17/37"
+      },
+      "vencedor": {
+        "id": "e8412c99-bc94-4c39-9361-c551e07a81c9",
+        "status": "pendente",
+        "data_prevista": "2028-09-10",
+        "data_pagamento": null,
+        "valor": "1500.00",
+        "created_at": "2026-01-15 22:04:14.641258+00",
+        "dist_dias": 0
+      },
+      "perdedores": [
+        {
+          "id": "5daf22d0-4f44-4347-b740-2cda04d6796c",
+          "status": "pendente",
+          "data_prevista": "2028-09-10",
+          "data_pagamento": null,
+          "valor": "2650.00",
+          "created_at": "2026-01-15 22:04:14.641258+00",
+          "dist_dias": 0,
+          "acao": "cancelar"
+        }
+      ],
+      "tiebreakerUsado": "created_at"
+    },
+    {
+      "venda_id": "1d7772d4-ee1e-4d72-92ec-3e67460880cc",
+      "contract": "275",
+      "billId": 178,
+      "seq": 18,
+      "sienge": {
+        "due": "2028-10-10",
+        "installmentId": 38,
+        "inst": "18/37"
+      },
+      "vencedor": {
+        "id": "d0878575-1a63-4f48-b2c4-1272a7030b16",
+        "status": "pendente",
+        "data_prevista": "2028-10-10",
+        "data_pagamento": null,
+        "valor": "2650.00",
+        "created_at": "2026-01-15 22:04:14.641258+00",
+        "dist_dias": 0
+      },
+      "perdedores": [
+        {
+          "id": "a179ee30-f5b4-4c8e-bf57-e112a1e8c63b",
+          "status": "pendente",
+          "data_prevista": "2028-10-10",
+          "data_pagamento": null,
+          "valor": "1500.00",
+          "created_at": "2026-01-15 22:04:14.641258+00",
+          "dist_dias": 0,
+          "acao": "cancelar"
+        }
+      ],
+      "tiebreakerUsado": "created_at"
+    },
+    {
+      "venda_id": "1d7772d4-ee1e-4d72-92ec-3e67460880cc",
+      "contract": "275",
+      "billId": 178,
+      "seq": 19,
+      "sienge": {
+        "due": "2028-11-10",
+        "installmentId": 39,
+        "inst": "19/37"
+      },
+      "vencedor": {
+        "id": "4e6d57fc-bc25-4866-ba16-a20ec060c3e1",
+        "status": "pendente",
+        "data_prevista": "2028-11-10",
+        "data_pagamento": null,
+        "valor": "2650.00",
+        "created_at": "2026-01-15 22:04:14.641258+00",
+        "dist_dias": 0
+      },
+      "perdedores": [
+        {
+          "id": "f7727f3e-4238-4817-80c8-91522168b984",
+          "status": "pendente",
+          "data_prevista": "2028-11-10",
+          "data_pagamento": null,
+          "valor": "1500.00",
+          "created_at": "2026-01-15 22:04:14.641258+00",
+          "dist_dias": 0,
+          "acao": "cancelar"
+        }
+      ],
+      "tiebreakerUsado": "created_at"
+    },
+    {
+      "venda_id": "37357039-b2ed-404a-b8f9-5162019eb51f",
+      "contract": "346",
+      "billId": 422,
+      "seq": 1,
+      "sienge": {
+        "due": "2026-04-10",
+        "installmentId": 5,
+        "inst": "1/50"
+      },
+      "vencedor": {
+        "id": "045d5d72-ac21-43dc-9914-c31510f14abe",
+        "status": "pago",
+        "data_prevista": "2026-04-10",
+        "data_pagamento": "2026-04-06",
+        "valor": "700.00",
+        "created_at": "2026-01-15 22:05:36.364044+00",
+        "dist_dias": 0
+      },
+      "perdedores": [
+        {
+          "id": "3b1a914c-ac59-43ac-9a2a-b736c44a0382",
+          "status": "pago",
+          "data_prevista": "2026-04-10",
+          "data_pagamento": "2026-01-19",
+          "valor": "700.00",
+          "created_at": "2026-01-15 22:05:36.364044+00",
+          "dist_dias": 0,
+          "acao": "cancelar"
+        }
+      ],
+      "tiebreakerUsado": "data_pagamento"
+    },
+    {
+      "venda_id": "37357039-b2ed-404a-b8f9-5162019eb51f",
+      "contract": "346",
+      "billId": 422,
+      "seq": 4,
+      "sienge": {
+        "due": "2026-07-10",
+        "installmentId": 8,
+        "inst": "4/50"
+      },
+      "vencedor": {
+        "id": "412b9708-3223-4ccf-bf86-63520dbda45b",
+        "status": "pago",
+        "data_prevista": "2026-07-10",
+        "data_pagamento": "2026-03-05",
+        "valor": "1200.00",
+        "created_at": "2026-01-15 22:05:36.364044+00",
+        "dist_dias": 0
+      },
+      "perdedores": [
+        {
+          "id": "ba8ca065-edf6-4c3a-af6c-5e62315990df",
+          "status": "pendente",
+          "data_prevista": "2026-07-10",
+          "data_pagamento": null,
+          "valor": "1200.00",
+          "created_at": "2026-01-15 22:05:36.364044+00",
+          "dist_dias": 0,
+          "acao": "cancelar"
+        }
+      ],
+      "tiebreakerUsado": "data_pagamento"
+    },
+    {
+      "venda_id": "e476bbdb-88ce-464d-9238-ebbe6badb81b",
+      "contract": "382",
+      "billId": 454,
+      "seq": 2,
+      "sienge": {
+        "due": "2027-02-10",
+        "installmentId": 15,
+        "inst": "2/41"
+      },
+      "vencedor": {
+        "id": "5bd3d9dd-5b75-4cea-96e9-07714741dbcd",
+        "status": "pago",
+        "data_prevista": "2027-02-10",
+        "data_pagamento": "2026-03-06",
+        "valor": "1723.01",
+        "created_at": "2026-04-22 14:17:49.502+00",
+        "dist_dias": 0
+      },
+      "perdedores": [
+        {
+          "id": "d6bb3750-cf09-49cf-b903-eb7790c95cf0",
+          "status": "pendente",
+          "data_prevista": "2026-03-10",
+          "data_pagamento": null,
+          "valor": "875.00",
+          "created_at": "2026-04-22 14:17:49.502+00",
+          "dist_dias": 337,
+          "acao": "cancelar"
+        }
+      ],
+      "tiebreakerUsado": null
+    },
+    {
+      "venda_id": "e476bbdb-88ce-464d-9238-ebbe6badb81b",
+      "contract": "382",
+      "billId": 454,
+      "seq": 3,
+      "sienge": {
+        "due": "2027-03-10",
+        "installmentId": 16,
+        "inst": "3/41"
+      },
+      "vencedor": {
+        "id": "f7809de1-58bb-49ad-9efa-186bf588e78e",
+        "status": "pendente",
+        "data_prevista": "2027-03-10",
+        "data_pagamento": null,
+        "valor": "875.00",
+        "created_at": "2026-04-22 14:17:49.502+00",
+        "dist_dias": 0
+      },
+      "perdedores": [
+        {
+          "id": "f6876bf1-882f-4ede-8934-0aa4f1b36572",
+          "status": "pendente",
+          "data_prevista": "2027-03-10",
+          "data_pagamento": null,
+          "valor": "875.00",
+          "created_at": "2026-04-22 14:17:49.502+00",
+          "dist_dias": 0,
+          "acao": "cancelar"
+        }
+      ],
+      "tiebreakerUsado": "created_at"
+    },
+    {
+      "venda_id": "e476bbdb-88ce-464d-9238-ebbe6badb81b",
+      "contract": "382",
+      "billId": 454,
+      "seq": 4,
+      "sienge": {
+        "due": "2027-04-10",
+        "installmentId": 17,
+        "inst": "4/41"
+      },
+      "vencedor": {
+        "id": "19b9aeee-4e8e-443d-80eb-7fda59779722",
+        "status": "pendente",
+        "data_prevista": "2027-04-10",
+        "data_pagamento": null,
+        "valor": "875.00",
+        "created_at": "2026-04-22 14:17:49.502+00",
+        "dist_dias": 0
+      },
+      "perdedores": [
+        {
+          "id": "1ca44599-95a0-4c15-97ce-accb9565ecbe",
+          "status": "pendente",
+          "data_prevista": "2027-04-10",
+          "data_pagamento": null,
+          "valor": "1723.01",
+          "created_at": "2026-04-22 14:17:49.502+00",
+          "dist_dias": 0,
+          "acao": "cancelar"
+        }
+      ],
+      "tiebreakerUsado": "created_at"
+    },
+    {
+      "venda_id": "e476bbdb-88ce-464d-9238-ebbe6badb81b",
+      "contract": "382",
+      "billId": 454,
+      "seq": 5,
+      "sienge": {
+        "due": "2027-05-10",
+        "installmentId": 18,
+        "inst": "5/41"
+      },
+      "vencedor": {
+        "id": "976cd96a-a769-4bb7-ac14-8eb59d9e067b",
+        "status": "pendente",
+        "data_prevista": "2027-05-10",
+        "data_pagamento": null,
+        "valor": "1723.01",
+        "created_at": "2026-04-22 14:17:49.502+00",
+        "dist_dias": 0
+      },
+      "perdedores": [
+        {
+          "id": "2037e055-59a3-4f75-be5a-c89171f73778",
+          "status": "pendente",
+          "data_prevista": "2027-05-10",
+          "data_pagamento": null,
+          "valor": "875.00",
+          "created_at": "2026-04-22 14:17:49.502+00",
+          "dist_dias": 0,
+          "acao": "cancelar"
+        }
+      ],
+      "tiebreakerUsado": "created_at"
+    },
+    {
+      "venda_id": "e476bbdb-88ce-464d-9238-ebbe6badb81b",
+      "contract": "382",
+      "billId": 454,
+      "seq": 6,
+      "sienge": {
+        "due": "2027-06-10",
+        "installmentId": 19,
+        "inst": "6/41"
+      },
+      "vencedor": {
+        "id": "1af56460-38e7-4011-b46f-b4655c9db626",
+        "status": "pendente",
+        "data_prevista": "2027-06-10",
+        "data_pagamento": null,
+        "valor": "875.00",
+        "created_at": "2026-04-22 14:17:49.502+00",
+        "dist_dias": 0
+      },
+      "perdedores": [
+        {
+          "id": "2a315393-e826-407c-a116-d686c2d375c2",
+          "status": "pendente",
+          "data_prevista": "2027-06-10",
+          "data_pagamento": null,
+          "valor": "1723.01",
+          "created_at": "2026-04-22 14:17:49.502+00",
+          "dist_dias": 0,
+          "acao": "cancelar"
+        }
+      ],
+      "tiebreakerUsado": "created_at"
+    },
+    {
+      "venda_id": "e476bbdb-88ce-464d-9238-ebbe6badb81b",
+      "contract": "382",
+      "billId": 454,
+      "seq": 7,
+      "sienge": {
+        "due": "2027-07-10",
+        "installmentId": 20,
+        "inst": "7/41"
+      },
+      "vencedor": {
+        "id": "c94a692d-7fc4-46ca-b693-d226f5f93700",
+        "status": "pendente",
+        "data_prevista": "2027-07-10",
+        "data_pagamento": null,
+        "valor": "875.00",
+        "created_at": "2026-04-22 14:17:49.502+00",
+        "dist_dias": 0
+      },
+      "perdedores": [
+        {
+          "id": "0843237f-25f3-406f-ba4e-0dce47692e2f",
+          "status": "pendente",
+          "data_prevista": "2027-07-10",
+          "data_pagamento": null,
+          "valor": "1723.01",
+          "created_at": "2026-04-22 14:17:49.502+00",
+          "dist_dias": 0,
+          "acao": "cancelar"
+        }
+      ],
+      "tiebreakerUsado": "created_at"
+    },
+    {
+      "venda_id": "e476bbdb-88ce-464d-9238-ebbe6badb81b",
+      "contract": "382",
+      "billId": 454,
+      "seq": 8,
+      "sienge": {
+        "due": "2027-08-10",
+        "installmentId": 21,
+        "inst": "8/41"
+      },
+      "vencedor": {
+        "id": "ac8340ca-747d-478c-b9d0-35a4497f1943",
+        "status": "pendente",
+        "data_prevista": "2027-08-10",
+        "data_pagamento": null,
+        "valor": "875.00",
+        "created_at": "2026-04-22 14:17:49.502+00",
+        "dist_dias": 0
+      },
+      "perdedores": [
+        {
+          "id": "8c5e1551-4504-476e-a7ab-38f46ba5bfc5",
+          "status": "pendente",
+          "data_prevista": "2027-08-10",
+          "data_pagamento": null,
+          "valor": "1723.01",
+          "created_at": "2026-04-22 14:17:49.502+00",
+          "dist_dias": 0,
+          "acao": "cancelar"
+        }
+      ],
+      "tiebreakerUsado": "created_at"
+    },
+    {
+      "venda_id": "e476bbdb-88ce-464d-9238-ebbe6badb81b",
+      "contract": "382",
+      "billId": 454,
+      "seq": 9,
+      "sienge": {
+        "due": "2027-09-10",
+        "installmentId": 22,
+        "inst": "9/41"
+      },
+      "vencedor": {
+        "id": "6fdcb989-3732-4edf-969b-4258d4badd50",
+        "status": "pendente",
+        "data_prevista": "2027-09-10",
+        "data_pagamento": null,
+        "valor": "875.00",
+        "created_at": "2026-04-22 14:17:49.502+00",
+        "dist_dias": 0
+      },
+      "perdedores": [
+        {
+          "id": "dd0727f7-c1a2-49b4-9495-e592071afb3a",
+          "status": "pendente",
+          "data_prevista": "2027-09-10",
+          "data_pagamento": null,
+          "valor": "1723.01",
+          "created_at": "2026-04-22 14:17:49.502+00",
+          "dist_dias": 0,
+          "acao": "cancelar"
+        }
+      ],
+      "tiebreakerUsado": "created_at"
+    },
+    {
+      "venda_id": "e476bbdb-88ce-464d-9238-ebbe6badb81b",
+      "contract": "382",
+      "billId": 454,
+      "seq": 10,
+      "sienge": {
+        "due": "2027-10-10",
+        "installmentId": 23,
+        "inst": "10/41"
+      },
+      "vencedor": {
+        "id": "aeb4a809-4dd8-4f46-980a-9cdff71ac291",
+        "status": "pendente",
+        "data_prevista": "2027-10-10",
+        "data_pagamento": null,
+        "valor": "875.00",
+        "created_at": "2026-04-22 14:17:49.502+00",
+        "dist_dias": 0
+      },
+      "perdedores": [
+        {
+          "id": "5ef4c069-706c-44d9-8dc1-314daef9d3f1",
+          "status": "pendente",
+          "data_prevista": "2027-10-10",
+          "data_pagamento": null,
+          "valor": "1723.01",
+          "created_at": "2026-04-22 14:17:49.502+00",
+          "dist_dias": 0,
+          "acao": "cancelar"
+        }
+      ],
+      "tiebreakerUsado": "created_at"
+    },
+    {
+      "venda_id": "e476bbdb-88ce-464d-9238-ebbe6badb81b",
+      "contract": "382",
+      "billId": 454,
+      "seq": 11,
+      "sienge": {
+        "due": "2027-11-10",
+        "installmentId": 24,
+        "inst": "11/41"
+      },
+      "vencedor": {
+        "id": "56e99b75-9cf2-47f5-83d7-a6ded7fafddf",
+        "status": "pendente",
+        "data_prevista": "2027-11-10",
+        "data_pagamento": null,
+        "valor": "875.00",
+        "created_at": "2026-04-22 14:17:49.502+00",
+        "dist_dias": 0
+      },
+      "perdedores": [
+        {
+          "id": "45ed90e2-ef0d-46c2-957a-4eab78205b25",
+          "status": "pendente",
+          "data_prevista": "2027-11-10",
+          "data_pagamento": null,
+          "valor": "1723.01",
+          "created_at": "2026-04-22 14:17:49.502+00",
+          "dist_dias": 0,
+          "acao": "cancelar"
+        }
+      ],
+      "tiebreakerUsado": "created_at"
+    },
+    {
+      "venda_id": "c9e6358d-2aab-4743-8358-e7628f761350",
+      "contract": "87",
+      "billId": 381,
+      "seq": 1,
+      "sienge": {
+        "due": "2026-02-20",
+        "installmentId": 9,
+        "inst": "1/53"
+      },
+      "vencedor": {
+        "id": "62aa05d7-38fe-446a-8c9d-2ab62ef5d311",
+        "status": "pago",
+        "data_prevista": "2026-02-20",
+        "data_pagamento": "2026-02-03",
+        "valor": "1394.47",
+        "created_at": "2026-01-16 11:59:56.45806+00",
+        "dist_dias": 0
+      },
+      "perdedores": [
+        {
+          "id": "ae7bccce-f471-4be8-83c2-01aaef9b8de0",
+          "status": "pago",
+          "data_prevista": "2026-02-20",
+          "data_pagamento": "2026-02-02",
+          "valor": "2761.39",
+          "created_at": "2026-01-16 11:59:56.45806+00",
+          "dist_dias": 0,
+          "acao": "cancelar"
+        },
+        {
+          "id": "a2a59d27-e6f4-41df-a901-83ee2a1763b5",
+          "status": "pendente",
+          "data_prevista": "2026-02-20",
+          "data_pagamento": null,
+          "valor": "1000.00",
+          "created_at": "2026-01-16 11:59:56.45806+00",
+          "dist_dias": 0,
+          "acao": "cancelar"
+        }
+      ],
+      "tiebreakerUsado": "data_pagamento"
+    },
+    {
+      "venda_id": "c9e6358d-2aab-4743-8358-e7628f761350",
+      "contract": "87",
+      "billId": 381,
+      "seq": 2,
+      "sienge": {
+        "due": "2026-03-20",
+        "installmentId": 10,
+        "inst": "2/53"
+      },
+      "vencedor": {
+        "id": "865aa881-a691-41a1-92c6-b6aa3113bc20",
+        "status": "pago",
+        "data_prevista": "2026-03-20",
+        "data_pagamento": "2025-07-20",
+        "valor": "1000.00",
+        "created_at": "2026-01-16 11:59:56.45806+00",
+        "dist_dias": 0
+      },
+      "perdedores": [
+        {
+          "id": "ed939b77-73f7-467d-a77f-176a9c35346c",
+          "status": "pendente",
+          "data_prevista": "2026-03-20",
+          "data_pagamento": null,
+          "valor": "1000.00",
+          "created_at": "2026-01-16 11:59:56.45806+00",
+          "dist_dias": 0,
+          "acao": "cancelar"
+        }
+      ],
+      "tiebreakerUsado": "data_pagamento"
+    },
+    {
+      "venda_id": "c9e6358d-2aab-4743-8358-e7628f761350",
+      "contract": "87",
+      "billId": 381,
+      "seq": 3,
+      "sienge": {
+        "due": "2026-04-20",
+        "installmentId": 11,
+        "inst": "3/53"
+      },
+      "vencedor": {
+        "id": "8eecf9b0-20ee-4fd7-928d-72d0ab07d522",
+        "status": "pago",
+        "data_prevista": "2026-04-20",
+        "data_pagamento": "2026-04-09",
+        "valor": "1394.47",
+        "created_at": "2026-01-16 11:59:56.45806+00",
+        "dist_dias": 0
+      },
+      "perdedores": [
+        {
+          "id": "844eaa70-2c4c-4957-9abb-7087d44d3f12",
+          "status": "pago",
+          "data_prevista": "2026-04-20",
+          "data_pagamento": "2025-08-10",
+          "valor": "1000.00",
+          "created_at": "2026-01-16 11:59:56.45806+00",
+          "dist_dias": 0,
+          "acao": "cancelar"
+        }
+      ],
+      "tiebreakerUsado": "data_pagamento"
+    },
+    {
+      "venda_id": "c9e6358d-2aab-4743-8358-e7628f761350",
+      "contract": "87",
+      "billId": 381,
+      "seq": 4,
+      "sienge": {
+        "due": "2026-05-20",
+        "installmentId": 12,
+        "inst": "4/53"
+      },
+      "vencedor": {
+        "id": "5ba910c4-0ecb-478a-8494-2cd444f8ef72",
+        "status": "pago",
+        "data_prevista": "2026-05-20",
+        "data_pagamento": "2025-09-04",
+        "valor": "1394.47",
+        "created_at": "2026-01-16 11:59:56.45806+00",
+        "dist_dias": 0
+      },
+      "perdedores": [
+        {
+          "id": "8dab210f-f848-4048-8fc2-90fd25aac583",
+          "status": "pendente",
+          "data_prevista": "2025-09-20",
+          "data_pagamento": null,
+          "valor": "1000.00",
+          "created_at": "2026-01-16 11:59:56.45806+00",
+          "dist_dias": 242,
+          "acao": "cancelar"
+        }
+      ],
+      "tiebreakerUsado": null
+    },
+    {
+      "venda_id": "c9e6358d-2aab-4743-8358-e7628f761350",
+      "contract": "87",
+      "billId": 381,
+      "seq": 6,
+      "sienge": {
+        "due": "2026-07-20",
+        "installmentId": 14,
+        "inst": "6/53"
+      },
+      "vencedor": {
+        "id": "1c4b2719-056d-47a1-a323-a39b6cca20fd",
+        "status": "pago",
+        "data_prevista": "2026-07-20",
+        "data_pagamento": "2025-11-03",
+        "valor": "1394.47",
+        "created_at": "2026-01-16 11:59:56.45806+00",
+        "dist_dias": 0
+      },
+      "perdedores": [
+        {
+          "id": "71ead2a4-153a-41f6-aa7e-17477739477f",
+          "status": "pendente",
+          "data_prevista": "2025-11-20",
+          "data_pagamento": null,
+          "valor": "1000.00",
+          "created_at": "2026-01-16 11:59:56.45806+00",
+          "dist_dias": 242,
+          "acao": "cancelar"
+        }
+      ],
+      "tiebreakerUsado": null
+    }
+  ]
+}

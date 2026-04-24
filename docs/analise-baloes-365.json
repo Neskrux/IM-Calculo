@@ -1,0 +1,1295 @@
+{
+  "meta": {
+    "geradoEm": "2026-04-24T14:08:26.271Z",
+    "totalInput": 86,
+    "vendasDistintas": 40,
+    "deltaMin": -1826,
+    "deltaMax": 1430
+  },
+  "sumario": {
+    "shift_exato_1ano": 3,
+    "shift_multiplo_ano": 64,
+    "drift_real_livre": 19,
+    "baloes_sem_match_sienge": 0
+  },
+  "classificacoes": {
+    "shift_exato_1ano": [
+      {
+        "pagamento_id": "075a8b02-c9e7-47b5-a9b6-2c5ab88fdea1",
+        "venda_id": "b42ba471-b3e3-46e0-a344-dba77fb9020a",
+        "billId": 216,
+        "seq_local": 1,
+        "data_prevista_sienge": "2027-07-20",
+        "delta_dias": -366,
+        "delta_anos_aprox": -1,
+        "sienge_baloes_completos": "seq1@2027-07-20, seq2@2026-07-20, seq3@2026-12-20, seq4@2027-07-20, seq5@2027-12-20, seq6@2028-07-20, seq7@2028-12-20, seq8@2029-07-20, seq9@2029-12-20",
+        "match_seq_encontrada": true,
+        "match_seq_detail": [
+          "seq1@2027-07-20(B1)"
+        ]
+      },
+      {
+        "pagamento_id": "3badfb41-5803-4d06-9938-84110b9260b0",
+        "venda_id": "85f070c7-e436-482c-ac8a-2242602aa984",
+        "billId": 13,
+        "seq_local": 4,
+        "data_prevista_sienge": "2028-12-10",
+        "delta_dias": 366,
+        "delta_anos_aprox": 1,
+        "sienge_baloes_completos": "seq1@2025-12-10, seq2@2026-12-10, seq3@2027-12-10, seq4@2028-12-10, seq5@2029-12-10",
+        "match_seq_encontrada": true,
+        "match_seq_detail": [
+          "seq4@2028-12-10(B4)"
+        ]
+      },
+      {
+        "pagamento_id": "9b06310b-d850-4bdc-9d38-db4c840e81e1",
+        "venda_id": "12df0ff7-62c6-48b7-822c-41bd26443196",
+        "billId": 255,
+        "seq_local": 1,
+        "data_prevista_sienge": "2026-12-10",
+        "delta_dias": -375,
+        "delta_anos_aprox": -1.03,
+        "sienge_baloes_completos": "seq1@2026-12-10, seq2@2027-12-20, seq3@2028-12-20, seq4@2029-12-20",
+        "match_seq_encontrada": true,
+        "match_seq_detail": [
+          "seq1@2026-12-10(B1)"
+        ]
+      }
+    ],
+    "shift_multiplo_ano": [
+      {
+        "pagamento_id": "0013ed98-20f3-4100-a722-fffd24489237",
+        "venda_id": "c5812545-2a1f-4640-b76f-dd00f555930d",
+        "billId": 206,
+        "seq_local": 1,
+        "data_prevista_sienge": "2026-12-20",
+        "delta_dias": -1096,
+        "delta_anos_aprox": -3,
+        "sienge_baloes_completos": "seq1@2026-12-20, seq2@2027-12-20, seq3@2028-12-20, seq4@2029-12-20, seq5@2030-12-20",
+        "match_seq_encontrada": true,
+        "match_seq_detail": [
+          "seq1@2026-12-20(B1)"
+        ],
+        "shift_anos": -3
+      },
+      {
+        "pagamento_id": "0430776d-8468-4b1a-9740-f66c37fe9886",
+        "venda_id": "30d07c47-ea9b-42fa-8033-ebfdbcce86e4",
+        "billId": 375,
+        "seq_local": 1,
+        "data_prevista_sienge": "2026-12-20",
+        "delta_dias": -1096,
+        "delta_anos_aprox": -3,
+        "sienge_baloes_completos": "seq1@2026-12-20, seq2@2027-12-20, seq3@2028-12-20, seq4@2029-12-20, seq5@2030-12-20",
+        "match_seq_encontrada": true,
+        "match_seq_detail": [
+          "seq1@2026-12-20(B1)"
+        ],
+        "shift_anos": -3
+      },
+      {
+        "pagamento_id": "04c2c7eb-b31b-4fe5-a03c-63fd80f1e0a0",
+        "venda_id": "b1ab6619-9462-4a69-93f6-78fdc26201b1",
+        "billId": 168,
+        "seq_local": 1,
+        "data_prevista_sienge": "2026-09-10",
+        "delta_dias": -1096,
+        "delta_anos_aprox": -3,
+        "sienge_baloes_completos": "seq1@2026-09-10, seq2@2027-09-10, seq3@2028-09-10, seq4@2029-09-10",
+        "match_seq_encontrada": true,
+        "match_seq_detail": [
+          "seq1@2026-09-10(B1)"
+        ],
+        "shift_anos": -3
+      },
+      {
+        "pagamento_id": "09881fc2-dfd3-4924-b3d9-64ac8f388a7e",
+        "venda_id": "5a6c00dd-e281-460a-90f6-816f4ed85002",
+        "billId": 239,
+        "seq_local": 1,
+        "data_prevista_sienge": "2025-12-25",
+        "delta_dias": -730,
+        "delta_anos_aprox": -2,
+        "sienge_baloes_completos": "seq1@2025-12-25, seq2@2026-12-25, seq3@2027-12-25, seq4@2028-12-25, seq5@2029-12-25",
+        "match_seq_encontrada": true,
+        "match_seq_detail": [
+          "seq1@2025-12-25(B1)"
+        ],
+        "shift_anos": -2
+      },
+      {
+        "pagamento_id": "0b18efa2-6022-4008-af2e-d334741fdf5d",
+        "venda_id": "b517bfcf-2c3a-4b71-a4a7-dae26216d596",
+        "billId": 258,
+        "seq_local": 1,
+        "data_prevista_sienge": "2026-03-20",
+        "delta_dias": -1096,
+        "delta_anos_aprox": -3,
+        "sienge_baloes_completos": "seq1@2026-03-20, seq2@2027-03-20, seq3@2028-03-20, seq4@2029-03-20, seq5@2029-03-20",
+        "match_seq_encontrada": true,
+        "match_seq_detail": [
+          "seq1@2026-03-20(B1)"
+        ],
+        "shift_anos": -3
+      },
+      {
+        "pagamento_id": "16c5c5fd-cb0f-4466-b2d5-f20bb601d3fe",
+        "venda_id": "5a6c00dd-e281-460a-90f6-816f4ed85002",
+        "billId": 239,
+        "seq_local": 1,
+        "data_prevista_sienge": "2025-12-25",
+        "delta_dias": -1096,
+        "delta_anos_aprox": -3,
+        "sienge_baloes_completos": "seq1@2025-12-25, seq2@2026-12-25, seq3@2027-12-25, seq4@2028-12-25, seq5@2029-12-25",
+        "match_seq_encontrada": true,
+        "match_seq_detail": [
+          "seq1@2025-12-25(B1)"
+        ],
+        "shift_anos": -3
+      },
+      {
+        "pagamento_id": "1cd19f9c-4304-40aa-9968-5c7ea821907f",
+        "venda_id": "52a15049-f506-4ae5-93f9-a2fca420b2ae",
+        "billId": 181,
+        "seq_local": 1,
+        "data_prevista_sienge": "2025-12-10",
+        "delta_dias": -1096,
+        "delta_anos_aprox": -3,
+        "sienge_baloes_completos": "seq1@2025-12-10, seq2@2026-12-10, seq3@2027-12-10, seq4@2028-12-10, seq5@2029-12-10",
+        "match_seq_encontrada": true,
+        "match_seq_detail": [
+          "seq1@2025-12-10(B1)"
+        ],
+        "shift_anos": -3
+      },
+      {
+        "pagamento_id": "221ad24a-b3ce-49f4-96e5-f7a930d90565",
+        "venda_id": "12df0ff7-62c6-48b7-822c-41bd26443196",
+        "billId": 255,
+        "seq_local": 1,
+        "data_prevista_sienge": "2026-12-10",
+        "delta_dias": -741,
+        "delta_anos_aprox": -2.03,
+        "sienge_baloes_completos": "seq1@2026-12-10, seq2@2027-12-20, seq3@2028-12-20, seq4@2029-12-20",
+        "match_seq_encontrada": true,
+        "match_seq_detail": [
+          "seq1@2026-12-10(B1)"
+        ],
+        "shift_anos": -2
+      },
+      {
+        "pagamento_id": "22ee4404-30d7-4d00-ab78-a5cdf78019a1",
+        "venda_id": "b7a817c5-aa5e-4461-b04f-0638a24c36e9",
+        "billId": 218,
+        "seq_local": 1,
+        "data_prevista_sienge": "2026-02-15",
+        "delta_dias": -730,
+        "delta_anos_aprox": -2,
+        "sienge_baloes_completos": "seq1@2026-02-15, seq2@2027-02-15, seq3@2028-02-15, seq4@2029-02-15, seq5@2030-02-15",
+        "match_seq_encontrada": true,
+        "match_seq_detail": [
+          "seq1@2026-02-15(B1)"
+        ],
+        "shift_anos": -2
+      },
+      {
+        "pagamento_id": "242df007-003f-4d85-a6d5-a2667234e271",
+        "venda_id": "a7fe850b-0b89-44ab-b222-68cf877febfe",
+        "billId": 226,
+        "seq_local": 1,
+        "data_prevista_sienge": "2026-12-20",
+        "delta_dias": -731,
+        "delta_anos_aprox": -2,
+        "sienge_baloes_completos": "seq1@2026-12-20, seq2@2027-12-20, seq3@2028-12-20, seq4@2029-12-20",
+        "match_seq_encontrada": true,
+        "match_seq_detail": [
+          "seq1@2026-12-20(B1)"
+        ],
+        "shift_anos": -2
+      },
+      {
+        "pagamento_id": "24792913-2fcb-4eba-919d-644bc26c44a5",
+        "venda_id": "8879bea6-eb3b-4306-a9f1-859855b2e77d",
+        "billId": 376,
+        "seq_local": 1,
+        "data_prevista_sienge": "2026-12-20",
+        "delta_dias": -731,
+        "delta_anos_aprox": -2,
+        "sienge_baloes_completos": "seq1@2026-12-20, seq2@2027-12-20, seq3@2028-12-20, seq4@2029-12-20, seq5@2030-12-20",
+        "match_seq_encontrada": true,
+        "match_seq_detail": [
+          "seq1@2026-12-20(B1)"
+        ],
+        "shift_anos": -2
+      },
+      {
+        "pagamento_id": "2fc25f9c-ad99-4c30-a1ee-fad492d42015",
+        "venda_id": "d645c7c0-6956-410f-ae8d-2ba56db29177",
+        "billId": 296,
+        "seq_local": 1,
+        "data_prevista_sienge": "2026-12-10",
+        "delta_dias": -731,
+        "delta_anos_aprox": -2,
+        "sienge_baloes_completos": "seq1@2026-12-10, seq2@2027-12-10, seq3@2028-12-10, seq4@2029-12-10",
+        "match_seq_encontrada": true,
+        "match_seq_detail": [
+          "seq1@2026-12-10(B1)"
+        ],
+        "shift_anos": -2
+      },
+      {
+        "pagamento_id": "2fd25bdf-ed47-4a39-8b52-883fd73ff8e3",
+        "venda_id": "c850d6b4-742b-412e-8477-33ec538fcdc4",
+        "billId": 499,
+        "seq_local": 1,
+        "data_prevista_sienge": "2026-12-10",
+        "delta_dias": -731,
+        "delta_anos_aprox": -2,
+        "sienge_baloes_completos": "seq1@2026-12-10, seq2@2027-12-10, seq3@2028-12-10, seq4@2029-12-10",
+        "match_seq_encontrada": true,
+        "match_seq_detail": [
+          "seq1@2026-12-10(B1)"
+        ],
+        "shift_anos": -2
+      },
+      {
+        "pagamento_id": "35ace73e-6c25-406d-bb8d-29aaed830632",
+        "venda_id": "30d07c47-ea9b-42fa-8033-ebfdbcce86e4",
+        "billId": 375,
+        "seq_local": 1,
+        "data_prevista_sienge": "2026-12-20",
+        "delta_dias": -731,
+        "delta_anos_aprox": -2,
+        "sienge_baloes_completos": "seq1@2026-12-20, seq2@2027-12-20, seq3@2028-12-20, seq4@2029-12-20, seq5@2030-12-20",
+        "match_seq_encontrada": true,
+        "match_seq_detail": [
+          "seq1@2026-12-20(B1)"
+        ],
+        "shift_anos": -2
+      },
+      {
+        "pagamento_id": "3934fe77-0d0c-467b-ae80-441c07b44d91",
+        "venda_id": "cb112568-042f-4e78-b86d-b1a209fa76d4",
+        "billId": 164,
+        "seq_local": 1,
+        "data_prevista_sienge": "2026-07-20",
+        "delta_dias": -1096,
+        "delta_anos_aprox": -3,
+        "sienge_baloes_completos": "seq1@2026-07-20, seq2@2027-07-20, seq3@2028-07-20, seq4@2029-07-20, seq5@2030-07-20",
+        "match_seq_encontrada": true,
+        "match_seq_detail": [
+          "seq1@2026-07-20(B1)"
+        ],
+        "shift_anos": -3
+      },
+      {
+        "pagamento_id": "3f0a04c1-6e4d-4a52-84dd-3de9b7745ef0",
+        "venda_id": "c9c377ab-05a4-4e3a-bb67-afa69af8ef98",
+        "billId": 367,
+        "seq_local": 1,
+        "data_prevista_sienge": "2025-11-11",
+        "delta_dias": -1096,
+        "delta_anos_aprox": -3,
+        "sienge_baloes_completos": "seq1@2025-11-11, seq2@2026-11-11, seq3@2027-11-11, seq4@2028-11-11, seq5@2029-11-11",
+        "match_seq_encontrada": true,
+        "match_seq_detail": [
+          "seq1@2025-11-11(B1)"
+        ],
+        "shift_anos": -3
+      },
+      {
+        "pagamento_id": "46f478f1-466c-4d85-bd0f-609e6eb5f3a2",
+        "venda_id": "cb112568-042f-4e78-b86d-b1a209fa76d4",
+        "billId": 164,
+        "seq_local": 1,
+        "data_prevista_sienge": "2026-07-20",
+        "delta_dias": -731,
+        "delta_anos_aprox": -2,
+        "sienge_baloes_completos": "seq1@2026-07-20, seq2@2027-07-20, seq3@2028-07-20, seq4@2029-07-20, seq5@2030-07-20",
+        "match_seq_encontrada": true,
+        "match_seq_detail": [
+          "seq1@2026-07-20(B1)"
+        ],
+        "shift_anos": -2
+      },
+      {
+        "pagamento_id": "4cdd1b7c-738c-4f5c-9488-da849f95324c",
+        "venda_id": "53d0c5f5-aa8e-4804-9c64-fef6ecdf04fc",
+        "billId": 146,
+        "seq_local": 1,
+        "data_prevista_sienge": "2026-12-20",
+        "delta_dias": -731,
+        "delta_anos_aprox": -2,
+        "sienge_baloes_completos": "seq1@2026-12-20, seq2@2027-12-20, seq3@2028-12-20, seq4@2029-12-20, seq5@2030-07-20",
+        "match_seq_encontrada": true,
+        "match_seq_detail": [
+          "seq1@2026-12-20(B1)"
+        ],
+        "shift_anos": -2
+      },
+      {
+        "pagamento_id": "4d1d6e79-64b7-43c3-8ca9-62dee8082ddb",
+        "venda_id": "62d4b34f-232f-4251-8ab1-9be0b87128e2",
+        "billId": 321,
+        "seq_local": 1,
+        "data_prevista_sienge": "2025-12-20",
+        "delta_dias": -730,
+        "delta_anos_aprox": -2,
+        "sienge_baloes_completos": "seq1@2025-12-20, seq2@2026-12-20, seq3@2027-12-20, seq4@2028-12-20, seq5@2029-11-20",
+        "match_seq_encontrada": true,
+        "match_seq_detail": [
+          "seq1@2025-12-20(B1)"
+        ],
+        "shift_anos": -2
+      },
+      {
+        "pagamento_id": "4ef0c2f5-5f21-4641-b607-b40b5c1027d3",
+        "venda_id": "71a27446-2dde-4c7e-b366-2083ba84ef81",
+        "billId": 27,
+        "seq_local": 1,
+        "data_prevista_sienge": "2025-12-20",
+        "delta_dias": -730,
+        "delta_anos_aprox": -2,
+        "sienge_baloes_completos": "seq1@2025-12-20, seq2@2026-12-20, seq3@2027-12-20, seq4@2028-12-20, seq5@2029-12-20",
+        "match_seq_encontrada": true,
+        "match_seq_detail": [
+          "seq1@2025-12-20(B1)"
+        ],
+        "shift_anos": -2
+      },
+      {
+        "pagamento_id": "5612c6bc-902f-4bcf-9f9c-7a4dcb53540a",
+        "venda_id": "71a27446-2dde-4c7e-b366-2083ba84ef81",
+        "billId": 27,
+        "seq_local": 1,
+        "data_prevista_sienge": "2025-12-20",
+        "delta_dias": -1096,
+        "delta_anos_aprox": -3,
+        "sienge_baloes_completos": "seq1@2025-12-20, seq2@2026-12-20, seq3@2027-12-20, seq4@2028-12-20, seq5@2029-12-20",
+        "match_seq_encontrada": true,
+        "match_seq_detail": [
+          "seq1@2025-12-20(B1)"
+        ],
+        "shift_anos": -3
+      },
+      {
+        "pagamento_id": "58fc365d-7d78-41bf-88c7-cdfb5626d1a4",
+        "venda_id": "c9c377ab-05a4-4e3a-bb67-afa69af8ef98",
+        "billId": 367,
+        "seq_local": 1,
+        "data_prevista_sienge": "2025-11-11",
+        "delta_dias": -730,
+        "delta_anos_aprox": -2,
+        "sienge_baloes_completos": "seq1@2025-11-11, seq2@2026-11-11, seq3@2027-11-11, seq4@2028-11-11, seq5@2029-11-11",
+        "match_seq_encontrada": true,
+        "match_seq_detail": [
+          "seq1@2025-11-11(B1)"
+        ],
+        "shift_anos": -2
+      },
+      {
+        "pagamento_id": "5d38a55b-3de0-4de1-8ef3-f7974e9fa6f3",
+        "venda_id": "b7a817c5-aa5e-4461-b04f-0638a24c36e9",
+        "billId": 218,
+        "seq_local": 1,
+        "data_prevista_sienge": "2026-02-15",
+        "delta_dias": -1096,
+        "delta_anos_aprox": -3,
+        "sienge_baloes_completos": "seq1@2026-02-15, seq2@2027-02-15, seq3@2028-02-15, seq4@2029-02-15, seq5@2030-02-15",
+        "match_seq_encontrada": true,
+        "match_seq_detail": [
+          "seq1@2026-02-15(B1)"
+        ],
+        "shift_anos": -3
+      },
+      {
+        "pagamento_id": "62283624-4b01-4438-aec0-f8c77123318c",
+        "venda_id": "53d0c5f5-aa8e-4804-9c64-fef6ecdf04fc",
+        "billId": 146,
+        "seq_local": 1,
+        "data_prevista_sienge": "2026-12-20",
+        "delta_dias": -731,
+        "delta_anos_aprox": -2,
+        "sienge_baloes_completos": "seq1@2026-12-20, seq2@2027-12-20, seq3@2028-12-20, seq4@2029-12-20, seq5@2030-07-20",
+        "match_seq_encontrada": true,
+        "match_seq_detail": [
+          "seq1@2026-12-20(B1)"
+        ],
+        "shift_anos": -2
+      },
+      {
+        "pagamento_id": "65c551ea-bfbd-46ee-8dc5-470d95673efe",
+        "venda_id": "b1ab6619-9462-4a69-93f6-78fdc26201b1",
+        "billId": 168,
+        "seq_local": 1,
+        "data_prevista_sienge": "2026-09-10",
+        "delta_dias": -731,
+        "delta_anos_aprox": -2,
+        "sienge_baloes_completos": "seq1@2026-09-10, seq2@2027-09-10, seq3@2028-09-10, seq4@2029-09-10",
+        "match_seq_encontrada": true,
+        "match_seq_detail": [
+          "seq1@2026-09-10(B1)"
+        ],
+        "shift_anos": -2
+      },
+      {
+        "pagamento_id": "66a927b0-f050-4f15-bc22-8206d37de2df",
+        "venda_id": "8879bea6-eb3b-4306-a9f1-859855b2e77d",
+        "billId": 376,
+        "seq_local": 1,
+        "data_prevista_sienge": "2026-12-20",
+        "delta_dias": -1461,
+        "delta_anos_aprox": -4,
+        "sienge_baloes_completos": "seq1@2026-12-20, seq2@2027-12-20, seq3@2028-12-20, seq4@2029-12-20, seq5@2030-12-20",
+        "match_seq_encontrada": true,
+        "match_seq_detail": [
+          "seq1@2026-12-20(B1)"
+        ],
+        "shift_anos": -4
+      },
+      {
+        "pagamento_id": "69f5761e-1603-4d61-b197-13b630b3c290",
+        "venda_id": "880bf6f0-b260-41cc-abc7-b4ffcf2340ff",
+        "billId": 155,
+        "seq_local": 6,
+        "data_prevista_sienge": "2026-12-20",
+        "delta_dias": -1461,
+        "delta_anos_aprox": -4,
+        "sienge_baloes_completos": "seq1@2025-12-20, seq2@2026-12-20, seq3@2027-12-20, seq4@2028-12-20, seq5@2029-12-20, seq6@2026-12-20",
+        "match_seq_encontrada": true,
+        "match_seq_detail": [
+          "seq6@2026-12-20(B6)"
+        ],
+        "shift_anos": -4
+      },
+      {
+        "pagamento_id": "7a080b86-a586-4118-8459-caa46ae7cedd",
+        "venda_id": "9e784457-c682-4bbb-9fe1-0677c980321a",
+        "billId": 210,
+        "seq_local": 1,
+        "data_prevista_sienge": "2026-12-30",
+        "delta_dias": -1461,
+        "delta_anos_aprox": -4,
+        "sienge_baloes_completos": "seq1@2026-12-30, seq2@2027-12-30, seq3@2028-01-30, seq4@2029-12-30, seq5@2030-12-30",
+        "match_seq_encontrada": true,
+        "match_seq_detail": [
+          "seq1@2026-12-30(B1)"
+        ],
+        "shift_anos": -4
+      },
+      {
+        "pagamento_id": "7c6a944a-b6ca-46ae-9fc8-796e5551cc5d",
+        "venda_id": "677f0acb-1cf8-434d-b6bc-44de97936960",
+        "billId": 382,
+        "seq_local": 1,
+        "data_prevista_sienge": "2025-12-20",
+        "delta_dias": -730,
+        "delta_anos_aprox": -2,
+        "sienge_baloes_completos": "seq1@2025-12-20, seq2@2026-12-20, seq3@2027-12-20, seq4@2028-12-20, seq5@2029-12-20",
+        "match_seq_encontrada": true,
+        "match_seq_detail": [
+          "seq1@2025-12-20(B1)"
+        ],
+        "shift_anos": -2
+      },
+      {
+        "pagamento_id": "81569044-b9e7-4953-ba63-474bb61439e2",
+        "venda_id": "e570a347-c613-45de-817c-4844ba204e2c",
+        "billId": 192,
+        "seq_local": 1,
+        "data_prevista_sienge": "2026-02-20",
+        "delta_dias": -730,
+        "delta_anos_aprox": -2,
+        "sienge_baloes_completos": "seq1@2026-02-20, seq2@2027-02-20, seq3@2028-02-20, seq4@2028-12-20, seq5@2029-02-20",
+        "match_seq_encontrada": true,
+        "match_seq_detail": [
+          "seq1@2026-02-20(B1)"
+        ],
+        "shift_anos": -2
+      },
+      {
+        "pagamento_id": "83075aaa-2c87-4efc-9c22-6a5157952540",
+        "venda_id": "f62fedaa-c66a-4abf-b36e-ce12c46334d8",
+        "billId": 204,
+        "seq_local": 1,
+        "data_prevista_sienge": "2025-12-20",
+        "delta_dias": -1826,
+        "delta_anos_aprox": -5,
+        "sienge_baloes_completos": "seq1@2025-12-20, seq2@2026-12-20, seq3@2027-12-20, seq4@2028-12-20, seq5@2029-12-20, seq6@2030-12-20, seq7@2031-12-20, seq8@2032-12-20",
+        "match_seq_encontrada": true,
+        "match_seq_detail": [
+          "seq1@2025-12-20(B1)"
+        ],
+        "shift_anos": -5
+      },
+      {
+        "pagamento_id": "84596b03-3451-4195-a1dc-9b37928630fd",
+        "venda_id": "52a15049-f506-4ae5-93f9-a2fca420b2ae",
+        "billId": 181,
+        "seq_local": 1,
+        "data_prevista_sienge": "2025-12-10",
+        "delta_dias": -730,
+        "delta_anos_aprox": -2,
+        "sienge_baloes_completos": "seq1@2025-12-10, seq2@2026-12-10, seq3@2027-12-10, seq4@2028-12-10, seq5@2029-12-10",
+        "match_seq_encontrada": true,
+        "match_seq_detail": [
+          "seq1@2025-12-10(B1)"
+        ],
+        "shift_anos": -2
+      },
+      {
+        "pagamento_id": "86fdeca3-c5a6-43ec-9043-715bc8710c43",
+        "venda_id": "677f0acb-1cf8-434d-b6bc-44de97936960",
+        "billId": 382,
+        "seq_local": 1,
+        "data_prevista_sienge": "2025-12-20",
+        "delta_dias": -730,
+        "delta_anos_aprox": -2,
+        "sienge_baloes_completos": "seq1@2025-12-20, seq2@2026-12-20, seq3@2027-12-20, seq4@2028-12-20, seq5@2029-12-20",
+        "match_seq_encontrada": true,
+        "match_seq_detail": [
+          "seq1@2025-12-20(B1)"
+        ],
+        "shift_anos": -2
+      },
+      {
+        "pagamento_id": "8a1e18d5-d690-43cc-8999-aef293a3187f",
+        "venda_id": "6f7fec05-5a52-46e1-82f7-1b9a6ee9469c",
+        "billId": 21,
+        "seq_local": 1,
+        "data_prevista_sienge": "2026-12-20",
+        "delta_dias": -1096,
+        "delta_anos_aprox": -3,
+        "sienge_baloes_completos": "seq1@2026-12-20, seq2@2027-12-20, seq3@2028-12-20, seq4@2029-12-20",
+        "match_seq_encontrada": true,
+        "match_seq_detail": [
+          "seq1@2026-12-20(B1)"
+        ],
+        "shift_anos": -3
+      },
+      {
+        "pagamento_id": "8b333e90-b646-4efb-af38-588d50c08f68",
+        "venda_id": "7a1c8aef-9e36-4eb7-9c36-4a46521ea514",
+        "billId": 34,
+        "seq_local": 1,
+        "data_prevista_sienge": "2026-12-20",
+        "delta_dias": -731,
+        "delta_anos_aprox": -2,
+        "sienge_baloes_completos": "seq1@2026-12-20, seq2@2027-12-20, seq3@2028-12-20, seq4@2029-12-20",
+        "match_seq_encontrada": true,
+        "match_seq_detail": [
+          "seq1@2026-12-20(B1)"
+        ],
+        "shift_anos": -2
+      },
+      {
+        "pagamento_id": "8d649a83-78c5-4c3e-8d49-db2076c28b40",
+        "venda_id": "e9f21d96-203e-44df-bead-9dddd6a2c250",
+        "billId": 195,
+        "seq_local": 1,
+        "data_prevista_sienge": "2026-12-20",
+        "delta_dias": -731,
+        "delta_anos_aprox": -2,
+        "sienge_baloes_completos": "seq1@2026-12-20, seq2@2027-12-20, seq3@2028-12-20, seq4@2029-12-20",
+        "match_seq_encontrada": true,
+        "match_seq_detail": [
+          "seq1@2026-12-20(B1)"
+        ],
+        "shift_anos": -2
+      },
+      {
+        "pagamento_id": "8f058045-f207-4bb6-a512-ae0d3b58f6ad",
+        "venda_id": "803041f5-8778-4b59-ab73-63df35a8ac3e",
+        "billId": 191,
+        "seq_local": 1,
+        "data_prevista_sienge": "2026-12-20",
+        "delta_dias": -731,
+        "delta_anos_aprox": -2,
+        "sienge_baloes_completos": "seq1@2026-12-20, seq2@2027-12-20, seq3@2028-12-20, seq4@2029-12-20",
+        "match_seq_encontrada": true,
+        "match_seq_detail": [
+          "seq1@2026-12-20(B1)"
+        ],
+        "shift_anos": -2
+      },
+      {
+        "pagamento_id": "96cce106-f090-4f1d-bcde-686ad6554022",
+        "venda_id": "f62fedaa-c66a-4abf-b36e-ce12c46334d8",
+        "billId": 204,
+        "seq_local": 1,
+        "data_prevista_sienge": "2025-12-20",
+        "delta_dias": -1461,
+        "delta_anos_aprox": -4,
+        "sienge_baloes_completos": "seq1@2025-12-20, seq2@2026-12-20, seq3@2027-12-20, seq4@2028-12-20, seq5@2029-12-20, seq6@2030-12-20, seq7@2031-12-20, seq8@2032-12-20",
+        "match_seq_encontrada": true,
+        "match_seq_detail": [
+          "seq1@2025-12-20(B1)"
+        ],
+        "shift_anos": -4
+      },
+      {
+        "pagamento_id": "98478963-e9a2-44b5-951b-e231952a5ef7",
+        "venda_id": "f62fedaa-c66a-4abf-b36e-ce12c46334d8",
+        "billId": 204,
+        "seq_local": 1,
+        "data_prevista_sienge": "2025-12-20",
+        "delta_dias": -1826,
+        "delta_anos_aprox": -5,
+        "sienge_baloes_completos": "seq1@2025-12-20, seq2@2026-12-20, seq3@2027-12-20, seq4@2028-12-20, seq5@2029-12-20, seq6@2030-12-20, seq7@2031-12-20, seq8@2032-12-20",
+        "match_seq_encontrada": true,
+        "match_seq_detail": [
+          "seq1@2025-12-20(B1)"
+        ],
+        "shift_anos": -5
+      },
+      {
+        "pagamento_id": "9e791d81-e520-47e8-a068-68cd540b8b0a",
+        "venda_id": "6f7fec05-5a52-46e1-82f7-1b9a6ee9469c",
+        "billId": 21,
+        "seq_local": 1,
+        "data_prevista_sienge": "2026-12-20",
+        "delta_dias": -731,
+        "delta_anos_aprox": -2,
+        "sienge_baloes_completos": "seq1@2026-12-20, seq2@2027-12-20, seq3@2028-12-20, seq4@2029-12-20",
+        "match_seq_encontrada": true,
+        "match_seq_detail": [
+          "seq1@2026-12-20(B1)"
+        ],
+        "shift_anos": -2
+      },
+      {
+        "pagamento_id": "a41ffbf2-385e-4f73-8c51-439cb6b7910c",
+        "venda_id": "324ef829-fb78-478d-8c44-9bc297cf4094",
+        "billId": 201,
+        "seq_local": 1,
+        "data_prevista_sienge": "2025-12-31",
+        "delta_dias": -730,
+        "delta_anos_aprox": -2,
+        "sienge_baloes_completos": "seq1@2025-12-31, seq2@2026-12-31, seq3@2027-12-31, seq4@2028-12-31, seq5@2029-12-31",
+        "match_seq_encontrada": true,
+        "match_seq_detail": [
+          "seq1@2025-12-31(B1)"
+        ],
+        "shift_anos": -2
+      },
+      {
+        "pagamento_id": "a67b29b3-e6ed-459a-b76d-3a834d3eba35",
+        "venda_id": "8336834f-ae1f-42fc-b680-7286d4bcd4af",
+        "billId": 138,
+        "seq_local": 1,
+        "data_prevista_sienge": "2026-01-10",
+        "delta_dias": -1096,
+        "delta_anos_aprox": -3,
+        "sienge_baloes_completos": "seq1@2026-01-10, seq2@2027-01-10, seq3@2028-01-10, seq4@2029-01-10, seq5@2030-01-01",
+        "match_seq_encontrada": true,
+        "match_seq_detail": [
+          "seq1@2026-01-10(B1)"
+        ],
+        "shift_anos": -3
+      },
+      {
+        "pagamento_id": "b37d20de-7e7c-4780-a422-fbd9835d7838",
+        "venda_id": "f62fedaa-c66a-4abf-b36e-ce12c46334d8",
+        "billId": 204,
+        "seq_local": 1,
+        "data_prevista_sienge": "2025-12-20",
+        "delta_dias": -730,
+        "delta_anos_aprox": -2,
+        "sienge_baloes_completos": "seq1@2025-12-20, seq2@2026-12-20, seq3@2027-12-20, seq4@2028-12-20, seq5@2029-12-20, seq6@2030-12-20, seq7@2031-12-20, seq8@2032-12-20",
+        "match_seq_encontrada": true,
+        "match_seq_detail": [
+          "seq1@2025-12-20(B1)"
+        ],
+        "shift_anos": -2
+      },
+      {
+        "pagamento_id": "b3828feb-3794-4eb8-af73-b4136809e6d9",
+        "venda_id": "324ef829-fb78-478d-8c44-9bc297cf4094",
+        "billId": 201,
+        "seq_local": 1,
+        "data_prevista_sienge": "2025-12-31",
+        "delta_dias": -1096,
+        "delta_anos_aprox": -3,
+        "sienge_baloes_completos": "seq1@2025-12-31, seq2@2026-12-31, seq3@2027-12-31, seq4@2028-12-31, seq5@2029-12-31",
+        "match_seq_encontrada": true,
+        "match_seq_detail": [
+          "seq1@2025-12-31(B1)"
+        ],
+        "shift_anos": -3
+      },
+      {
+        "pagamento_id": "bf3c9bb0-2689-4f40-86bc-ddd163c4c318",
+        "venda_id": "36810789-4453-4544-9523-3651bd74d027",
+        "billId": 200,
+        "seq_local": 1,
+        "data_prevista_sienge": "2025-12-20",
+        "delta_dias": -730,
+        "delta_anos_aprox": -2,
+        "sienge_baloes_completos": "seq1@2025-12-20, seq2@2026-12-20, seq3@2027-12-20",
+        "match_seq_encontrada": true,
+        "match_seq_detail": [
+          "seq1@2025-12-20(B1)"
+        ],
+        "shift_anos": -2
+      },
+      {
+        "pagamento_id": "bf8ef492-3ec1-4394-9c4e-4667319da7ee",
+        "venda_id": "f62fedaa-c66a-4abf-b36e-ce12c46334d8",
+        "billId": 204,
+        "seq_local": 1,
+        "data_prevista_sienge": "2025-12-20",
+        "delta_dias": -1096,
+        "delta_anos_aprox": -3,
+        "sienge_baloes_completos": "seq1@2025-12-20, seq2@2026-12-20, seq3@2027-12-20, seq4@2028-12-20, seq5@2029-12-20, seq6@2030-12-20, seq7@2031-12-20, seq8@2032-12-20",
+        "match_seq_encontrada": true,
+        "match_seq_detail": [
+          "seq1@2025-12-20(B1)"
+        ],
+        "shift_anos": -3
+      },
+      {
+        "pagamento_id": "c04b84de-8c5b-4b38-ac79-738f72822dae",
+        "venda_id": "52a15049-f506-4ae5-93f9-a2fca420b2ae",
+        "billId": 181,
+        "seq_local": 1,
+        "data_prevista_sienge": "2025-12-10",
+        "delta_dias": -730,
+        "delta_anos_aprox": -2,
+        "sienge_baloes_completos": "seq1@2025-12-10, seq2@2026-12-10, seq3@2027-12-10, seq4@2028-12-10, seq5@2029-12-10",
+        "match_seq_encontrada": true,
+        "match_seq_detail": [
+          "seq1@2025-12-10(B1)"
+        ],
+        "shift_anos": -2
+      },
+      {
+        "pagamento_id": "c3155e7a-84ab-4a14-9b7c-f9d12e936e79",
+        "venda_id": "b517bfcf-2c3a-4b71-a4a7-dae26216d596",
+        "billId": 258,
+        "seq_local": 1,
+        "data_prevista_sienge": "2026-03-20",
+        "delta_dias": -731,
+        "delta_anos_aprox": -2,
+        "sienge_baloes_completos": "seq1@2026-03-20, seq2@2027-03-20, seq3@2028-03-20, seq4@2029-03-20, seq5@2029-03-20",
+        "match_seq_encontrada": true,
+        "match_seq_detail": [
+          "seq1@2026-03-20(B1)"
+        ],
+        "shift_anos": -2
+      },
+      {
+        "pagamento_id": "c5d25000-6011-467b-bda5-ddc9cd51b494",
+        "venda_id": "c5812545-2a1f-4640-b76f-dd00f555930d",
+        "billId": 206,
+        "seq_local": 1,
+        "data_prevista_sienge": "2026-12-20",
+        "delta_dias": -731,
+        "delta_anos_aprox": -2,
+        "sienge_baloes_completos": "seq1@2026-12-20, seq2@2027-12-20, seq3@2028-12-20, seq4@2029-12-20, seq5@2030-12-20",
+        "match_seq_encontrada": true,
+        "match_seq_detail": [
+          "seq1@2026-12-20(B1)"
+        ],
+        "shift_anos": -2
+      },
+      {
+        "pagamento_id": "c68e9489-c4fd-4612-a812-cf9a643ea678",
+        "venda_id": "8879bea6-eb3b-4306-a9f1-859855b2e77d",
+        "billId": 376,
+        "seq_local": 1,
+        "data_prevista_sienge": "2026-12-20",
+        "delta_dias": -1096,
+        "delta_anos_aprox": -3,
+        "sienge_baloes_completos": "seq1@2026-12-20, seq2@2027-12-20, seq3@2028-12-20, seq4@2029-12-20, seq5@2030-12-20",
+        "match_seq_encontrada": true,
+        "match_seq_detail": [
+          "seq1@2026-12-20(B1)"
+        ],
+        "shift_anos": -3
+      },
+      {
+        "pagamento_id": "d64124f1-0401-41e9-8e76-eeabb438d258",
+        "venda_id": "69833968-ed1a-4988-9a38-fa28a3c29512",
+        "billId": 286,
+        "seq_local": 1,
+        "data_prevista_sienge": "2026-12-20",
+        "delta_dias": -731,
+        "delta_anos_aprox": -2,
+        "sienge_baloes_completos": "seq1@2026-12-20, seq2@2027-12-20, seq3@2028-12-20, seq4@2029-12-20",
+        "match_seq_encontrada": true,
+        "match_seq_detail": [
+          "seq1@2026-12-20(B1)"
+        ],
+        "shift_anos": -2
+      },
+      {
+        "pagamento_id": "d9a8a83d-2afb-4ccc-b2fb-27d9d3fe15b4",
+        "venda_id": "b517bfcf-2c3a-4b71-a4a7-dae26216d596",
+        "billId": 258,
+        "seq_local": 1,
+        "data_prevista_sienge": "2026-03-20",
+        "delta_dias": -731,
+        "delta_anos_aprox": -2,
+        "sienge_baloes_completos": "seq1@2026-03-20, seq2@2027-03-20, seq3@2028-03-20, seq4@2029-03-20, seq5@2029-03-20",
+        "match_seq_encontrada": true,
+        "match_seq_detail": [
+          "seq1@2026-03-20(B1)"
+        ],
+        "shift_anos": -2
+      },
+      {
+        "pagamento_id": "da4c210a-cb75-4fc1-b44a-957833c8a41e",
+        "venda_id": "e570a347-c613-45de-817c-4844ba204e2c",
+        "billId": 192,
+        "seq_local": 1,
+        "data_prevista_sienge": "2026-02-20",
+        "delta_dias": -730,
+        "delta_anos_aprox": -2,
+        "sienge_baloes_completos": "seq1@2026-02-20, seq2@2027-02-20, seq3@2028-02-20, seq4@2028-12-20, seq5@2029-02-20",
+        "match_seq_encontrada": true,
+        "match_seq_detail": [
+          "seq1@2026-02-20(B1)"
+        ],
+        "shift_anos": -2
+      },
+      {
+        "pagamento_id": "dc08124d-d9d4-44c0-8e24-6097ddf663a0",
+        "venda_id": "803041f5-8778-4b59-ab73-63df35a8ac3e",
+        "billId": 191,
+        "seq_local": 1,
+        "data_prevista_sienge": "2026-12-20",
+        "delta_dias": -1096,
+        "delta_anos_aprox": -3,
+        "sienge_baloes_completos": "seq1@2026-12-20, seq2@2027-12-20, seq3@2028-12-20, seq4@2029-12-20",
+        "match_seq_encontrada": true,
+        "match_seq_detail": [
+          "seq1@2026-12-20(B1)"
+        ],
+        "shift_anos": -3
+      },
+      {
+        "pagamento_id": "dd1851f7-b74c-4f89-aaa6-dc54ea10faa0",
+        "venda_id": "6a33ac0b-00af-4fc3-8539-7529998a94b2",
+        "billId": 305,
+        "seq_local": 1,
+        "data_prevista_sienge": "2026-03-20",
+        "delta_dias": -1096,
+        "delta_anos_aprox": -3,
+        "sienge_baloes_completos": "seq1@2026-03-20, seq2@2027-03-20, seq3@2028-03-20, seq4@2029-03-20, seq5@2030-03-20",
+        "match_seq_encontrada": true,
+        "match_seq_detail": [
+          "seq1@2026-03-20(B1)"
+        ],
+        "shift_anos": -3
+      },
+      {
+        "pagamento_id": "e9a3e479-1439-4487-86c1-ecb2110df474",
+        "venda_id": "8336834f-ae1f-42fc-b680-7286d4bcd4af",
+        "billId": 138,
+        "seq_local": 1,
+        "data_prevista_sienge": "2026-01-10",
+        "delta_dias": -730,
+        "delta_anos_aprox": -2,
+        "sienge_baloes_completos": "seq1@2026-01-10, seq2@2027-01-10, seq3@2028-01-10, seq4@2029-01-10, seq5@2030-01-01",
+        "match_seq_encontrada": true,
+        "match_seq_detail": [
+          "seq1@2026-01-10(B1)"
+        ],
+        "shift_anos": -2
+      },
+      {
+        "pagamento_id": "eba81c98-39a1-4f05-889e-5b6edf99e28f",
+        "venda_id": "aff2856b-b787-47a4-84e2-81930c5c9201",
+        "billId": 223,
+        "seq_local": 1,
+        "data_prevista_sienge": "2026-03-30",
+        "delta_dias": -731,
+        "delta_anos_aprox": -2,
+        "sienge_baloes_completos": "seq1@2026-03-30, seq2@2027-03-30, seq3@2028-03-30, seq4@2029-03-30",
+        "match_seq_encontrada": true,
+        "match_seq_detail": [
+          "seq1@2026-03-30(B1)"
+        ],
+        "shift_anos": -2
+      },
+      {
+        "pagamento_id": "ec4ce17c-dd85-4fe4-96f7-e72f7b08fd0e",
+        "venda_id": "62d4b34f-232f-4251-8ab1-9be0b87128e2",
+        "billId": 321,
+        "seq_local": 1,
+        "data_prevista_sienge": "2025-12-20",
+        "delta_dias": -1096,
+        "delta_anos_aprox": -3,
+        "sienge_baloes_completos": "seq1@2025-12-20, seq2@2026-12-20, seq3@2027-12-20, seq4@2028-12-20, seq5@2029-11-20",
+        "match_seq_encontrada": true,
+        "match_seq_detail": [
+          "seq1@2025-12-20(B1)"
+        ],
+        "shift_anos": -3
+      },
+      {
+        "pagamento_id": "eebfc106-3f6f-4a6c-8466-a93aabce614b",
+        "venda_id": "c850d6b4-742b-412e-8477-33ec538fcdc4",
+        "billId": 499,
+        "seq_local": 1,
+        "data_prevista_sienge": "2026-12-10",
+        "delta_dias": -731,
+        "delta_anos_aprox": -2,
+        "sienge_baloes_completos": "seq1@2026-12-10, seq2@2027-12-10, seq3@2028-12-10, seq4@2029-12-10",
+        "match_seq_encontrada": true,
+        "match_seq_detail": [
+          "seq1@2026-12-10(B1)"
+        ],
+        "shift_anos": -2
+      },
+      {
+        "pagamento_id": "ef4fffed-2f10-4a5c-bc10-6f644ad7750f",
+        "venda_id": "12df0ff7-62c6-48b7-822c-41bd26443196",
+        "billId": 255,
+        "seq_local": 1,
+        "data_prevista_sienge": "2026-12-10",
+        "delta_dias": -1106,
+        "delta_anos_aprox": -3.03,
+        "sienge_baloes_completos": "seq1@2026-12-10, seq2@2027-12-20, seq3@2028-12-20, seq4@2029-12-20",
+        "match_seq_encontrada": true,
+        "match_seq_detail": [
+          "seq1@2026-12-10(B1)"
+        ],
+        "shift_anos": -3
+      },
+      {
+        "pagamento_id": "f4faaa61-c24b-4289-87d3-5b7ff85843e3",
+        "venda_id": "b42ba471-b3e3-46e0-a344-dba77fb9020a",
+        "billId": 216,
+        "seq_local": 1,
+        "data_prevista_sienge": "2027-07-20",
+        "delta_dias": -731,
+        "delta_anos_aprox": -2,
+        "sienge_baloes_completos": "seq1@2027-07-20, seq2@2026-07-20, seq3@2026-12-20, seq4@2027-07-20, seq5@2027-12-20, seq6@2028-07-20, seq7@2028-12-20, seq8@2029-07-20, seq9@2029-12-20",
+        "match_seq_encontrada": true,
+        "match_seq_detail": [
+          "seq1@2027-07-20(B1)"
+        ],
+        "shift_anos": -2
+      },
+      {
+        "pagamento_id": "f85c2b49-2de8-4fe8-9ead-cf00343f25b5",
+        "venda_id": "b7a817c5-aa5e-4461-b04f-0638a24c36e9",
+        "billId": 218,
+        "seq_local": 1,
+        "data_prevista_sienge": "2026-02-15",
+        "delta_dias": -730,
+        "delta_anos_aprox": -2,
+        "sienge_baloes_completos": "seq1@2026-02-15, seq2@2027-02-15, seq3@2028-02-15, seq4@2029-02-15, seq5@2030-02-15",
+        "match_seq_encontrada": true,
+        "match_seq_detail": [
+          "seq1@2026-02-15(B1)"
+        ],
+        "shift_anos": -2
+      },
+      {
+        "pagamento_id": "f9f22ae9-d245-44e1-b147-2bb9324b4da6",
+        "venda_id": "a5636b9e-0d94-441d-8883-f5db0092eeb5",
+        "billId": 154,
+        "seq_local": 1,
+        "data_prevista_sienge": "2026-12-20",
+        "delta_dias": -731,
+        "delta_anos_aprox": -2,
+        "sienge_baloes_completos": "seq1@2026-12-20, seq2@2027-12-20, seq3@2028-12-20, seq4@2027-12-20, seq5@2030-12-20",
+        "match_seq_encontrada": true,
+        "match_seq_detail": [
+          "seq1@2026-12-20(B1)"
+        ],
+        "shift_anos": -2
+      },
+      {
+        "pagamento_id": "fb0faf91-7038-48e8-86f2-35ebd3870d5b",
+        "venda_id": "85f070c7-e436-482c-ac8a-2242602aa984",
+        "billId": 13,
+        "seq_local": 1,
+        "data_prevista_sienge": "2025-12-10",
+        "delta_dias": -1461,
+        "delta_anos_aprox": -4,
+        "sienge_baloes_completos": "seq1@2025-12-10, seq2@2026-12-10, seq3@2027-12-10, seq4@2028-12-10, seq5@2029-12-10",
+        "match_seq_encontrada": true,
+        "match_seq_detail": [
+          "seq1@2025-12-10(B1)"
+        ],
+        "shift_anos": -4
+      }
+    ],
+    "drift_real_livre": [
+      {
+        "pagamento_id": "061f8343-db8f-49d1-b031-5a52311db74d",
+        "venda_id": "a365d466-0bc4-49ef-a39f-d5fe958ab92a",
+        "billId": 169,
+        "seq_local": 1,
+        "data_prevista_sienge": "2026-05-20",
+        "delta_dias": -945,
+        "delta_anos_aprox": -2.59,
+        "sienge_baloes_completos": "seq1@2026-05-20, seq2@2026-12-20, seq3@2027-12-20, seq4@2028-12-20, seq5@2029-12-20",
+        "match_seq_encontrada": true,
+        "match_seq_detail": [
+          "seq1@2026-05-20(B1)"
+        ]
+      },
+      {
+        "pagamento_id": "153620d2-7440-434a-8435-001c47f3373c",
+        "venda_id": "b42ba471-b3e3-46e0-a344-dba77fb9020a",
+        "billId": 216,
+        "seq_local": 1,
+        "data_prevista_sienge": "2027-07-20",
+        "delta_dias": 577,
+        "delta_anos_aprox": 1.58,
+        "sienge_baloes_completos": "seq1@2027-07-20, seq2@2026-07-20, seq3@2026-12-20, seq4@2027-07-20, seq5@2027-12-20, seq6@2028-07-20, seq7@2028-12-20, seq8@2029-07-20, seq9@2029-12-20",
+        "match_seq_encontrada": true,
+        "match_seq_detail": [
+          "seq1@2027-07-20(B1)"
+        ]
+      },
+      {
+        "pagamento_id": "56e6eac6-552e-4a1c-a9fc-8e4df024dc5e",
+        "venda_id": "9760cf8a-5826-4b18-b233-780551ec5586",
+        "billId": 496,
+        "seq_local": 3,
+        "data_prevista_sienge": "2032-08-15",
+        "delta_dias": 1339,
+        "delta_anos_aprox": 3.67,
+        "sienge_baloes_completos": "seq1@2030-08-15, seq2@2031-08-15, seq3@2032-08-15, seq4@2033-08-15",
+        "match_seq_encontrada": true,
+        "match_seq_detail": [
+          "seq3@2032-08-15(BA)"
+        ]
+      },
+      {
+        "pagamento_id": "5ada5359-537f-46d4-9097-5132d8051b9e",
+        "venda_id": "a365d466-0bc4-49ef-a39f-d5fe958ab92a",
+        "billId": 169,
+        "seq_local": 1,
+        "data_prevista_sienge": "2026-05-20",
+        "delta_dias": -579,
+        "delta_anos_aprox": -1.59,
+        "sienge_baloes_completos": "seq1@2026-05-20, seq2@2026-12-20, seq3@2027-12-20, seq4@2028-12-20, seq5@2029-12-20",
+        "match_seq_encontrada": true,
+        "match_seq_detail": [
+          "seq1@2026-05-20(B1)"
+        ]
+      },
+      {
+        "pagamento_id": "5d75463a-6bc5-4d8d-b4f5-5205cd96d083",
+        "venda_id": "7295782a-b03d-409b-b21d-3a257ec8b61f",
+        "billId": 8,
+        "seq_local": 1,
+        "data_prevista_sienge": "2026-01-28",
+        "delta_dias": -401,
+        "delta_anos_aprox": -1.1,
+        "sienge_baloes_completos": "seq1@2026-01-28, seq1@2026-03-05, seq2@2026-02-25, seq2@2027-03-05, seq3@2026-03-15, seq3@2028-03-05, seq4@2029-03-05, seq5@2030-03-05",
+        "match_seq_encontrada": true,
+        "match_seq_detail": [
+          "seq1@2026-01-28(B1)",
+          "seq1@2026-03-05(B1)"
+        ]
+      },
+      {
+        "pagamento_id": "8026ddf9-e4fc-4d1c-b445-b8652d318ed3",
+        "venda_id": "b42ba471-b3e3-46e0-a344-dba77fb9020a",
+        "billId": 216,
+        "seq_local": 1,
+        "data_prevista_sienge": "2027-07-20",
+        "delta_dias": 577,
+        "delta_anos_aprox": 1.58,
+        "sienge_baloes_completos": "seq1@2027-07-20, seq2@2026-07-20, seq3@2026-12-20, seq4@2027-07-20, seq5@2027-12-20, seq6@2028-07-20, seq7@2028-12-20, seq8@2029-07-20, seq9@2029-12-20",
+        "match_seq_encontrada": true,
+        "match_seq_detail": [
+          "seq1@2027-07-20(B1)"
+        ]
+      },
+      {
+        "pagamento_id": "8050820b-aaa1-4d07-8aab-1ff6c8be5cc1",
+        "venda_id": "1dfd5558-328f-483b-b19c-39ab45b43ed1",
+        "billId": 505,
+        "seq_local": 1,
+        "data_prevista_sienge": "2030-07-20",
+        "delta_dias": 699,
+        "delta_anos_aprox": 1.92,
+        "sienge_baloes_completos": "seq1@2030-07-20, seq2@2030-07-20, seq3@2030-07-20, seq4@2030-07-20, seq5@2030-08-20",
+        "match_seq_encontrada": true,
+        "match_seq_detail": [
+          "seq1@2030-07-20(B1)"
+        ]
+      },
+      {
+        "pagamento_id": "89225134-a461-431f-bac4-5511e96f968e",
+        "venda_id": "b42ba471-b3e3-46e0-a344-dba77fb9020a",
+        "billId": 216,
+        "seq_local": 1,
+        "data_prevista_sienge": "2027-07-20",
+        "delta_dias": -519,
+        "delta_anos_aprox": -1.42,
+        "sienge_baloes_completos": "seq1@2027-07-20, seq2@2026-07-20, seq3@2026-12-20, seq4@2027-07-20, seq5@2027-12-20, seq6@2028-07-20, seq7@2028-12-20, seq8@2029-07-20, seq9@2029-12-20",
+        "match_seq_encontrada": true,
+        "match_seq_detail": [
+          "seq1@2027-07-20(B1)"
+        ]
+      },
+      {
+        "pagamento_id": "8928b17e-1afd-4e6e-9386-14e867fb34c7",
+        "venda_id": "9760cf8a-5826-4b18-b233-780551ec5586",
+        "billId": 496,
+        "seq_local": 1,
+        "data_prevista_sienge": "2030-08-15",
+        "delta_dias": 1339,
+        "delta_anos_aprox": 3.67,
+        "sienge_baloes_completos": "seq1@2030-08-15, seq2@2031-08-15, seq3@2032-08-15, seq4@2033-08-15",
+        "match_seq_encontrada": true,
+        "match_seq_detail": [
+          "seq1@2030-08-15(BA)"
+        ]
+      },
+      {
+        "pagamento_id": "8a66d63e-bb18-4462-bd96-fca8fd8944b6",
+        "venda_id": "1dfd5558-328f-483b-b19c-39ab45b43ed1",
+        "billId": 505,
+        "seq_local": 1,
+        "data_prevista_sienge": "2030-07-20",
+        "delta_dias": 699,
+        "delta_anos_aprox": 1.92,
+        "sienge_baloes_completos": "seq1@2030-07-20, seq2@2030-07-20, seq3@2030-07-20, seq4@2030-07-20, seq5@2030-08-20",
+        "match_seq_encontrada": true,
+        "match_seq_detail": [
+          "seq1@2030-07-20(B1)"
+        ]
+      },
+      {
+        "pagamento_id": "8a6c18db-bf18-4269-9a2f-951be3917571",
+        "venda_id": "9760cf8a-5826-4b18-b233-780551ec5586",
+        "billId": 496,
+        "seq_local": 4,
+        "data_prevista_sienge": "2033-08-15",
+        "delta_dias": 1339,
+        "delta_anos_aprox": 3.67,
+        "sienge_baloes_completos": "seq1@2030-08-15, seq2@2031-08-15, seq3@2032-08-15, seq4@2033-08-15",
+        "match_seq_encontrada": true,
+        "match_seq_detail": [
+          "seq4@2033-08-15(BA)"
+        ]
+      },
+      {
+        "pagamento_id": "9d52abab-0f91-41a9-951d-3e90a2fa098a",
+        "venda_id": "1dfd5558-328f-483b-b19c-39ab45b43ed1",
+        "billId": 505,
+        "seq_local": 1,
+        "data_prevista_sienge": "2030-07-20",
+        "delta_dias": 1430,
+        "delta_anos_aprox": 3.92,
+        "sienge_baloes_completos": "seq1@2030-07-20, seq2@2030-07-20, seq3@2030-07-20, seq4@2030-07-20, seq5@2030-08-20",
+        "match_seq_encontrada": true,
+        "match_seq_detail": [
+          "seq1@2030-07-20(B1)"
+        ]
+      },
+      {
+        "pagamento_id": "9f71076e-75c3-45e0-90f7-2121be9f14e3",
+        "venda_id": "1dfd5558-328f-483b-b19c-39ab45b43ed1",
+        "billId": 505,
+        "seq_local": 1,
+        "data_prevista_sienge": "2030-07-20",
+        "delta_dias": 1065,
+        "delta_anos_aprox": 2.92,
+        "sienge_baloes_completos": "seq1@2030-07-20, seq2@2030-07-20, seq3@2030-07-20, seq4@2030-07-20, seq5@2030-08-20",
+        "match_seq_encontrada": true,
+        "match_seq_detail": [
+          "seq1@2030-07-20(B1)"
+        ]
+      },
+      {
+        "pagamento_id": "9f742502-ade8-48c8-a5d2-7a5b55934b84",
+        "venda_id": "9760cf8a-5826-4b18-b233-780551ec5586",
+        "billId": 496,
+        "seq_local": 2,
+        "data_prevista_sienge": "2031-08-15",
+        "delta_dias": 1339,
+        "delta_anos_aprox": 3.67,
+        "sienge_baloes_completos": "seq1@2030-08-15, seq2@2031-08-15, seq3@2032-08-15, seq4@2033-08-15",
+        "match_seq_encontrada": true,
+        "match_seq_detail": [
+          "seq2@2031-08-15(BA)"
+        ]
+      },
+      {
+        "pagamento_id": "b9d1908f-a639-4c75-8ecd-6b9a6937d34a",
+        "venda_id": "9e784457-c682-4bbb-9fe1-0677c980321a",
+        "billId": 210,
+        "seq_local": 1,
+        "data_prevista_sienge": "2026-12-30",
+        "delta_dias": -396,
+        "delta_anos_aprox": -1.08,
+        "sienge_baloes_completos": "seq1@2026-12-30, seq2@2027-12-30, seq3@2028-01-30, seq4@2029-12-30, seq5@2030-12-30",
+        "match_seq_encontrada": true,
+        "match_seq_detail": [
+          "seq1@2026-12-30(B1)"
+        ]
+      },
+      {
+        "pagamento_id": "ddc45b0f-4537-49f0-8089-bb5ae223d852",
+        "venda_id": "5c6c8318-2dc3-4fd7-b4e0-756c90308af8",
+        "billId": 224,
+        "seq_local": 1,
+        "data_prevista_sienge": "2025-12-20",
+        "delta_dias": -396,
+        "delta_anos_aprox": -1.08,
+        "sienge_baloes_completos": "seq1@2025-12-20, seq2@2026-12-20, seq3@2027-01-20, seq4@2028-12-20",
+        "match_seq_encontrada": true,
+        "match_seq_detail": [
+          "seq1@2025-12-20(B1)"
+        ]
+      },
+      {
+        "pagamento_id": "ec91834a-ae6e-477c-9f10-79e0da6cd3e8",
+        "venda_id": "7295782a-b03d-409b-b21d-3a257ec8b61f",
+        "billId": 8,
+        "seq_local": 1,
+        "data_prevista_sienge": "2026-01-28",
+        "delta_dias": -767,
+        "delta_anos_aprox": -2.1,
+        "sienge_baloes_completos": "seq1@2026-01-28, seq1@2026-03-05, seq2@2026-02-25, seq2@2027-03-05, seq3@2026-03-15, seq3@2028-03-05, seq4@2029-03-05, seq5@2030-03-05",
+        "match_seq_encontrada": true,
+        "match_seq_detail": [
+          "seq1@2026-01-28(B1)",
+          "seq1@2026-03-05(B1)"
+        ]
+      },
+      {
+        "pagamento_id": "f1fab802-87ce-4bdb-b193-1cfdb7c7318c",
+        "venda_id": "7295782a-b03d-409b-b21d-3a257ec8b61f",
+        "billId": 8,
+        "seq_local": 1,
+        "data_prevista_sienge": "2026-01-28",
+        "delta_dias": -1132,
+        "delta_anos_aprox": -3.1,
+        "sienge_baloes_completos": "seq1@2026-01-28, seq1@2026-03-05, seq2@2026-02-25, seq2@2027-03-05, seq3@2026-03-15, seq3@2028-03-05, seq4@2029-03-05, seq5@2030-03-05",
+        "match_seq_encontrada": true,
+        "match_seq_detail": [
+          "seq1@2026-01-28(B1)",
+          "seq1@2026-03-05(B1)"
+        ]
+      },
+      {
+        "pagamento_id": "feecd49f-e819-4b3f-a439-444aaa75b7ec",
+        "venda_id": "5c6c8318-2dc3-4fd7-b4e0-756c90308af8",
+        "billId": 224,
+        "seq_local": 1,
+        "data_prevista_sienge": "2025-12-20",
+        "delta_dias": -396,
+        "delta_anos_aprox": -1.08,
+        "sienge_baloes_completos": "seq1@2025-12-20, seq2@2026-12-20, seq3@2027-01-20, seq4@2028-12-20",
+        "match_seq_encontrada": true,
+        "match_seq_detail": [
+          "seq1@2025-12-20(B1)"
+        ]
+      }
+    ],
+    "baloes_sem_match_sienge": []
+  }
+}

@@ -1,0 +1,296 @@
+{
+  "meta": {
+    "geradoEm": "2026-04-23T20:52:36.791Z",
+    "totalStage": 3677,
+    "totalVendasComBillId": 299,
+    "totalPagamentos": 16903
+  },
+  "counts": {
+    "matched": 3599,
+    "no_match_venda": 2,
+    "no_match_parcela": 0,
+    "tipo_divergente": 76,
+    "ja_pago": 3599,
+    "ja_pago_drift_data": 38,
+    "drift_valor": 0,
+    "drift_data_prevista": 0,
+    "would_update": 0
+  },
+  "samples": {
+    "no_match_venda": [
+      {
+        "billId": 394,
+        "clientName": "IM EMPREENDIMENTO E INCORPORACAO SPE LTDA",
+        "numeroParcela": 1
+      },
+      {
+        "billId": 516,
+        "clientName": "IM EMPREENDIMENTO E INCORPORACAO SPE LTDA",
+        "numeroParcela": 1
+      }
+    ],
+    "no_match_parcela": [],
+    "tipo_divergente": [
+      {
+        "billId": 1,
+        "vendaId": "d2847ce1-bc8f-4eb6-a95f-3bc1cab122d5",
+        "numeroParcela": 1,
+        "tipoStageEsperado": "sinal",
+        "tiposEncontrados": [
+          "parcela_entrada"
+        ]
+      },
+      {
+        "billId": 5,
+        "vendaId": "9e6bbd51-6eee-4372-a51f-4d43f572e97f",
+        "numeroParcela": 1,
+        "tipoStageEsperado": "sinal",
+        "tiposEncontrados": [
+          "parcela_entrada"
+        ]
+      },
+      {
+        "billId": 6,
+        "vendaId": "99b07752-8baf-406f-96a8-4932f2010e99",
+        "numeroParcela": 1,
+        "tipoStageEsperado": "sinal",
+        "tiposEncontrados": [
+          "parcela_entrada"
+        ]
+      },
+      {
+        "billId": 7,
+        "vendaId": "bae0add3-beee-45a2-aa70-e16d089232b2",
+        "numeroParcela": 1,
+        "tipoStageEsperado": "sinal",
+        "tiposEncontrados": [
+          "parcela_entrada"
+        ]
+      },
+      {
+        "billId": 9,
+        "vendaId": "a4b242b6-d5cb-41fe-a501-70d91e50c3bf",
+        "numeroParcela": 1,
+        "tipoStageEsperado": "sinal",
+        "tiposEncontrados": [
+          "parcela_entrada"
+        ]
+      },
+      {
+        "billId": 10,
+        "vendaId": "11728f4d-67d3-4629-a6b2-d93ec06dbea0",
+        "numeroParcela": 1,
+        "tipoStageEsperado": "sinal",
+        "tiposEncontrados": [
+          "parcela_entrada"
+        ]
+      },
+      {
+        "billId": 12,
+        "vendaId": "dd6819f1-94a7-4394-822e-f86bcd42e8c2",
+        "numeroParcela": 1,
+        "tipoStageEsperado": "sinal",
+        "tiposEncontrados": [
+          "parcela_entrada"
+        ]
+      },
+      {
+        "billId": 13,
+        "vendaId": "85f070c7-e436-482c-ac8a-2242602aa984",
+        "numeroParcela": 1,
+        "tipoStageEsperado": "sinal",
+        "tiposEncontrados": [
+          "parcela_entrada",
+          "balao"
+        ]
+      },
+      {
+        "billId": 15,
+        "vendaId": "c5000de1-654b-42c5-9c9c-c0e29e439432",
+        "numeroParcela": 1,
+        "tipoStageEsperado": "sinal",
+        "tiposEncontrados": [
+          "parcela_entrada"
+        ]
+      },
+      {
+        "billId": 21,
+        "vendaId": "6f7fec05-5a52-46e1-82f7-1b9a6ee9469c",
+        "numeroParcela": 1,
+        "tipoStageEsperado": "sinal",
+        "tiposEncontrados": [
+          "parcela_entrada",
+          "balao",
+          "balao",
+          "balao",
+          "balao"
+        ]
+      }
+    ],
+    "ja_pago": [
+      {
+        "billId": 1,
+        "vendaId": "d2847ce1-bc8f-4eb6-a95f-3bc1cab122d5",
+        "numeroParcela": 1,
+        "dataLocal": "2025-09-30",
+        "dataSienge": "2025-09-30"
+      },
+      {
+        "billId": 1,
+        "vendaId": "d2847ce1-bc8f-4eb6-a95f-3bc1cab122d5",
+        "numeroParcela": 2,
+        "dataLocal": "2025-11-17",
+        "dataSienge": "2025-11-17"
+      },
+      {
+        "billId": 5,
+        "vendaId": "9e6bbd51-6eee-4372-a51f-4d43f572e97f",
+        "numeroParcela": 1,
+        "dataLocal": "2025-09-10",
+        "dataSienge": "2025-09-10"
+      },
+      {
+        "billId": 5,
+        "vendaId": "9e6bbd51-6eee-4372-a51f-4d43f572e97f",
+        "numeroParcela": 2,
+        "dataLocal": "2025-10-03",
+        "dataSienge": "2025-10-03"
+      },
+      {
+        "billId": 5,
+        "vendaId": "9e6bbd51-6eee-4372-a51f-4d43f572e97f",
+        "numeroParcela": 3,
+        "dataLocal": "2025-11-19",
+        "dataSienge": "2025-11-19"
+      },
+      {
+        "billId": 5,
+        "vendaId": "9e6bbd51-6eee-4372-a51f-4d43f572e97f",
+        "numeroParcela": 4,
+        "dataLocal": "2025-12-08",
+        "dataSienge": "2025-12-08"
+      },
+      {
+        "billId": 5,
+        "vendaId": "9e6bbd51-6eee-4372-a51f-4d43f572e97f",
+        "numeroParcela": 5,
+        "dataLocal": "2026-01-13",
+        "dataSienge": "2026-01-13"
+      },
+      {
+        "billId": 5,
+        "vendaId": "9e6bbd51-6eee-4372-a51f-4d43f572e97f",
+        "numeroParcela": 6,
+        "dataLocal": "2026-01-30",
+        "dataSienge": "2026-01-30"
+      },
+      {
+        "billId": 5,
+        "vendaId": "9e6bbd51-6eee-4372-a51f-4d43f572e97f",
+        "numeroParcela": 7,
+        "dataLocal": "2026-03-10",
+        "dataSienge": "2026-03-10"
+      },
+      {
+        "billId": 5,
+        "vendaId": "9e6bbd51-6eee-4372-a51f-4d43f572e97f",
+        "numeroParcela": 8,
+        "dataLocal": "2026-04-16",
+        "dataSienge": "2026-04-16"
+      }
+    ],
+    "ja_pago_drift_data": [
+      {
+        "billId": 8,
+        "vendaId": "7295782a-b03d-409b-b21d-3a257ec8b61f",
+        "numeroParcela": 1,
+        "dataLocal": "2026-02-27",
+        "dataSienge": "2026-03-13",
+        "dDias": 14
+      },
+      {
+        "billId": 143,
+        "vendaId": "84b74c27-fa97-4cb0-9e22-be95f88237d2",
+        "numeroParcela": 1,
+        "dataLocal": "2025-08-27",
+        "dataSienge": "2025-12-29",
+        "dDias": 124
+      },
+      {
+        "billId": 143,
+        "vendaId": "84b74c27-fa97-4cb0-9e22-be95f88237d2",
+        "numeroParcela": 2,
+        "dataLocal": "2025-09-05",
+        "dataSienge": "2025-12-29",
+        "dDias": 115
+      },
+      {
+        "billId": 143,
+        "vendaId": "84b74c27-fa97-4cb0-9e22-be95f88237d2",
+        "numeroParcela": 3,
+        "dataLocal": "2025-09-05",
+        "dataSienge": "2025-12-29",
+        "dDias": 115
+      },
+      {
+        "billId": 146,
+        "vendaId": "53d0c5f5-aa8e-4804-9c64-fef6ecdf04fc",
+        "numeroParcela": 1,
+        "dataLocal": "2025-11-24",
+        "dataSienge": "2025-07-28",
+        "dDias": 119
+      },
+      {
+        "billId": 146,
+        "vendaId": "53d0c5f5-aa8e-4804-9c64-fef6ecdf04fc",
+        "numeroParcela": 4,
+        "dataLocal": "2026-02-23",
+        "dataSienge": "2025-11-06",
+        "dDias": 109
+      },
+      {
+        "billId": 146,
+        "vendaId": "53d0c5f5-aa8e-4804-9c64-fef6ecdf04fc",
+        "numeroParcela": 2,
+        "dataLocal": "2025-08-20",
+        "dataSienge": "2025-11-24",
+        "dDias": 96
+      },
+      {
+        "billId": 146,
+        "vendaId": "53d0c5f5-aa8e-4804-9c64-fef6ecdf04fc",
+        "numeroParcela": 3,
+        "dataLocal": "2025-09-18",
+        "dataSienge": "2026-01-21",
+        "dDias": 125
+      },
+      {
+        "billId": 226,
+        "vendaId": "a7fe850b-0b89-44ab-b222-68cf877febfe",
+        "numeroParcela": 1,
+        "dataLocal": "2025-10-20",
+        "dataSienge": "2026-03-20",
+        "dDias": 151
+      },
+      {
+        "billId": 226,
+        "vendaId": "a7fe850b-0b89-44ab-b222-68cf877febfe",
+        "numeroParcela": 2,
+        "dataLocal": "2025-11-19",
+        "dataSienge": "2026-04-20",
+        "dDias": 152
+      }
+    ],
+    "drift_valor": [],
+    "drift_data_prevista": [],
+    "would_update": []
+  },
+  "byTipo": {
+    "parcela_entrada": 3548,
+    "balao": 51
+  },
+  "byBillIdSemMatch": {
+    "394": 1,
+    "516": 1
+  }
+}

@@ -21,6 +21,15 @@ import '../styles/Dashboard.css'
 import '../styles/CorretorDashboard.css'
 import '../styles/EmpreendimentosPage.css'
 import { sortParcelas } from '../utils/parcelasSort'
+import {
+  calcularFatorComissao,
+  calcularComissaoPagamentoCompleto,
+  somarComissao,
+  isPago,
+  isPendente,
+  dataEfetiva,
+} from '../utils/comissaoCalculator'
+import { parseDataLocal, formatDataBR } from '../utils/datas'
 
 const CorretorDashboard = () => {
   const { user, userProfile, signOut, refreshProfile } = useAuth()
@@ -265,16 +274,26 @@ const CorretorDashboard = () => {
 
       if (error) throw error
 
-      // Associar vendas a cada cliente
+      // Associar vendas a cada cliente. Comissão SEMPRE via pagamentos (R2).
       const clientesComVendas = (data || []).map(cliente => {
         const vendasCliente = vendas.filter(v => v.cliente_id === cliente.id)
+        const vendaIds = new Set(vendasCliente.map(v => v.id))
+        const pagamentosCliente = meusPagamentos.filter(p => vendaIds.has(p.venda_id))
         const totalVendas = vendasCliente.reduce((acc, v) => acc + (parseFloat(v.valor_venda) || 0), 0)
-        const totalComissao = vendasCliente.reduce((acc, v) => acc + (parseFloat(v.comissao_corretor) || 0), 0)
+        const totalComissao = pagamentosCliente.reduce((acc, p) => acc + calcularComissaoPagamento(p), 0)
+        const totalComissaoPaga = pagamentosCliente
+          .filter(p => p.status === 'pago')
+          .reduce((acc, p) => acc + calcularComissaoPagamento(p), 0)
+        const totalComissaoPendente = pagamentosCliente
+          .filter(p => p.status === 'pendente')
+          .reduce((acc, p) => acc + calcularComissaoPagamento(p), 0)
         return {
           ...cliente,
           vendas: vendasCliente,
           total_vendas: totalVendas,
           total_comissao: totalComissao,
+          total_comissao_paga: totalComissaoPaga,
+          total_comissao_pendente: totalComissaoPendente,
           qtd_vendas: vendasCliente.length,
           empreendimentos_ids: [...new Set(vendasCliente.map(v => v.empreendimento_id).filter(Boolean))]
         }
@@ -369,28 +388,26 @@ const CorretorDashboard = () => {
         return acc
       }, {})
 
-      // Validar e normalizar os dados
+      // Validar e normalizar os dados. Priorizar snapshot (R9): fator_comissao do banco.
       const vendasValidadas = (data || []).map(venda => {
         const valorVenda = parseFloat(venda.valor_venda) || 0
         const valorProSoluto = parseFloat(venda.valor_pro_soluto) || 0
         let comissaoCorretor = parseFloat(venda.comissao_corretor) || 0
-        
-        // Percentual do corretor
-        const percentualCorretor = userProfile?.percentual_corretor || 
+
+        // Percentual nominal do corretor (só usado quando não há snapshot)
+        const percentualCorretor = userProfile?.percentual_corretor ||
           (userProfile?.tipo_corretor === 'interno' ? 2.5 : 4)
-        
+
         // Se comissao_corretor for 0, calcular usando a fórmula correta
-        // COMISSÃO DO CORRETOR = Valor da Venda × Percentual do Corretor / 100
         if (!comissaoCorretor || comissaoCorretor === 0) {
           comissaoCorretor = (valorVenda * percentualCorretor) / 100
         }
-        
-        // Calcular o fator de comissão do corretor para uso nas parcelas
-        // FATOR = (Valor da Venda × Percentual) / Pro-Soluto
-        let fatorComissaoCorretor = venda.fator_comissao || 0
-        if (valorProSoluto > 0) {
-          fatorComissaoCorretor = (valorVenda * (percentualCorretor / 100)) / valorProSoluto
-        }
+
+        // Fator de comissão do corretor: SNAPSHOT primeiro (R9), só recalcula se ausente.
+        const fatorSnapshot = parseFloat(venda.fator_comissao) || 0
+        const fatorComissaoCorretor = fatorSnapshot > 0
+          ? fatorSnapshot
+          : calcularFatorComissao(valorVenda, valorProSoluto, percentualCorretor)
 
         return {
           ...venda,
@@ -767,11 +784,12 @@ const CorretorDashboard = () => {
   const filteredVendas = vendas.filter(venda => {
     if (periodo === 'todos') return true
     
-    const dataVenda = new Date(venda.data_venda)
+    const dataVenda = parseDataLocal(venda.data_venda)
     const hoje = new Date()
-    
+
+    if (!dataVenda) return false
     if (periodo === 'mes') {
-      const mesmoMes = dataVenda.getMonth() === hoje.getMonth() && 
+      const mesmoMes = dataVenda.getMonth() === hoje.getMonth() &&
              dataVenda.getFullYear() === hoje.getFullYear()
       return mesmoMes
     }
@@ -796,14 +814,15 @@ const CorretorDashboard = () => {
     if (filtrosPagamentos.empreendimento && pag.empreendimento_nome !== filtrosPagamentos.empreendimento) {
       return false
     }
-    // Filtro por data
-    if (filtrosPagamentos.dataInicio && pag.data_prevista) {
-      if (new Date(pag.data_prevista) < new Date(filtrosPagamentos.dataInicio)) {
+    // Filtro por data efetiva: pago usa data_pagamento, pendente usa data_prevista
+    const dataRef = dataEfetiva(pag)
+    if (filtrosPagamentos.dataInicio && dataRef) {
+      if (parseDataLocal(dataRef) < parseDataLocal(filtrosPagamentos.dataInicio)) {
         return false
       }
     }
-    if (filtrosPagamentos.dataFim && pag.data_prevista) {
-      if (new Date(pag.data_prevista) > new Date(filtrosPagamentos.dataFim)) {
+    if (filtrosPagamentos.dataFim && dataRef) {
+      if (parseDataLocal(dataRef) > parseDataLocal(filtrosPagamentos.dataFim)) {
         return false
       }
     }
@@ -904,10 +923,11 @@ const CorretorDashboard = () => {
     }
     // Filtro por período
     if (filtrosVendas.periodo !== 'todos') {
-      const dataVenda = new Date(venda.data_venda)
+      const dataVenda = parseDataLocal(venda.data_venda)
       const hoje = new Date()
+      if (!dataVenda) return false
       if (filtrosVendas.periodo === 'mes') {
-        const mesmoMes = dataVenda.getMonth() === hoje.getMonth() && 
+        const mesmoMes = dataVenda.getMonth() === hoje.getMonth() &&
                          dataVenda.getFullYear() === hoje.getFullYear()
         if (!mesmoMes) return false
       }
@@ -918,13 +938,13 @@ const CorretorDashboard = () => {
     }
     // Filtro por data início
     if (filtrosVendas.dataInicio && venda.data_venda) {
-      if (new Date(venda.data_venda) < new Date(filtrosVendas.dataInicio)) {
+      if (parseDataLocal(venda.data_venda) < parseDataLocal(filtrosVendas.dataInicio)) {
         return false
       }
     }
     // Filtro por data fim
     if (filtrosVendas.dataFim && venda.data_venda) {
-      if (new Date(venda.data_venda) > new Date(filtrosVendas.dataFim)) {
+      if (parseDataLocal(venda.data_venda) > parseDataLocal(filtrosVendas.dataFim)) {
         return false
       }
     }
@@ -942,33 +962,19 @@ const CorretorDashboard = () => {
     return meusPagamentos.filter(pag => vendaIdsFiltradas.includes(pag.venda_id))
   }
 
+  // R2 — sempre por pagamento. Sem pagamentos → 0.
   const getFilteredTotalComissao = () => {
-    const pagamentosFiltrados = getFilteredPagamentos()
-    if (pagamentosFiltrados.length === 0) {
-      // Fallback se pagamentos ainda não carregaram
-      return filteredMinhasVendas.reduce((acc, v) => acc + (parseFloat(v.comissao_corretor) || 0), 0)
-    }
-    return pagamentosFiltrados.reduce((acc, pag) => acc + calcularComissaoPagamento(pag), 0)
+    return getFilteredPagamentos().reduce((acc, pag) => acc + calcularComissaoPagamento(pag), 0)
   }
 
   const getFilteredComissaoPendente = () => {
-    const pagamentosFiltrados = getFilteredPagamentos()
-    if (pagamentosFiltrados.length === 0) {
-      return filteredMinhasVendas.filter(v => v.status === 'pendente')
-        .reduce((acc, v) => acc + (parseFloat(v.comissao_corretor) || 0), 0)
-    }
-    return pagamentosFiltrados
+    return getFilteredPagamentos()
       .filter(pag => pag.status === 'pendente')
       .reduce((acc, pag) => acc + calcularComissaoPagamento(pag), 0)
   }
 
   const getFilteredComissaoPaga = () => {
-    const pagamentosFiltrados = getFilteredPagamentos()
-    if (pagamentosFiltrados.length === 0) {
-      return filteredMinhasVendas.filter(v => v.status === 'pago')
-        .reduce((acc, v) => acc + (parseFloat(v.comissao_corretor) || 0), 0)
-    }
-    return pagamentosFiltrados
+    return getFilteredPagamentos()
       .filter(pag => pag.status === 'pago')
       .reduce((acc, pag) => acc + calcularComissaoPagamento(pag), 0)
   }
@@ -983,14 +989,17 @@ const CorretorDashboard = () => {
       if (relatorioFiltros.empreendimento) {
         vendasFiltradas = vendasFiltradas.filter(v => v.empreendimento_nome === relatorioFiltros.empreendimento)
       }
+      // Filtro por status: sempre via pagamentos (R2) — inclui vendas parcialmente pagas.
       if (relatorioFiltros.status !== 'todos') {
-        vendasFiltradas = vendasFiltradas.filter(v => v.status === relatorioFiltros.status)
+        vendasFiltradas = vendasFiltradas.filter(v =>
+          meusPagamentos.some(p => p.venda_id === v.id && p.status === relatorioFiltros.status)
+        )
       }
       if (relatorioFiltros.dataInicio) {
-        vendasFiltradas = vendasFiltradas.filter(v => new Date(v.data_venda) >= new Date(relatorioFiltros.dataInicio))
+        vendasFiltradas = vendasFiltradas.filter(v => parseDataLocal(v.data_venda) >= parseDataLocal(relatorioFiltros.dataInicio))
       }
       if (relatorioFiltros.dataFim) {
-        vendasFiltradas = vendasFiltradas.filter(v => new Date(v.data_venda) <= new Date(relatorioFiltros.dataFim))
+        vendasFiltradas = vendasFiltradas.filter(v => parseDataLocal(v.data_venda) <= parseDataLocal(relatorioFiltros.dataFim))
       }
 
       // Calcular totais usando PAGAMENTOS (regra correta)
@@ -1084,12 +1093,12 @@ const CorretorDashboard = () => {
         else if (percentPago > 0) statusVenda = `${Math.round(percentPago)}% Pago`
         
         return [
-          new Date(v.data_venda).toLocaleDateString('pt-BR'),
+          formatDataBR(v.data_venda),
           v.empreendimento_nome || '-',
           v.unidade || '-',
           capitalizeName(v.cliente_nome) || '-',
           formatCurrency(v.valor_venda),
-          formatCurrency(comissaoVenda > 0 ? comissaoVenda : v.comissao_corretor),
+          formatCurrency(comissaoVenda),
           statusVenda
         ]
       })
@@ -1153,72 +1162,26 @@ const CorretorDashboard = () => {
     return filteredVendas.reduce((acc, v) => acc + (parseFloat(v.valor_venda) || 0), 0)
   }
 
-  // Calcular comissão de um pagamento usando fator correto
-  const calcularComissaoPagamento = (pagamento) => {
-    // Primeiro: usar comissao_gerada se existir no pagamento
-    if (pagamento.comissao_gerada && parseFloat(pagamento.comissao_gerada) > 0) {
-      return parseFloat(pagamento.comissao_gerada)
-    }
-    
-    // Segundo: usar fator_comissao_corretor se existir
-    if (pagamento.fator_comissao_corretor && pagamento.fator_comissao_corretor > 0) {
-      return (parseFloat(pagamento.valor) || 0) * pagamento.fator_comissao_corretor
-    }
-    
-    // Terceiro: calcular fator baseado na venda
-    const venda = vendas.find(v => v.id === pagamento.venda_id)
-    if (venda && venda.fator_comissao_corretor && venda.fator_comissao_corretor > 0) {
-      return (parseFloat(pagamento.valor) || 0) * venda.fator_comissao_corretor
-    }
-    
-    // Fallback: usar proporção simples se tiver comissão_corretor na venda
-    if (venda && venda.comissao_corretor && venda.valor_pro_soluto && venda.valor_pro_soluto > 0) {
-      const fator = parseFloat(venda.comissao_corretor) / parseFloat(venda.valor_pro_soluto)
-      return (parseFloat(pagamento.valor) || 0) * fator
-    }
-    
-    // Último fallback: proporção simples baseado no percentual padrão
-    const valorParcela = parseFloat(pagamento.valor) || 0
-    const percentual = userProfile?.percentual_corretor || (userProfile?.tipo_corretor === 'interno' ? 2.5 : 4)
-    return valorParcela * (percentual / 100)
-  }
+  // Cascata canônica (R1) delegada para comissaoCalculator.js — fonte única.
+  // O percentualFallback do corretor só entra no passo 7, quando nada mais resolve.
+  const percentualFallback =
+    userProfile?.percentual_corretor ||
+    (userProfile?.tipo_corretor === 'interno' ? 2.5 : 4)
 
-  // Total de comissão = soma de todas as comissões dos pagamentos
-  const getTotalComissao = () => {
-    if (meusPagamentos.length === 0) {
-      // Fallback para vendas se pagamentos ainda não carregaram
-      return filteredVendas.reduce((acc, v) => acc + (parseFloat(v.comissao_corretor) || 0), 0)
-    }
-    return meusPagamentos.reduce((acc, pag) => acc + calcularComissaoPagamento(pag), 0)
-  }
+  const calcularComissaoPagamento = (pagamento) =>
+    calcularComissaoPagamentoCompleto(pagamento, { vendas, percentualFallback })
 
-  // Comissão Pendente = soma das comissões dos pagamentos pendentes
-  const getComissaoPendente = () => {
-    if (meusPagamentos.length === 0) {
-      return filteredVendas.filter(v => v.status === 'pendente')
-        .reduce((acc, v) => acc + (parseFloat(v.comissao_corretor) || 0), 0)
-    }
-    const pendentes = meusPagamentos.filter(pag => pag.status === 'pendente')
-    return pendentes.reduce((acc, pag) => acc + calcularComissaoPagamento(pag), 0)
-  }
-
-  // Comissão Paga = soma das comissões dos pagamentos PAGOS
-  const getComissaoPaga = () => {
-    if (meusPagamentos.length === 0) {
-      return filteredVendas.filter(v => v.status === 'pago')
-        .reduce((acc, v) => acc + (parseFloat(v.comissao_corretor) || 0), 0)
-    }
-    const pagos = meusPagamentos.filter(pag => pag.status === 'pago')
-    return pagos.reduce((acc, pag) => acc + calcularComissaoPagamento(pag), 0)
-  }
+  // R2 — comissão SEMPRE por pagamento. Sem pagamentos → 0 (nunca fallback por v.status).
+  const getTotalComissao = () => somarComissao(meusPagamentos, { vendas, percentualFallback })
+  const getComissaoPendente = () => somarComissao(meusPagamentos, { predicate: isPendente, vendas, percentualFallback })
+  const getComissaoPaga = () => somarComissao(meusPagamentos, { predicate: isPago, vendas, percentualFallback })
 
   // Contagem real de vendas (baseado em vendas únicas, não pagamentos)
   const getVendasCount = () => {
     return vendas.length
   }
 
-  const percentualCorretor = userProfile?.percentual_corretor || 
-    (userProfile?.tipo_corretor === 'interno' ? 2.5 : 4)
+  const percentualCorretor = percentualFallback
 
   // Buscar pagamentos de uma venda específica
   const fetchPagamentosVenda = async (vendaId) => {
@@ -1330,15 +1293,15 @@ const CorretorDashboard = () => {
     
     // Vendas hoje
     const vendasHoje = vendas.filter(v => {
-      const dataVenda = new Date(v.data_venda)
-      return dataVenda >= inicioHoje && dataVenda <= fimHoje
+      const dataVenda = parseDataLocal(v.data_venda)
+      return dataVenda && dataVenda >= inicioHoje && dataVenda <= fimHoje
     })
     const totalVendasHoje = vendasHoje.reduce((acc, v) => acc + (parseFloat(v.valor_venda) || 0), 0)
-    
+
     // Vendas este mês
     const vendasMes = vendas.filter(v => {
-      const dataVenda = new Date(v.data_venda)
-      return dataVenda.getMonth() === hoje.getMonth() && 
+      const dataVenda = parseDataLocal(v.data_venda)
+      return dataVenda && dataVenda.getMonth() === hoje.getMonth() &&
              dataVenda.getFullYear() === hoje.getFullYear()
     })
     const totalVendasMes = vendasMes.reduce((acc, v) => acc + (parseFloat(v.valor_venda) || 0), 0)
@@ -1726,8 +1689,8 @@ const CorretorDashboard = () => {
                   const data = new Date(hoje.getFullYear(), hoje.getMonth() - i, 1)
                   const mesNome = data.toLocaleDateString('pt-BR', { month: 'short' }).replace('.', '')
                   const vendasMes = vendas.filter(v => {
-                    const dv = new Date(v.data_venda)
-                    return dv.getMonth() === data.getMonth() && dv.getFullYear() === data.getFullYear()
+                    const dv = parseDataLocal(v.data_venda)
+                    return dv && dv.getMonth() === data.getMonth() && dv.getFullYear() === data.getFullYear()
                   })
                   // Usar PAGAMENTOS para calcular comissão (regra correta)
                   const vendaIdsMes = vendasMes.map(v => v.id)
@@ -2026,7 +1989,7 @@ const CorretorDashboard = () => {
                                 )}
                       <span className="venda-date">
                         <Calendar size={14} />
-                        {new Date(venda.data_venda).toLocaleDateString('pt-BR')}
+                        {formatDataBR(venda.data_venda)}
                       </span>
                       <span className={`status-tag ${statusClass}`}>
                         {statusClass === 'pago' ? (
@@ -2126,10 +2089,7 @@ const CorretorDashboard = () => {
                                               {pagamento.tipo === 'comissao_integral' && '✨ Comissão Integral'}
                                             </div>
                                             <div className="corretor-parcela-data">
-                                              {pagamento.data_prevista 
-                                                ? new Date(pagamento.data_prevista).toLocaleDateString('pt-BR')
-                                                : '-'
-                                              }
+                                              {formatDataBR(pagamento.data_prevista)}
                                             </div>
                                             <div className="corretor-parcela-valor">
                                               {formatCurrency(pagamento.valor)}
@@ -2195,10 +2155,7 @@ const CorretorDashboard = () => {
                                                     {pagamento.tipo === 'comissao_integral' && '✨ Comissão Integral'}
                                                   </div>
                                                   <div className="corretor-parcela-data">
-                                                    {pagamento.data_prevista 
-                                                      ? new Date(pagamento.data_prevista).toLocaleDateString('pt-BR')
-                                                      : '-'
-                                                    }
+                                                    {formatDataBR(pagamento.data_prevista)}
                                                   </div>
                                                   <div className="corretor-parcela-valor">
                                                     {formatCurrency(pagamento.valor)}
@@ -2522,7 +2479,7 @@ const CorretorDashboard = () => {
                                             {pag.tipo === 'balao' && `Balão ${pag.numero_parcela || ''}`}
                                             {pag.tipo === 'comissao_integral' && '✨ Comissão Integral'}
                                           </div>
-                                          <div className="parcela-data">{pag.data_prevista ? new Date(pag.data_prevista).toLocaleDateString('pt-BR') : '-'}</div>
+                                          <div className="parcela-data">{formatDataBR(pag.data_prevista)}</div>
                                           <div className="parcela-valor">{formatCurrency(pag.valor)}</div>
                                           <div className="parcela-comissao-corretor">
                                             <span className="comissao-label">Minha Comissão:</span>
@@ -3064,7 +3021,7 @@ const CorretorDashboard = () => {
                         
                         return (
                           <tr key={venda.id}>
-                            <td>{new Date(venda.data_venda).toLocaleDateString('pt-BR')}</td>
+                            <td>{formatDataBR(venda.data_venda)}</td>
                             <td>{capitalizeName(venda.cliente_nome) || 'N/A'}</td>
                             <td>{venda.empreendimento_nome || 'N/A'}</td>
                             <td>{venda.unidade || '-'}</td>
@@ -3766,7 +3723,7 @@ const CorretorDashboard = () => {
                     <div key={venda.id} className="venda-mini-card">
                       <div className="venda-mini-info">
                         <span className="venda-mini-emp">{venda.empreendimento_nome || 'N/A'}</span>
-                        <span className="venda-mini-data">{new Date(venda.data_venda).toLocaleDateString('pt-BR')}</span>
+                        <span className="venda-mini-data">{formatDataBR(venda.data_venda)}</span>
                       </div>
                       <div className="venda-mini-valores">
                         <span className="venda-mini-valor">{formatCurrency(venda.valor_venda)}</span>

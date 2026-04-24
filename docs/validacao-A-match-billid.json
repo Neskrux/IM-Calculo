@@ -1,0 +1,46 @@
+{
+  "meta": {
+    "bancoBillIds": 299,
+    "incomeRows": 3721,
+    "incomeBillIds": 294,
+    "matched": 292,
+    "orfaos": 2,
+    "fantasmas": 7,
+    "matchRatePct": 99.32,
+    "parcelasMatched": 3719,
+    "parcelasOrfas": 2,
+    "valorMatched": 17694549.15,
+    "valorOrfao": 6900,
+    "pagoMatched": 17694186.47,
+    "pagoOrfao": 6900
+  },
+  "orfaos": [
+    {
+      "billId": 394,
+      "parcelas": 1,
+      "valorOriginal": 2000,
+      "pago": 2000,
+      "numeros": [
+        "1/1"
+      ]
+    },
+    {
+      "billId": 516,
+      "parcelas": 1,
+      "valorOriginal": 4900,
+      "pago": 4900,
+      "numeros": [
+        "1/1"
+      ]
+    }
+  ],
+  "fantasmas": [
+    151,
+    219,
+    261,
+    428,
+    507,
+    508,
+    509
+  ]
+}

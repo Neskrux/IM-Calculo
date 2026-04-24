@@ -8,6 +8,7 @@ import {
 } from 'lucide-react'
 import Ticker from '../components/Ticker'
 import '../styles/HomeDashboard.css'
+import { parseDataLocal, formatDataBR } from '../utils/datas'
 
 const HomeDashboard = ({ 
   showTicker = true, 
@@ -35,24 +36,24 @@ const HomeDashboard = ({
     // Vendas do mês atual
     const vendasMes = vendas
       .filter(v => {
-        const dataVenda = new Date(v.data_venda)
-        return dataVenda >= inicioMes
+        const dataVenda = parseDataLocal(v.data_venda)
+        return dataVenda && dataVenda >= inicioMes
       })
       .reduce((acc, v) => acc + (parseFloat(v.valor_venda) || 0), 0)
 
     // Vendas do mês anterior
     const vendasMesAnterior = vendas
       .filter(v => {
-        const dataVenda = new Date(v.data_venda)
-        return dataVenda >= inicioMesAnterior && dataVenda <= fimMesAnterior
+        const dataVenda = parseDataLocal(v.data_venda)
+        return dataVenda && dataVenda >= inicioMesAnterior && dataVenda <= fimMesAnterior
       })
       .reduce((acc, v) => acc + (parseFloat(v.valor_venda) || 0), 0)
 
     // Vendas de hoje
     const vendasHoje = vendas
       .filter(v => {
-        const dataVenda = new Date(v.data_venda)
-        return dataVenda >= inicioHoje && dataVenda <= fimHoje
+        const dataVenda = parseDataLocal(v.data_venda)
+        return dataVenda && dataVenda >= inicioHoje && dataVenda <= fimHoje
       })
       .reduce((acc, v) => acc + (parseFloat(v.valor_venda) || 0), 0)
 
@@ -69,8 +70,8 @@ const HomeDashboard = ({
     // Comissões do mês anterior (para comparação)
     const comissoesPendentesMesAnterior = pagamentos
       .filter(p => {
-        const dataPag = new Date(p.created_at || p.data_prevista)
-        return p.status === 'pendente' && dataPag >= inicioMesAnterior && dataPag <= fimMesAnterior
+        const dataPag = p.created_at ? new Date(p.created_at) : parseDataLocal(p.data_prevista)
+        return p.status === 'pendente' && dataPag && dataPag >= inicioMesAnterior && dataPag <= fimMesAnterior
       })
       .reduce((acc, p) => acc + (parseFloat(p.comissao_gerada) || 0), 0)
 
@@ -88,7 +89,9 @@ const HomeDashboard = ({
       : 0
 
     // Meta mensal (calculada como % do total de vendas do mês vs média mensal)
-    const primeiraVenda = vendas.length > 0 ? new Date(vendas.sort((a, b) => new Date(a.data_venda) - new Date(b.data_venda))[0].data_venda) : hoje
+    const primeiraVenda = vendas.length > 0
+      ? (parseDataLocal(vendas.slice().sort((a, b) => parseDataLocal(a.data_venda) - parseDataLocal(b.data_venda))[0].data_venda) || hoje)
+      : hoje
     const diasDesdeInicio = Math.max(1, Math.ceil((hoje - primeiraVenda) / (1000 * 60 * 60 * 24)))
     const mesesDesdeInicio = Math.max(1, diasDesdeInicio / 30)
     const mediaMensal = vendasTotal / mesesDesdeInicio
@@ -119,8 +122,8 @@ const HomeDashboard = ({
       
       const valor = vendas
         .filter(v => {
-          const dataVenda = new Date(v.data_venda)
-          return dataVenda >= mesInicio && dataVenda <= mesFim
+          const dataVenda = parseDataLocal(v.data_venda)
+          return dataVenda && dataVenda >= mesInicio && dataVenda <= mesFim
         })
         .reduce((acc, v) => acc + (parseFloat(v.valor_venda) || 0), 0)
       
@@ -201,7 +204,8 @@ const HomeDashboard = ({
   // Vendas recentes (últimas 5)
   const vendasRecentes = useMemo(() => {
     return vendas
-      .sort((a, b) => new Date(b.data_venda) - new Date(a.data_venda))
+      .slice()
+      .sort((a, b) => parseDataLocal(b.data_venda) - parseDataLocal(a.data_venda))
       .slice(0, 5)
       .map(v => {
         const empreendimento = empreendimentos.find(e => e.id === v.empreendimento_id)
@@ -490,7 +494,7 @@ const HomeDashboard = ({
                         <span className="recent-title">{venda.cliente}</span>
                         <div className="recent-meta">
                           <Calendar size={12} />
-                          <span>{new Date(venda.data).toLocaleDateString('pt-BR')}</span>
+                          <span>{formatDataBR(venda.data)}</span>
                         </div>
                       </div>
                       <div className="recent-details">

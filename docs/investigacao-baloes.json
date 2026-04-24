@@ -1,0 +1,414 @@
+{
+  "contagemPorPT": {
+    "10": 1,
+    "PM": 16641,
+    "CA": 280,
+    "AT": 58,
+    "CV": 57,
+    "B1": 54,
+    "B2": 51,
+    "B3": 50,
+    "B4": 47,
+    "BA": 36,
+    "B5": 33,
+    "SN": 23,
+    "PU": 9,
+    "FI": 3,
+    "B6": 3,
+    "B8": 3,
+    "PE": 3,
+    "B7": 2,
+    "BN": 2,
+    "PA": 2,
+    "CH": 1,
+    "B9": 1
+  },
+  "detalheBaloes": {
+    "B1": {
+      "total": 54,
+      "billIdsDistintos": 53,
+      "installmentNumbersDistintos": 1,
+      "topInstallmentNumbers": [
+        [
+          "1/1",
+          54
+        ]
+      ],
+      "dueDateMin": "2025-11-11",
+      "dueDateMax": "2030-07-20",
+      "sample": [
+        {
+          "billId": 21,
+          "installmentNumber": "1/1",
+          "dueDate": "2026-12-20"
+        },
+        {
+          "billId": 34,
+          "installmentNumber": "1/1",
+          "dueDate": "2026-12-20"
+        },
+        {
+          "billId": 146,
+          "installmentNumber": "1/1",
+          "dueDate": "2026-12-20"
+        }
+      ]
+    },
+    "B2": {
+      "total": 51,
+      "billIdsDistintos": 50,
+      "installmentNumbersDistintos": 1,
+      "topInstallmentNumbers": [
+        [
+          "1/1",
+          51
+        ]
+      ],
+      "dueDateMin": "2026-02-25",
+      "dueDateMax": "2030-07-20",
+      "sample": [
+        {
+          "billId": 8,
+          "installmentNumber": "1/1",
+          "dueDate": "2027-03-05"
+        },
+        {
+          "billId": 13,
+          "installmentNumber": "1/1",
+          "dueDate": "2026-12-10"
+        },
+        {
+          "billId": 21,
+          "installmentNumber": "1/1",
+          "dueDate": "2027-12-20"
+        }
+      ]
+    },
+    "B3": {
+      "total": 50,
+      "billIdsDistintos": 49,
+      "installmentNumbersDistintos": 1,
+      "topInstallmentNumbers": [
+        [
+          "1/1",
+          50
+        ]
+      ],
+      "dueDateMin": "2026-03-15",
+      "dueDateMax": "2030-07-20",
+      "sample": [
+        {
+          "billId": 8,
+          "installmentNumber": "1/1",
+          "dueDate": "2028-03-05"
+        },
+        {
+          "billId": 13,
+          "installmentNumber": "1/1",
+          "dueDate": "2027-12-10"
+        },
+        {
+          "billId": 21,
+          "installmentNumber": "1/1",
+          "dueDate": "2028-12-20"
+        }
+      ]
+    },
+    "B4": {
+      "total": 47,
+      "billIdsDistintos": 47,
+      "installmentNumbersDistintos": 1,
+      "topInstallmentNumbers": [
+        [
+          "1/1",
+          47
+        ]
+      ],
+      "dueDateMin": "2027-07-20",
+      "dueDateMax": "2030-12-20",
+      "sample": [
+        {
+          "billId": 8,
+          "installmentNumber": "1/1",
+          "dueDate": "2029-03-05"
+        },
+        {
+          "billId": 13,
+          "installmentNumber": "1/1",
+          "dueDate": "2028-12-10"
+        },
+        {
+          "billId": 21,
+          "installmentNumber": "1/1",
+          "dueDate": "2029-12-20"
+        }
+      ]
+    },
+    "B5": {
+      "total": 33,
+      "billIdsDistintos": 33,
+      "installmentNumbersDistintos": 1,
+      "topInstallmentNumbers": [
+        [
+          "1/1",
+          33
+        ]
+      ],
+      "dueDateMin": "2027-12-20",
+      "dueDateMax": "2030-12-30",
+      "sample": [
+        {
+          "billId": 8,
+          "installmentNumber": "1/1",
+          "dueDate": "2030-03-05"
+        },
+        {
+          "billId": 13,
+          "installmentNumber": "1/1",
+          "dueDate": "2029-12-10"
+        },
+        {
+          "billId": 27,
+          "installmentNumber": "1/1",
+          "dueDate": "2029-12-20"
+        }
+      ]
+    },
+    "B6": {
+      "total": 3,
+      "billIdsDistintos": 3,
+      "installmentNumbersDistintos": 1,
+      "topInstallmentNumbers": [
+        [
+          "1/1",
+          3
+        ]
+      ],
+      "dueDateMin": "2026-12-20",
+      "dueDateMax": "2030-12-20",
+      "sample": [
+        {
+          "billId": 155,
+          "installmentNumber": "1/1",
+          "dueDate": "2026-12-20"
+        },
+        {
+          "billId": 204,
+          "installmentNumber": "1/1",
+          "dueDate": "2030-12-20"
+        },
+        {
+          "billId": 216,
+          "installmentNumber": "1/1",
+          "dueDate": "2028-07-20"
+        }
+      ]
+    },
+    "B7": {
+      "total": 2,
+      "billIdsDistintos": 2,
+      "installmentNumbersDistintos": 1,
+      "topInstallmentNumbers": [
+        [
+          "1/1",
+          2
+        ]
+      ],
+      "dueDateMin": "2028-12-20",
+      "dueDateMax": "2031-12-20",
+      "sample": [
+        {
+          "billId": 204,
+          "installmentNumber": "1/1",
+          "dueDate": "2031-12-20"
+        },
+        {
+          "billId": 216,
+          "installmentNumber": "1/1",
+          "dueDate": "2028-12-20"
+        }
+      ]
+    },
+    "B8": {
+      "total": 3,
+      "billIdsDistintos": 3,
+      "installmentNumbersDistintos": 1,
+      "topInstallmentNumbers": [
+        [
+          "1/1",
+          3
+        ]
+      ],
+      "dueDateMin": "2029-07-20",
+      "dueDateMax": "2032-12-20",
+      "sample": [
+        {
+          "billId": 204,
+          "installmentNumber": "1/1",
+          "dueDate": "2032-12-20"
+        },
+        {
+          "billId": 216,
+          "installmentNumber": "1/1",
+          "dueDate": "2029-07-20"
+        },
+        {
+          "billId": 272,
+          "installmentNumber": "1/1",
+          "dueDate": "2030-12-01"
+        }
+      ]
+    },
+    "B9": {
+      "total": 1,
+      "billIdsDistintos": 1,
+      "installmentNumbersDistintos": 1,
+      "topInstallmentNumbers": [
+        [
+          "1/1",
+          1
+        ]
+      ],
+      "dueDateMin": "2029-12-20",
+      "dueDateMax": "2029-12-20",
+      "sample": [
+        {
+          "billId": 216,
+          "installmentNumber": "1/1",
+          "dueDate": "2029-12-20"
+        }
+      ]
+    },
+    "BA": {
+      "total": 36,
+      "billIdsDistintos": 9,
+      "installmentNumbersDistintos": 12,
+      "topInstallmentNumbers": [
+        [
+          "1/4",
+          7
+        ],
+        [
+          "2/4",
+          7
+        ],
+        [
+          "3/4",
+          7
+        ],
+        [
+          "4/4",
+          7
+        ],
+        [
+          "2/5",
+          1
+        ]
+      ],
+      "dueDateMin": "2026-01-20",
+      "dueDateMax": "2033-08-15",
+      "sample": [
+        {
+          "billId": 208,
+          "installmentNumber": "2/5",
+          "dueDate": "2027-01-20"
+        },
+        {
+          "billId": 208,
+          "installmentNumber": "3/5",
+          "dueDate": "2028-01-20"
+        },
+        {
+          "billId": 208,
+          "installmentNumber": "4/5",
+          "dueDate": "2029-01-20"
+        }
+      ]
+    }
+  },
+  "combosBalaoPorBillId": {
+    "B1+B2+B3+B4+B5": 29,
+    "B1+B2+B3+B4": 15,
+    "BA": 8,
+    "B1": 3,
+    "B1+B2+B3": 2,
+    "B1+B2+B3+B4+B5+B6": 1,
+    "B1+B2+B3+B4+B5+B6+B7+B8": 1,
+    "B1+B2+B3+B4+B5+B6+B7+B8+B9": 1,
+    "B8": 1,
+    "B1+B2": 1,
+    "B5+BA": 1
+  },
+  "exemploBAMultiplos": [
+    {
+      "billId": 208,
+      "total": 5,
+      "parcelas": [
+        {
+          "inst": "2/5",
+          "due": "2027-01-20"
+        },
+        {
+          "inst": "3/5",
+          "due": "2028-01-20"
+        },
+        {
+          "inst": "4/5",
+          "due": "2029-01-20"
+        },
+        {
+          "inst": "5/5",
+          "due": "2030-01-20"
+        },
+        {
+          "inst": "1/5",
+          "due": "2026-01-20"
+        }
+      ]
+    },
+    {
+      "billId": 406,
+      "total": 4,
+      "parcelas": [
+        {
+          "inst": "1/4",
+          "due": "2026-12-20"
+        },
+        {
+          "inst": "2/4",
+          "due": "2027-12-20"
+        },
+        {
+          "inst": "3/4",
+          "due": "2028-12-20"
+        },
+        {
+          "inst": "4/4",
+          "due": "2029-12-20"
+        }
+      ]
+    },
+    {
+      "billId": 444,
+      "total": 4,
+      "parcelas": [
+        {
+          "inst": "1/4",
+          "due": "2026-12-10"
+        },
+        {
+          "inst": "2/4",
+          "due": "2027-12-10"
+        },
+        {
+          "inst": "3/4",
+          "due": "2028-12-10"
+        },
+        {
+          "inst": "4/4",
+          "due": "2029-12-10"
+        }
+      ]
+    }
+  ]
+}

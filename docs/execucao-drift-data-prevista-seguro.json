@@ -1,0 +1,55 @@
+{
+  "meta": {
+    "geradoEm": "2026-04-24T13:55:59.435Z",
+    "input": "docs/fase5-plano-drift-data-prevista-v2.json",
+    "inputRows": 682,
+    "elegiveis": 258,
+    "colisoesExcluidas": 253,
+    "distribuicaoDelta": {
+      "<=7d": 0,
+      "8-15d": 246,
+      "16-30d": 12
+    },
+    "deltasDistintos": [
+      -10,
+      28,
+      29,
+      30
+    ],
+    "datasDistintas": 62
+  },
+  "counts": {
+    "updated": 258,
+    "failed_http": 0,
+    "skipado_nao_pendente": 0,
+    "retornou_vazio": 0
+  },
+  "falhas": [],
+  "sampleUpdates": [
+    {
+      "id": "00f1b3ff-2ae2-4fa0-b68e-8835fedbe44a",
+      "data_prevista_nova": "2028-03-10",
+      "numero_parcela": 34
+    },
+    {
+      "id": "040ac5a8-38d0-4d1d-9d08-e5e3f20ca673",
+      "data_prevista_nova": "2026-12-10",
+      "numero_parcela": 12
+    },
+    {
+      "id": "003e3563-f1a8-4dc9-9ed6-5b5a50b8c3ba",
+      "data_prevista_nova": "2027-04-10",
+      "numero_parcela": 23
+    },
+    {
+      "id": "035b0135-6573-42fb-86e8-3f819c5b5d2c",
+      "data_prevista_nova": "2026-06-10",
+      "numero_parcela": 6
+    },
+    {
+      "id": "074b11d6-380e-45a4-b9fc-2b01948bb9c2",
+      "data_prevista_nova": "2029-05-10",
+      "numero_parcela": 48
+    }
+  ]
+}

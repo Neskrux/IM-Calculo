@@ -1,0 +1,17 @@
+{
+  "meta": {
+    "geradoEm": "2026-04-24T18:54:41.543Z",
+    "modo": "dry-run",
+    "regra": "Sienge fonte da verdade. Migration 020 libera data_pagamento em pago. CAT 4 = INSERT de status pago real."
+  },
+  "resumo": {
+    "cat2_tentativas": 29,
+    "cat2_updated": 29,
+    "cat2_failed": 0,
+    "cat4_tentativas": 294,
+    "cat4_updated": 294,
+    "cat4_failed": 0
+  },
+  "falhas_cat2": [],
+  "falhas_cat4": []
+}

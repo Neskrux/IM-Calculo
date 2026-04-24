@@ -1,0 +1,74 @@
+{
+  "meta": {
+    "geradoEm": "2026-04-24T15:02:41.825Z",
+    "gruposSeguros": 55,
+    "linhasParaCancelar": 64,
+    "acao": "status='cancelado' (preserva data_pagamento, nao DELETE)"
+  },
+  "counts": {
+    "updated": 64,
+    "falhas_http": 0,
+    "retornou_vazio": 0
+  },
+  "falhas": [],
+  "amostraUpdates": [
+    {
+      "id": "cfec2ba5-82b5-4493-a5f6-4f9c4a38cc42",
+      "tipo": "parcela_entrada",
+      "numero_parcela": 2,
+      "status_novo": "cancelado",
+      "data_pagamento": null
+    }
+  ],
+  "pagosRevisaoHumana": [
+    {
+      "id": "1e222d1e-794e-4cee-8eda-e48afc36e191",
+      "venda_id": "137d0df9-2c8e-49da-b3a3-528129babfd2",
+      "seq": 1,
+      "contract": "166",
+      "dpag": "2026-01-13"
+    },
+    {
+      "id": "ab621c00-1aeb-4141-bc23-0fd644f50f6b",
+      "venda_id": "53d0c5f5-aa8e-4804-9c64-fef6ecdf04fc",
+      "seq": 2,
+      "contract": "204",
+      "dpag": "2025-08-20"
+    },
+    {
+      "id": "50afdcce-e5a5-4594-90f5-dd47e470fada",
+      "venda_id": "53d0c5f5-aa8e-4804-9c64-fef6ecdf04fc",
+      "seq": 4,
+      "contract": "204",
+      "dpag": "2026-02-23"
+    },
+    {
+      "id": "6e5bbe8b-9876-4c33-baf7-d5d9d150df49",
+      "venda_id": "a7fe850b-0b89-44ab-b222-68cf877febfe",
+      "seq": 2,
+      "contract": "256",
+      "dpag": "2025-11-19"
+    },
+    {
+      "id": "3b1a914c-ac59-43ac-9a2a-b736c44a0382",
+      "venda_id": "37357039-b2ed-404a-b8f9-5162019eb51f",
+      "seq": 1,
+      "contract": "346",
+      "dpag": "2026-01-19"
+    },
+    {
+      "id": "ae7bccce-f471-4be8-83c2-01aaef9b8de0",
+      "venda_id": "c9e6358d-2aab-4743-8358-e7628f761350",
+      "seq": 1,
+      "contract": "87",
+      "dpag": "2026-02-02"
+    },
+    {
+      "id": "844eaa70-2c4c-4957-9abb-7087d44d3f12",
+      "venda_id": "c9e6358d-2aab-4743-8358-e7628f761350",
+      "seq": 3,
+      "contract": "87",
+      "dpag": "2025-08-10"
+    }
+  ]
+}

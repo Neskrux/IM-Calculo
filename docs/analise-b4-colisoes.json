@@ -1,0 +1,376 @@
+{
+  "meta": {
+    "geradoEm": "2026-04-24T14:34:21.756Z",
+    "colisoesDetectadas": 253,
+    "porTipoColisao": {
+      "balao": 3,
+      "parcela_entrada": 250
+    },
+    "tiebreakersUsados": 0,
+    "distanciaAnosMin": 0.1,
+    "distanciaAnosMedia": 0.8,
+    "distanciaAnosMax": 5
+  },
+  "decisoesAmostra": [
+    {
+      "key": "8|balao|2",
+      "vencedor": {
+        "due": "2027-03-05",
+        "ptId": "B2",
+        "inst": "1/1",
+        "installmentId": 22
+      },
+      "perdedores": [
+        {
+          "due": "2026-02-25",
+          "ptId": "B2",
+          "inst": "1/1",
+          "installmentId": 68
+        }
+      ],
+      "tiebreakerUsado": false
+    },
+    {
+      "key": "8|balao|3",
+      "vencedor": {
+        "due": "2028-03-05",
+        "ptId": "B3",
+        "inst": "1/1",
+        "installmentId": 35
+      },
+      "perdedores": [
+        {
+          "due": "2026-03-15",
+          "ptId": "B3",
+          "inst": "1/1",
+          "installmentId": 69
+        }
+      ],
+      "tiebreakerUsado": false
+    },
+    {
+      "key": "20|parcela_entrada|1",
+      "vencedor": {
+        "due": "2026-02-20",
+        "ptId": "PM",
+        "inst": "1/3",
+        "installmentId": 62
+      },
+      "perdedores": [
+        {
+          "due": "2025-05-20",
+          "ptId": "PM",
+          "inst": "1/60",
+          "installmentId": 1
+        }
+      ],
+      "tiebreakerUsado": false
+    },
+    {
+      "key": "20|parcela_entrada|2",
+      "vencedor": {
+        "due": "2026-03-20",
+        "ptId": "PM",
+        "inst": "2/3",
+        "installmentId": 63
+      },
+      "perdedores": [
+        {
+          "due": "2025-06-20",
+          "ptId": "PM",
+          "inst": "2/60",
+          "installmentId": 2
+        }
+      ],
+      "tiebreakerUsado": false
+    },
+    {
+      "key": "20|parcela_entrada|3",
+      "vencedor": {
+        "due": "2026-04-20",
+        "ptId": "PM",
+        "inst": "3/3",
+        "installmentId": 64
+      },
+      "perdedores": [
+        {
+          "due": "2025-07-20",
+          "ptId": "PM",
+          "inst": "3/60",
+          "installmentId": 3
+        }
+      ],
+      "tiebreakerUsado": false
+    },
+    {
+      "key": "178|parcela_entrada|8",
+      "vencedor": {
+        "due": "2027-12-10",
+        "ptId": "PM",
+        "inst": "8/37",
+        "installmentId": 28
+      },
+      "perdedores": [
+        {
+          "due": "2026-05-10",
+          "ptId": "PM",
+          "inst": "8/19",
+          "installmentId": 9
+        }
+      ],
+      "tiebreakerUsado": false
+    },
+    {
+      "key": "178|parcela_entrada|9",
+      "vencedor": {
+        "due": "2028-01-10",
+        "ptId": "PM",
+        "inst": "9/37",
+        "installmentId": 29
+      },
+      "perdedores": [
+        {
+          "due": "2026-06-10",
+          "ptId": "PM",
+          "inst": "9/19",
+          "installmentId": 10
+        }
+      ],
+      "tiebreakerUsado": false
+    },
+    {
+      "key": "178|parcela_entrada|10",
+      "vencedor": {
+        "due": "2028-02-10",
+        "ptId": "PM",
+        "inst": "10/37",
+        "installmentId": 30
+      },
+      "perdedores": [
+        {
+          "due": "2026-07-10",
+          "ptId": "PM",
+          "inst": "10/19",
+          "installmentId": 11
+        }
+      ],
+      "tiebreakerUsado": false
+    },
+    {
+      "key": "178|parcela_entrada|11",
+      "vencedor": {
+        "due": "2028-03-10",
+        "ptId": "PM",
+        "inst": "11/37",
+        "installmentId": 31
+      },
+      "perdedores": [
+        {
+          "due": "2026-08-10",
+          "ptId": "PM",
+          "inst": "11/19",
+          "installmentId": 12
+        }
+      ],
+      "tiebreakerUsado": false
+    },
+    {
+      "key": "178|parcela_entrada|12",
+      "vencedor": {
+        "due": "2028-04-10",
+        "ptId": "PM",
+        "inst": "12/37",
+        "installmentId": 32
+      },
+      "perdedores": [
+        {
+          "due": "2026-09-10",
+          "ptId": "PM",
+          "inst": "12/19",
+          "installmentId": 13
+        }
+      ],
+      "tiebreakerUsado": false
+    },
+    {
+      "key": "178|parcela_entrada|13",
+      "vencedor": {
+        "due": "2028-05-10",
+        "ptId": "PM",
+        "inst": "13/37",
+        "installmentId": 33
+      },
+      "perdedores": [
+        {
+          "due": "2026-10-10",
+          "ptId": "PM",
+          "inst": "13/19",
+          "installmentId": 14
+        }
+      ],
+      "tiebreakerUsado": false
+    },
+    {
+      "key": "178|parcela_entrada|14",
+      "vencedor": {
+        "due": "2028-06-10",
+        "ptId": "PM",
+        "inst": "14/37",
+        "installmentId": 34
+      },
+      "perdedores": [
+        {
+          "due": "2026-11-10",
+          "ptId": "PM",
+          "inst": "14/19",
+          "installmentId": 15
+        }
+      ],
+      "tiebreakerUsado": false
+    },
+    {
+      "key": "178|parcela_entrada|15",
+      "vencedor": {
+        "due": "2028-07-10",
+        "ptId": "PM",
+        "inst": "15/37",
+        "installmentId": 35
+      },
+      "perdedores": [
+        {
+          "due": "2026-12-10",
+          "ptId": "PM",
+          "inst": "15/19",
+          "installmentId": 16
+        }
+      ],
+      "tiebreakerUsado": false
+    },
+    {
+      "key": "178|parcela_entrada|16",
+      "vencedor": {
+        "due": "2028-08-10",
+        "ptId": "PM",
+        "inst": "16/37",
+        "installmentId": 36
+      },
+      "perdedores": [
+        {
+          "due": "2027-01-10",
+          "ptId": "PM",
+          "inst": "16/19",
+          "installmentId": 17
+        }
+      ],
+      "tiebreakerUsado": false
+    },
+    {
+      "key": "178|parcela_entrada|17",
+      "vencedor": {
+        "due": "2028-09-10",
+        "ptId": "PM",
+        "inst": "17/37",
+        "installmentId": 37
+      },
+      "perdedores": [
+        {
+          "due": "2027-02-10",
+          "ptId": "PM",
+          "inst": "17/19",
+          "installmentId": 18
+        }
+      ],
+      "tiebreakerUsado": false
+    },
+    {
+      "key": "178|parcela_entrada|18",
+      "vencedor": {
+        "due": "2028-10-10",
+        "ptId": "PM",
+        "inst": "18/37",
+        "installmentId": 38
+      },
+      "perdedores": [
+        {
+          "due": "2027-03-10",
+          "ptId": "PM",
+          "inst": "18/19",
+          "installmentId": 19
+        }
+      ],
+      "tiebreakerUsado": false
+    },
+    {
+      "key": "178|parcela_entrada|19",
+      "vencedor": {
+        "due": "2028-11-10",
+        "ptId": "PM",
+        "inst": "19/37",
+        "installmentId": 39
+      },
+      "perdedores": [
+        {
+          "due": "2027-04-10",
+          "ptId": "PM",
+          "inst": "19/19",
+          "installmentId": 20
+        }
+      ],
+      "tiebreakerUsado": false
+    },
+    {
+      "key": "178|parcela_entrada|1",
+      "vencedor": {
+        "due": "2027-05-10",
+        "ptId": "PM",
+        "inst": "1/37",
+        "installmentId": 21
+      },
+      "perdedores": [
+        {
+          "due": "2025-10-10",
+          "ptId": "PM",
+          "inst": "1/19",
+          "installmentId": 2
+        }
+      ],
+      "tiebreakerUsado": false
+    },
+    {
+      "key": "178|parcela_entrada|2",
+      "vencedor": {
+        "due": "2027-06-10",
+        "ptId": "PM",
+        "inst": "2/37",
+        "installmentId": 22
+      },
+      "perdedores": [
+        {
+          "due": "2025-11-10",
+          "ptId": "PM",
+          "inst": "2/19",
+          "installmentId": 3
+        }
+      ],
+      "tiebreakerUsado": false
+    },
+    {
+      "key": "178|parcela_entrada|3",
+      "vencedor": {
+        "due": "2027-07-10",
+        "ptId": "PM",
+        "inst": "3/37",
+        "installmentId": 23
+      },
+      "perdedores": [
+        {
+          "due": "2025-12-10",
+          "ptId": "PM",
+          "inst": "3/19",
+          "installmentId": 4
+        }
+      ],
+      "tiebreakerUsado": false
+    }
+  ]
+}
