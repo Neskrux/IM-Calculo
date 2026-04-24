@@ -21,6 +21,7 @@ import '../styles/EmpreendimentosPage.css'
 import { LayoutGrid, List } from 'lucide-react'
 import { safeGet, safeSet } from '../utils/storage'
 import { calcularFatorComissao, calcularComissaoPagamento } from '../utils/comissaoCalculator'
+import { parseDataLocal, formatDataBR } from '../utils/datas'
 import { triggerFullSync, triggerNormalizeOnly, probeSienge, pollRunUntilDone } from '../lib/siengeSyncApi'
 import { sortParcelas } from '../utils/parcelasSort'
 
@@ -2388,7 +2389,7 @@ const AdminDashboard = () => {
     let comissaoCorretor = 0
     grupo.pagamentos.forEach(pag => {
       const isPago = pag.status === 'pago'
-      const dataPrevista = pag.data_prevista ? new Date(pag.data_prevista) : null
+      const dataPrevista = parseDataLocal(pag.data_prevista)
       const isVencidoAteDistrato = dataPrevista && dataPrevista <= dataLimite
       if (isPago || isVencidoAteDistrato) {
         comissaoTotal += parseFloat(pag.comissao_gerada) || 0
@@ -2915,7 +2916,7 @@ const AdminDashboard = () => {
         const valorParcelaEnt = parseFloat(venda.valor_parcela_entrada) || 0
 
         for (let i = 1; i <= qtdParcelas; i++) {
-          const dataParcela = new Date(venda.data_venda)
+          const dataParcela = parseDataLocal(venda.data_venda)
           dataParcela.setMonth(dataParcela.getMonth() + i)
 
           novosPagamentos.push({
@@ -4150,7 +4151,7 @@ const AdminDashboard = () => {
           dadosFiltrados = dadosFiltrados.map(g => ({
             ...g,
             pagamentos: g.pagamentos.filter(p => {
-              const dataPagamento = new Date(p.data_prevista)
+              const dataPagamento = parseDataLocal(p.data_prevista)
               if (dataInicio && dataPagamento < dataInicio) return false
               if (dataFim && dataPagamento > dataFim) return false
               return true
@@ -4158,7 +4159,7 @@ const AdminDashboard = () => {
           })).filter(g => g.pagamentos.length > 0)
         } else {
           dadosFiltrados = dadosFiltrados.filter(g => {
-            const dataVenda = new Date(g.venda?.data_venda)
+            const dataVenda = parseDataLocal(g.venda?.data_venda)
             if (dataInicio && dataVenda < dataInicio) return false
             if (dataFim && dataVenda > dataFim) return false
             return true
@@ -4177,8 +4178,8 @@ const AdminDashboard = () => {
       else if (relatorioFiltros.cargoId === '') filtrosTexto.push('Cargo: Todos os cargos')
       else if (relatorioFiltros.cargoId) filtrosTexto.push(`Cargo: ${relatorioFiltros.cargoId}`)
       if (relatorioFiltros.dataInicio || relatorioFiltros.dataFim) {
-        const inicio = relatorioFiltros.dataInicio ? new Date(relatorioFiltros.dataInicio).toLocaleDateString('pt-BR') : 'inicio'
-        const fim = relatorioFiltros.dataFim ? new Date(relatorioFiltros.dataFim).toLocaleDateString('pt-BR') : 'hoje'
+        const inicio = relatorioFiltros.dataInicio ? formatDataBR(relatorioFiltros.dataInicio) : 'inicio'
+        const fim = relatorioFiltros.dataFim ? formatDataBR(relatorioFiltros.dataFim) : 'hoje'
         filtrosTexto.push(`Periodo: ${inicio} a ${fim}`)
       }
       
@@ -4349,7 +4350,7 @@ const AdminDashboard = () => {
         const unidade = venda?.unidade || venda?.numero_unidade || '-'
         const bloco = venda?.bloco || venda?.numero_bloco || '-'
         const cliente = venda?.nome_cliente || venda?.cliente?.nome_completo || venda?.cliente?.nome || 'Cliente nao informado'
-        const dataVenda = venda?.data_venda ? new Date(venda.data_venda).toLocaleDateString('pt-BR') : (venda?.data_emissao ? new Date(venda.data_emissao).toLocaleDateString('pt-BR') : '-')
+        const dataVenda = venda?.data_venda ? formatDataBR(venda.data_venda) : (venda?.data_emissao ? formatDataBR(venda.data_emissao) : '-')
         const valorVenda = parseFloat(venda?.valor_venda) || parseFloat(venda?.valor_venda_total) || 0
         const valorProSolutoDb = parseFloat(venda?.valor_pro_soluto) || 0
         const valorProSolutoCalc = grupo.pagamentos.reduce((acc, p) => acc + (parseFloat(p.valor) || 0), 0)
@@ -4443,7 +4444,7 @@ const AdminDashboard = () => {
             const valorParcela = parseFloat(pag.valor) || 0
             const cargos = calcularComissaoPorCargoPagamento(pag)
             const tipoFormatado = formatTipo(pag)
-            const dataStr = pag.data_prevista ? new Date(pag.data_prevista).toLocaleDateString('pt-BR') : '-'
+            const dataStr = formatDataBR(pag.data_prevista)
             const valorStr = formatCurrency(pag.valor)
             const statusStr = pag.status === 'pago' ? 'PAGO' : 'PENDENTE'
             cargos.forEach(c => {
@@ -4481,7 +4482,7 @@ const AdminDashboard = () => {
             const tipoFormatado = formatTipo(pag)
             return [
               tipoFormatado,
-              pag.data_prevista ? new Date(pag.data_prevista).toLocaleDateString('pt-BR') : '-',
+              formatDataBR(pag.data_prevista),
               formatCurrency(pag.valor),
               pag.status === 'pago' ? 'PAGO' : 'PENDENTE',
               `${percentualUsado.toFixed(2).replace('.', ',')}%`,
@@ -4780,10 +4781,10 @@ const AdminDashboard = () => {
     // Filtro por data
     const matchData = (() => {
       if (!filtrosVendas.dataInicio && !filtrosVendas.dataFim) return true
-      const dataVenda = new Date(venda.data_venda)
-      if (filtrosVendas.dataInicio && dataVenda < new Date(filtrosVendas.dataInicio)) return false
+      const dataVenda = parseDataLocal(venda.data_venda)
+      if (filtrosVendas.dataInicio && dataVenda < parseDataLocal(filtrosVendas.dataInicio)) return false
       if (filtrosVendas.dataFim) {
-        const dataFim = new Date(filtrosVendas.dataFim)
+        const dataFim = parseDataLocal(filtrosVendas.dataFim)
         dataFim.setHours(23, 59, 59, 999)
         if (dataVenda > dataFim) return false
       }
@@ -4801,8 +4802,8 @@ const AdminDashboard = () => {
     return matchSearch && matchTipo && matchCorretor && matchEmpreendimento && matchStatus && matchBloco && matchData && matchValor
   }).sort((a, b) => {
     // Ordenar por data mais recente primeiro
-    const dataA = new Date(a.data_venda || a.created_at || 0)
-    const dataB = new Date(b.data_venda || b.created_at || 0)
+    const dataA = parseDataLocal(a.data_venda) || new Date(a.created_at || 0)
+    const dataB = parseDataLocal(b.data_venda) || new Date(b.created_at || 0)
     return dataB - dataA
   })
   
@@ -4813,14 +4814,14 @@ const AdminDashboard = () => {
       let pagamentosFiltrados = grupo.pagamentos
       if (filtrosPagamentos.dataInicio || filtrosPagamentos.dataFim) {
         pagamentosFiltrados = grupo.pagamentos.filter(pag => {
-          const dataPag = new Date(pag.data_prevista)
+          const dataPag = parseDataLocal(pag.data_prevista)
           if (filtrosPagamentos.dataInicio) {
-            const dataInicio = new Date(filtrosPagamentos.dataInicio)
+            const dataInicio = parseDataLocal(filtrosPagamentos.dataInicio)
             dataInicio.setHours(0, 0, 0, 0)
             if (dataPag < dataInicio) return false
           }
           if (filtrosPagamentos.dataFim) {
-            const dataFim = new Date(filtrosPagamentos.dataFim)
+            const dataFim = parseDataLocal(filtrosPagamentos.dataFim)
             dataFim.setHours(23, 59, 59, 999)
             if (dataPag > dataFim) return false
           }
@@ -4878,8 +4879,8 @@ const AdminDashboard = () => {
     const maxUpdatedA = Math.max(...(a.pagamentos || []).map(p => new Date(p.updated_at || p.created_at || 0).getTime()), 0)
     const maxUpdatedB = Math.max(...(b.pagamentos || []).map(p => new Date(p.updated_at || p.created_at || 0).getTime()), 0)
     if (maxUpdatedA !== maxUpdatedB) return maxUpdatedB - maxUpdatedA
-    const dataA = new Date(a.venda?.data_venda || a.venda?.created_at || 0)
-    const dataB = new Date(b.venda?.data_venda || b.venda?.created_at || 0)
+    const dataA = parseDataLocal(a.venda?.data_venda) || new Date(a.venda?.created_at || 0)
+    const dataB = parseDataLocal(b.venda?.data_venda) || new Date(b.venda?.created_at || 0)
     return dataB - dataA
   })
 
@@ -4950,15 +4951,15 @@ const AdminDashboard = () => {
     
     // Vendas hoje
     const vendasHoje = vendas.filter(v => {
-      const dataVenda = new Date(v.data_venda)
-      return dataVenda >= inicioHoje && dataVenda <= fimHoje
+      const dataVenda = parseDataLocal(v.data_venda)
+      return dataVenda && dataVenda >= inicioHoje && dataVenda <= fimHoje
     })
     const totalVendasHoje = vendasHoje.reduce((acc, v) => acc + (parseFloat(v.valor_venda) || 0), 0)
     
     // Vendas este mês
     const vendasMes = vendas.filter(v => {
-      const dataVenda = new Date(v.data_venda)
-      return dataVenda.getMonth() === hoje.getMonth() && 
+      const dataVenda = parseDataLocal(v.data_venda)
+      return dataVenda && dataVenda.getMonth() === hoje.getMonth() &&
              dataVenda.getFullYear() === hoje.getFullYear()
     })
     const totalVendasMes = vendasMes.reduce((acc, v) => acc + (parseFloat(v.valor_venda) || 0), 0)
@@ -4980,8 +4981,8 @@ const AdminDashboard = () => {
     // Pagamentos hoje (pro-soluto)
     const pagamentosHoje = pagamentos.filter(p => {
       if (!p.data_pagamento) return false
-      const dataPagamento = new Date(p.data_pagamento)
-      return dataPagamento >= inicioHoje && dataPagamento <= fimHoje
+      const dataPagamento = parseDataLocal(p.data_pagamento)
+      return dataPagamento && dataPagamento >= inicioHoje && dataPagamento <= fimHoje
     })
     const totalPagamentosHoje = pagamentosHoje.reduce((acc, p) => acc + (parseFloat(p.valor) || 0), 0)
     
@@ -5561,7 +5562,7 @@ const AdminDashboard = () => {
                         : calcularComissaoVendaPorPagamentos(venda.id)
                       const nomeCliente = venda.nome_cliente || venda.cliente?.nome || ''
                       const dataDistratoFormatada = venda.data_distrato
-                        ? new Date(venda.data_distrato + 'T12:00:00').toLocaleDateString('pt-BR')
+                        ? formatDataBR(venda.data_distrato)
                         : ''
                       const nomeClienteExibicao = venda.status === 'distrato' && dataDistratoFormatada
                         ? `${nomeCliente} - DISTRATO ${dataDistratoFormatada}`
@@ -5596,7 +5597,7 @@ const AdminDashboard = () => {
                         <td className="value-cell">{formatCurrency(venda.valor_venda)}</td>
                         <td className="value-cell highlight">{formatCurrency(comissaoCorretor)}</td>
                         <td className="value-cell">{formatCurrency(comissaoTotal)}</td>
-                        <td>{new Date(venda.data_venda).toLocaleDateString('pt-BR')}</td>
+                        <td>{formatDataBR(venda.data_venda)}</td>
                         <td>
                           <span className={`status-badge ${venda.status}`}>
                             {venda.status === 'pago' && <CheckCircle size={14} />}
@@ -6860,7 +6861,7 @@ const AdminDashboard = () => {
                                   {pag.tipo === 'balao' && `Balão ${pag.numero_parcela || ''}`}
                                   {pag.tipo === 'comissao_integral' && '✨ Comissão Integral'}
                                 </div>
-                                <div className="parcela-data">{pag.data_prevista ? new Date(pag.data_prevista).toLocaleDateString('pt-BR') : '-'}</div>
+                                <div className="parcela-data">{formatDataBR(pag.data_prevista)}</div>
                                 <div className="parcela-valor">{formatCurrency(pag.valor)}</div>
                                 <div className="parcela-status">
                                   <span className={`status-pill ${pag.status}`}>
@@ -7063,9 +7064,7 @@ const AdminDashboard = () => {
                           <div className="info-row">
                             <span className="label">Data Prevista:</span>
                             <span className="value">
-                              {pagamentoParaConfirmar.data_prevista
-                                ? new Date(pagamentoParaConfirmar.data_prevista).toLocaleDateString('pt-BR')
-                                : '-'}
+                              {formatDataBR(pagamentoParaConfirmar.data_prevista)}
                             </span>
                           </div>
                         </div>
@@ -8107,9 +8106,7 @@ const AdminDashboard = () => {
                     <div className="dado-item">
                       <span className="label">Data da Venda</span>
                       <span className="value">
-                        {solicitacaoSelecionada.dados?.data_venda 
-                          ? new Date(solicitacaoSelecionada.dados.data_venda).toLocaleDateString('pt-BR')
-                          : '-'}
+                        {formatDataBR(solicitacaoSelecionada.dados?.data_venda)}
                       </span>
                     </div>
                   </div>
@@ -8281,7 +8278,7 @@ const AdminDashboard = () => {
                               <div key={i} className="renego-historico-item">
                                 <span>{p.tipo?.replace('_', ' ')} {p.numero_parcela ? `#${p.numero_parcela}` : ''}</span>
                                 <span>{formatCurrency(p.valor)}</span>
-                                <span className="renego-data">{p.data_prevista ? new Date(p.data_prevista + 'T12:00:00').toLocaleDateString('pt-BR') : '—'}</span>
+                                <span className="renego-data">{p.data_prevista ? formatDataBR(p.data_prevista) : '—'}</span>
                               </div>
                             ))}
                             <div className="renego-historico-subtotal">Total: {formatCurrency(somaOrig)} | Com.: {formatCurrency(somaComOrig)}</div>
@@ -8293,7 +8290,7 @@ const AdminDashboard = () => {
                               <div key={i} className="renego-historico-item">
                                 <span>{p.tipo?.replace('_', ' ')} {p.numero_parcela ? `#${p.numero_parcela}` : ''}</span>
                                 <span>{formatCurrency(p.valor)}</span>
-                                <span className="renego-data">{p.data_prevista ? new Date(p.data_prevista + 'T12:00:00').toLocaleDateString('pt-BR') : '—'}</span>
+                                <span className="renego-data">{p.data_prevista ? formatDataBR(p.data_prevista) : '—'}</span>
                               </div>
                             ))}
                             <div className="renego-historico-subtotal depois">Total: {formatCurrency(somaNovas)} | Com.: {formatCurrency(somaComNovas)}</div>
@@ -8385,8 +8382,8 @@ const AdminDashboard = () => {
                     Data da Venda
                   </h4>
                   <p style={{ margin: 0, fontSize: '18px', fontWeight: '600' }}>
-                    {selectedItem.data_venda ? new Date(selectedItem.data_venda).toLocaleDateString('pt-BR', { 
-                      day: '2-digit', month: 'long', year: 'numeric' 
+                    {selectedItem.data_venda ? parseDataLocal(selectedItem.data_venda).toLocaleDateString('pt-BR', {
+                      day: '2-digit', month: 'long', year: 'numeric'
                     }) : 'Não informada'}
                   </p>
                   <p style={{ margin: '4px 0 0' }}>
@@ -9558,7 +9555,7 @@ const AdminDashboard = () => {
                                 <span className="renegociacao-item-tipo">{labelTipo}</span>
                                 <span className="renegociacao-item-valor">{formatCurrency(pag.valor)}</span>
                                 <span className="renegociacao-item-data">
-                                  {pag.data_prevista ? new Date(pag.data_prevista + 'T12:00:00').toLocaleDateString('pt-BR') : '—'}
+                                  {pag.data_prevista ? formatDataBR(pag.data_prevista) : '—'}
                                 </span>
                                 <span className="renegociacao-item-comissao">
                                   Comissão: {formatCurrency(pag.comissao_gerada)}
@@ -10815,7 +10812,7 @@ const AdminDashboard = () => {
                         <div>
                           <span style={{ fontWeight: '500' }}>{venda.empreendimento?.nome || 'N/A'}</span>
                           <span style={{ color: '#64748b', fontSize: '12px', marginLeft: '8px' }}>
-                            {new Date(venda.data_venda).toLocaleDateString('pt-BR')}
+                            {formatDataBR(venda.data_venda)}
                           </span>
                         </div>
                         <div style={{ textAlign: 'right' }}>
@@ -11014,7 +11011,7 @@ const AdminDashboard = () => {
                         <div>
                           <span style={{ fontWeight: '500' }}>{venda.empreendimento?.nome || 'N/A'}</span>
                           <span style={{ color: '#64748b', fontSize: '12px', marginLeft: '8px' }}>
-                            {new Date(venda.data_venda).toLocaleDateString('pt-BR')}
+                            {formatDataBR(venda.data_venda)}
                           </span>
                         </div>
                         <div style={{ textAlign: 'right' }}>

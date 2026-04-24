@@ -28,6 +28,7 @@ import {
   isPago,
   isPendente,
 } from '../utils/comissaoCalculator'
+import { parseDataLocal, formatDataBR } from '../utils/datas'
 
 const CorretorDashboard = () => {
   const { user, userProfile, signOut, refreshProfile } = useAuth()
@@ -782,11 +783,12 @@ const CorretorDashboard = () => {
   const filteredVendas = vendas.filter(venda => {
     if (periodo === 'todos') return true
     
-    const dataVenda = new Date(venda.data_venda)
+    const dataVenda = parseDataLocal(venda.data_venda)
     const hoje = new Date()
-    
+
+    if (!dataVenda) return false
     if (periodo === 'mes') {
-      const mesmoMes = dataVenda.getMonth() === hoje.getMonth() && 
+      const mesmoMes = dataVenda.getMonth() === hoje.getMonth() &&
              dataVenda.getFullYear() === hoje.getFullYear()
       return mesmoMes
     }
@@ -813,12 +815,12 @@ const CorretorDashboard = () => {
     }
     // Filtro por data
     if (filtrosPagamentos.dataInicio && pag.data_prevista) {
-      if (new Date(pag.data_prevista) < new Date(filtrosPagamentos.dataInicio)) {
+      if (parseDataLocal(pag.data_prevista) < parseDataLocal(filtrosPagamentos.dataInicio)) {
         return false
       }
     }
     if (filtrosPagamentos.dataFim && pag.data_prevista) {
-      if (new Date(pag.data_prevista) > new Date(filtrosPagamentos.dataFim)) {
+      if (parseDataLocal(pag.data_prevista) > parseDataLocal(filtrosPagamentos.dataFim)) {
         return false
       }
     }
@@ -919,10 +921,11 @@ const CorretorDashboard = () => {
     }
     // Filtro por período
     if (filtrosVendas.periodo !== 'todos') {
-      const dataVenda = new Date(venda.data_venda)
+      const dataVenda = parseDataLocal(venda.data_venda)
       const hoje = new Date()
+      if (!dataVenda) return false
       if (filtrosVendas.periodo === 'mes') {
-        const mesmoMes = dataVenda.getMonth() === hoje.getMonth() && 
+        const mesmoMes = dataVenda.getMonth() === hoje.getMonth() &&
                          dataVenda.getFullYear() === hoje.getFullYear()
         if (!mesmoMes) return false
       }
@@ -933,13 +936,13 @@ const CorretorDashboard = () => {
     }
     // Filtro por data início
     if (filtrosVendas.dataInicio && venda.data_venda) {
-      if (new Date(venda.data_venda) < new Date(filtrosVendas.dataInicio)) {
+      if (parseDataLocal(venda.data_venda) < parseDataLocal(filtrosVendas.dataInicio)) {
         return false
       }
     }
     // Filtro por data fim
     if (filtrosVendas.dataFim && venda.data_venda) {
-      if (new Date(venda.data_venda) > new Date(filtrosVendas.dataFim)) {
+      if (parseDataLocal(venda.data_venda) > parseDataLocal(filtrosVendas.dataFim)) {
         return false
       }
     }
@@ -991,10 +994,10 @@ const CorretorDashboard = () => {
         )
       }
       if (relatorioFiltros.dataInicio) {
-        vendasFiltradas = vendasFiltradas.filter(v => new Date(v.data_venda) >= new Date(relatorioFiltros.dataInicio))
+        vendasFiltradas = vendasFiltradas.filter(v => parseDataLocal(v.data_venda) >= parseDataLocal(relatorioFiltros.dataInicio))
       }
       if (relatorioFiltros.dataFim) {
-        vendasFiltradas = vendasFiltradas.filter(v => new Date(v.data_venda) <= new Date(relatorioFiltros.dataFim))
+        vendasFiltradas = vendasFiltradas.filter(v => parseDataLocal(v.data_venda) <= parseDataLocal(relatorioFiltros.dataFim))
       }
 
       // Calcular totais usando PAGAMENTOS (regra correta)
@@ -1088,7 +1091,7 @@ const CorretorDashboard = () => {
         else if (percentPago > 0) statusVenda = `${Math.round(percentPago)}% Pago`
         
         return [
-          new Date(v.data_venda).toLocaleDateString('pt-BR'),
+          formatDataBR(v.data_venda),
           v.empreendimento_nome || '-',
           v.unidade || '-',
           capitalizeName(v.cliente_nome) || '-',
@@ -1288,15 +1291,15 @@ const CorretorDashboard = () => {
     
     // Vendas hoje
     const vendasHoje = vendas.filter(v => {
-      const dataVenda = new Date(v.data_venda)
-      return dataVenda >= inicioHoje && dataVenda <= fimHoje
+      const dataVenda = parseDataLocal(v.data_venda)
+      return dataVenda && dataVenda >= inicioHoje && dataVenda <= fimHoje
     })
     const totalVendasHoje = vendasHoje.reduce((acc, v) => acc + (parseFloat(v.valor_venda) || 0), 0)
-    
+
     // Vendas este mês
     const vendasMes = vendas.filter(v => {
-      const dataVenda = new Date(v.data_venda)
-      return dataVenda.getMonth() === hoje.getMonth() && 
+      const dataVenda = parseDataLocal(v.data_venda)
+      return dataVenda && dataVenda.getMonth() === hoje.getMonth() &&
              dataVenda.getFullYear() === hoje.getFullYear()
     })
     const totalVendasMes = vendasMes.reduce((acc, v) => acc + (parseFloat(v.valor_venda) || 0), 0)
@@ -1684,8 +1687,8 @@ const CorretorDashboard = () => {
                   const data = new Date(hoje.getFullYear(), hoje.getMonth() - i, 1)
                   const mesNome = data.toLocaleDateString('pt-BR', { month: 'short' }).replace('.', '')
                   const vendasMes = vendas.filter(v => {
-                    const dv = new Date(v.data_venda)
-                    return dv.getMonth() === data.getMonth() && dv.getFullYear() === data.getFullYear()
+                    const dv = parseDataLocal(v.data_venda)
+                    return dv && dv.getMonth() === data.getMonth() && dv.getFullYear() === data.getFullYear()
                   })
                   // Usar PAGAMENTOS para calcular comissão (regra correta)
                   const vendaIdsMes = vendasMes.map(v => v.id)
@@ -1984,7 +1987,7 @@ const CorretorDashboard = () => {
                                 )}
                       <span className="venda-date">
                         <Calendar size={14} />
-                        {new Date(venda.data_venda).toLocaleDateString('pt-BR')}
+                        {formatDataBR(venda.data_venda)}
                       </span>
                       <span className={`status-tag ${statusClass}`}>
                         {statusClass === 'pago' ? (
@@ -2084,10 +2087,7 @@ const CorretorDashboard = () => {
                                               {pagamento.tipo === 'comissao_integral' && '✨ Comissão Integral'}
                                             </div>
                                             <div className="corretor-parcela-data">
-                                              {pagamento.data_prevista 
-                                                ? new Date(pagamento.data_prevista).toLocaleDateString('pt-BR')
-                                                : '-'
-                                              }
+                                              {formatDataBR(pagamento.data_prevista)}
                                             </div>
                                             <div className="corretor-parcela-valor">
                                               {formatCurrency(pagamento.valor)}
@@ -2153,10 +2153,7 @@ const CorretorDashboard = () => {
                                                     {pagamento.tipo === 'comissao_integral' && '✨ Comissão Integral'}
                                                   </div>
                                                   <div className="corretor-parcela-data">
-                                                    {pagamento.data_prevista 
-                                                      ? new Date(pagamento.data_prevista).toLocaleDateString('pt-BR')
-                                                      : '-'
-                                                    }
+                                                    {formatDataBR(pagamento.data_prevista)}
                                                   </div>
                                                   <div className="corretor-parcela-valor">
                                                     {formatCurrency(pagamento.valor)}
@@ -2480,7 +2477,7 @@ const CorretorDashboard = () => {
                                             {pag.tipo === 'balao' && `Balão ${pag.numero_parcela || ''}`}
                                             {pag.tipo === 'comissao_integral' && '✨ Comissão Integral'}
                                           </div>
-                                          <div className="parcela-data">{pag.data_prevista ? new Date(pag.data_prevista).toLocaleDateString('pt-BR') : '-'}</div>
+                                          <div className="parcela-data">{formatDataBR(pag.data_prevista)}</div>
                                           <div className="parcela-valor">{formatCurrency(pag.valor)}</div>
                                           <div className="parcela-comissao-corretor">
                                             <span className="comissao-label">Minha Comissão:</span>
@@ -3022,7 +3019,7 @@ const CorretorDashboard = () => {
                         
                         return (
                           <tr key={venda.id}>
-                            <td>{new Date(venda.data_venda).toLocaleDateString('pt-BR')}</td>
+                            <td>{formatDataBR(venda.data_venda)}</td>
                             <td>{capitalizeName(venda.cliente_nome) || 'N/A'}</td>
                             <td>{venda.empreendimento_nome || 'N/A'}</td>
                             <td>{venda.unidade || '-'}</td>
@@ -3724,7 +3721,7 @@ const CorretorDashboard = () => {
                     <div key={venda.id} className="venda-mini-card">
                       <div className="venda-mini-info">
                         <span className="venda-mini-emp">{venda.empreendimento_nome || 'N/A'}</span>
-                        <span className="venda-mini-data">{new Date(venda.data_venda).toLocaleDateString('pt-BR')}</span>
+                        <span className="venda-mini-data">{formatDataBR(venda.data_venda)}</span>
                       </div>
                       <div className="venda-mini-valores">
                         <span className="venda-mini-valor">{formatCurrency(venda.valor_venda)}</span>

@@ -13,6 +13,7 @@ import {
 import logo from '../imgs/logo.png'
 import Ticker from '../components/Ticker'
 import '../styles/Dashboard.css'
+import { parseDataLocal, formatDataBR } from '../utils/datas'
 import '../styles/ClienteDashboard.css'
 import { sortParcelas } from '../utils/parcelasSort'
 
@@ -283,9 +284,9 @@ const ClienteDashboard = () => {
     const comprasPagas = compras.filter(c => c.status === 'pago')
     const totalJaPago = comprasPagas.reduce((acc, c) => acc + (parseFloat(c.valor_venda) || 0), 0)
     const comprasMes = compras.filter(c => {
-      const dataVenda = new Date(c.data_venda)
+      const dataVenda = parseDataLocal(c.data_venda)
       const hoje = new Date()
-      return dataVenda.getMonth() === hoje.getMonth() && dataVenda.getFullYear() === hoje.getFullYear()
+      return dataVenda && dataVenda.getMonth() === hoje.getMonth() && dataVenda.getFullYear() === hoje.getFullYear()
     })
     const totalComprasMes = comprasMes.reduce((acc, c) => acc + (parseFloat(c.valor_venda) || 0), 0)
     const mediaPorCompra = compras.length > 0 ? totalCompras / compras.length : 0
@@ -905,10 +906,7 @@ const ClienteDashboard = () => {
                                           {pagamento.tipo === 'balao' && `Balão ${pagamento.numero_parcela || ''}`}
                                         </div>
                                         <div className="cliente-parcela-data">
-                                          {pagamento.data_prevista 
-                                            ? new Date(pagamento.data_prevista).toLocaleDateString('pt-BR')
-                                            : '-'
-                                          }
+                                          {formatDataBR(pagamento.data_prevista)}
                                         </div>
                                         <div className="cliente-parcela-valor">
                                           {formatCurrency(pagamento.valor)}
@@ -964,10 +962,7 @@ const ClienteDashboard = () => {
                                                   {pagamento.tipo === 'balao' && `Balão ${pagamento.numero_parcela || ''}`}
                                                 </div>
                                                 <div className="cliente-parcela-data">
-                                                  {pagamento.data_prevista 
-                                                    ? new Date(pagamento.data_prevista).toLocaleDateString('pt-BR')
-                                                    : '-'
-                                                  }
+                                                  {formatDataBR(pagamento.data_prevista)}
                                                 </div>
                                                 <div className="cliente-parcela-valor">
                                                   {formatCurrency(pagamento.valor)}
