@@ -36,3 +36,10 @@ Thumbs.db
 # Temporary files
 *.tmp
 *.temp
+
+# Graphify (knowledge graph artifacts)
+.graphify_*.json
+graphify-out/
+
+# Claude Code runtime
+.claude/scheduled_tasks.lock
