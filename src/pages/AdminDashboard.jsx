@@ -20,7 +20,7 @@ import '../styles/Dashboard.css'
 import '../styles/EmpreendimentosPage.css'
 import { LayoutGrid, List } from 'lucide-react'
 import { safeGet, safeSet } from '../utils/storage'
-import { calcularFatorComissao, calcularComissaoPagamento } from '../utils/comissaoCalculator'
+import { calcularFatorComissao, calcularComissaoPagamento, dataEfetiva } from '../utils/comissaoCalculator'
 import { parseDataLocal, formatDataBR } from '../utils/datas'
 import { triggerFullSync, triggerNormalizeOnly, probeSienge, pollRunUntilDone } from '../lib/siengeSyncApi'
 import { sortParcelas } from '../utils/parcelasSort'
@@ -4151,9 +4151,10 @@ const AdminDashboard = () => {
           dadosFiltrados = dadosFiltrados.map(g => ({
             ...g,
             pagamentos: g.pagamentos.filter(p => {
-              const dataPagamento = parseDataLocal(p.data_prevista)
-              if (dataInicio && dataPagamento < dataInicio) return false
-              if (dataFim && dataPagamento > dataFim) return false
+              const dataRef = parseDataLocal(dataEfetiva(p))
+              if (!dataRef) return false
+              if (dataInicio && dataRef < dataInicio) return false
+              if (dataFim && dataRef > dataFim) return false
               return true
             })
           })).filter(g => g.pagamentos.length > 0)
@@ -4814,7 +4815,8 @@ const AdminDashboard = () => {
       let pagamentosFiltrados = grupo.pagamentos
       if (filtrosPagamentos.dataInicio || filtrosPagamentos.dataFim) {
         pagamentosFiltrados = grupo.pagamentos.filter(pag => {
-          const dataPag = parseDataLocal(pag.data_prevista)
+          const dataPag = parseDataLocal(dataEfetiva(pag))
+          if (!dataPag) return false
           if (filtrosPagamentos.dataInicio) {
             const dataInicio = parseDataLocal(filtrosPagamentos.dataInicio)
             dataInicio.setHours(0, 0, 0, 0)

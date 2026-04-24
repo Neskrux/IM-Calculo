@@ -27,6 +27,7 @@ import {
   somarComissao,
   isPago,
   isPendente,
+  dataEfetiva,
 } from '../utils/comissaoCalculator'
 import { parseDataLocal, formatDataBR } from '../utils/datas'
 
@@ -813,14 +814,15 @@ const CorretorDashboard = () => {
     if (filtrosPagamentos.empreendimento && pag.empreendimento_nome !== filtrosPagamentos.empreendimento) {
       return false
     }
-    // Filtro por data
-    if (filtrosPagamentos.dataInicio && pag.data_prevista) {
-      if (parseDataLocal(pag.data_prevista) < parseDataLocal(filtrosPagamentos.dataInicio)) {
+    // Filtro por data efetiva: pago usa data_pagamento, pendente usa data_prevista
+    const dataRef = dataEfetiva(pag)
+    if (filtrosPagamentos.dataInicio && dataRef) {
+      if (parseDataLocal(dataRef) < parseDataLocal(filtrosPagamentos.dataInicio)) {
         return false
       }
     }
-    if (filtrosPagamentos.dataFim && pag.data_prevista) {
-      if (parseDataLocal(pag.data_prevista) > parseDataLocal(filtrosPagamentos.dataFim)) {
+    if (filtrosPagamentos.dataFim && dataRef) {
+      if (parseDataLocal(dataRef) > parseDataLocal(filtrosPagamentos.dataFim)) {
         return false
       }
     }
