@@ -8430,7 +8430,7 @@ const AdminDashboard = () => {
                   </div>
                   <div>
                     <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '12px', display: 'block' }}>Comissão Total</span>
-                    <span style={{ fontSize: '20px', fontWeight: '700', color: '#c9a962' }}>{formatCurrency(selectedItem.comissao_total)}</span>
+                    <span style={{ fontSize: '20px', fontWeight: '700', color: '#c9a962' }}>{formatCurrency(pagamentosVisualizacao.reduce((acc, p) => acc + (parseFloat(p.comissao_gerada) || 0), 0))}</span>
                   </div>
                 </div>
               </div>
