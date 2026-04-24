@@ -7,6 +7,9 @@ import logo from '../imgs/logo.png'
 import LoginTransition from '../components/LoginTransition'
 import '../styles/Login.css'
 
+const FORGOT_COOLDOWN_SECONDS = 60
+const FORGOT_COOLDOWN_KEY = 'im-forgot-cooldown'
+
 const Login = () => {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -15,6 +18,11 @@ const Login = () => {
   const [focusedField, setFocusedField] = useState(null)
   const [showTransition, setShowTransition] = useState(false)
   const [redirectUrl, setRedirectUrl] = useState(null)
+  const [showForgot, setShowForgot] = useState(false)
+  const [forgotEmail, setForgotEmail] = useState('')
+  const [forgotLoading, setForgotLoading] = useState(false)
+  const [forgotMessage, setForgotMessage] = useState(null)
+  const [forgotCooldown, setForgotCooldown] = useState(0)
   const { signIn } = useAuth()
   const navigate = useNavigate()
 
@@ -74,6 +82,26 @@ const Login = () => {
 
     return () => clearInterval(interval)
   }, [empreendimentos.length, isTransitioning, currentSlide])
+
+  // Tick do cooldown de reenvio de email de recuperação (persistido em localStorage por email).
+  useEffect(() => {
+    if (!showForgot) return
+    const key = (forgotEmail || '').trim().toLowerCase()
+    const compute = () => {
+      try {
+        const raw = localStorage.getItem(FORGOT_COOLDOWN_KEY)
+        const map = raw ? JSON.parse(raw) : {}
+        const until = key ? map[key] : 0
+        const remaining = until ? Math.max(0, Math.ceil((until - Date.now()) / 1000)) : 0
+        setForgotCooldown(remaining)
+      } catch {
+        setForgotCooldown(0)
+      }
+    }
+    compute()
+    const id = setInterval(compute, 1000)
+    return () => clearInterval(id)
+  }, [showForgot, forgotEmail])
 
   const nextSlide = useCallback(() => {
     if (isTransitioning || empreendimentos.length <= 1) return
@@ -206,6 +234,49 @@ const Login = () => {
 
   const toggleTheme = () => {
     setTheme(prev => prev === 'gold' ? 'blue' : 'gold')
+  }
+
+  const openForgot = () => {
+    setForgotEmail(email)
+    setForgotMessage(null)
+    setShowForgot(true)
+  }
+
+  const closeForgot = () => {
+    setShowForgot(false)
+    setForgotLoading(false)
+    setForgotMessage(null)
+  }
+
+  const handleForgotSubmit = async (e) => {
+    e.preventDefault()
+    if (!forgotEmail || forgotLoading || forgotCooldown > 0) return
+    setForgotLoading(true)
+    setForgotMessage(null)
+    try {
+      const { error: resetError } = await supabase.auth.resetPasswordForEmail(forgotEmail, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      })
+      if (resetError) {
+        setForgotMessage({ type: 'error', text: resetError.message || 'Não foi possível enviar o email.' })
+      } else {
+        try {
+          const raw = localStorage.getItem(FORGOT_COOLDOWN_KEY)
+          const map = raw ? JSON.parse(raw) : {}
+          const now = Date.now()
+          Object.keys(map).forEach((k) => { if (!map[k] || map[k] < now) delete map[k] })
+          const key = forgotEmail.trim().toLowerCase()
+          map[key] = now + FORGOT_COOLDOWN_SECONDS * 1000
+          localStorage.setItem(FORGOT_COOLDOWN_KEY, JSON.stringify(map))
+        } catch { /* storage indisponível: cooldown fica só em memória */ }
+        setForgotCooldown(FORGOT_COOLDOWN_SECONDS)
+        setForgotMessage({ type: 'success' })
+      }
+    } catch (err) {
+      setForgotMessage({ type: 'error', text: 'Erro inesperado. Tente novamente.' })
+    } finally {
+      setForgotLoading(false)
+    }
   }
 
   // Callback quando a transição terminar
@@ -378,6 +449,10 @@ const Login = () => {
               </>
             )}
           </button>
+
+          <button type="button" className="forgot-password-link" onClick={openForgot}>
+            Esqueci minha senha
+          </button>
         </form>
 
         {/* Footer */}
@@ -399,14 +474,87 @@ const Login = () => {
       </div>
 
       {/* Botão de Troca de Tema */}
-      <button 
-        className="theme-toggle" 
+      <button
+        className="theme-toggle"
         onClick={toggleTheme}
         title={`Mudar para tema ${theme === 'gold' ? 'Azul' : 'Dourado'}`}
       >
         <Palette size={20} />
         <span>{theme === 'gold' ? 'Azul' : 'Dourado'}</span>
       </button>
+
+      {showForgot && (
+        <div className="forgot-modal-backdrop" onClick={closeForgot}>
+          <div className="forgot-modal" onClick={(e) => e.stopPropagation()}>
+            <h3>Redefinir senha</h3>
+            <p className="forgot-modal-hint">
+              Informe o email cadastrado. Enviaremos um link para você criar uma nova senha.
+            </p>
+            <form onSubmit={handleForgotSubmit}>
+              <div className="input-group filled">
+                <label>Email</label>
+                <div className="input-wrapper">
+                  <Mail size={18} className="input-icon" />
+                  <input
+                    type="email"
+                    value={forgotEmail}
+                    onChange={(e) => setForgotEmail(e.target.value)}
+                    placeholder="seu@email.com"
+                    required
+                    autoFocus
+                  />
+                  <div className="input-highlight"></div>
+                </div>
+              </div>
+
+              {forgotMessage && (
+                <div className={`forgot-message forgot-message-${forgotMessage.type}`}>
+                  {forgotMessage.type === 'error' && <AlertCircle size={16} />}
+                  {forgotMessage.type === 'success' ? (
+                    <div style={{ lineHeight: 1.5 }}>
+                      <p style={{ margin: 0, fontWeight: 600 }}>Link de redefinição enviado</p>
+                      <p style={{ margin: '6px 0 0' }}>
+                        Se o email estiver cadastrado, você receberá o link em instantes. O link expira em 1 hora.
+                      </p>
+                      <ul style={{ margin: '8px 0 0', paddingLeft: 18 }}>
+                        <li>Confira as pastas <strong>Spam</strong>, <strong>Lixo Eletrônico</strong> e <strong>Promoções</strong>.</li>
+                        <li>Adicione o remetente aos contatos para os próximos emails chegarem direto.</li>
+                        <li>Não recebeu? Use o botão de reenvio abaixo após a contagem.</li>
+                      </ul>
+                    </div>
+                  ) : (
+                    <span>{forgotMessage.text}</span>
+                  )}
+                </div>
+              )}
+
+              <div className="forgot-modal-actions">
+                <button type="button" className="forgot-btn-secondary" onClick={closeForgot} disabled={forgotLoading}>
+                  {forgotMessage?.type === 'success' ? 'Fechar' : 'Cancelar'}
+                </button>
+                <button
+                  type="submit"
+                  className="login-button forgot-btn-primary"
+                  disabled={forgotLoading || forgotCooldown > 0 || !forgotEmail}
+                >
+                  {forgotLoading ? (
+                    <div className="button-loading">
+                      <span></span><span></span><span></span>
+                    </div>
+                  ) : forgotCooldown > 0 ? (
+                    <span>Reenviar em {forgotCooldown}s</span>
+                  ) : (
+                    <>
+                      <span>{forgotMessage?.type === 'success' ? 'Reenviar link' : 'Enviar link'}</span>
+                      <ArrowRight size={18} />
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { supabase } from './lib/supabase'
 import Login from './pages/Login'
+import ResetPassword from './pages/ResetPassword'
 import ErrorBoundary from './components/ErrorBoundary'
 import AdminDashboard from './pages/AdminDashboard'
 import CorretorDashboard from './pages/CorretorDashboard'
@@ -288,14 +289,15 @@ const DashboardRedirect = () => {
 function AppRoutes() {
   return (
     <Routes>
-      <Route 
-        path="/login" 
+      <Route
+        path="/login"
         element={
           <PublicRoute>
             <Login />
           </PublicRoute>
-        } 
+        }
       />
+      <Route path="/reset-password" element={<ResetPassword />} />
       <Route 
         path="/admin" 
         element={
