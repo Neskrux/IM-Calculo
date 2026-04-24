@@ -13,7 +13,6 @@ import {
 import logo from '../imgs/logo.png'
 import Ticker from '../components/Ticker'
 import HomeDashboard from './HomeDashboard'
-import SincronizarSiengeV2 from '../components/SincronizarSiengeV2'
 import EmpreendimentoGaleria from '../components/EmpreendimentoGaleria'
 // import CadastrarCorretores from '../components/CadastrarCorretores'
 // import ImportarVendas from '../components/ImportarVendas'
@@ -22,6 +21,7 @@ import '../styles/EmpreendimentosPage.css'
 import { LayoutGrid, List } from 'lucide-react'
 import { safeGet, safeSet } from '../utils/storage'
 import { calcularFatorComissao, calcularComissaoPagamento } from '../utils/comissaoCalculator'
+import { triggerFullSync, triggerNormalizeOnly, probeSienge, pollRunUntilDone } from '../lib/siengeSyncApi'
 import { sortParcelas } from '../utils/parcelasSort'
 
 // ─── SPEC: Preservação de pagamentos auditados ───────────────────────────────
@@ -73,10 +73,11 @@ const CAMPOS_FINANCEIROS_VENDA = new Set([
 ])
 
 // Colunas imutáveis em linha pago (§B da SPEC).
-// O trigger 017 garante no banco; esta lista documenta a intenção no frontend.
+// Migration 018 afrouxou a protecao: fator_comissao_aplicado e
+// percentual_comissao_total sao snapshots/metadados (nao dinheiro) e ficaram
+// editaveis em pago. Trigger 017/018 segue blindando os campos financeiros.
 const COLUNAS_IMUTAVEIS_PAGO = [
   'tipo', 'status', 'comissao_gerada',
-  'fator_comissao_aplicado', 'percentual_comissao_total',
   'created_at', 'valor', 'data_pagamento',
 ]
 
@@ -171,23 +172,14 @@ async function propagarCronogramaCirurgico({
   pagamentosExistentes,
   pagamentosNovos, // grade teórica gerada pelo motor
 }) {
-  const pagosPorOrdem = pagamentosExistentes
-    .filter(p => p.status === 'pago')
-    .sort((a, b) => {
-      if (a.tipo !== b.tipo) return a.tipo.localeCompare(b.tipo)
-      return (a.numero_parcela ?? 0) - (b.numero_parcela ?? 0)
-    })
+  const chaveDe = (p) => `${p.tipo}__${p.numero_parcela ?? ''}`
 
-  const novosPorOrdem = pagamentosNovos
-    .slice()
-    .sort((a, b) => {
-      if (a.tipo !== b.tipo) return a.tipo.localeCompare(b.tipo)
-      return (a.numero_parcela ?? 0) - (b.numero_parcela ?? 0)
-    })
+  const pagos = pagamentosExistentes.filter(p => p.status === 'pago')
+  const pendentes = pagamentosExistentes.filter(p => p.status !== 'pago')
 
-  // Atualizar data_prevista das linhas pago (único campo mutável neste fluxo)
-  for (const pago of pagosPorOrdem) {
-    const correspondente = novosPorOrdem.find(
+  // 1) Linhas PAGAS: só atualizar data_prevista (demais campos bloqueados pelo trigger 018)
+  for (const pago of pagos) {
+    const correspondente = pagamentosNovos.find(
       n => n.tipo === pago.tipo &&
            (n.numero_parcela ?? null) === (pago.numero_parcela ?? null)
     )
@@ -199,31 +191,55 @@ async function propagarCronogramaCirurgico({
     }
   }
 
-  // Substituir apenas as linhas pendente
-  const idsPendentes = pagamentosExistentes
-    .filter(p => p.status !== 'pago')
-    .map(p => p.id)
+  // 2) Linhas PENDENTES: preservar IDs via UPDATE por chave (R6)
+  //    - match por (tipo, numero_parcela): UPDATE
+  //    - novos sem match: INSERT
+  //    - pendentes antigos sem match: DELETE
+  const chavesPagas = new Set(pagos.map(chaveDe))
+  const pendentesPorChave = new Map(pendentes.map(p => [chaveDe(p), p]))
 
-  if (idsPendentes.length > 0) {
-    await supabaseClient
-      .from('pagamentos_prosoluto')
-      .delete()
-      .in('id', idsPendentes)
+  // Novos que NÃO colidem com um pago (pago já foi tratado acima)
+  const novosAplicaveis = pagamentosNovos.filter(n => !chavesPagas.has(chaveDe(n)))
+
+  const chavesNovasAplicaveis = new Set(novosAplicaveis.map(chaveDe))
+  const paraInserir = []
+
+  for (const novo of novosAplicaveis) {
+    const existente = pendentesPorChave.get(chaveDe(novo))
+    if (existente) {
+      // UPDATE preservando id
+      const { error } = await supabaseClient
+        .from('pagamentos_prosoluto')
+        .update({
+          valor: novo.valor,
+          data_prevista: novo.data_prevista,
+          comissao_gerada: novo.comissao_gerada,
+          fator_comissao_aplicado: novo.fator_comissao_aplicado,
+          percentual_comissao_total: novo.percentual_comissao_total,
+        })
+        .eq('id', existente.id)
+      if (error) throw error
+    } else {
+      paraInserir.push(novo)
+    }
   }
 
-  // Inserir pendentes novos (excluindo os que já têm correspondente pago)
-  const tiposComPago = new Set(
-    pagosPorOrdem.map(p => `${p.tipo}__${p.numero_parcela ?? ''}`)
-  )
-  const pendentesParaInserir = pagamentosNovos.filter(n => {
-    const chave = `${n.tipo}__${n.numero_parcela ?? ''}`
-    return !tiposComPago.has(chave)
-  })
-
-  if (pendentesParaInserir.length > 0) {
+  // DELETE pendentes antigos sem correspondente no novo cronograma
+  const idsParaRemover = pendentes
+    .filter(p => !chavesNovasAplicaveis.has(chaveDe(p)))
+    .map(p => p.id)
+  if (idsParaRemover.length > 0) {
     const { error } = await supabaseClient
       .from('pagamentos_prosoluto')
-      .insert(pendentesParaInserir)
+      .delete()
+      .in('id', idsParaRemover)
+    if (error) throw error
+  }
+
+  if (paraInserir.length > 0) {
+    const { error } = await supabaseClient
+      .from('pagamentos_prosoluto')
+      .insert(paraInserir)
     if (error) throw error
   }
 }
@@ -274,6 +290,113 @@ const AdminDashboard = () => {
     return saved === 'true'
   })
   const [searchTerm, setSearchTerm] = useState('')
+  const [siengeSyncLoading, setSiengeSyncLoading] = useState(null)
+  const [siengeSyncResult, setSiengeSyncResult] = useState(null)
+  const [siengeSyncError, setSiengeSyncError] = useState(null)
+  const [siengeSyncProgress, setSiengeSyncProgress] = useState(null)
+  const dispararSiengeSync = async (entity) => {
+    setSiengeSyncLoading(entity)
+    setSiengeSyncResult(null)
+    setSiengeSyncError(null)
+    setSiengeSyncProgress(null)
+    try {
+      const useNormalizeOnly = entity === 'sales-contracts' || entity === 'receivable-bills'
+      if (!useNormalizeOnly) {
+        // v11+: handler retorna 202 com runId imediatamente. Worker processa em background (EdgeRuntime.waitUntil).
+        // Cliente polla /runs/:id até status != RUNNING.
+        const kick = await triggerFullSync([entity])
+        setSiengeSyncProgress({ entity, status: 'queued', runId: kick.runId })
+        const run = await pollRunUntilDone(kick.runId, { intervalMs: 3000, timeoutMs: 15 * 60 * 1000 })
+        setSiengeSyncResult({ runId: run.id, status: run.status, metrics: run.metrics })
+        return
+      }
+
+      // Chunking: cada invocação processa um slice do dataset pra caber no CPU budget do worker (~20s).
+      // sales-contracts: sem API calls, pode ir mais largo.
+      // receivable-bills: v12 usa /bulk-data/v1/income (sem quota 100/dia), apiBudget conta páginas (200 linhas cada).
+      const chunkLimit = entity === 'sales-contracts' ? 40 : 15
+      const apiBudgetPerChunk = entity === 'receivable-bills' ? 200 : undefined
+      const maxChunks = entity === 'sales-contracts' ? 20 : 2 // receivable-bills faz sweep inteiro numa call
+
+      let offset = 0
+      let chunkIdx = 0
+      const chunkResults = []
+      let aggregate = { inserted: 0, updated: 0, errors: 0 }
+
+      while (chunkIdx < maxChunks) {
+        setSiengeSyncProgress({ entity, chunk: chunkIdx + 1, offset, limit: chunkLimit, status: 'rodando' })
+        // v11+: kick retorna 202+runId; polla até worker terminar.
+        const kick = await triggerNormalizeOnly([entity], { offset, limit: chunkLimit, apiBudget: apiBudgetPerChunk })
+        const run = await pollRunUntilDone(kick.runId, { intervalMs: 3000, timeoutMs: 10 * 60 * 1000 })
+        const data = { runId: run.id, status: run.status, metrics: run.metrics }
+        chunkResults.push(data)
+
+        const metrics = data?.metrics?.per_entity?.[entity]?.normalize
+        if (metrics) {
+          aggregate.inserted += Number(metrics.inserted || 0)
+          aggregate.updated += Number(metrics.updated || 0)
+          aggregate.errors += Number(metrics.errors || 0)
+        }
+
+        const extra = metrics?.extra || {}
+        const hasMore = !!extra.hasMore
+        const budgetExhausted = !!extra.budgetExhausted
+        setSiengeSyncProgress({
+          entity,
+          chunk: chunkIdx + 1,
+          offset,
+          limit: chunkLimit,
+          status: hasMore ? 'prosseguindo' : 'concluido',
+          total: extra.total,
+          fetched: extra.fetched,
+          hasMore,
+          budgetExhausted,
+          apiCalls: extra.apiCalls,
+          aggregate: { ...aggregate },
+        })
+
+        if (!hasMore) break
+        if (budgetExhausted) break // bate no cap de API daquele chunk; usuário decide se roda mais (protege quota Sienge)
+        offset += chunkLimit
+        chunkIdx++
+      }
+
+      setSiengeSyncResult({ chunks: chunkResults.length, aggregate, lastChunk: chunkResults[chunkResults.length - 1] })
+    } catch (e) {
+      setSiengeSyncError(e?.message || String(e))
+    } finally {
+      setSiengeSyncLoading(null)
+    }
+  }
+  const dispararProbeBulk = async () => {
+    setSiengeSyncLoading('probe')
+    setSiengeSyncResult(null)
+    setSiengeSyncError(null)
+    setSiengeSyncProgress(null)
+    try {
+      const r = await probeSienge('/bulk-data/v1/income', {
+        startDate: '2026-03-22',
+        endDate: '2026-04-22',
+        selectionType: 'P',
+        companyId: 5,
+        limit: 10,
+        offset: 0,
+      })
+      const payload = r?.data
+      const results = Array.isArray(payload) ? payload : (payload?.results ?? payload?.data ?? [])
+      setSiengeSyncResult({
+        status: r?.status,
+        url: r?.url,
+        total: Array.isArray(results) ? results.length : null,
+        metadata: payload?.resultSetMetadata ?? null,
+        sample: Array.isArray(results) ? results.slice(0, 2) : payload,
+      })
+    } catch (e) {
+      setSiengeSyncError(e?.message || String(e))
+    } finally {
+      setSiengeSyncLoading(null)
+    }
+  }
   const [showModal, setShowModal] = useState(false)
   const [modalType, setModalType] = useState('')
   const [selectedItem, setSelectedItem] = useState(null)
@@ -448,17 +571,9 @@ const AdminDashboard = () => {
     acc[vendaIdStr].totalValor += parseFloat(pag.valor) || 0
     acc[vendaIdStr].totalComissao += parseFloat(pag.comissao_gerada) || 0
     if (pag.status === 'pago') {
-      // Considerar valor da comissão paga (pode ser personalizado) ou comissão gerada
-      const comissaoPaga = parseFloat(pag.valor_comissao_pago) || parseFloat(pag.comissao_gerada) || 0
-      acc[vendaIdStr].totalPago += comissaoPaga
-      // Subtrair valor já pago se houver
-      const valorJaPago = parseFloat(pag.valor_ja_pago) || 0
-      acc[vendaIdStr].totalPendente -= valorJaPago
+      acc[vendaIdStr].totalPago += parseFloat(pag.comissao_gerada) || 0
     } else {
       acc[vendaIdStr].totalPendente += parseFloat(pag.comissao_gerada) || 0
-      // Subtrair valor já pago se houver (mesmo em pendente)
-      const valorJaPago = parseFloat(pag.valor_ja_pago) || 0
-      acc[vendaIdStr].totalPendente -= valorJaPago
     }
     return acc
   }, {})
@@ -1383,7 +1498,12 @@ const AdminDashboard = () => {
     // Fator de comissão conforme fator-comissao.mdc: (valorVenda * percentual) / valorProSoluto
     const percentualTotal = comissoesDinamicas.percentualTotal
     const fatorTotal = calcularFatorComissao(valorVenda, valorProSoluto, percentualTotal)
-    
+    // Snapshot histórico (R9) — grava junto de cada parcela criada em handleSaveVenda
+    const snapshotComissao = {
+      fator_comissao_aplicado: fatorTotal,
+      percentual_comissao_total: percentualTotal
+    }
+
     // Calcular comissão do corretor
     const comissaoCorretor = calcularComissaoCorretor(comissoesDinamicas, vendaForm.corretor_id, valorVenda)
     
@@ -1542,6 +1662,7 @@ const AdminDashboard = () => {
             valor: valorEntradaParaCalculo,
             data_prevista: dataBaseCalculo,
             comissao_gerada: comissaoTotal,
+            ...snapshotComissao,
           })
         } else {
           if (valorSinal > 0) {
@@ -1551,6 +1672,7 @@ const AdminDashboard = () => {
               valor: valorSinal,
               data_prevista: vendaForm.data_sinal || dataBaseCalculo,
               comissao_gerada: calcularComissaoPagamento(valorSinal, fatorTotal),
+              ...snapshotComissao,
             })
           }
           if (vendaForm.teve_entrada && !vendaForm.parcelou_entrada) {
@@ -1562,6 +1684,7 @@ const AdminDashboard = () => {
                 valor: valorEntradaAvista,
                 data_prevista: dataBaseCalculo,
                 comissao_gerada: calcularComissaoPagamento(valorEntradaAvista, fatorTotal),
+                ...snapshotComissao,
               })
             }
           }
@@ -1589,6 +1712,7 @@ const AdminDashboard = () => {
                     valor,
                     data_prevista: dataPrevista,
                     comissao_gerada: calcularComissaoPagamento(valor, fatorTotal),
+                    ...snapshotComissao,
                   })
                   numeroParcela++
                 }
@@ -1618,6 +1742,7 @@ const AdminDashboard = () => {
                     valor,
                     data_prevista: dataOverrideBalao || dataAutoBalao || undefined,
                     comissao_gerada: calcularComissaoPagamento(valor, fatorTotal),
+                    ...snapshotComissao,
                   })
                   numeroBalao++
                 }
@@ -1650,160 +1775,157 @@ const AdminDashboard = () => {
 
         console.log('✅ Propagação cirúrgica concluída.')
       } else {
-        // Sem baixas: comportamento original — deletar tudo e recriar
-        console.log('✏️ Edição sem baixas: recriando grade de pagamentos...')
-        await supabase
+        // Sem baixas: R6 — preservar IDs via UPDATE por chave (tipo, numero_parcela)
+        console.log('✏️ Edição sem baixas: propagação cirúrgica (UPDATE por ID)...')
+
+        // Buscar pagamentos existentes para fazer match por chave
+        const { data: pagamentosAtuaisSemBaixa } = await supabase
           .from('pagamentos_prosoluto')
-          .delete()
+          .select('*')
           .eq('venda_id', vendaId)
-      
-      // Recriar pagamentos com novos valores
-      const pagamentos = []
-      
-      // ===== REGRA ESPECIAL: ENTRADA >= 20% NO ATO (ver .cursor/rules/comissao-integral-20.mdc) =====
-      const valorEntradaParaCalculo = valorSinal + valorEntradaTotal
-      const percentualEntrada = valorVenda > 0 ? (valorEntradaParaCalculo / valorVenda) * 100 : 0
-      const entradaNoAto = !vendaForm.parcelou_entrada
-      const aplicarComissaoIntegral = percentualEntrada >= 20 && entradaNoAto
-      
-      const dataBaseCalculo = vendaForm.data_entrada || vendaForm.data_venda
 
-      if (aplicarComissaoIntegral) {
-        // Entrada >= 20% e paga no ato (não parcelada): 1 parcela com comissão total
-        const comissaoTotal = comissoesDinamicas.total || (valorProSoluto * fatorTotal)
-        const fatorIntegral = valorEntradaParaCalculo > 0 ? comissaoTotal / valorEntradaParaCalculo : 0
+        // Gerar grade teórica (mesmo motor)
+        const pagamentosNovos = []
+        const valorEntradaParaCalculo = valorSinal + valorEntradaTotal
+        const percentualEntrada = valorVenda > 0 ? (valorEntradaParaCalculo / valorVenda) * 100 : 0
+        const entradaNoAto = !vendaForm.parcelou_entrada
+        const aplicarComissaoIntegral = percentualEntrada >= 20 && entradaNoAto
+        const dataBaseCalculo = vendaForm.data_entrada || vendaForm.data_venda
 
-        pagamentos.push({
-          venda_id: vendaId,
-          tipo: 'comissao_integral',
-          valor: valorEntradaParaCalculo,
-          data_prevista: dataBaseCalculo,
-          comissao_gerada: comissaoTotal,
-        })
-
-        console.log(`✅ Edição: Entrada >= 20% no ato (${percentualEntrada.toFixed(1)}%). Comissão integral: R$ ${comissaoTotal.toFixed(2)}`)
-      } else {
-        // Entrada < 20% ou entrada parcelada: gerar parcelas normalmente
-
-        // Sinal
-        if (valorSinal > 0) {
-          pagamentos.push({
+        if (aplicarComissaoIntegral) {
+          const comissaoTotal = comissoesDinamicas.total || (valorProSoluto * fatorTotal)
+          pagamentosNovos.push({
             venda_id: vendaId,
-            tipo: 'sinal',
-            valor: valorSinal,
-            data_prevista: vendaForm.data_sinal || dataBaseCalculo,
-            comissao_gerada: calcularComissaoPagamento(valorSinal, fatorTotal),
+            tipo: 'comissao_integral',
+            valor: valorEntradaParaCalculo,
+            data_prevista: dataBaseCalculo,
+            comissao_gerada: comissaoTotal,
+            ...snapshotComissao,
           })
-        }
-
-        // Entrada (à vista) - só se teve entrada E não parcelou
-        if (vendaForm.teve_entrada && !vendaForm.parcelou_entrada) {
-          const valorEntradaAvista = parseFloat(vendaForm.valor_entrada) || 0
-          if (valorEntradaAvista > 0) {
-            pagamentos.push({
+          console.log(`✅ Edição: Entrada >= 20% no ato (${percentualEntrada.toFixed(1)}%). Comissão integral: R$ ${comissaoTotal.toFixed(2)}`)
+        } else {
+          if (valorSinal > 0) {
+            pagamentosNovos.push({
               venda_id: vendaId,
-              tipo: 'entrada',
-              valor: valorEntradaAvista,
-              data_prevista: dataBaseCalculo,
-              comissao_gerada: calcularComissaoPagamento(valorEntradaAvista, fatorTotal),
+              tipo: 'sinal',
+              valor: valorSinal,
+              data_prevista: vendaForm.data_sinal || dataBaseCalculo,
+              comissao_gerada: calcularComissaoPagamento(valorSinal, fatorTotal),
+              ...snapshotComissao,
+            })
+          }
+
+          if (vendaForm.teve_entrada && !vendaForm.parcelou_entrada) {
+            const valorEntradaAvista = parseFloat(vendaForm.valor_entrada) || 0
+            if (valorEntradaAvista > 0) {
+              pagamentosNovos.push({
+                venda_id: vendaId,
+                tipo: 'entrada',
+                valor: valorEntradaAvista,
+                data_prevista: dataBaseCalculo,
+                comissao_gerada: calcularComissaoPagamento(valorEntradaAvista, fatorTotal),
+                ...snapshotComissao,
+              })
+            }
+          }
+
+          if (vendaForm.teve_entrada && vendaForm.parcelou_entrada) {
+            let numeroParcela = 1
+            gruposParcelasEntrada.forEach((grupo) => {
+              if (!grupo || typeof grupo !== 'object' || grupo === null) {
+                console.warn('Grupo de parcela inválido ignorado:', grupo)
+                return
+              }
+              const qtd = parseInt(grupo.qtd) || 0
+              const valor = parseFloat(grupo.valor) || 0
+              if (qtd > 0 && valor > 0) {
+                for (let i = 0; i < qtd; i++) {
+                  const idxParcela = numeroParcela - 1
+                  const dataOverride = (vendaForm.datas_parcelas_override || {})[idxParcela]
+                  let dataPrevistaParcela
+                  if (dataOverride) {
+                    dataPrevistaParcela = dataOverride
+                  } else {
+                    const periodicidade = parseInt(vendaForm.periodicidade_parcelas) || 1
+                    const diaFixo = vendaForm.dia_pagamento_parcelas === 0
+                      ? (parseInt(vendaForm.dia_pagamento_parcelas_outro) || 1)
+                      : (vendaForm.dia_pagamento_parcelas || 1)
+                    dataPrevistaParcela = getDataComDiaFixo(dataBaseCalculo, numeroParcela * periodicidade, diaFixo)
+                  }
+
+                  pagamentosNovos.push({
+                    venda_id: vendaId,
+                    tipo: 'parcela_entrada',
+                    numero_parcela: numeroParcela,
+                    valor: valor,
+                    data_prevista: dataPrevistaParcela,
+                    comissao_gerada: calcularComissaoPagamento(valor, fatorTotal),
+                    ...snapshotComissao,
+                  })
+                  numeroParcela++
+                }
+              }
+            })
+          }
+
+          if (vendaForm.teve_balao === 'sim') {
+            let numeroBalao = 1
+            gruposBalao.forEach((grupo) => {
+              if (!grupo || typeof grupo !== 'object' || grupo === null) {
+                console.warn('Grupo de balão inválido ignorado:', grupo)
+                return
+              }
+              const qtd = parseInt(grupo.qtd) || 0
+              const valor = parseFloat(grupo.valor) || 0
+              if (qtd > 0 && valor > 0) {
+                for (let i = 0; i < qtd; i++) {
+                  const dataOverrideBalao = (vendaForm.datas_balao_override || {})[numeroBalao - 1]
+                  const periBalao = parseInt(vendaForm.periodicidade_balao) || 6
+                  const diaFixoBalao = vendaForm.dia_pagamento_balao === 0
+                    ? (parseInt(vendaForm.dia_pagamento_balao_outro) || 1)
+                    : (vendaForm.dia_pagamento_balao || 1)
+                  const dataAutoBalao = dataBaseCalculo
+                    ? getDataComDiaFixo(dataBaseCalculo, numeroBalao * periBalao, diaFixoBalao)
+                    : undefined
+                  pagamentosNovos.push({
+                    venda_id: vendaId,
+                    tipo: 'balao',
+                    numero_parcela: numeroBalao,
+                    valor: valor,
+                    data_prevista: dataOverrideBalao || dataAutoBalao || undefined,
+                    comissao_gerada: calcularComissaoPagamento(valor, fatorTotal),
+                    ...snapshotComissao,
+                  })
+                  numeroBalao++
+                }
+              }
             })
           }
         }
 
-        // Parcelas da entrada - só se teve entrada E parcelou
-        if (vendaForm.teve_entrada && vendaForm.parcelou_entrada) {
-          let numeroParcela = 1
-          // Iterar por cada grupo de parcelas (apenas grupos válidos)
-          gruposParcelasEntrada.forEach((grupo) => {
-            // Validar que grupo é um objeto válido antes de processar
-            if (!grupo || typeof grupo !== 'object' || grupo === null) {
-              console.warn('Grupo de parcela inválido ignorado:', grupo)
-              return
-            }
+        await propagarCronogramaCirurgico({
+          supabaseClient: supabase,
+          vendaId,
+          pagamentosExistentes: pagamentosAtuaisSemBaixa || [],
+          pagamentosNovos,
+        })
 
-            const qtd = parseInt(grupo.qtd) || 0
-            const valor = parseFloat(grupo.valor) || 0
-
-            // Só processar se quantidade e valor forem válidos
-            if (qtd > 0 && valor > 0) {
-              for (let i = 0; i < qtd; i++) {
-                const idxParcela = numeroParcela - 1
-                const dataOverride = (vendaForm.datas_parcelas_override || {})[idxParcela]
-                let dataPrevistaParcela
-                if (dataOverride) {
-                  dataPrevistaParcela = dataOverride
-                } else {
-                  const periodicidade = parseInt(vendaForm.periodicidade_parcelas) || 1
-                  const diaFixo = vendaForm.dia_pagamento_parcelas === 0
-                    ? (parseInt(vendaForm.dia_pagamento_parcelas_outro) || 1)
-                    : (vendaForm.dia_pagamento_parcelas || 1)
-                  dataPrevistaParcela = getDataComDiaFixo(dataBaseCalculo, numeroParcela * periodicidade, diaFixo)
-                }
-
-                pagamentos.push({
-                  venda_id: vendaId,
-                  tipo: 'parcela_entrada',
-                  numero_parcela: numeroParcela,
-                  valor: valor,
-                  data_prevista: dataPrevistaParcela,
-                  comissao_gerada: calcularComissaoPagamento(valor, fatorTotal),
-                })
-                numeroParcela++
-              }
-            }
-          })
+        // Recalcular total da venda a partir das linhas atuais
+        const { data: linhasAtualizadasSem } = await supabase
+          .from('pagamentos_prosoluto')
+          .select('comissao_gerada')
+          .eq('venda_id', vendaId)
+        if (linhasAtualizadasSem) {
+          const novaComissaoTotalSem = linhasAtualizadasSem.reduce(
+            (s, p) => s + (parseFloat(p.comissao_gerada) || 0), 0
+          )
+          await supabase
+            .from('vendas')
+            .update({ comissao_total: novaComissaoTotalSem })
+            .eq('id', vendaId)
         }
 
-        // Balões
-        if (vendaForm.teve_balao === 'sim') {
-          let numeroBalao = 1
-          // Iterar por cada grupo de balões (apenas grupos válidos)
-          gruposBalao.forEach((grupo) => {
-            // Validar que grupo é um objeto válido antes de processar
-            if (!grupo || typeof grupo !== 'object' || grupo === null) {
-              console.warn('Grupo de balão inválido ignorado:', grupo)
-              return
-            }
-
-            const qtd = parseInt(grupo.qtd) || 0
-            const valor = parseFloat(grupo.valor) || 0
-
-            // Só processar se quantidade e valor forem válidos
-            if (qtd > 0 && valor > 0) {
-              for (let i = 0; i < qtd; i++) {
-                const dataOverrideBalao = (vendaForm.datas_balao_override || {})[numeroBalao - 1]
-                const periBalao = parseInt(vendaForm.periodicidade_balao) || 6
-                const diaFixoBalao = vendaForm.dia_pagamento_balao === 0
-                  ? (parseInt(vendaForm.dia_pagamento_balao_outro) || 1)
-                  : (vendaForm.dia_pagamento_balao || 1)
-                const dataAutoBalao = dataBaseCalculo
-                  ? getDataComDiaFixo(dataBaseCalculo, numeroBalao * periBalao, diaFixoBalao)
-                  : undefined
-                pagamentos.push({
-                  venda_id: vendaId,
-                  tipo: 'balao',
-                  numero_parcela: numeroBalao,
-                  valor: valor,
-                  data_prevista: dataOverrideBalao || dataAutoBalao || undefined,
-                  comissao_gerada: calcularComissaoPagamento(valor, fatorTotal),
-                })
-                numeroBalao++
-              }
-            }
-          })
-        }
-      }
-
-      if (pagamentos.length > 0) {
-        const { error: pagError } = await supabase.from('pagamentos_prosoluto').insert(pagamentos)
-        if (pagError) {
-          console.error('❌ Erro ao recriar pagamentos:', pagError)
-        } else {
-          console.log('✅ Pagamentos recriados para edição:', pagamentos.length)
-        }
-      } else {
-        console.log('⚠️ Edição sem novos pagamentos. Pro-soluto:', valorProSoluto)
-      }
+        console.log('✅ Edição sem baixas: propagação concluída preservando IDs.')
       } // fecha else (sem baixas)
     } // fecha if (selectedItem && vendaId)
 
@@ -1847,7 +1969,8 @@ const AdminDashboard = () => {
           valor: valorEntradaParaCalculo,
           data_prevista: dataBaseCalculo2,
           comissao_gerada: comissaoTotal,
-          numero_parcela: null
+          numero_parcela: null,
+          ...snapshotComissao,
         })
 
         console.log(`✅ Entrada >= 20% no ato (${percentualEntrada.toFixed(1)}%). Comissão integral: R$ ${comissaoTotal.toFixed(2)}`)
@@ -1862,6 +1985,7 @@ const AdminDashboard = () => {
             valor: valorSinal,
             data_prevista: vendaForm.data_sinal || dataBaseCalculo2,
             comissao_gerada: calcularComissaoPagamento(valorSinal, fatorTotal),
+            ...snapshotComissao,
           })
         }
 
@@ -1875,6 +1999,7 @@ const AdminDashboard = () => {
               valor: valorEntradaAvista,
               data_prevista: dataBaseCalculo2,
               comissao_gerada: calcularComissaoPagamento(valorEntradaAvista, fatorTotal),
+              ...snapshotComissao,
             })
           }
         }
@@ -1916,6 +2041,7 @@ const AdminDashboard = () => {
                   valor: valor,
                   data_prevista: dataPrevistaParcela2,
                   comissao_gerada: calcularComissaoPagamento(valor, fatorTotal),
+                  ...snapshotComissao,
                 })
                 numeroParcela++
               }
@@ -1955,6 +2081,7 @@ const AdminDashboard = () => {
                   valor: valor,
                   data_prevista: dataOverrideBalao2 || dataAutoBalao2 || undefined,
                   comissao_gerada: calcularComissaoPagamento(valor, fatorTotal),
+                  ...snapshotComissao,
                 })
                 numeroBalao++
               }
@@ -2577,43 +2704,36 @@ const AdminDashboard = () => {
     if (!pagamentoParaConfirmar || confirmandoPagamento) return
 
     setConfirmandoPagamento(true)
-    
+
     try {
       // Data em que o pagamento foi efetivamente feito (pode ser antes ou depois do previsto)
       const dataPagamento = formConfirmarPagamento.dataPagamento?.trim() || new Date().toISOString().split('T')[0]
+      const comissaoAtual = parseFloat(pagamentoParaConfirmar.comissao_gerada) || 0
+      const valorComissao = formConfirmarPagamento.valorPersonalizado
+        ? parseFloat(formConfirmarPagamento.valorPersonalizado) || 0
+        : comissaoAtual
+
+      // Trigger 017 imutabiliza comissao_gerada quando status='pago'.
+      // Aplicar qualquer alteração de comissao_gerada no mesmo UPDATE que transita pra pago.
       const updateData = {
         status: 'pago',
-        data_pagamento: dataPagamento
+        data_pagamento: dataPagamento,
+      }
+      if (formConfirmarPagamento.valorPersonalizado && Math.abs(valorComissao - comissaoAtual) > 0.01) {
+        updateData.comissao_gerada = valorComissao
       }
 
-      // Se houver valor personalizado, podemos salvar em um campo de observação ou comentário
-      // Por enquanto, apenas confirmamos o pagamento
       const { error } = await supabase
         .from('pagamentos_prosoluto')
         .update(updateData)
         .eq('id', pagamentoParaConfirmar.id)
-      
+
       if (error) {
         setMessage({ type: 'error', text: 'Erro ao confirmar: ' + error.message })
         setConfirmandoPagamento(false)
         return
       }
-      
-      // Se houver valor personalizado diferente do padrão, podemos criar um registro separado
-      // ou apenas usar na lógica de cálculo sem salvar
-      const valorComissao = formConfirmarPagamento.valorPersonalizado
-        ? parseFloat(formConfirmarPagamento.valorPersonalizado) || 0
-        : parseFloat(pagamentoParaConfirmar.comissao_gerada) || 0
-      
-      // Se o valor personalizado for diferente, podemos atualizar a comissão_gerada
-      if (formConfirmarPagamento.valorPersonalizado && 
-          Math.abs(valorComissao - (parseFloat(pagamentoParaConfirmar.comissao_gerada) || 0)) > 0.01) {
-        await supabase
-          .from('pagamentos_prosoluto')
-          .update({ comissao_gerada: valorComissao })
-          .eq('id', pagamentoParaConfirmar.id)
-      }
-      
+
       setShowModalConfirmarPagamento(false)
       setPagamentoParaConfirmar(null)
       setConfirmandoPagamento(false)
@@ -2717,6 +2837,11 @@ const AdminDashboard = () => {
     // Fator de comissão conforme fator-comissao.mdc
     const percentualTotal = comissoesDinamicas.percentualTotal
     const fatorTotal = calcularFatorComissao(valorVenda, valorProSoluto, percentualTotal)
+    // Snapshot histórico (R9) — sempre gravar junto com o pagamento
+    const snapshotComissao = {
+      fator_comissao_aplicado: fatorTotal,
+      percentual_comissao_total: percentualTotal
+    }
     
     // Calcular e atualizar comissão do corretor na venda se não estiver preenchida
     const comissaoCorretor = calcularComissaoCorretor(comissoesDinamicas, venda.corretor_id, valorVenda)
@@ -2750,6 +2875,7 @@ const AdminDashboard = () => {
         valor: valorEntradaParaCalculo, // Valor da entrada
         data_prevista: venda.data_venda,
         comissao_gerada: comissaoTotal, // Comissão TOTAL do corretor
+        ...snapshotComissao,
       })
       
       console.log(`✅ Entrada >= 20% no ato (${percentualEntrada.toFixed(1)}%). Comissão integral: R$ ${comissaoTotal.toFixed(2)}`)
@@ -2764,6 +2890,7 @@ const AdminDashboard = () => {
           valor: valorSinal,
           data_prevista: venda.data_venda,
           comissao_gerada: calcularComissaoPagamento(valorSinal, fatorTotal),
+          ...snapshotComissao,
         })
       }
 
@@ -2777,19 +2904,20 @@ const AdminDashboard = () => {
             valor: valorEntradaAvista,
             data_prevista: venda.data_venda,
             comissao_gerada: calcularComissaoPagamento(valorEntradaAvista, fatorTotal),
+            ...snapshotComissao,
           })
         }
       }
-      
+
       // Parcelas da entrada
       if (venda.teve_entrada && venda.parcelou_entrada) {
         const qtdParcelas = parseInt(venda.qtd_parcelas_entrada) || 0
         const valorParcelaEnt = parseFloat(venda.valor_parcela_entrada) || 0
-        
+
         for (let i = 1; i <= qtdParcelas; i++) {
           const dataParcela = new Date(venda.data_venda)
           dataParcela.setMonth(dataParcela.getMonth() + i)
-          
+
           novosPagamentos.push({
             venda_id: venda.id,
             tipo: 'parcela_entrada',
@@ -2797,10 +2925,11 @@ const AdminDashboard = () => {
             valor: valorParcelaEnt,
             data_prevista: dataParcela.toISOString().split('T')[0],
             comissao_gerada: calcularComissaoPagamento(valorParcelaEnt, fatorTotal),
+            ...snapshotComissao,
           })
         }
       }
-      
+
       // Balões
       if (venda.teve_balao === 'sim') {
         const qtdBalao = parseInt(venda.qtd_balao) || 0
@@ -2812,6 +2941,7 @@ const AdminDashboard = () => {
             numero_parcela: i,
             valor: valorBalaoUnit,
             comissao_gerada: calcularComissaoPagamento(valorBalaoUnit, fatorTotal),
+            ...snapshotComissao,
           })
         }
       }
@@ -4836,10 +4966,10 @@ const AdminDashboard = () => {
     // Total em vendas
     const totalVendas = vendas.reduce((acc, v) => acc + (parseFloat(v.valor_venda) || 0), 0)
     
-    // Comissões pendentes (todas as vendas com status pendente)
-    const comissoesPendentes = vendas
-      .filter(v => v.status === 'pendente')
-      .reduce((acc, v) => acc + (parseFloat(v.comissao_total) || 0), 0)
+    // Comissões pendentes — sempre por pagamento (R2), nunca por venda.status
+    const comissoesPendentes = pagamentos
+      .filter(p => p.status === 'pendente')
+      .reduce((acc, p) => acc + (parseFloat(p.comissao_gerada) || 0), 0)
     
     // Corretores ativos
     const corretoresAtivos = corretores.filter(c => c.ativo !== false).length
@@ -5191,8 +5321,62 @@ const AdminDashboard = () => {
         {/* Content */}
         {activeTab === 'dashboard' && (
           <div style={{ padding: '0', flex: 1, overflow: 'auto' }}>
-            <HomeDashboard 
-              showTicker={false} 
+            <section style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12, padding: 16, margin: 16 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+                <div>
+                  <strong style={{ fontSize: 14 }}>Sincronizar Sienge (backend - piloto)</strong>
+                  <div style={{ fontSize: 12, color: '#6b7280' }}>
+                    Dispara a Edge Function <code>sienge-sync</code>. Rode (1) primeiro, depois (2).
+                  </div>
+                </div>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                  <button
+                    onClick={() => dispararSiengeSync('sales-contracts')}
+                    disabled={!!siengeSyncLoading}
+                    style={{ padding: '8px 14px', border: '1px solid #2563eb', background: '#2563eb', color: '#fff', borderRadius: 8, cursor: siengeSyncLoading ? 'not-allowed' : 'pointer', opacity: siengeSyncLoading ? 0.6 : 1 }}
+                  >
+                    {siengeSyncLoading === 'sales-contracts' ? 'Rodando…' : '1) Sales Contracts'}
+                  </button>
+                  <button
+                    onClick={() => dispararSiengeSync('receivable-bills')}
+                    disabled={!!siengeSyncLoading}
+                    style={{ padding: '8px 14px', border: '1px solid #059669', background: '#059669', color: '#fff', borderRadius: 8, cursor: siengeSyncLoading ? 'not-allowed' : 'pointer', opacity: siengeSyncLoading ? 0.6 : 1 }}
+                  >
+                    {siengeSyncLoading === 'receivable-bills' ? 'Rodando…' : '2) Receivable Bills'}
+                  </button>
+                  <button
+                    onClick={dispararProbeBulk}
+                    disabled={!!siengeSyncLoading}
+                    style={{ padding: '8px 14px', border: '1px solid #a16207', background: '#a16207', color: '#fff', borderRadius: 8, cursor: siengeSyncLoading ? 'not-allowed' : 'pointer', opacity: siengeSyncLoading ? 0.6 : 1 }}
+                  >
+                    {siengeSyncLoading === 'probe' ? 'Sondando…' : '🔍 Probe Bulk Data'}
+                  </button>
+                </div>
+              </div>
+              {siengeSyncProgress && (
+                <div style={{ marginTop: 12, background: '#eff6ff', color: '#1e3a8a', padding: 12, borderRadius: 8, fontSize: 12 }}>
+                  <div><strong>{siengeSyncProgress.entity}</strong> — chunk {siengeSyncProgress.chunk} (offset {siengeSyncProgress.offset}, limit {siengeSyncProgress.limit}) — {siengeSyncProgress.status}</div>
+                  {siengeSyncProgress.total != null && (
+                    <div>processados {Math.min(siengeSyncProgress.offset + (siengeSyncProgress.fetched || 0), siengeSyncProgress.total)}/{siengeSyncProgress.total} · hasMore={String(!!siengeSyncProgress.hasMore)} · budgetExhausted={String(!!siengeSyncProgress.budgetExhausted)} · apiCalls={siengeSyncProgress.apiCalls ?? '-'}</div>
+                  )}
+                  {siengeSyncProgress.aggregate && (
+                    <div>acumulado: updated={siengeSyncProgress.aggregate.updated} · errors={siengeSyncProgress.aggregate.errors}</div>
+                  )}
+                </div>
+              )}
+              {siengeSyncError && (
+                <pre style={{ marginTop: 12, background: '#fef2f2', color: '#991b1b', padding: 12, borderRadius: 8, fontSize: 12, whiteSpace: 'pre-wrap' }}>
+                  {siengeSyncError}
+                </pre>
+              )}
+              {siengeSyncResult && (
+                <pre style={{ marginTop: 12, background: '#f9fafb', color: '#111827', padding: 12, borderRadius: 8, fontSize: 12, maxHeight: 320, overflow: 'auto' }}>
+                  {JSON.stringify(siengeSyncResult, null, 2)}
+                </pre>
+              )}
+            </section>
+            <HomeDashboard
+              showTicker={false}
               showHeader={false}
               vendas={vendas}
               corretores={corretores}
@@ -6188,13 +6372,16 @@ const AdminDashboard = () => {
                       <h3>Estatísticas</h3>
                       {(() => {
                         const vendasEmp = vendas.filter(v => v.empreendimento_id === empreendimentoVisualizar.id)
+                        const vendasIds = new Set(vendasEmp.map(v => v.id))
+                        const pagamentosEmp = pagamentos.filter(p => vendasIds.has(p.venda_id))
                         const totalVendas = vendasEmp.length
                         const valorTotal = vendasEmp.reduce((acc, v) => acc + (parseFloat(v.valor_venda) || 0), 0)
-                        const comissaoPaga = vendasEmp.reduce((acc, v) => acc + (parseFloat(v.comissao_paga) || 0), 0)
-                        const comissaoPendente = vendasEmp.reduce((acc, v) => {
-                          const comissaoTotal = (parseFloat(v.valor_venda) || 0) * ((parseFloat(v.comissao_percentual) || 0) / 100)
-                          return acc + (comissaoTotal - (parseFloat(v.comissao_paga) || 0))
-                        }, 0)
+                        const comissaoPaga = pagamentosEmp
+                          .filter(p => p.status === 'pago')
+                          .reduce((acc, p) => acc + (parseFloat(p.comissao_gerada) || 0), 0)
+                        const comissaoPendente = pagamentosEmp
+                          .filter(p => p.status === 'pendente')
+                          .reduce((acc, p) => acc + (parseFloat(p.comissao_gerada) || 0), 0)
                         const corretoresEmp = [...new Set(vendasEmp.map(v => v.corretor_id))].length
 
                         return (
@@ -6493,12 +6680,9 @@ const AdminDashboard = () => {
                     <span className="resumo-label">Comissão Pendente</span>
                     <span className="resumo-valor pendente">
                       {formatCurrency(filteredPagamentos.reduce((acc, grupo) => {
-                        // Calcular comissão pendente considerando valores já pagos
                         return acc + grupo.pagamentos.reduce((sum, pag) => {
                           if (pag.status === 'pendente') {
-                            const comissaoParcela = parseFloat(pag.comissao_gerada) || 0
-                            const valorJaPago = parseFloat(pag.valor_ja_pago) || 0
-                            return sum + (comissaoParcela - valorJaPago)
+                            return sum + (parseFloat(pag.comissao_gerada) || 0)
                           }
                           return sum
                         }, 0)
@@ -6509,14 +6693,9 @@ const AdminDashboard = () => {
                     <span className="resumo-label">Comissão Paga</span>
                     <span className="resumo-valor pago">
                       {formatCurrency(filteredPagamentos.reduce((acc, grupo) => {
-                        // Calcular comissão paga baseada nos pagamentos filtrados
                         return acc + grupo.pagamentos
                           .filter(p => p.status === 'pago')
-                          .reduce((sum, pag) => {
-                            const comissaoParcela = parseFloat(pag.comissao_gerada) || 0
-                            const valorJaPago = parseFloat(pag.valor_ja_pago) || 0
-                            return sum + (comissaoParcela - valorJaPago)
-                          }, 0)
+                          .reduce((sum, pag) => sum + (parseFloat(pag.comissao_gerada) || 0), 0)
                       }, 0))}
                     </span>
                   </div>
@@ -6626,9 +6805,7 @@ const AdminDashboard = () => {
                             <span className="valor-number pendente">{formatCurrency(
                               grupo.pagamentos.reduce((sum, pag) => {
                                 if (pag.status === 'pendente') {
-                                  const comissaoParcela = parseFloat(pag.comissao_gerada) || 0
-                                  const valorJaPago = parseFloat(pag.valor_ja_pago) || 0
-                                  return sum + (comissaoParcela - valorJaPago)
+                                  return sum + (parseFloat(pag.comissao_gerada) || 0)
                                 }
                                 return sum
                               }, 0)
@@ -6732,13 +6909,24 @@ const AdminDashboard = () => {
                                 {calcularComissaoPorCargoPagamento(pag).map((cargo, idx) => {
                                   const valorParcela = parseFloat(pag.valor) || 0
                                   const percentualFator = valorParcela > 0 ? ((cargo.valor / valorParcela) * 100) : 0
-                                  
+                                  const percentualNominal = parseFloat(cargo.percentual) || 0
+
                                   return (
                                     <div key={idx} className="comissao-item">
-                                      <span className="comissao-nome">{cargo.nome_cargo}</span>
+                                      <span className="comissao-nome">
+                                        {cargo.nome_cargo}
+                                        {percentualNominal > 0 && (
+                                          <span className="comissao-percentual-cargo"> ({percentualNominal.toFixed(2)}%)</span>
+                                        )}
+                                      </span>
                                       <span className="comissao-valor">
                                         {formatCurrency(cargo.valor)}
-                                        <span className="comissao-percentual">{percentualFator.toFixed(2)}%</span>
+                                        <span
+                                          className="comissao-percentual"
+                                          title={`Fator aplicado na parcela: ${percentualFator.toFixed(2)}% do valor. Percentual nominal do cargo: ${percentualNominal.toFixed(2)}%.`}
+                                        >
+                                          fator {percentualFator.toFixed(2)}%
+                                        </span>
                                       </span>
                                     </div>
                                   )
@@ -7161,12 +7349,6 @@ const AdminDashboard = () => {
                 ))}
               </div>
             )}
-          </div>
-        )}
-
-        {false && activeTab === 'sienge' && (
-          <div className="content-section">
-            <SincronizarSiengeV2 />
           </div>
         )}
 

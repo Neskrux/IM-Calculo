@@ -775,7 +775,7 @@ export const findVendaBySiengeId = async (siengeContractId) => {
 }
 
 /**
- * Recalcula comissões dos pagamentos existentes (UPDATE, preserva status, valor_comissao_pago, valor_ja_pago, data_pagamento)
+ * Recalcula comissões dos pagamentos existentes (UPDATE, preserva status, data_pagamento)
  * Usa fórmula correta: fator = (valorVenda × percentualTotal) / valorProSoluto, comissao = parcela × fator
  */
 export const recalcularComissoesPagamentosVenda = async (vendaId) => {
