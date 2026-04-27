@@ -1,0 +1,41 @@
+{
+  "meta": {
+    "geradoEm": "2026-04-27T00:00:00.000Z",
+    "spec_ref": ".claude/rules/sincronizacao-sienge.md",
+    "script": "B3-corrigir-datas-duplicadas-138",
+    "modo": "humano-pendente",
+    "regra": "Datas 21-28 duplicam 13-20. Decisao entre cancelar (Hipotese A) ou deslocar (Hipotese B) precisa Sienge live. Encaminhado pra revisao humana e cross-validacao quando C.1 rodar."
+  },
+  "counts": {
+    "matched": 8,
+    "updated": 0,
+    "inserted": 0,
+    "skipped_idempotent": 0,
+    "drift_detected": 8,
+    "drift_corrected": 0,
+    "noMatch": 0,
+    "skipped_humano": 8,
+    "errors": 0
+  },
+  "drift": [
+    { "id": "34405cb2-584b-4ef7-bf35-553c57040693", "campo": "data_prevista", "antes": "2027-04-10", "depois": "?", "motivo": "duplicada com parcela 13" },
+    { "id": "39b876c2-1c5b-4477-9dba-2c339c7ab6a8", "campo": "data_prevista", "antes": "2027-05-10", "depois": "?", "motivo": "duplicada com parcela 14" },
+    { "id": "a65b6545-d557-47ca-b133-e80d3a32123a", "campo": "data_prevista", "antes": "2027-06-10", "depois": "?", "motivo": "duplicada com parcela 15" },
+    { "id": "a060c342-70a2-406a-a8ea-318f509e00cf", "campo": "data_prevista", "antes": "2027-07-10", "depois": "?", "motivo": "duplicada com parcela 16" },
+    { "id": "84859ca5-45ea-412d-94c3-224a6cdf11f9", "campo": "data_prevista", "antes": "2027-08-10", "depois": "?", "motivo": "duplicada com parcela 17" },
+    { "id": "48303122-cd78-4960-b4ce-b9c0117a7fe3", "campo": "data_prevista", "antes": "2027-09-10", "depois": "?", "motivo": "duplicada com parcela 18" },
+    { "id": "233d1379-e8cb-4127-9e5a-913013daf4b2", "campo": "data_prevista", "antes": "2027-10-10", "depois": "?", "motivo": "duplicada com parcela 19" },
+    { "id": "16ae0cf9-09a2-452f-9ee5-75793ae3d8a5", "campo": "data_prevista", "antes": "2027-11-10", "depois": "?", "motivo": "duplicada com parcela 20" }
+  ],
+  "humano_pendente": [
+    {
+      "venda_id": "c6100456-03b1-44a9-8f1b-c47dd16997ad",
+      "numero_contrato": "138",
+      "sienge_contract_id": "230",
+      "motivo": "8 parcelas com data_prevista duplicada (21-28 = 13-20). Sem cronograma Sienge live nao da pra decidir entre cancelar ou deslocar.",
+      "ref_b": "docs/b7-contrato-138-datas-ambiguas.md",
+      "acao_recomendada": "Quando rodar C.1, GET /accounts-receivable/receivable-bills/{billId}/installments deste contrato e confirmar quantidade real de parcelas."
+    }
+  ],
+  "errors": []
+}

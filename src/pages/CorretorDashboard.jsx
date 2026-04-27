@@ -1770,7 +1770,7 @@ const CorretorDashboard = () => {
                       </div>
                     </div>
                     <div className="sale-values">
-                      <span className="sale-comissao">{formatCurrency(comissaoVenda > 0 ? comissaoVenda : venda.comissao_corretor)}</span>
+                      <span className="sale-comissao">{formatCurrency(comissaoVenda)}</span>
                       <span className={`sale-status ${statusClass}`}>
                         {statusLabel}
                       </span>
@@ -2033,7 +2033,7 @@ const CorretorDashboard = () => {
                     </div>
                     <div className="venda-comissao">
                                 <span className="label">Sua Comissão ({percentualCorretor}%)</span>
-                      <span className="value highlight">{formatCurrency(comissaoVenda > 0 ? comissaoVenda : venda.comissao_corretor)}</span>
+                      <span className="value highlight">{formatCurrency(comissaoVenda)}</span>
                     </div>
                   </div>
                 </div>
@@ -3026,7 +3026,7 @@ const CorretorDashboard = () => {
                             <td>{venda.empreendimento_nome || 'N/A'}</td>
                             <td>{venda.unidade || '-'}</td>
                             <td>{formatCurrency(venda.valor_venda)}</td>
-                            <td className="comissao-cell">{formatCurrency(comissaoVenda > 0 ? comissaoVenda : venda.comissao_corretor)}</td>
+                            <td className="comissao-cell">{formatCurrency(comissaoVenda)}</td>
                             <td>
                               <span className={`status-badge ${statusVenda}`}>
                                 {statusVenda === 'pago' && <><CheckCircle size={12} /> {statusLabel}</>}

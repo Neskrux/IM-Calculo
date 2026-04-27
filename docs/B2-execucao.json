@@ -1,0 +1,35 @@
+{
+  "meta": {
+    "geradoEm": "2026-04-27T00:00:00.000Z",
+    "spec_ref": ".claude/rules/sincronizacao-sienge.md",
+    "script": "B2-resolver-venda-duplicada-1804A",
+    "modo": "humano-pendente",
+    "regra": "Spec proibe excluido=TRUE em venda com pagamento 'pago'. As duas vendas duplicadas tem 1 pago cada. Encaminhado para revisao humana."
+  },
+  "counts": {
+    "matched": 2,
+    "updated": 0,
+    "inserted": 0,
+    "skipped_idempotent": 0,
+    "drift_detected": 0,
+    "drift_corrected": 0,
+    "noMatch": 0,
+    "skipped_humano": 1,
+    "errors": 0
+  },
+  "drift": [],
+  "humano_pendente": [
+    {
+      "venda_id_original": "ac644733-d731-44e5-8573-99b9231e90a8",
+      "venda_id_duplicata_suspeita": "9d279176-e4de-4e3f-8ec2-9aa4b6c7f62a",
+      "cliente": "GIOVANE DOS SANTOS",
+      "cliente_cpf": "03063230952",
+      "unidade": "1804 A",
+      "evidencia_duplicata": "duplicata vinculada a usuario 'jonas beton' / jonas@teste.com (usuario de teste). Mesmo cliente, mesma unidade, mesmo pagamento de R$ 1.267,19 em 2026-02-20.",
+      "pagamento_fantasma_id": "c779389c-20fc-4dd8-a733-36c78b0a339b",
+      "motivo": "Spec FASE 0.1a proibe excluido=TRUE com pago. Operador precisa: (1) Excluir Baixa do pagamento fantasma; (2) marcar venda duplicata como excluido=true.",
+      "ref_b": "docs/b7-duplicata-1804A-revisao.md"
+    }
+  ],
+  "errors": []
+}
