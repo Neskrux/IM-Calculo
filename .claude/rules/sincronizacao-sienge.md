@@ -138,13 +138,81 @@ WHERE status='pendente' AND data_pagamento IS NOT NULL;  -- deve ser 0
 
 ---
 
+## Invariantes de `vendas` tocados por correção retroativa (2026-04-27)
+
+Não-financeiros mas críticos pra cálculo de comissão e relatório. Spec autoriza correção sob as condições abaixo.
+
+- **`valor_pro_soluto`**: imutável quando `≠ 0` E existem pagamentos com `status='pago'` na venda. Quando `= 0` E zero pagamentos pagos: pode ser populado a partir de `paymentConditions[]` PM do payload Sienge raw.
+- **`fator_comissao`**: derivado de `valor_pro_soluto` + `percentual_total`. Recalculável quando `valor_pro_soluto` muda. Em vendas com pagos: refazer só os snapshots `fator_comissao_aplicado` (liberado por 018) — nunca mexer em `valor`/`comissao_gerada`.
+- **`excluido = TRUE`**: só permitido se a venda **não** tem pagamentos `status='pago'`. Se tem pago, abortar e mandar pra revisão humana (rodada `b`).
+- **`corretor_id`** e **`cliente_id`**: ver invariante de origem abaixo.
+- **Imutáveis em qualquer caso**: `sienge_contract_id` (idempotência), `created_at`.
+
+## `vendas.corretor_id` / `vendas.cliente_id` — proteção contra sobrescrita
+
+Migration **021** adiciona dois campos:
+
+```sql
+vendas.corretor_id_origem text NOT NULL DEFAULT 'sync'
+  CHECK (corretor_id_origem IN ('sync','manual','api_commissions'));
+vendas.cliente_id_origem  text NOT NULL DEFAULT 'sync'
+  CHECK (cliente_id_origem IN ('sync','manual'));
+```
+
+Semântica:
+- `'sync'` (default): preenchido por sync Sienge — sync **pode** sobrescrever.
+- `'manual'`: corrigido por humano — sync **NÃO** sobrescreve, só loga drift.
+- `'api_commissions'` (apenas corretor): mapeado via `/accounts-receivable/receivable-bills/{billId}/commissions` — sync de sales-contracts não sobrescreve.
+
+Toda correção de `corretor_id`/`cliente_id` registra a origem na mesma operação de UPDATE.
+
+## Política de "correção retroativa" de pagamentos pagos
+
+Migrations 018 + 020 já liberam UPDATE em `data_pagamento`, `data_prevista`, `numero_parcela`, `fator_comissao_aplicado`, `percentual_comissao_total` para linhas com `status='pago'`. Spec adiciona regra de uso:
+
+**Permitido sem revisão humana:**
+- Correção que **reaproxima do Sienge**: `data_pagamento`, `data_prevista` quando o Sienge tem o valor correto.
+- **Identidade matemática**: recalcular `fator_comissao_aplicado = comissao_gerada / valor` (preserva o financeiro `comissao_gerada`).
+
+**Requer revisão humana antes (rodada `b`):**
+- Mudança de `numero_parcela` em pago.
+- Mudança de `data_prevista` em pago > 30 dias.
+- Recálculo de snapshot que mude valor financeiro derivado (não só fator).
+
+## Schema canônico de métrica
+
+Toda execução (script ou edge function) que toque `pagamentos_prosoluto` ou `vendas` emite JSON com este formato:
+
+```jsonc
+{
+  "meta": {
+    "geradoEm": "ISO8601",
+    "spec_ref": ".claude/rules/sincronizacao-sienge.md",
+    "script": "scripts/B1-...mjs",
+    "modo": "dry-run|apply|rollback"
+  },
+  "counts": {
+    "matched": N, "updated": N, "inserted": N, "skipped_idempotent": N,
+    "drift_detected": N, "drift_corrected": N, "noMatch": N,
+    "skipped_humano": N, "errors": N
+  },
+  "drift": [ { "id", "campo", "antes", "depois", "motivo" } ],
+  "humano_pendente": [ { "id", "motivo", "ref_b": "docs/b{N}-..." } ],
+  "errors": [ { "id", "msg" } ]
+}
+```
+
+**Idempotência testável**: rodar 2× seguidas → 2º run reporta `inserted=0, updated=0, skipped_idempotent=N`.
+
+---
+
 ## Context engineering + spec-driven development
 
-Esta regra **é a spec**. Qualquer script, edge function, ou migration que toque `pagamentos_prosoluto.status`/`data_pagamento` deve:
+Esta regra **é a spec**. Qualquer script, edge function, ou migration que toque `pagamentos_prosoluto.status`/`data_pagamento`/`vendas.{valor_pro_soluto,fator_comissao,excluido,corretor_id,cliente_id}` deve:
 
 1. **Referenciar esta regra explicitamente** no cabeçalho/comentário (`// ver .claude/rules/sincronizacao-sienge.md`)
-2. **Respeitar as invariantes** listadas (nunca pago sem data, nunca delete de pago, nunca mexer em `tipo`/`valor`/`comissao_gerada` em pago, nunca reverter pago→pendente fora do fluxo "Excluir Baixa")
-3. **Emitir métricas estruturadas** (`matched`, `updated`, `drift`, `noMatch`, `noPaymentDate`) — pra auditoria e detecção de regressão
+2. **Respeitar as invariantes** listadas (nunca pago sem data, nunca delete de pago, nunca mexer em `tipo`/`valor`/`comissao_gerada` em pago, nunca reverter pago→pendente fora do fluxo "Excluir Baixa", proteger `*_id_origem='manual'`)
+3. **Emitir métricas estruturadas** no schema canônico acima
 4. **Ser idempotente** — rodar 2x seguidas não deve mudar nada no 2º run (exceto métricas)
 
 Quem quiser entender o porquê de uma decisão de código nessa área, lê este arquivo primeiro. Quem for alterar, atualiza este arquivo **antes** de mexer no código.

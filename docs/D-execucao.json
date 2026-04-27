@@ -1,0 +1,29 @@
+{
+  "meta": {
+    "geradoEm": "2026-04-27T00:00:00.000Z",
+    "spec_ref": ".claude/rules/sincronizacao-sienge.md",
+    "script": "D-mapear-clientes-vendas-sem-cliente",
+    "modo": "apply",
+    "regra": "Universo de 38 vendas com cliente_id=NULL + sienge_contract_id valido. Todas tem salesContractCustomers no payload. NENHUMA tinha customer correspondente em clientes nem em sienge_raw.objects 'customers'. Inseridos 29 clientes parciais (nome + sienge_customer_id) e vinculadas 38 vendas. cliente_id_origem='sync' permite sync futuro completar cadastro (CPF, telefone, email)."
+  },
+  "counts": {
+    "matched": 38,
+    "updated": 38,
+    "inserted": 29,
+    "skipped_idempotent": 0,
+    "drift_detected": 0,
+    "drift_corrected": 0,
+    "noMatch": 0,
+    "skipped_humano": 0,
+    "errors": 0
+  },
+  "drift": [],
+  "humano_pendente": [],
+  "errors": [],
+  "verificacao_pos_apply": {
+    "vendas_sem_cliente_com_sienge_id": 0,
+    "vendas_sem_cliente_sem_sienge_id": 0,
+    "total_vendas_sem_cliente": 0
+  },
+  "nota": "Clientes inseridos com nome + sienge_customer_id apenas (CPF/email/telefone NULL). Quando rodar sync de customers, esses campos serao populados via UPSERT no sienge_customer_id."
+}

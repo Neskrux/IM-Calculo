@@ -1,0 +1,12 @@
+{
+  "meta": {
+    "geradoEm": "2026-04-27T00:00:00.000Z",
+    "spec_ref": ".claude/rules/sincronizacao-sienge.md",
+    "script": "B4-recalcular-snapshots-stale",
+    "regra": "Spec FASE 0.1c autoriza identidade matematica fator = comissao_gerada / valor. 75 com fator inconsistente + 9 sem snapshot. Total 84.",
+    "regra_rollback": "UPDATE pagamentos_prosoluto SET fator_comissao_aplicado=fator_antes, percentual_comissao_total=pct_antes WHERE id=...",
+    "total_linhas": 84,
+    "fonte_pre_estado": "executado via mcp execute_sql; preview_completo_em_relatorio_execucao"
+  },
+  "nota": "Pre-estado preservado em B4-execucao.json (drift array)."
+}

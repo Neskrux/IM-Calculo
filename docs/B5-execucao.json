@@ -1,0 +1,38 @@
+{
+  "meta": {
+    "geradoEm": "2026-04-27T00:00:00.000Z",
+    "spec_ref": ".claude/rules/sincronizacao-sienge.md",
+    "script": "B5-baloes-sem-data-prevista",
+    "modo": "humano-pendente",
+    "regra": "40 baloes pendentes sem data_prevista. 7 com sienge_id (contratos 207, 243): payload Sienge NAO tem condition BL para nenhum dos dois - sao baloes fantasmas do gerador antigo. 33 sem sienge_id (vendas locais nao-Sienge): nao temos fonte pra inferir data."
+  },
+  "counts": {
+    "matched": 40,
+    "updated": 0,
+    "inserted": 0,
+    "skipped_idempotent": 0,
+    "drift_detected": 0,
+    "drift_corrected": 0,
+    "noMatch": 7,
+    "skipped_humano": 40,
+    "errors": 0
+  },
+  "drift": [],
+  "humano_pendente": [
+    {
+      "grupo": "com_sienge_sem_BL_no_payload",
+      "qtd": 7,
+      "contratos": ["207 (sienge 299)", "243 (sienge 340)"],
+      "motivo": "Banco tem baloes pendentes mas payload sales-contracts do Sienge nao tem conditionTypeId='BL'. Provavelmente baloes fantasma do gerador antigo.",
+      "ref_b": "docs/b7-baloes-sem-data.md",
+      "acao_recomendada": "Cancelar (status='cancelado') ou aguardar confirmacao via Sienge live (Etapa C)"
+    },
+    {
+      "grupo": "sem_sienge_local",
+      "qtd": 33,
+      "motivo": "Vendas locais (cadastro manual, nao-Sienge). Nao temos fonte de verdade pra inferir data_prevista. Gestora precisa preencher.",
+      "ref_b": "docs/b7-baloes-sem-data.md"
+    }
+  ],
+  "errors": []
+}

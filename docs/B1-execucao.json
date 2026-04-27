@@ -1,0 +1,101 @@
+{
+  "meta": {
+    "geradoEm": "2026-04-27T00:00:00.000Z",
+    "spec_ref": ".claude/rules/sincronizacao-sienge.md",
+    "script": "B1-vendas-sem-prosoluto-validacao",
+    "modo": "validacao-readonly",
+    "regra": "Confirma via payload Sienge que vendas com valor_pro_soluto=0 sao legitimamente sem pro-soluto (apenas conditionTypes PU/PA/PE, sem PM). Nao ha mutacao."
+  },
+  "counts": {
+    "matched": 11,
+    "updated": 0,
+    "inserted": 0,
+    "skipped_idempotent": 11,
+    "drift_detected": 0,
+    "drift_corrected": 0,
+    "noMatch": 0,
+    "skipped_humano": 11,
+    "errors": 0
+  },
+  "drift": [],
+  "humano_pendente": [
+    {
+      "venda_id": "92b9178d-4ea7-4a3e-9549-c9ac882248b0",
+      "sienge_contract_id": "393", "numero_contrato": "275",
+      "tipos_condicao": "PARCELA UNICA", "valor_venda": "500000.00",
+      "motivo": "venda a vista (PU), sem pro-soluto. Sem cliente_id (cadastro incompleto local).",
+      "ref_b": "docs/b7-vendas-sem-prosoluto.md"
+    },
+    {
+      "venda_id": "4ddf58a4-be14-46df-8be4-ea5fd59cd10b",
+      "sienge_contract_id": "394", "numero_contrato": "276",
+      "tipos_condicao": "PARCELAS ANUAIS", "valor_venda": "500000.00",
+      "motivo": "venda em parcelas anuais (PA), sem pro-soluto mensal. Sem cliente_id.",
+      "ref_b": "docs/b7-vendas-sem-prosoluto.md"
+    },
+    {
+      "venda_id": "eb70a072-a784-4ef5-9322-1a093f5e4b4a",
+      "sienge_contract_id": "395", "numero_contrato": "277",
+      "tipos_condicao": "PARCELA UNICA", "valor_venda": "500000.00",
+      "motivo": "venda a vista (PU). Sem cliente_id.",
+      "ref_b": "docs/b7-vendas-sem-prosoluto.md"
+    },
+    {
+      "venda_id": "6f3cde65-a816-4562-8739-ba85dbab6fe3",
+      "sienge_contract_id": "396", "numero_contrato": "278",
+      "tipos_condicao": "PARCELAS ANUAIS", "valor_venda": "500000.00",
+      "motivo": "venda em parcelas anuais (PA). Sem cliente_id.",
+      "ref_b": "docs/b7-vendas-sem-prosoluto.md"
+    },
+    {
+      "venda_id": "593aa36f-ba3e-483a-80e7-f2765d39d770",
+      "sienge_contract_id": "397", "numero_contrato": "279",
+      "tipos_condicao": "PARCELA UNICA", "valor_venda": "500000.00",
+      "motivo": "venda a vista (PU). Sem cliente_id.",
+      "ref_b": "docs/b7-vendas-sem-prosoluto.md"
+    },
+    {
+      "venda_id": "92af4a70-c01f-42eb-8217-1a532007eb6c",
+      "sienge_contract_id": "398", "numero_contrato": "280",
+      "tipos_condicao": "PARCELA UNICA", "valor_venda": "500000.00",
+      "motivo": "venda a vista (PU). Sem cliente_id.",
+      "ref_b": "docs/b7-vendas-sem-prosoluto.md"
+    },
+    {
+      "venda_id": "731a137f-8e49-40d6-905b-5d615c41499f",
+      "sienge_contract_id": "399", "numero_contrato": "281",
+      "tipos_condicao": "PARCELA UNICA", "valor_venda": "500000.00",
+      "motivo": "venda a vista (PU). Sem cliente_id.",
+      "ref_b": "docs/b7-vendas-sem-prosoluto.md"
+    },
+    {
+      "venda_id": "197353d2-55c8-48d6-92cf-4080e7554644",
+      "sienge_contract_id": "400", "numero_contrato": "282",
+      "tipos_condicao": "PARCELA UNICA", "valor_venda": "500000.00",
+      "motivo": "venda a vista (PU). Sem cliente_id.",
+      "ref_b": "docs/b7-vendas-sem-prosoluto.md"
+    },
+    {
+      "venda_id": "63229ab7-b4e1-4484-9c9a-ab08cd3832a0",
+      "sienge_contract_id": "433", "numero_contrato": "300",
+      "tipos_condicao": "PERMUTA", "valor_venda": "499437.96",
+      "motivo": "venda via permuta (PE). Sem cliente_id, sem corretor_id.",
+      "ref_b": "docs/b7-vendas-sem-prosoluto.md"
+    },
+    {
+      "venda_id": "c8b843f9-7133-4720-8b3e-89517bb83ad2",
+      "sienge_contract_id": "434", "numero_contrato": "301",
+      "tipos_condicao": "PERMUTA", "valor_venda": "494493.06",
+      "motivo": "venda via permuta (PE). Sem cliente_id, sem corretor_id.",
+      "ref_b": "docs/b7-vendas-sem-prosoluto.md"
+    },
+    {
+      "venda_id": "22d30cd4-bbca-47d5-9d73-7008d1b36db9",
+      "sienge_contract_id": "435", "numero_contrato": "302",
+      "tipos_condicao": "PERMUTA", "valor_venda": "509476.67",
+      "motivo": "venda via permuta (PE). Sem cliente_id, sem corretor_id.",
+      "ref_b": "docs/b7-vendas-sem-prosoluto.md"
+    }
+  ],
+  "errors": []
+}

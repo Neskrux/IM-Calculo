@@ -1,0 +1,18 @@
+{
+  "meta": {
+    "geradoEm": "2026-04-27T14:43:00.031Z",
+    "spec_ref": ".claude/rules/sincronizacao-sienge.md",
+    "script": "C1-probe-commissions-sienge",
+    "bill_id": 11,
+    "sienge_contract_id": 75,
+    "venda_referencia": "contrato 75 / sienge_contract_id 75 / RICARDO JOSE GIRARD"
+  },
+  "tentativas": [
+    {
+      "path": "/sales-contracts/75",
+      "status": 200,
+      "elapsedMs": 642,
+      "body_completo": "{\"id\":75,\"companyId\":5,\"internalCompanyId\":5,\"companyName\":\"IM FIGUEIRA GARCIA SPE LTDA\",\"enterpriseId\":2104,\"internalEnterpriseId\":5,\"enterpriseName\":\"FIGUEIRA GARCIA\",\"receivableBillId\":11,\"cancellationPayableBillId\":null,\"number\":\"35\",\"correctionType\":\"Anual\",\"situation\":\"Emitido\",\"discountType\":null,\"cancellationReason\":null,\"discountPercentage\":null,\"value\":390993.15,\"totalSellingValue\":390993.15,\"contractDate\":\"2025-05-22\",\"issueDate\":\"2025-11-13\",\"expectedDeliveryDate\":\"2030-12-01\",\"accountingDate\":\"2025-05-22\",\"keysDeliveredAt\":null,\"cancellationDate\":null,\"totalCancellationAmount\":0.0,\"creationDate\":\"2025-09-10\",\"lastUpdateDate\":\"2025-11-13\",\"financialInstitutionDate\":null,\"financialInstitutionNumber\":\"\",\"proRataIndexer\":null,\"interestPercentage\":null,\"interestType\":null,\"fineRate\":null,\"lateInterestCalculationType\":\"M\",\"dailyLateInterestValue\":null,\"containsRemadeInstallments\":false,\"specialClause\":\"\",\"salesContractCustomers\":[{\"id\":38,\"name\":\"RICARDO JOSÉ GIRARD\",\"main\":true,\"spouse\":false,\"participationPercentage\":100.0}],\"salesContractUnits\":[{\"id\":91,\"main\":true,\"name\":\"902 A\",\"participationPercentage\":100.0}],\"paymentConditions\":[{\"bearerName\":\"Carteira\",\"indexerName\":\"REAL\",\"conditionTypeId\":\"CA\",\"conditionTypeName\":\"CREDITO ASSOCIATIVO\",\"interestType\":\"N\",\"matchMaturities\":\"S\",\"installmentsNumber\":1,\"openInstallmentsNumber\":1,\"bearerId\":1,\"indexerId\":0,\"monthsGracePeriod\":null,\"firstPayment\":\"2030-12-01\",\"baseDate\":\"2025-05-01\",\"baseDateInterest\":null,\"totalValue\":312794.52,\"outstandingBalance\":312794.52,\"interestPercentage\":0.0,\"totalValueInterest\":312794.52,\"amountPaid\":0.0,\"sequenceId\":1,\"orderNumber\":2,\"orderNumberRemadeInstallments\":2,\"status\":\"UNMODIFIED\",\"paidBeforeContractAdditive\":false},{\"bearerName\":\"Carteira\",\"indexerName\":\"REAL\",\"conditionTypeId\":\"PM\",\"conditionTypeName\":\"Parcelas Mensais\",\"interestType\":\"N\",\"matchMaturities\":\"S\",\"installmentsNumber\":60,\"openInstallmentsNumber\":54,\"bearerId\":1,\"indexerId\":0,\"monthsGracePeriod\":null,\"firstPayment\":\"2025-06-10\",\"baseDate\":\"2025-05-01\",\"baseDateInterest\":null,\"totalValue\":78198.63,\"outstandingBalance\":70378.74,\"interestPercentage\":0.0,\"totalValueInterest\":78198.63,\"amountPaid\":7819.89,\"sequenceId\":1,\"orderNumber\":1,\"orderNumberRemadeInstallments\":1,\"status\":\"UNMODIFIED\",\"paidBeforeContractAdditive\":false}],\"linkedCommissions\":null,\"links\":[{\"rel\":\"enterprise\",\"href\":\"https://api.sienge.com.br/imincorporadora/public/api/v1/cost-centers/2104\"}]}"
+    }
+  ]
+}

@@ -137,18 +137,22 @@ const HomeDashboard = ({
     return meses
   }, [vendas])
 
-  // Calcular distribuição de comissões por tipo de corretor
+  // Distribuição de comissões por tipo de corretor — soma viva de pagamentos_prosoluto
+  // (ver .claude/rules/visualizacao-totais.md). vendas.comissao_total esta stale em
+  // 284/319 vendas, soma absoluta de erro R$ 7.2M.
   const distribuicaoComissoes = useMemo(() => {
-    const externo = vendas
-      .filter(v => v.tipo_corretor === 'externo')
-      .reduce((acc, v) => acc + (parseFloat(v.comissao_total) || 0), 0)
-    
-    const interno = vendas
-      .filter(v => v.tipo_corretor === 'interno')
-      .reduce((acc, v) => acc + (parseFloat(v.comissao_total) || 0), 0)
-    
+    const tipoPorVenda = new Map(vendas.map(v => [v.id, v.tipo_corretor]))
+    let externo = 0
+    let interno = 0
+    for (const p of pagamentos) {
+      const tipo = tipoPorVenda.get(p.venda_id)
+      const valor = parseFloat(p.comissao_gerada) || 0
+      if (tipo === 'externo') externo += valor
+      else if (tipo === 'interno') interno += valor
+    }
+
     const total = externo + interno
-    
+
     if (total === 0) {
       return [
         { tipo: 'Corretor Externo', valor: 0, cor: '#4ade80' },
@@ -157,18 +161,18 @@ const HomeDashboard = ({
     }
 
     return [
-      { 
-        tipo: 'Corretor Externo', 
-        valor: Math.round((externo / total) * 100), 
-        cor: '#4ade80' 
+      {
+        tipo: 'Corretor Externo',
+        valor: Math.round((externo / total) * 100),
+        cor: '#4ade80'
       },
-      { 
-        tipo: 'Corretor Interno', 
-        valor: Math.round((interno / total) * 100), 
-        cor: '#c9a962' 
+      {
+        tipo: 'Corretor Interno',
+        valor: Math.round((interno / total) * 100),
+        cor: '#c9a962'
       }
     ]
-  }, [vendas])
+  }, [vendas, pagamentos])
 
   // Calcular top corretores
   const topCorretores = useMemo(() => {

@@ -14,6 +14,11 @@ Regras de negócio críticas que **SEMPRE** devem ser respeitadas ao alterar có
 
 @.claude/rules/sincronizacao-sienge.md
 
+## Regras de visualização e processo (carregadas automaticamente)
+
+@.claude/rules/visualizacao-totais.md
+@.claude/rules/rodadas-b.md
+
 ---
 
 ## Princípios gerais
@@ -48,3 +53,4 @@ Regras de negócio críticas que **SEMPRE** devem ser respeitadas ao alterar có
 - [docs/p3-vendas-divergentes-decisao.md](docs/p3-vendas-divergentes-decisao.md) — 6 vendas divergentes aguardando decisão de negócio (causa: mudança de `tipo_corretor` com regeneração de grade)
 - [migrations/018_afrouxar_snapshot_em_pago.sql](migrations/018_afrouxar_snapshot_em_pago.sql) — libera snapshots metadados em `status=pago` (trigger 017 afrouxado)
 - [migrations/020_liberar_data_pagamento_sienge.sql](migrations/020_liberar_data_pagamento_sienge.sql) — libera `data_pagamento` em `status=pago` pra sync corrigir drift vs Sienge (2026-04-23)
+- [migrations/021_corretor_cliente_id_origem.sql](migrations/021_corretor_cliente_id_origem.sql) — adiciona `corretor_id_origem` e `cliente_id_origem` em `vendas` pra proteger correções manuais contra sync (2026-04-27)

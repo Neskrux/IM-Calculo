@@ -1119,7 +1119,8 @@ const AdminDashboard = () => {
             ...venda,
             id: venda.id,
             valor_venda: venda.valor_venda,
-            comissao_total: venda.comissao_total,
+            // comissao_total: snapshot stale em vendas (ver .claude/rules/visualizacao-totais.md).
+            // Quem precisa do total deriva de pagamentos_prosoluto.
             tipo_corretor: venda.tipo_corretor,
             empreendimento_id: venda.empreendimento_id,
             corretor_id: venda.corretor_id,
@@ -4102,15 +4103,29 @@ const AdminDashboard = () => {
       if (listaVendasComPagamentos.length > 0) {
         dadosFiltrados = [...listaVendasComPagamentos]
       } else if (vendas.length > 0) {
-        dadosFiltrados = vendas.map(venda => ({
-          venda_id: venda.id,
-          venda: venda,
-          pagamentos: [],
-          totalValor: parseFloat(venda.valor_pro_soluto) || parseFloat(venda.valor_venda) || 0,
-          totalComissao: parseFloat(venda.comissao_total) || 0,
-          totalPago: venda.status === 'pago' ? (parseFloat(venda.comissao_total) || 0) : 0,
-          totalPendente: venda.status !== 'pago' ? (parseFloat(venda.comissao_total) || 0) : 0
-        }))
+        // Fallback quando listaVendasComPagamentos ainda nao carregou: deriva
+        // totais de pagamentos_prosoluto (ver .claude/rules/visualizacao-totais.md).
+        // Antes lia venda.comissao_total (snapshot stale em 89% das vendas).
+        const pagsPorVenda = pagamentos.reduce((acc, p) => {
+          const arr = acc.get(p.venda_id) || []
+          arr.push(p)
+          acc.set(p.venda_id, arr)
+          return acc
+        }, new Map())
+        dadosFiltrados = vendas.map(venda => {
+          const pags = pagsPorVenda.get(venda.id) || []
+          const totalComissao = pags.reduce((acc, p) => acc + (parseFloat(p.comissao_gerada) || 0), 0)
+          const totalPago = pags.filter(p => p.status === 'pago').reduce((acc, p) => acc + (parseFloat(p.comissao_gerada) || 0), 0)
+          return {
+            venda_id: venda.id,
+            venda: venda,
+            pagamentos: pags,
+            totalValor: parseFloat(venda.valor_pro_soluto) || parseFloat(venda.valor_venda) || 0,
+            totalComissao,
+            totalPago,
+            totalPendente: totalComissao - totalPago
+          }
+        })
       }
       
       // Aplicar filtros
@@ -4741,14 +4756,6 @@ const AdminDashboard = () => {
   const handleRemoveContrato = () => {
     setContratoFile(null)
     setVendaForm({ ...vendaForm, contrato_url: '', contrato_nome: '' })
-  }
-
-  const getTotalVendas = () => {
-    return vendas.reduce((acc, v) => acc + v.valor_venda, 0)
-  }
-
-  const getTotalComissoes = () => {
-    return vendas.reduce((acc, v) => acc + v.comissao_total, 0)
   }
 
   const filteredVendas = vendas.filter(venda => {

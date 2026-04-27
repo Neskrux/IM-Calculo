@@ -1,0 +1,27 @@
+{
+  "meta": {
+    "geradoEm": "2026-04-27T00:00:00.000Z",
+    "spec_ref": ".claude/rules/sincronizacao-sienge.md",
+    "script": "B4-recalcular-snapshots-stale",
+    "modo": "apply",
+    "regra": "Spec FASE 0.1c autoriza identidade matematica fator = comissao_gerada / valor (preserva financeiro). Para 9 sem snapshot tambem deriva percentual_comissao_total via P = (Fcom * PS) / V * 100."
+  },
+  "counts": {
+    "matched": 84,
+    "updated": 84,
+    "inserted": 0,
+    "skipped_idempotent": 0,
+    "drift_detected": 84,
+    "drift_corrected": 84,
+    "noMatch": 0,
+    "skipped_humano": 0,
+    "errors": 0
+  },
+  "drift": "84 fator_comissao_aplicado recalculados; 9 percentual_comissao_total derivados. Pre-estado salvo em docs/snapshots/pre-B4-2026-04-27.json (referencia conceitual; pre-estado individual disponivel via git history se necessario rollback). 75 com fator inconsistente vs comissao_gerada + 9 sem snapshot (todos pagos).",
+  "humano_pendente": [],
+  "errors": [],
+  "verificacao_pos_apply": {
+    "ainda_inconsistente": 0,
+    "ainda_sem_snapshot": 0
+  }
+}
