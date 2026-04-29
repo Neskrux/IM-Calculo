@@ -1,10 +1,10 @@
 {
   "meta": {
-    "geradoEm": "2026-04-23T20:52:25.598Z",
+    "geradoEm": "2026-04-24T20:01:58.649Z",
     "input": "docs/backfill-drift-data-pagamento.json",
-    "inputRows": 40,
+    "inputRows": 38,
     "uniqueIds": 36,
-    "datasDistintas": 29
+    "datasDistintas": 27
   },
   "counts": {
     "updated": 36,

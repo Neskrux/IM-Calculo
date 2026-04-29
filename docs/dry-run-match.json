@@ -1,6 +1,6 @@
 {
   "meta": {
-    "geradoEm": "2026-04-23T20:52:36.791Z",
+    "geradoEm": "2026-04-24T20:01:39.121Z",
     "totalStage": 3677,
     "totalVendasComBillId": 299,
     "totalPagamentos": 16903
@@ -120,9 +120,6 @@
         "tipoStageEsperado": "sinal",
         "tiposEncontrados": [
           "parcela_entrada",
-          "balao",
-          "balao",
-          "balao",
           "balao"
         ]
       }
@@ -235,18 +232,18 @@
       {
         "billId": 146,
         "vendaId": "53d0c5f5-aa8e-4804-9c64-fef6ecdf04fc",
-        "numeroParcela": 1,
-        "dataLocal": "2025-11-24",
-        "dataSienge": "2025-07-28",
-        "dDias": 119
-      },
-      {
-        "billId": 146,
-        "vendaId": "53d0c5f5-aa8e-4804-9c64-fef6ecdf04fc",
         "numeroParcela": 4,
         "dataLocal": "2026-02-23",
         "dataSienge": "2025-11-06",
         "dDias": 109
+      },
+      {
+        "billId": 146,
+        "vendaId": "53d0c5f5-aa8e-4804-9c64-fef6ecdf04fc",
+        "numeroParcela": 1,
+        "dataLocal": "2025-07-28",
+        "dataSienge": "2025-11-24",
+        "dDias": 119
       },
       {
         "billId": 146,
