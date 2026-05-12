@@ -4759,14 +4759,18 @@ const AdminDashboard = () => {
   }
 
   const filteredVendas = vendas.filter(venda => {
-    // Busca por texto
-    const matchSearch = !searchTerm || 
-      venda.corretor?.nome?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      venda.descricao?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      venda.nome_cliente?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      venda.unidade?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      venda.bloco?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      venda.empreendimento?.nome?.toLowerCase().includes(searchTerm.toLowerCase())
+    const q = searchTerm?.toLowerCase() || ''
+    // Busca por texto (cliente: nome na venda OU cadastro clientes — mesmo critério da coluna CLIENTE na tabela)
+    const matchSearch = !searchTerm ||
+      venda.corretor?.nome?.toLowerCase().includes(q) ||
+      venda.descricao?.toLowerCase().includes(q) ||
+      venda.nome_cliente?.toLowerCase().includes(q) ||
+      venda.cliente?.nome?.toLowerCase().includes(q) ||
+      String(venda.cliente?.cpf || '').toLowerCase().includes(q) ||
+      String(venda.cliente?.cnpj || '').toLowerCase().includes(q) ||
+      venda.unidade?.toLowerCase().includes(q) ||
+      venda.bloco?.toLowerCase().includes(q) ||
+      venda.empreendimento?.nome?.toLowerCase().includes(q)
     
     // Filtro por tipo de corretor
     const matchTipo = filterTipo === 'todos' || venda.tipo_corretor === filterTipo
