@@ -1,0 +1,758 @@
+{
+  "meta": {
+    "geradoEm": "2026-04-27T00:00:00.000Z",
+    "total": 34,
+    "motivos": {
+      "sem_prosoluto_legitimo": 11,
+      "venda_duplicada_com_pago": 1,
+      "datas_duplicadas_no_cronograma": 1,
+      "baloes_sem_data_prevista": 8,
+      "sem_corretor_sienge_indisponivel": 13
+    },
+    "regra": "Casos delicados que automacao nao pode decidir sem confirmacao humana (gestora). Cada grupo tem motivo proprio + acao_sugerida + opcoes. Spec: ver .claude/rules/sincronizacao-sienge.md + .claude/rules/rodadas-b.md."
+  },
+  "casos": [
+    {
+      "grupo": "sem_prosoluto_legitimo",
+      "venda_id": "92b9178d-4ea7-4a3e-9549-c9ac882248b0",
+      "sienge_contract_id": "393",
+      "numero_contrato": "275",
+      "unidade": null,
+      "cliente": "GONCALVES DE MENDONCA PARTICIPACOES LTDA",
+      "cliente_cpf": null,
+      "cliente_telefone": null,
+      "corretor": "Watson Slonski",
+      "corretor_telefone": null,
+      "valor_venda": "500000.00",
+      "valor_pro_soluto": "0.00",
+      "tipos_condicao_sienge": "PARCELA UNICA",
+      "motivo_delicado": "venda a vista (PU), sem pro-soluto. Confirmado via payload Sienge.",
+      "acao_sugerida": "marcar_como_quitada_a_vista",
+      "opcoes": [
+        { "id": "1", "label": "Confirma: venda a vista quitada, sem cronograma" },
+        { "id": "2", "label": "Investigar: pode ter cronograma adicional fora do payload" }
+      ]
+    },
+    {
+      "grupo": "sem_prosoluto_legitimo",
+      "venda_id": "4ddf58a4-be14-46df-8be4-ea5fd59cd10b",
+      "sienge_contract_id": "394",
+      "numero_contrato": "276",
+      "unidade": null,
+      "cliente": "GONCALVES DE MENDONCA PARTICIPACOES LTDA",
+      "cliente_cpf": null,
+      "cliente_telefone": null,
+      "corretor": "Watson Slonski",
+      "corretor_telefone": null,
+      "valor_venda": "500000.00",
+      "valor_pro_soluto": "0.00",
+      "tipos_condicao_sienge": "PARCELAS ANUAIS",
+      "motivo_delicado": "venda em parcelas anuais (PA), sem pro-soluto mensal.",
+      "acao_sugerida": "confirmar_cronograma_anual",
+      "opcoes": [
+        { "id": "1", "label": "Confirma cronograma anual, sem ajustes" },
+        { "id": "2", "label": "Detalhar parcelas anuais no banco" }
+      ]
+    },
+    {
+      "grupo": "sem_prosoluto_legitimo",
+      "venda_id": "eb70a072-a784-4ef5-9322-1a093f5e4b4a",
+      "sienge_contract_id": "395",
+      "numero_contrato": "277",
+      "unidade": null,
+      "cliente": "GONCALVES DE MENDONCA PARTICIPACOES LTDA",
+      "cliente_cpf": null,
+      "cliente_telefone": null,
+      "corretor": "Watson Slonski",
+      "corretor_telefone": null,
+      "valor_venda": "500000.00",
+      "valor_pro_soluto": "0.00",
+      "tipos_condicao_sienge": "PARCELA UNICA",
+      "motivo_delicado": "venda a vista (PU), sem pro-soluto.",
+      "acao_sugerida": "marcar_como_quitada_a_vista",
+      "opcoes": [
+        { "id": "1", "label": "Confirma: venda a vista quitada" },
+        { "id": "2", "label": "Investigar" }
+      ]
+    },
+    {
+      "grupo": "sem_prosoluto_legitimo",
+      "venda_id": "6f3cde65-a816-4562-8739-ba85dbab6fe3",
+      "sienge_contract_id": "396",
+      "numero_contrato": "278",
+      "unidade": null,
+      "cliente": "GONCALVES DE MENDONCA PARTICIPACOES LTDA",
+      "cliente_cpf": null,
+      "cliente_telefone": null,
+      "corretor": "Watson Slonski",
+      "corretor_telefone": null,
+      "valor_venda": "500000.00",
+      "valor_pro_soluto": "0.00",
+      "tipos_condicao_sienge": "PARCELAS ANUAIS",
+      "motivo_delicado": "venda em parcelas anuais (PA).",
+      "acao_sugerida": "confirmar_cronograma_anual",
+      "opcoes": [
+        { "id": "1", "label": "Confirma cronograma anual" },
+        { "id": "2", "label": "Detalhar parcelas no banco" }
+      ]
+    },
+    {
+      "grupo": "sem_prosoluto_legitimo",
+      "venda_id": "593aa36f-ba3e-483a-80e7-f2765d39d770",
+      "sienge_contract_id": "397",
+      "numero_contrato": "279",
+      "unidade": null,
+      "cliente": "GONCALVES DE MENDONCA PARTICIPACOES LTDA",
+      "cliente_cpf": null,
+      "cliente_telefone": null,
+      "corretor": "Watson Slonski",
+      "corretor_telefone": null,
+      "valor_venda": "500000.00",
+      "valor_pro_soluto": "0.00",
+      "tipos_condicao_sienge": "PARCELA UNICA",
+      "motivo_delicado": "venda a vista (PU).",
+      "acao_sugerida": "marcar_como_quitada_a_vista",
+      "opcoes": [
+        { "id": "1", "label": "Confirma quitada" },
+        { "id": "2", "label": "Investigar" }
+      ]
+    },
+    {
+      "grupo": "sem_prosoluto_legitimo",
+      "venda_id": "92af4a70-c01f-42eb-8217-1a532007eb6c",
+      "sienge_contract_id": "398",
+      "numero_contrato": "280",
+      "unidade": null,
+      "cliente": "GONCALVES DE MENDONCA PARTICIPACOES LTDA",
+      "cliente_cpf": null,
+      "cliente_telefone": null,
+      "corretor": "Watson Slonski",
+      "corretor_telefone": null,
+      "valor_venda": "500000.00",
+      "valor_pro_soluto": "0.00",
+      "tipos_condicao_sienge": "PARCELA UNICA",
+      "motivo_delicado": "venda a vista (PU).",
+      "acao_sugerida": "marcar_como_quitada_a_vista",
+      "opcoes": [
+        { "id": "1", "label": "Confirma quitada" },
+        { "id": "2", "label": "Investigar" }
+      ]
+    },
+    {
+      "grupo": "sem_prosoluto_legitimo",
+      "venda_id": "731a137f-8e49-40d6-905b-5d615c41499f",
+      "sienge_contract_id": "399",
+      "numero_contrato": "281",
+      "unidade": null,
+      "cliente": "GONCALVES DE MENDONCA PARTICIPACOES LTDA",
+      "cliente_cpf": null,
+      "cliente_telefone": null,
+      "corretor": "Watson Slonski",
+      "corretor_telefone": null,
+      "valor_venda": "500000.00",
+      "valor_pro_soluto": "0.00",
+      "tipos_condicao_sienge": "PARCELA UNICA",
+      "motivo_delicado": "venda a vista (PU).",
+      "acao_sugerida": "marcar_como_quitada_a_vista",
+      "opcoes": [
+        { "id": "1", "label": "Confirma quitada" },
+        { "id": "2", "label": "Investigar" }
+      ]
+    },
+    {
+      "grupo": "sem_prosoluto_legitimo",
+      "venda_id": "197353d2-55c8-48d6-92cf-4080e7554644",
+      "sienge_contract_id": "400",
+      "numero_contrato": "282",
+      "unidade": null,
+      "cliente": "GONCALVES DE MENDONCA PARTICIPACOES LTDA",
+      "cliente_cpf": null,
+      "cliente_telefone": null,
+      "corretor": "Watson Slonski",
+      "corretor_telefone": null,
+      "valor_venda": "500000.00",
+      "valor_pro_soluto": "0.00",
+      "tipos_condicao_sienge": "PARCELA UNICA",
+      "motivo_delicado": "venda a vista (PU).",
+      "acao_sugerida": "marcar_como_quitada_a_vista",
+      "opcoes": [
+        { "id": "1", "label": "Confirma quitada" },
+        { "id": "2", "label": "Investigar" }
+      ]
+    },
+    {
+      "grupo": "sem_prosoluto_legitimo",
+      "venda_id": "63229ab7-b4e1-4484-9c9a-ab08cd3832a0",
+      "sienge_contract_id": "433",
+      "numero_contrato": "300",
+      "unidade": null,
+      "cliente": "FERRETTI CONSULTORIA E INVESTIMENTOS LTDA",
+      "cliente_cpf": null,
+      "cliente_telefone": null,
+      "corretor": "(sem corretor)",
+      "corretor_telefone": null,
+      "valor_venda": "499437.96",
+      "valor_pro_soluto": "0.00",
+      "tipos_condicao_sienge": "PERMUTA",
+      "motivo_delicado": "venda via permuta (PE). Sem corretor vinculado - pode ser permuta interna.",
+      "acao_sugerida": "confirmar_permuta_sem_corretor",
+      "opcoes": [
+        { "id": "1", "label": "Permuta interna, mantem sem corretor" },
+        { "id": "2", "label": "Falta cadastro de corretor, vou complementar" }
+      ]
+    },
+    {
+      "grupo": "sem_prosoluto_legitimo",
+      "venda_id": "c8b843f9-7133-4720-8b3e-89517bb83ad2",
+      "sienge_contract_id": "434",
+      "numero_contrato": "301",
+      "unidade": null,
+      "cliente": "FERRETTI CONSULTORIA E INVESTIMENTOS LTDA",
+      "cliente_cpf": null,
+      "cliente_telefone": null,
+      "corretor": "(sem corretor)",
+      "corretor_telefone": null,
+      "valor_venda": "494493.06",
+      "valor_pro_soluto": "0.00",
+      "tipos_condicao_sienge": "PERMUTA",
+      "motivo_delicado": "venda via permuta (PE). Sem corretor vinculado.",
+      "acao_sugerida": "confirmar_permuta_sem_corretor",
+      "opcoes": [
+        { "id": "1", "label": "Permuta interna, mantem sem corretor" },
+        { "id": "2", "label": "Falta cadastro, complementar" }
+      ]
+    },
+    {
+      "grupo": "sem_prosoluto_legitimo",
+      "venda_id": "22d30cd4-bbca-47d5-9d73-7008d1b36db9",
+      "sienge_contract_id": "435",
+      "numero_contrato": "302",
+      "unidade": null,
+      "cliente": "FERRETTI CONSULTORIA E INVESTIMENTOS LTDA",
+      "cliente_cpf": null,
+      "cliente_telefone": null,
+      "corretor": "(sem corretor)",
+      "corretor_telefone": null,
+      "valor_venda": "509476.67",
+      "valor_pro_soluto": "0.00",
+      "tipos_condicao_sienge": "PERMUTA",
+      "motivo_delicado": "venda via permuta (PE). Sem corretor vinculado.",
+      "acao_sugerida": "confirmar_permuta_sem_corretor",
+      "opcoes": [
+        { "id": "1", "label": "Permuta interna, mantem sem corretor" },
+        { "id": "2", "label": "Falta cadastro, complementar" }
+      ]
+    },
+
+    {
+      "grupo": "venda_duplicada_com_pago",
+      "venda_id_original": "ac644733-d731-44e5-8573-99b9231e90a8",
+      "venda_id_duplicata_suspeita": "9d279176-e4de-4e3f-8ec2-9aa4b6c7f62a",
+      "sienge_contract_id": null,
+      "numero_contrato": null,
+      "unidade": "1804 A",
+      "cliente": "GIOVANE DOS SANTOS",
+      "cliente_cpf": "03063230952",
+      "cliente_telefone": "(47)99180-0266",
+      "corretor_original": "MATHEUS DE S. PIRES NEGOCIOS IMOBILIARIOS",
+      "corretor_duplicata": "jonas beton (jonas@teste.com - usuario de teste)",
+      "valor_venda": "378123.86",
+      "valor_pro_soluto": "77031.40",
+      "evidencia_duplicata": "Mesmo cliente, mesma unidade, mesmo pagamento de R$ 1.267,19 em 2026-02-20 (parcela #9). Duplicata vinculada a usuario de teste.",
+      "pagamento_fantasma_id": "c779389c-20fc-4dd8-a733-36c78b0a339b",
+      "motivo_delicado": "Spec proibe excluido=TRUE em venda com pagamento 'pago' (trigger 017). Operador precisa estornar baixa antes de excluir.",
+      "acao_sugerida": "estornar_baixa_e_excluir",
+      "opcoes": [
+        { "id": "1", "label": "Confirma duplicata: Excluir Baixa do pagamento fantasma + marcar venda 9d279176 como excluido=true" },
+        { "id": "2", "label": "Os dois pagamentos sao reais (cliente pagou em duplicidade)" },
+        { "id": "3", "label": "Investigar manualmente no Sienge antes" }
+      ]
+    },
+
+    {
+      "grupo": "datas_duplicadas_no_cronograma",
+      "venda_id": "c6100456-03b1-44a9-8f1b-c47dd16997ad",
+      "sienge_contract_id": "230",
+      "numero_contrato": "138",
+      "unidade": "906 C",
+      "cliente": "JOAO PEDRO MARASCA",
+      "cliente_cpf": "09762700916",
+      "cliente_telefone": "(47) 99670-3160",
+      "corretor": null,
+      "corretor_telefone": null,
+      "valor_venda": null,
+      "valor_pro_soluto": "78199.66",
+      "parcelas_duplicadas": [
+        { "id": "34405cb2-584b-4ef7-bf35-553c57040693", "numero_parcela": 21, "data_prevista": "2027-04-10", "duplica_com_parcela": 13 },
+        { "id": "39b876c2-1c5b-4477-9dba-2c339c7ab6a8", "numero_parcela": 22, "data_prevista": "2027-05-10", "duplica_com_parcela": 14 },
+        { "id": "a65b6545-d557-47ca-b133-e80d3a32123a", "numero_parcela": 23, "data_prevista": "2027-06-10", "duplica_com_parcela": 15 },
+        { "id": "a060c342-70a2-406a-a8ea-318f509e00cf", "numero_parcela": 24, "data_prevista": "2027-07-10", "duplica_com_parcela": 16 },
+        { "id": "84859ca5-45ea-412d-94c3-224a6cdf11f9", "numero_parcela": 25, "data_prevista": "2027-08-10", "duplica_com_parcela": 17 },
+        { "id": "48303122-cd78-4960-b4ce-b9c0117a7fe3", "numero_parcela": 26, "data_prevista": "2027-09-10", "duplica_com_parcela": 18 },
+        { "id": "233d1379-e8cb-4127-9e5a-913013daf4b2", "numero_parcela": 27, "data_prevista": "2027-10-10", "duplica_com_parcela": 19 },
+        { "id": "16ae0cf9-09a2-452f-9ee5-75793ae3d8a5", "numero_parcela": 28, "data_prevista": "2027-11-10", "duplica_com_parcela": 20 }
+      ],
+      "motivo_delicado": "8 parcelas tem data_prevista identica a outras (gerador antigo bugou sequencia). 50 ou 58 parcelas reais? sem cronograma Sienge live nao da pra decidir.",
+      "acao_sugerida": "consultar_sienge_live",
+      "opcoes": [
+        { "id": "1", "label": "Hipotese A: cancelar 21-28 (sao lixo). Pro-soluto cai pra R$ 67.413,50 (50 parcelas)" },
+        { "id": "2", "label": "Hipotese B: deslocar 21-28 pra jun/30..jan/31. Pro-soluto fica R$ 78.199,66 (58 parcelas)" },
+        { "id": "3", "label": "Investigar via /accounts-receivable/receivable-bills/235/installments antes de decidir" }
+      ]
+    },
+
+    {
+      "grupo": "baloes_sem_data_prevista",
+      "subtipo": "fantasma_sienge",
+      "venda_id": "6a33ac0b-00af-4fc3-8539-7529998a94b2",
+      "sienge_contract_id": "299",
+      "numero_contrato": "207",
+      "unidade": "1305 D",
+      "cliente": "LURDES COLMAN LOPES",
+      "cliente_cpf": "51348039191",
+      "cliente_telefone": "(47)99211-8110",
+      "corretor": "Luiz Corazza",
+      "corretor_telefone": "4732483369",
+      "valor_venda": "457103.88",
+      "valor_pro_soluto": "91420.75",
+      "baloes": [
+        { "id": "bf618af9-4be2-4e07-b51a-d7e3e950104a", "numero_parcela": 2, "valor": "4364.15" },
+        { "id": "2dcadc79-e50f-4f4b-b00b-5ebb31244e1e", "numero_parcela": 3, "valor": "4364.15" },
+        { "id": "410239f1-3442-41ef-8396-72fe2e72baf1", "numero_parcela": 4, "valor": "4364.15" },
+        { "id": "a49c733e-b51c-49e1-9630-d8e2bf876aaa", "numero_parcela": 5, "valor": "4364.15" }
+      ],
+      "soma_baloes": "17456.60",
+      "motivo_delicado": "Banco tem baloes pendentes mas payload sales-contracts do Sienge nao tem conditionTypeId='BL'. Provavelmente baloes fantasma do gerador antigo.",
+      "acao_sugerida": "cancelar_baloes",
+      "opcoes": [
+        { "id": "1", "label": "Cancelar baloes (status='cancelado')" },
+        { "id": "2", "label": "Aguardar proxima sincronizacao Sienge antes de cancelar" },
+        { "id": "3", "label": "Investigar manualmente no Sienge" }
+      ]
+    },
+    {
+      "grupo": "baloes_sem_data_prevista",
+      "subtipo": "fantasma_sienge",
+      "venda_id": "e3bd5695-27ce-436b-a578-ce1bfac3d7aa",
+      "sienge_contract_id": "340",
+      "numero_contrato": "243",
+      "unidade": "905 B",
+      "cliente": "CAROLINE SARAIVA DA SILVEIRA RODRIGUES",
+      "cliente_cpf": "06023755925",
+      "cliente_telefone": "(47)99727-9147",
+      "corretor": "MATHEUS DE S. PIRES NEGOCIOS IMOBILIARIOS",
+      "corretor_telefone": "1192003475",
+      "valor_venda": "345733.70",
+      "valor_pro_soluto": "69120.00",
+      "baloes": [
+        { "id": "a1cf5d93-b91f-4b94-a72a-739d066d8108", "numero_parcela": 2, "valor": "3624.00" },
+        { "id": "d7e125e2-b234-4bb2-ad28-27ed73ed6da8", "numero_parcela": 3, "valor": "3624.00" },
+        { "id": "0571ad14-c556-4212-bea0-f21abb75e694", "numero_parcela": 4, "valor": "3624.00" }
+      ],
+      "soma_baloes": "10872.00",
+      "motivo_delicado": "Banco tem baloes pendentes mas payload sales-contracts do Sienge nao tem conditionTypeId='BL'.",
+      "acao_sugerida": "cancelar_baloes",
+      "opcoes": [
+        { "id": "1", "label": "Cancelar baloes" },
+        { "id": "2", "label": "Aguardar sincronizacao" },
+        { "id": "3", "label": "Investigar Sienge" }
+      ]
+    },
+    {
+      "grupo": "baloes_sem_data_prevista",
+      "subtipo": "venda_local_sem_sienge",
+      "venda_id": "22833c5c-759c-483e-b266-d680f2f8416d",
+      "sienge_contract_id": null,
+      "numero_contrato": null,
+      "unidade": "B 401",
+      "cliente": "RAYLTON GOMES DA COSTA",
+      "cliente_cpf": "113.127.329-03",
+      "cliente_telefone": "(47) 99976-9642",
+      "corretor": "DENIS ALEXANDRE MOREIRA MAGNI PINTO",
+      "corretor_telefone": "4733114400",
+      "valor_venda": "310200.39",
+      "valor_pro_soluto": "62039.70",
+      "baloes": [
+        { "id": "05208c5d-3a0e-4797-bc9b-b0ee83d667dc", "numero_parcela": 1, "valor": "4000.00" },
+        { "id": "0a6eeb85-eb95-4dc5-9158-50b550418ec6", "numero_parcela": 2, "valor": "4000.00" },
+        { "id": "957b17b5-0eef-43f1-affa-b3295412b447", "numero_parcela": 3, "valor": "4000.00" },
+        { "id": "d77c75b1-e3d5-4263-be9c-1b7c89e8a240", "numero_parcela": 4, "valor": "4000.00" },
+        { "id": "859a2dca-3b33-4ec6-b7d3-d56fd34a9d1f", "numero_parcela": 5, "valor": "4000.00" }
+      ],
+      "soma_baloes": "20000.00",
+      "motivo_delicado": "Venda local (cadastro manual). Sem fonte pra inferir data_prevista dos baloes.",
+      "acao_sugerida": "preencher_datas_manualmente",
+      "opcoes": [
+        { "id": "1", "label": "Vou preencher datas manualmente (planilha venda_id, numero_parcela, data_prevista)" },
+        { "id": "2", "label": "Cancelar baloes (eram lixo de cadastro)" }
+      ]
+    },
+    {
+      "grupo": "baloes_sem_data_prevista",
+      "subtipo": "venda_local_sem_sienge",
+      "venda_id": "e1220449-7207-4d62-b558-57004ae9cee6",
+      "sienge_contract_id": null,
+      "numero_contrato": null,
+      "unidade": "A 1305",
+      "cliente": "ALISSON RODRIGUES DO CARMO",
+      "cliente_cpf": "039.401.881-82",
+      "cliente_telefone": "(66) 99618-1743",
+      "corretor": "MATEUS GABRIEL DE OLIVEIRA",
+      "corretor_telefone": "47999033809",
+      "valor_venda": "457103.88",
+      "valor_pro_soluto": "93143.41",
+      "baloes": [
+        { "id": "9829bc4a-e3ce-4ce2-9880-dfafd7f8f5f1", "numero_parcela": 1, "valor": "11375.00" }
+      ],
+      "soma_baloes": "11375.00",
+      "motivo_delicado": "Venda local. Sem fonte pra data.",
+      "acao_sugerida": "preencher_datas_manualmente",
+      "opcoes": [
+        { "id": "1", "label": "Preencher data manualmente" },
+        { "id": "2", "label": "Cancelar balao" }
+      ]
+    },
+    {
+      "grupo": "baloes_sem_data_prevista",
+      "subtipo": "venda_local_sem_sienge",
+      "venda_id": "bd0483d9-e3a2-4c30-a010-d4eb93769972",
+      "sienge_contract_id": null,
+      "numero_contrato": null,
+      "unidade": "D 1307",
+      "cliente": "Felix Roman Munieweg",
+      "cliente_cpf": "030.678.040-23",
+      "cliente_telefone": "(51) 99927-4568",
+      "corretor": "Rodrigo Fernando Viapiana Parada",
+      "corretor_telefone": "4732483369",
+      "valor_venda": "453281.51",
+      "valor_pro_soluto": "90656.04",
+      "baloes": [
+        { "id": "2a2f7f68-9399-461b-b32c-8f6c5fcb68c5", "numero_parcela": 1, "valor": "5000.00" },
+        { "id": "2d6a403d-2759-48cc-884c-6adae137bca0", "numero_parcela": 2, "valor": "5000.00" },
+        { "id": "44afea7d-dc35-426d-a5d4-ee1fa9566acb", "numero_parcela": 3, "valor": "5000.00" },
+        { "id": "c3ad7412-d78f-4d8c-92d7-1cc590f68032", "numero_parcela": 4, "valor": "5000.00" }
+      ],
+      "soma_baloes": "20000.00",
+      "motivo_delicado": "Venda local. Sem fonte pra datas.",
+      "acao_sugerida": "preencher_datas_manualmente",
+      "opcoes": [
+        { "id": "1", "label": "Preencher datas manualmente" },
+        { "id": "2", "label": "Cancelar baloes" }
+      ]
+    },
+    {
+      "grupo": "baloes_sem_data_prevista",
+      "subtipo": "venda_local_teste",
+      "venda_id": "2026ca9d-1c30-49da-bfe6-b4024462477c",
+      "sienge_contract_id": null,
+      "numero_contrato": null,
+      "unidade": "K 002",
+      "cliente": "jonas cliente",
+      "cliente_cpf": "196.849.841-98",
+      "cliente_telefone": "(41) 98877-5587",
+      "corretor": "jonas beton",
+      "corretor_telefone": "(41) 99999-9991",
+      "valor_venda": "100000.00",
+      "valor_pro_soluto": "12500.00",
+      "baloes": [
+        { "id": "aecf87b3-ea04-4bf4-91c3-20a475a9bb38", "numero_parcela": 1, "valor": "300.00" },
+        { "id": "37d40b0c-0e80-44c0-880e-0180999d78ad", "numero_parcela": 2, "valor": "300.00" },
+        { "id": "fe1ab48b-93bd-4ad9-b6cb-a2d2662a9c1f", "numero_parcela": 3, "valor": "300.00" },
+        { "id": "7873e28f-de0b-487d-bb66-ee8a876c7cde", "numero_parcela": 4, "valor": "300.00" },
+        { "id": "d0c81069-bfe4-4040-bdd3-d2ec594c7949", "numero_parcela": 5, "valor": "300.00" }
+      ],
+      "soma_baloes": "1500.00",
+      "motivo_delicado": "Venda de teste (jonas beton, jonas@teste.com). Pode ser cancelada com seguranca.",
+      "acao_sugerida": "cancelar_baloes_e_venda",
+      "opcoes": [
+        { "id": "1", "label": "Cancelar baloes + marcar venda como excluida (e teste)" },
+        { "id": "2", "label": "Manter por enquanto" }
+      ]
+    },
+    {
+      "grupo": "baloes_sem_data_prevista",
+      "subtipo": "venda_local_sem_sienge",
+      "venda_id": "9b6d5bf3-db8f-4c8b-80f4-fc84461af081",
+      "sienge_contract_id": null,
+      "numero_contrato": null,
+      "unidade": "C 1603",
+      "cliente": "HELOIZA MARCHINI SANCHES",
+      "cliente_cpf": "447.476.588-58",
+      "cliente_telefone": "(47) 99126-6529",
+      "corretor": "Luiz Corazza",
+      "corretor_telefone": "4732483369",
+      "valor_venda": "467016.40",
+      "valor_pro_soluto": "123403.23",
+      "baloes": [
+        { "id": "986a48bf-b675-43fd-a490-57f9948c8eb5", "numero_parcela": 1, "valor": "3000.00" },
+        { "id": "3e4659e2-463d-494c-88ec-3ef290a1271c", "numero_parcela": 2, "valor": "3000.00" },
+        { "id": "c974fab2-f2f9-40ee-b231-51550d4f7463", "numero_parcela": 3, "valor": "3000.00" },
+        { "id": "ea2b201c-263f-4707-b8d2-9e59600c3317", "numero_parcela": 4, "valor": "3000.00" },
+        { "id": "3edaba7c-4ca0-4cc3-86d4-3a54e348ccff", "numero_parcela": 5, "valor": "3000.00" },
+        { "id": "2b27a3d5-8b27-4432-a5bf-b1321f3d9b13", "numero_parcela": 6, "valor": "3000.00" },
+        { "id": "7bb84e71-ddc1-4a71-ab78-641efdf39481", "numero_parcela": 7, "valor": "3000.00" },
+        { "id": "a711bd44-8ea1-4f2b-ba14-06f004eb2d7f", "numero_parcela": 8, "valor": "3000.00" },
+        { "id": "4bbb5bc5-cac1-4789-a1da-d5293d80be9f", "numero_parcela": 9, "valor": "3000.00" },
+        { "id": "597654d8-e65e-47e5-9a73-efc2dcaa8918", "numero_parcela": 10, "valor": "3000.00" },
+        { "id": "6d554d10-9598-4e7f-ab28-4628c746fe5e", "numero_parcela": 11, "valor": "3000.00" },
+        { "id": "f4fd5f9e-9704-4d1c-a441-73264415c7e3", "numero_parcela": 12, "valor": "3000.00" },
+        { "id": "5c69f4a6-2994-4ccf-9e5b-56a51ba4d5fd", "numero_parcela": 13, "valor": "3000.00" },
+        { "id": "8a44feca-d637-4185-be6e-ef09eb9df747", "numero_parcela": 14, "valor": "3000.00" }
+      ],
+      "soma_baloes": "42000.00",
+      "motivo_delicado": "Venda local com 14 baloes (volume alto - revisar quantidade real). Sem fonte pra datas.",
+      "acao_sugerida": "preencher_datas_manualmente",
+      "opcoes": [
+        { "id": "1", "label": "Preencher datas manualmente" },
+        { "id": "2", "label": "Reduzir quantidade de baloes (sao demais?)" },
+        { "id": "3", "label": "Cancelar todos" }
+      ]
+    },
+    {
+      "grupo": "baloes_sem_data_prevista",
+      "subtipo": "venda_local_sem_sienge",
+      "venda_id": "ad2d2d32-096b-4680-9863-464cb33d4a12",
+      "sienge_contract_id": null,
+      "numero_contrato": null,
+      "unidade": "B 603",
+      "cliente": "CAYO KAMENAC RAMOS DA SILVA",
+      "cliente_cpf": "138.953.824-93",
+      "cliente_telefone": "(47) 99648-1110",
+      "corretor": "Alessandro Pereira",
+      "corretor_telefone": "(47) 99648-1110",
+      "valor_venda": "426900.16",
+      "valor_pro_soluto": "196136.89",
+      "baloes": [
+        { "id": "be53c870-a6fa-450b-8ad3-1549741b3b4c", "numero_parcela": 1, "valor": "10000.00" },
+        { "id": "c46712fb-8808-4a89-b653-a3c5d9eca66e", "numero_parcela": 2, "valor": "10000.00" },
+        { "id": "1b53d58b-8945-40de-8d6e-d9b31debba14", "numero_parcela": 3, "valor": "10000.00" },
+        { "id": "6c5f9815-8a3c-4463-b164-fc40d9f0573d", "numero_parcela": 4, "valor": "10000.00" }
+      ],
+      "soma_baloes": "40000.00",
+      "motivo_delicado": "Venda local. Sem fonte pra datas.",
+      "acao_sugerida": "preencher_datas_manualmente",
+      "opcoes": [
+        { "id": "1", "label": "Preencher datas manualmente" },
+        { "id": "2", "label": "Cancelar baloes" }
+      ]
+    },
+
+    {
+      "grupo": "sem_corretor_sienge_indisponivel",
+      "venda_id": "73bdb2c7-b89c-45ef-84ed-156a6c24e4b1",
+      "sienge_contract_id": "75",
+      "numero_contrato": "35",
+      "unidade": "902 A",
+      "cliente": "RICARDO JOSE GIRARD",
+      "valor_venda": "390993.15",
+      "data_contrato": "2025-05-22",
+      "billId": 11,
+      "motivo_delicado": "Sienge nao expoe endpoint /commissions (404/403); linkedCommissions null no payload. Sem fonte automatizada.",
+      "acao_sugerida": "preencher_corretor_manualmente",
+      "opcoes": [
+        { "id": "1", "label": "Vou preencher: corretor X" },
+        { "id": "2", "label": "Esta venda nao tem corretor (caso especial)" }
+      ]
+    },
+    {
+      "grupo": "sem_corretor_sienge_indisponivel",
+      "venda_id": "39d7aad3-aa7b-459c-820a-17a00e1aa7f4",
+      "sienge_contract_id": "79",
+      "numero_contrato": "37",
+      "unidade": "904 A",
+      "cliente": "BRYAN LUCAS MACCALLI",
+      "valor_venda": "418341.97",
+      "data_contrato": "2025-06-04",
+      "billId": 31,
+      "motivo_delicado": "Sienge sem corretor exposto.",
+      "acao_sugerida": "preencher_corretor_manualmente",
+      "opcoes": [
+        { "id": "1", "label": "Vou preencher: corretor X" },
+        { "id": "2", "label": "Sem corretor" }
+      ]
+    },
+    {
+      "grupo": "sem_corretor_sienge_indisponivel",
+      "venda_id": "52a15049-f506-4ae5-93f9-a2fca420b2ae",
+      "sienge_contract_id": "161",
+      "numero_contrato": "71",
+      "unidade": "1506 A",
+      "cliente": "LUCAS PORTO MARTINS",
+      "valor_venda": "310250.00",
+      "data_contrato": "2025-06-16",
+      "billId": 181,
+      "motivo_delicado": "Sienge sem corretor exposto.",
+      "acao_sugerida": "preencher_corretor_manualmente",
+      "opcoes": [
+        { "id": "1", "label": "Vou preencher: corretor X" },
+        { "id": "2", "label": "Sem corretor" }
+      ]
+    },
+    {
+      "grupo": "sem_corretor_sienge_indisponivel",
+      "venda_id": "13736419-ed8e-44b8-bd34-5b241981bd23",
+      "sienge_contract_id": "174",
+      "numero_contrato": "84",
+      "unidade": "1806 A",
+      "cliente": "ALEX WILLIAN BERNARDES",
+      "valor_venda": "388744.70",
+      "data_contrato": "2025-05-09",
+      "billId": 280,
+      "motivo_delicado": "Sienge sem corretor exposto.",
+      "acao_sugerida": "preencher_corretor_manualmente",
+      "opcoes": [
+        { "id": "1", "label": "Vou preencher: corretor X" },
+        { "id": "2", "label": "Sem corretor" }
+      ]
+    },
+    {
+      "grupo": "sem_corretor_sienge_indisponivel",
+      "venda_id": "62d4b34f-232f-4251-8ab1-9be0b87128e2",
+      "sienge_contract_id": "176",
+      "numero_contrato": "86",
+      "unidade": "403 B",
+      "cliente": "MILENA PAULA NASCIMENTO SANTOS",
+      "valor_venda": "310442.00",
+      "data_contrato": "2025-06-02",
+      "billId": 321,
+      "motivo_delicado": "Sienge sem corretor exposto.",
+      "acao_sugerida": "preencher_corretor_manualmente",
+      "opcoes": [
+        { "id": "1", "label": "Vou preencher: corretor X" },
+        { "id": "2", "label": "Sem corretor" }
+      ]
+    },
+    {
+      "grupo": "sem_corretor_sienge_indisponivel",
+      "venda_id": "7d936e98-422e-476f-98f7-ec08c7d16532",
+      "sienge_contract_id": "213",
+      "numero_contrato": "121",
+      "unidade": "503 C",
+      "cliente": "ANTONIO DOS SANTOS ESTEVAO",
+      "valor_venda": "313546.14",
+      "data_contrato": "2025-05-22",
+      "billId": 312,
+      "motivo_delicado": "Sienge sem corretor exposto.",
+      "acao_sugerida": "preencher_corretor_manualmente",
+      "opcoes": [
+        { "id": "1", "label": "Vou preencher: corretor X" },
+        { "id": "2", "label": "Sem corretor" }
+      ]
+    },
+    {
+      "grupo": "sem_corretor_sienge_indisponivel",
+      "venda_id": "943b164d-ff42-45ce-90e0-80b481637f82",
+      "sienge_contract_id": "236",
+      "numero_contrato": "144",
+      "unidade": "1007 C",
+      "cliente": "CLAUDIO MARTIRE",
+      "valor_venda": "384110.14",
+      "data_contrato": "2025-05-16",
+      "billId": 261,
+      "motivo_delicado": "Sienge sem corretor exposto. ALEM DISSO o contrato 144 tem outras pendencias (ver b6-grupo-3 - contrato sem par no Sienge bulk).",
+      "acao_sugerida": "aguardar_decisao_b6",
+      "opcoes": [
+        { "id": "1", "label": "Decidir junto com b6 grupo 3" }
+      ]
+    },
+    {
+      "grupo": "sem_corretor_sienge_indisponivel",
+      "venda_id": "275196bc-0223-4386-914f-5871038c50b9",
+      "sienge_contract_id": "294",
+      "numero_contrato": "202",
+      "unidade": "1201 D",
+      "cliente": "ANNE MAYARA BRANCO VIEIRA",
+      "valor_venda": "356209.78",
+      "data_contrato": "2025-05-06",
+      "billId": 162,
+      "motivo_delicado": "Sienge sem corretor exposto.",
+      "acao_sugerida": "preencher_corretor_manualmente",
+      "opcoes": [
+        { "id": "1", "label": "Vou preencher: corretor X" },
+        { "id": "2", "label": "Sem corretor" }
+      ]
+    },
+    {
+      "grupo": "sem_corretor_sienge_indisponivel",
+      "venda_id": "2fc89307-9572-4970-9663-08feac626c94",
+      "sienge_contract_id": "390",
+      "numero_contrato": "273",
+      "unidade": "1008 C",
+      "cliente": "CLAUDIO MARTIRE",
+      "valor_venda": "384110.14",
+      "data_contrato": "2025-05-16",
+      "billId": 462,
+      "motivo_delicado": "Sienge sem corretor exposto.",
+      "acao_sugerida": "preencher_corretor_manualmente",
+      "opcoes": [
+        { "id": "1", "label": "Vou preencher: corretor X" },
+        { "id": "2", "label": "Sem corretor" }
+      ]
+    },
+    {
+      "grupo": "sem_corretor_sienge_indisponivel",
+      "venda_id": "c3650d6d-f1e8-4afe-ad0f-f8ee30c19a16",
+      "sienge_contract_id": "411",
+      "numero_contrato": "287",
+      "unidade": "603 B",
+      "cliente": "CAYO KAMENAC RAMOS DA SILVA",
+      "valor_venda": "426900.16",
+      "data_contrato": "2026-02-09",
+      "billId": 483,
+      "motivo_delicado": "Sienge sem corretor exposto.",
+      "acao_sugerida": "preencher_corretor_manualmente",
+      "opcoes": [
+        { "id": "1", "label": "Vou preencher: corretor X" },
+        { "id": "2", "label": "Sem corretor" }
+      ]
+    },
+    {
+      "grupo": "sem_corretor_sienge_indisponivel",
+      "venda_id": "63229ab7-b4e1-4484-9c9a-ab08cd3832a0",
+      "sienge_contract_id": "433",
+      "numero_contrato": "300",
+      "unidade": "1008 D",
+      "cliente": "FERRETTI CONSULTORIA E INVESTIMENTOS LTDA",
+      "valor_venda": "499437.96",
+      "data_contrato": "2026-03-24",
+      "billId": 507,
+      "motivo_delicado": "Permuta sem corretor (ja mapeado em sem_prosoluto_legitimo). Possivelmente permuta interna.",
+      "acao_sugerida": "decidir_em_sem_prosoluto",
+      "opcoes": [
+        { "id": "1", "label": "Decidir junto com caso sem_prosoluto_legitimo do contrato 300" }
+      ]
+    },
+    {
+      "grupo": "sem_corretor_sienge_indisponivel",
+      "venda_id": "c8b843f9-7133-4720-8b3e-89517bb83ad2",
+      "sienge_contract_id": "434",
+      "numero_contrato": "301",
+      "unidade": "908 D",
+      "cliente": "FERRETTI CONSULTORIA E INVESTIMENTOS LTDA",
+      "valor_venda": "494493.06",
+      "data_contrato": "2026-03-23",
+      "billId": 508,
+      "motivo_delicado": "Permuta sem corretor.",
+      "acao_sugerida": "decidir_em_sem_prosoluto",
+      "opcoes": [
+        { "id": "1", "label": "Decidir junto com caso sem_prosoluto_legitimo do contrato 301" }
+      ]
+    },
+    {
+      "grupo": "sem_corretor_sienge_indisponivel",
+      "venda_id": "22d30cd4-bbca-47d5-9d73-7008d1b36db9",
+      "sienge_contract_id": "435",
+      "numero_contrato": "302",
+      "unidade": "1208 A",
+      "cliente": "FERRETTI CONSULTORIA E INVESTIMENTOS LTDA",
+      "valor_venda": "509476.67",
+      "data_contrato": "2026-03-24",
+      "billId": 509,
+      "motivo_delicado": "Permuta sem corretor.",
+      "acao_sugerida": "decidir_em_sem_prosoluto",
+      "opcoes": [
+        { "id": "1", "label": "Decidir junto com caso sem_prosoluto_legitimo do contrato 302" }
+      ]
+    }
+  ]
+}
