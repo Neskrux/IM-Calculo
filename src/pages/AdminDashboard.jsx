@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { supabase } from '../lib/supabase'
@@ -13,6 +13,7 @@ import {
 import logo from '../imgs/logo.png'
 import Ticker from '../components/Ticker'
 import HomeDashboard from './HomeDashboard'
+import NotasAtualizacaoModal from '../components/NotasAtualizacaoModal'
 import EmpreendimentoGaleria from '../components/EmpreendimentoGaleria'
 // import CadastrarCorretores from '../components/CadastrarCorretores'
 // import ImportarVendas from '../components/ImportarVendas'
@@ -225,7 +226,10 @@ async function propagarCronogramaCirurgico({
     }
   }
 
-  // DELETE pendentes antigos sem correspondente no novo cronograma
+  // DELETE pendentes antigos sem correspondente no novo cronograma.
+  // .neq('status', 'pago') eh defesa em profundidade — trigger 017 ja bloqueia
+  // delete de pago no DB, mas explicitar aqui evita erro silencioso caso a
+  // filtragem JS de cima ('pendentes') receba algum pago por bug.
   const idsParaRemover = pendentes
     .filter(p => !chavesNovasAplicaveis.has(chaveDe(p)))
     .map(p => p.id)
@@ -234,6 +238,7 @@ async function propagarCronogramaCirurgico({
       .from('pagamentos_prosoluto')
       .delete()
       .in('id', idsParaRemover)
+      .neq('status', 'pago')
     if (error) throw error
   }
 
@@ -463,11 +468,14 @@ const AdminDashboard = () => {
   const [excluindoBaixa, setExcluindoBaixa] = useState(false)
   const [pagamentoParaConfirmar, setPagamentoParaConfirmar] = useState(null)
 
-  // Estados para modal de Exclusão/Distrato de Venda
+  // Estados para modal de Exclusão/Distrato de Venda.
+  // step: 1 = escolha (excluir vs distrato), 2 = data do distrato, 3 = motivo da exclusao.
+  // Motivo (>= 10 chars) eh obrigatorio pra excluido=true (migration 022 enforce via CHECK).
   const [showModalExcluirVenda, setShowModalExcluirVenda] = useState(false)
   const [vendaParaExcluir, setVendaParaExcluir] = useState(null)
-  const [modalExcluirVendaStep, setModalExcluirVendaStep] = useState(1) // 1: escolha, 2: data distrato
+  const [modalExcluirVendaStep, setModalExcluirVendaStep] = useState(1)
   const [dataDistrato, setDataDistrato] = useState('')
+  const [motivoExclusao, setMotivoExclusao] = useState('')
   const [processandoExclusaoVenda, setProcessandoExclusaoVenda] = useState(false)
   const [formConfirmarPagamento, setFormConfirmarPagamento] = useState({
     valorPersonalizado: '',
@@ -541,43 +549,50 @@ const AdminDashboard = () => {
     }, ms)
   }
 
-  // Agrupar pagamentos por venda
-  const pagamentosAgrupados = pagamentos.reduce((acc, pag) => {
-    const vendaId = pag.venda_id
-    if (!vendaId) return acc // Ignorar pagamentos sem venda_id
-    
-    // Comparação segura de IDs
-    const vendaIdStr = String(vendaId)
-    
-    if (!acc[vendaIdStr]) {
-      // Buscar venda completa se não estiver no pag.venda
-      const vendaCompleta = pag.venda || vendas.find(v => String(v.id) === vendaIdStr)
-      
-      if (!vendaCompleta) {
-        console.warn('⚠️ Venda não encontrada para pagamento:', vendaId)
-        return acc
+  // Agrupar pagamentos por venda.
+  // useMemo: roda só quando pagamentos/vendas mudam. Antes era recalculado a
+  // cada render (incluindo todos os re-renders do AuthContext durante o login),
+  // o que disparava console.warn em loop pros pagamentos órfãos.
+  const pagamentosAgrupados = useMemo(() => {
+    const acc = {}
+    const vendaIdsOrfaos = new Set()
+    for (const pag of pagamentos) {
+      const vendaId = pag.venda_id
+      if (!vendaId) continue
+      const vendaIdStr = String(vendaId)
+      if (!acc[vendaIdStr]) {
+        const vendaCompleta = pag.venda || vendas.find(v => String(v.id) === vendaIdStr)
+        if (!vendaCompleta) {
+          vendaIdsOrfaos.add(vendaIdStr)
+          continue
+        }
+        acc[vendaIdStr] = {
+          venda_id: vendaId,
+          venda: vendaCompleta,
+          pagamentos: [],
+          totalValor: 0,
+          totalComissao: 0,
+          totalPago: 0,
+          totalPendente: 0
+        }
       }
-      
-      acc[vendaIdStr] = {
-        venda_id: vendaId,
-        venda: vendaCompleta,
-        pagamentos: [],
-        totalValor: 0,
-        totalComissao: 0,
-        totalPago: 0,
-        totalPendente: 0
+      acc[vendaIdStr].pagamentos.push(pag)
+      acc[vendaIdStr].totalValor += parseFloat(pag.valor) || 0
+      acc[vendaIdStr].totalComissao += parseFloat(pag.comissao_gerada) || 0
+      if (pag.status === 'pago') {
+        acc[vendaIdStr].totalPago += parseFloat(pag.comissao_gerada) || 0
+      } else {
+        acc[vendaIdStr].totalPendente += parseFloat(pag.comissao_gerada) || 0
       }
     }
-    acc[vendaIdStr].pagamentos.push(pag)
-    acc[vendaIdStr].totalValor += parseFloat(pag.valor) || 0
-    acc[vendaIdStr].totalComissao += parseFloat(pag.comissao_gerada) || 0
-    if (pag.status === 'pago') {
-      acc[vendaIdStr].totalPago += parseFloat(pag.comissao_gerada) || 0
-    } else {
-      acc[vendaIdStr].totalPendente += parseFloat(pag.comissao_gerada) || 0
+    if (vendaIdsOrfaos.size > 0) {
+      console.warn(
+        `⚠️ ${vendaIdsOrfaos.size} venda(s) órfã(s) — pagamentos cujo venda_id não bate com nenhuma venda carregada (provavelmente vendas com excluido=true).`,
+        Array.from(vendaIdsOrfaos).slice(0, 3)
+      )
     }
     return acc
-  }, {})
+  }, [pagamentos, vendas])
 
   const listaVendasComPagamentos = Object.values(pagamentosAgrupados)
   
@@ -2332,21 +2347,34 @@ const AdminDashboard = () => {
     const hoje = new Date().toISOString().split('T')[0]
     setVendaParaExcluir(venda)
     setDataDistrato(hoje)
+    setMotivoExclusao('')
     setModalExcluirVendaStep(1)
     setShowModalExcluirVenda(true)
   }
 
   const processarExclusaoVenda = async () => {
     if (!vendaParaExcluir) return
+    const motivoTrim = (motivoExclusao || '').trim()
+    if (motivoTrim.length < 10) {
+      setMessage({ type: 'error', text: 'Motivo da exclusão é obrigatório (mín. 10 caracteres).' })
+      clearMessageAfter(4000)
+      return
+    }
     setProcessandoExclusaoVenda(true)
     try {
       const { error } = await supabase
         .from('vendas')
-        .update({ excluido: true })
+        .update({
+          excluido: true,
+          motivo_exclusao: motivoTrim,
+          excluido_por: userProfile?.id ?? null,
+          excluido_em: new Date().toISOString(),
+        })
         .eq('id', vendaParaExcluir.id)
       if (error) throw error
       setShowModalExcluirVenda(false)
       setVendaParaExcluir(null)
+      setMotivoExclusao('')
       fetchData()
       setMessage({ type: 'success', text: 'Venda excluída do sistema com sucesso!' })
       clearMessageAfter(3000)
@@ -4242,10 +4270,15 @@ const AdminDashboard = () => {
           })
         })
       } else if (percentualCorretorTotais !== null) {
+        // Filtrou por corretor sem cargo especifico — usa a comissao do cargo "Corretor"
+        // calculada via fator (calcularComissaoPorCargoPagamento respeita
+        // .claude/rules/fator-comissao.md). Antes aplicava percentual direto na parcela,
+        // o que subestima — ignora a relacao valor_venda/pro_soluto que o fator captura.
         dadosFiltrados.forEach(grupo => {
           grupo.pagamentos.forEach(pag => {
-            const valorParcela = parseFloat(pag.valor) || 0
-            const comissao = valorParcela * percentualCorretorTotais
+            const cargos = calcularComissaoPorCargoPagamento(pag)
+            const cargoCorretor = cargos.find(c => c.nome_cargo === 'Corretor' || c.nome_cargo?.toLowerCase().includes('corretor'))
+            const comissao = cargoCorretor?.valor ?? 0
             totalComissao += comissao
             if (pag.status === 'pago') totalPago += comissao
           })
@@ -4375,12 +4408,16 @@ const AdminDashboard = () => {
         // Calcular comissão da venda
         let comissaoVenda = 0
         if (percentualCorretorTotais !== null) {
+          // Soma viva da comissao do cargo "Corretor" via fator (ver .claude/rules/fator-comissao.md).
           comissaoVenda = grupo.pagamentos.reduce((acc, p) => {
-            const valorParcela = parseFloat(p.valor) || 0
-            return acc + (valorParcela * percentualCorretorTotais)
+            const cargos = calcularComissaoPorCargoPagamento(p)
+            const cargoCorretor = cargos.find(c => c.nome_cargo === 'Corretor' || c.nome_cargo?.toLowerCase().includes('corretor'))
+            return acc + (cargoCorretor?.valor ?? 0)
           }, 0)
         } else {
-          comissaoVenda = parseFloat(venda?.comissao_total) || grupo.totalComissao || grupo.pagamentos.reduce((acc, p) => acc + (parseFloat(p.comissao_gerada) || 0), 0)
+          // soma viva dos pagamentos — nao usar venda.comissao_total (snapshot stale
+          // em 89.7% das vendas, ver .claude/rules/visualizacao-totais.md)
+          comissaoVenda = grupo.totalComissao || grupo.pagamentos.reduce((acc, p) => acc + (parseFloat(p.comissao_gerada) || 0), 0)
         }
         
         // ========================================
@@ -11317,7 +11354,11 @@ const AdminDashboard = () => {
         <div className="modal-overlay" onClick={() => !processandoExclusaoVenda && setShowModalExcluirVenda(false)}>
           <div className="modal modal-excluir-venda" onClick={e => e.stopPropagation()}>
             <div className="modal-header">
-              <h2>{modalExcluirVendaStep === 1 ? 'Excluir / Distrato de Venda' : 'Distrato do Contrato'}</h2>
+              <h2>{
+                modalExcluirVendaStep === 1 ? 'Excluir / Distrato de Venda'
+                : modalExcluirVendaStep === 2 ? 'Distrato do Contrato'
+                : 'Motivo da Exclusão'
+              }</h2>
               <button className="close-btn" onClick={() => !processandoExclusaoVenda && setShowModalExcluirVenda(false)}>
                 <X size={24} />
               </button>
@@ -11332,17 +11373,14 @@ const AdminDashboard = () => {
                   <div className="modal-excluir-opcoes">
                     <button
                       className="btn-opcao-modal danger"
-                      onClick={processarExclusaoVenda}
+                      onClick={() => setModalExcluirVendaStep(3)}
                       disabled={processandoExclusaoVenda}
                     >
                       <span className="btn-opcao-modal-title">
-                        {processandoExclusaoVenda
-                          ? <><span className="btn-spinner" />Excluindo...</>
-                          : <><Trash2 size={18} />Exclusão do Sistema</>
-                        }
+                        <Trash2 size={18} />Exclusão do Sistema
                       </span>
                       <span className="btn-opcao-modal-desc">
-                        Arquiva a venda permanentemente. Some completamente da listagem.
+                        Arquiva a venda permanentemente. Some completamente da listagem. Exige motivo registrado.
                       </span>
                     </button>
                     <button
@@ -11407,10 +11445,57 @@ const AdminDashboard = () => {
                   </div>
                 </>
               )}
+              {modalExcluirVendaStep === 3 && (
+                <>
+                  <p className="modal-excluir-descricao">
+                    Descreva o motivo da exclusão de{' '}
+                    <strong>{vendaParaExcluir.nome_cliente || vendaParaExcluir.cliente?.nome || 'esta venda'}</strong>.
+                    O motivo fica registrado junto com seu usuário e a data.
+                  </p>
+                  <div className="form-section">
+                    <label>
+                      <span>Motivo (mín. 10 caracteres)</span>
+                      <textarea
+                        value={motivoExclusao}
+                        onChange={e => setMotivoExclusao(e.target.value)}
+                        placeholder="Ex.: duplicata da venda XYZ; cliente cancelou antes do contrato; erro de cadastro na unidade..."
+                        rows={4}
+                        style={{ width: '100%', resize: 'vertical', padding: '10px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.2)', background: 'rgba(0,0,0,0.3)', color: '#fff', fontSize: '14px', fontFamily: 'inherit' }}
+                        autoFocus
+                      />
+                    </label>
+                    <p style={{ fontSize: '12px', color: motivoExclusao.trim().length >= 10 ? 'rgba(80,200,120,0.9)' : 'rgba(255,255,255,0.5)', marginTop: '6px' }}>
+                      {motivoExclusao.trim().length}/10 caracteres mínimos
+                    </p>
+                  </div>
+                  <div className="modal-actions">
+                    <button
+                      className="btn-secondary"
+                      onClick={() => setModalExcluirVendaStep(1)}
+                      disabled={processandoExclusaoVenda}
+                    >
+                      Voltar
+                    </button>
+                    <button
+                      className="btn-opcao-modal danger"
+                      onClick={processarExclusaoVenda}
+                      disabled={processandoExclusaoVenda || motivoExclusao.trim().length < 10}
+                    >
+                      {processandoExclusaoVenda
+                        ? <><span className="btn-spinner" />Excluindo...</>
+                        : <><Trash2 size={16} />Confirmar Exclusão</>
+                      }
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </div>
       )}
+
+      {/* Notas de atualizacao — admin-only por construcao, mostra 1x por versao */}
+      <NotasAtualizacaoModal />
 
     </div>
   )

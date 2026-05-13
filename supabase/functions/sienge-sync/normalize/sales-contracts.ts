@@ -351,6 +351,18 @@ async function upsertVenda(
   const clienteId = cliP?.id != null ? maps.cliBySienge.get(String(cliP.id)) ?? null : null
   const corretor = corP?.id != null ? maps.corBySienge.get(String(corP.id)) ?? null : null
 
+  // Observabilidade: broker do Sienge sem cadastro local vira corretor_id=null silenciosamente,
+  // o que ja causou vendas orfas (ver docs/revisao-geral-2026-05-13.md). Logar pra runs.metrics.warnings
+  // ajuda a pegar antes de virar queixa do corretor.
+  if (corP?.id != null && !corretor) {
+    console.warn(JSON.stringify({
+      warning: 'broker_sienge_sem_cadastro_local',
+      sienge_contract_id: String(contract.id),
+      broker_sienge_id: String(corP.id),
+      broker_name: corP.name ?? null,
+    }))
+  }
+
   const tipoCorretor = corretor?.tipo ?? "externo"
   const percentualTotal = empInfo ? (tipoCorretor === "interno" ? empInfo.com_int : empInfo.com_ext) : 7
   const paymentData = mapearPaymentConditions(contract.paymentConditions)
@@ -395,12 +407,35 @@ async function upsertVenda(
     sienge_updated_at: contract.lastUpdateDate ? new Date(contract.lastUpdateDate).toISOString() : new Date().toISOString(),
   }
 
+  // Preserva correcoes manuais (migration 021 + .claude/rules/sincronizacao-sienge.md):
+  // se a venda existente foi corrigida por humano (corretor_id_origem='manual' ou
+  // 'api_commissions') ou cliente_id_origem='manual', mantem os ids atuais e a flag
+  // de origem. Sem isso, todo sync sobrescreve a correcao — a flag virava decorativa.
+  const { data: existente } = await supa
+    .from("vendas")
+    .select("corretor_id, corretor_id_origem, cliente_id, cliente_id_origem, tipo_corretor")
+    .eq("sienge_contract_id", String(contract.id))
+    .maybeSingle()
+
+  const rowProtegido = { ...row } as Record<string, unknown>
+  if (existente?.corretor_id_origem === "manual" || existente?.corretor_id_origem === "api_commissions") {
+    rowProtegido.corretor_id = existente.corretor_id
+    // tipo_corretor anda junto: se corretor manual aponta pra interno, manter interno;
+    // senao o sync recalcularia percentualTotal com base no tipo errado.
+    if (existente.tipo_corretor) rowProtegido.tipo_corretor = existente.tipo_corretor
+    rowProtegido.corretor_id_origem = existente.corretor_id_origem
+  }
+  if (existente?.cliente_id_origem === "manual") {
+    rowProtegido.cliente_id = existente.cliente_id
+    rowProtegido.cliente_id_origem = existente.cliente_id_origem
+  }
+
   const now = new Date().toISOString()
   // Idempotente: upsert por sienge_contract_id evita race em múltiplos runs simultâneos
   // (dois workers chegando no mesmo contrato não explodem com UNIQUE violation — o 2º vira UPDATE)
   const { data, error } = await supa
     .from("vendas")
-    .upsert({ ...row, created_at: now, updated_at: now }, { onConflict: "sienge_contract_id" })
+    .upsert({ ...rowProtegido, created_at: now, updated_at: now }, { onConflict: "sienge_contract_id" })
     .select("id")
     .single()
   if (error) throw new Error(`vendas.upsert: ${error.message}`)

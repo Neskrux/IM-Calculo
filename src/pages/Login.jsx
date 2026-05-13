@@ -279,13 +279,19 @@ const Login = () => {
     }
   }
 
-  // Callback quando a transição terminar
-  const handleTransitionComplete = () => {
+  // Callback quando a transição terminar.
+  // - navigate() (SPA) em vez de window.location.href pra evitar hard reload —
+  //   o reload reiniciava o AuthContext do zero e disparava um segundo
+  //   "Carregando..." visível após a cortina, sensação de loading duplicado.
+  // - useCallback estabiliza a ref: LoginTransition usa `[onComplete]` nas deps
+  //   do useEffect. Sem isso, cada re-render do AuthContext (que dispara user/
+  //   userProfile durante a cortina) reiniciava a timeline da cortina.
+  const handleTransitionComplete = useCallback(() => {
     sessionStorage.removeItem('im-login-transition')
     if (redirectUrl) {
-      window.location.href = redirectUrl
+      navigate(redirectUrl, { replace: true })
     }
-  }
+  }, [redirectUrl, navigate])
 
   // Se a transição está ativa, mostrar apenas a intro
   if (showTransition) {
