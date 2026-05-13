@@ -14,6 +14,8 @@ import logo from '../imgs/logo.png'
 import Ticker from '../components/Ticker'
 import HomeDashboard from './HomeDashboard'
 import NotasAtualizacaoModal from '../components/NotasAtualizacaoModal'
+import AtualizacoesView from '../components/AtualizacoesView'
+import { Sparkles } from 'lucide-react'
 import EmpreendimentoGaleria from '../components/EmpreendimentoGaleria'
 // import CadastrarCorretores from '../components/CadastrarCorretores'
 // import ImportarVendas from '../components/ImportarVendas'
@@ -5218,7 +5220,7 @@ const AdminDashboard = () => {
             <Eye size={20} />
             <span>Ver PDF</span>
           </button>
-          <button 
+          <button
             className={`nav-item ${activeTab === 'solicitacoes' ? 'active' : ''}`}
             onClick={() => navigate('/admin/solicitacoes')}
             title="Solicitações"
@@ -5228,6 +5230,14 @@ const AdminDashboard = () => {
             {solicitacoes.filter(s => s.status === 'pendente').length > 0 && (
               <span className="nav-badge">{solicitacoes.filter(s => s.status === 'pendente').length}</span>
             )}
+          </button>
+          <button
+            className={`nav-item ${activeTab === 'atualizacoes' ? 'active' : ''}`}
+            onClick={() => navigate('/admin/atualizacoes')}
+            title="Atualizações"
+          >
+            <Sparkles size={20} />
+            <span>Atualizações</span>
           </button>
           {/* Sincronizar Sienge - Oculto em produção */}
           {false && (
@@ -5297,6 +5307,7 @@ const AdminDashboard = () => {
             {activeTab === 'relatorios' && 'Relatórios'}
             {activeTab === 'preview-pdf' && 'Ver PDF'}
             {activeTab === 'solicitacoes' && 'Solicitações'}
+            {activeTab === 'atualizacoes' && 'Atualizações'}
             {false && activeTab === 'sienge' && 'Sincronização Sienge'}
           </h1>
           <div className="header-actions">
@@ -11348,6 +11359,11 @@ const AdminDashboard = () => {
           </div>
         </div>
       )}
+
+      {/* ================================================
+          ABA DE ATUALIZAÇÕES (histórico das notas)
+          ================================================ */}
+      {activeTab === 'atualizacoes' && <AtualizacoesView />}
 
       {/* Modal de Exclusão / Distrato de Venda */}
       {showModalExcluirVenda && vendaParaExcluir && (
