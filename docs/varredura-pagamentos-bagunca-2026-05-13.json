@@ -1,0 +1,2189 @@
+{
+  "meta": {
+    "geradoEm": "2026-05-13T21:54:38.261Z",
+    "total": 99,
+    "criterios": {
+      "DRIFT_LIMITE_DIAS": 30
+    }
+  },
+  "vendas": [
+    {
+      "venda_id": "84b74c27-fa97-4cb0-9e22-be95f88237d2",
+      "sienge_contract_id": "255",
+      "numero_contrato": "163",
+      "unidade": "1405 C",
+      "cliente": null,
+      "cliente_id": "573b55b1-3ab1-4505-bc51-7cded7f85a5d",
+      "corretor": null,
+      "excluido": false,
+      "sintomas": {
+        "numero_parcela_duplicado": 7,
+        "drift_pago_30d": 57,
+        "sem_sienge_bill_id": false
+      },
+      "contagens": {
+        "total": 65,
+        "pagos": 58,
+        "pendentes": 0,
+        "cancelados": 7
+      },
+      "score": 2
+    },
+    {
+      "venda_id": "ac1c4423-44f2-4c1d-b09c-866fcf326fe3",
+      "sienge_contract_id": "246",
+      "numero_contrato": "154",
+      "unidade": "1302 C",
+      "cliente": null,
+      "cliente_id": "1e096169-352a-4507-b7c1-bf85df32a2b6",
+      "corretor": null,
+      "excluido": false,
+      "sintomas": {
+        "numero_parcela_duplicado": 3,
+        "drift_pago_30d": 49,
+        "sem_sienge_bill_id": false
+      },
+      "contagens": {
+        "total": 56,
+        "pagos": 53,
+        "pendentes": 0,
+        "cancelados": 3
+      },
+      "score": 2
+    },
+    {
+      "venda_id": "3771951d-5221-4a3d-8b2f-6a0c5b076b12",
+      "sienge_contract_id": "269",
+      "numero_contrato": "177",
+      "unidade": "609 D",
+      "cliente": null,
+      "cliente_id": "8fbe5fe7-a751-42a2-a4a5-bffd3ded5d69",
+      "corretor": null,
+      "excluido": false,
+      "sintomas": {
+        "numero_parcela_duplicado": 18,
+        "drift_pago_30d": 5,
+        "sem_sienge_bill_id": false
+      },
+      "contagens": {
+        "total": 66,
+        "pagos": 12,
+        "pendentes": 36,
+        "cancelados": 18
+      },
+      "score": 2
+    },
+    {
+      "venda_id": "1d7772d4-ee1e-4d72-92ec-3e67460880cc",
+      "sienge_contract_id": "275",
+      "numero_contrato": "183",
+      "unidade": "803 D",
+      "cliente": null,
+      "cliente_id": "8e608cb1-7240-4d0b-a9b7-4623e38b75d4",
+      "corretor": null,
+      "excluido": false,
+      "sintomas": {
+        "numero_parcela_duplicado": 16,
+        "drift_pago_30d": 4,
+        "sem_sienge_bill_id": false
+      },
+      "contagens": {
+        "total": 57,
+        "pagos": 8,
+        "pendentes": 33,
+        "cancelados": 16
+      },
+      "score": 2
+    },
+    {
+      "venda_id": "7c3ca9b3-8251-469b-ae71-5f8a433a6d3e",
+      "sienge_contract_id": "163",
+      "numero_contrato": "73",
+      "unidade": "1603 A",
+      "cliente": null,
+      "cliente_id": "d7b8b964-98a7-4d1c-84e6-4a893a985d8f",
+      "corretor": null,
+      "excluido": false,
+      "sintomas": {
+        "numero_parcela_duplicado": 9,
+        "drift_pago_30d": 4,
+        "sem_sienge_bill_id": false
+      },
+      "contagens": {
+        "total": 61,
+        "pagos": 10,
+        "pendentes": 42,
+        "cancelados": 9
+      },
+      "score": 2
+    },
+    {
+      "venda_id": "37357039-b2ed-404a-b8f9-5162019eb51f",
+      "sienge_contract_id": "346",
+      "numero_contrato": "246",
+      "unidade": "508 A",
+      "cliente": null,
+      "cliente_id": "31f43576-a99c-4b6f-a811-943158de33bf",
+      "corretor": null,
+      "excluido": false,
+      "sintomas": {
+        "numero_parcela_duplicado": 1,
+        "drift_pago_30d": 4,
+        "sem_sienge_bill_id": false
+      },
+      "contagens": {
+        "total": 54,
+        "pagos": 7,
+        "pendentes": 46,
+        "cancelados": 1
+      },
+      "score": 2
+    },
+    {
+      "venda_id": "53d0c5f5-aa8e-4804-9c64-fef6ecdf04fc",
+      "sienge_contract_id": "204",
+      "numero_contrato": "112",
+      "unidade": "1204 B",
+      "cliente": null,
+      "cliente_id": "5da22b7d-95b3-4f4d-b1e9-9113cdc21fe4",
+      "corretor": null,
+      "excluido": false,
+      "sintomas": {
+        "numero_parcela_duplicado": 2,
+        "drift_pago_30d": 3,
+        "sem_sienge_bill_id": false
+      },
+      "contagens": {
+        "total": 64,
+        "pagos": 8,
+        "pendentes": 54,
+        "cancelados": 2
+      },
+      "score": 2
+    },
+    {
+      "venda_id": "c9e6358d-2aab-4743-8358-e7628f761350",
+      "sienge_contract_id": "87",
+      "numero_contrato": "40",
+      "unidade": "908 A",
+      "cliente": null,
+      "cliente_id": "61c3647e-ddd5-4d27-9265-75dcba7479ee",
+      "corretor": null,
+      "excluido": false,
+      "sintomas": {
+        "numero_parcela_duplicado": 5,
+        "drift_pago_30d": 2,
+        "sem_sienge_bill_id": false
+      },
+      "contagens": {
+        "total": 61,
+        "pagos": 8,
+        "pendentes": 49,
+        "cancelados": 4
+      },
+      "score": 2
+    },
+    {
+      "venda_id": "a7fe850b-0b89-44ab-b222-68cf877febfe",
+      "sienge_contract_id": "256",
+      "numero_contrato": "164",
+      "unidade": "1406 C",
+      "cliente": null,
+      "cliente_id": "fbf08b79-ea64-4a92-ab0f-dffc5742d71a",
+      "corretor": null,
+      "excluido": false,
+      "sintomas": {
+        "numero_parcela_duplicado": 1,
+        "drift_pago_30d": 2,
+        "sem_sienge_bill_id": false
+      },
+      "contagens": {
+        "total": 59,
+        "pagos": 8,
+        "pendentes": 50,
+        "cancelados": 1
+      },
+      "score": 2
+    },
+    {
+      "venda_id": "e476bbdb-88ce-464d-9238-ebbe6badb81b",
+      "sienge_contract_id": "382",
+      "numero_contrato": "268",
+      "unidade": "1305 A",
+      "cliente": null,
+      "cliente_id": "3b74a2e7-6c0d-42e2-8b4c-79ddb631a648",
+      "corretor": null,
+      "excluido": false,
+      "sintomas": {
+        "numero_parcela_duplicado": 10,
+        "drift_pago_30d": 1,
+        "sem_sienge_bill_id": false
+      },
+      "contagens": {
+        "total": 54,
+        "pagos": 3,
+        "pendentes": 41,
+        "cancelados": 10
+      },
+      "score": 2
+    },
+    {
+      "venda_id": "9b6d5bf3-db8f-4c8b-80f4-fc84461af081",
+      "sienge_contract_id": null,
+      "numero_contrato": null,
+      "unidade": "1603",
+      "cliente": null,
+      "cliente_id": "a74be3dd-47b2-442f-ab6a-49f4e6d33a2b",
+      "corretor": null,
+      "excluido": false,
+      "sintomas": {
+        "numero_parcela_duplicado": 0,
+        "drift_pago_30d": 1,
+        "sem_sienge_bill_id": true
+      },
+      "contagens": {
+        "total": 67,
+        "pagos": 3,
+        "pendentes": 64,
+        "cancelados": 0
+      },
+      "score": 2
+    },
+    {
+      "venda_id": "67240a63-fd0f-4d21-8dd6-5ea34e4c0c76",
+      "sienge_contract_id": "290",
+      "numero_contrato": "198",
+      "unidade": "1008 D",
+      "cliente": null,
+      "cliente_id": "84d93608-a4ef-42c3-bf38-d474253379f3",
+      "corretor": null,
+      "excluido": false,
+      "sintomas": {
+        "numero_parcela_duplicado": 0,
+        "drift_pago_30d": 63,
+        "sem_sienge_bill_id": false
+      },
+      "contagens": {
+        "total": 65,
+        "pagos": 65,
+        "pendentes": 0,
+        "cancelados": 0
+      },
+      "score": 1
+    },
+    {
+      "venda_id": "11728f4d-67d3-4629-a6b2-d93ec06dbea0",
+      "sienge_contract_id": "25",
+      "numero_contrato": "18",
+      "unidade": "508 A",
+      "cliente": null,
+      "cliente_id": "74788c27-f4a4-4783-8605-a2bc0d05de65",
+      "corretor": null,
+      "excluido": false,
+      "sintomas": {
+        "numero_parcela_duplicado": 0,
+        "drift_pago_30d": 59,
+        "sem_sienge_bill_id": false
+      },
+      "contagens": {
+        "total": 61,
+        "pagos": 61,
+        "pendentes": 0,
+        "cancelados": 0
+      },
+      "score": 1
+    },
+    {
+      "venda_id": "6065c4ff-1bb2-42ab-85f5-b769f7f97253",
+      "sienge_contract_id": "307",
+      "numero_contrato": "215",
+      "unidade": "1707 A",
+      "cliente": null,
+      "cliente_id": "51fd9d11-14fe-440a-8132-f0396f7f9ee9",
+      "corretor": null,
+      "excluido": false,
+      "sintomas": {
+        "numero_parcela_duplicado": 0,
+        "drift_pago_30d": 58,
+        "sem_sienge_bill_id": false
+      },
+      "contagens": {
+        "total": 60,
+        "pagos": 60,
+        "pendentes": 0,
+        "cancelados": 0
+      },
+      "score": 1
+    },
+    {
+      "venda_id": "5cbed8bd-36a1-4ec6-ace1-0aa9da2023b1",
+      "sienge_contract_id": "362",
+      "numero_contrato": "259",
+      "unidade": "906 A",
+      "cliente": null,
+      "cliente_id": "4d202cbe-3e58-4b8e-b3c6-de7a6c2a9983",
+      "corretor": null,
+      "excluido": false,
+      "sintomas": {
+        "numero_parcela_duplicado": 0,
+        "drift_pago_30d": 57,
+        "sem_sienge_bill_id": false
+      },
+      "contagens": {
+        "total": 59,
+        "pagos": 59,
+        "pendentes": 0,
+        "cancelados": 0
+      },
+      "score": 1
+    },
+    {
+      "venda_id": "908fbcdb-ac7a-45f0-95c1-5e4f45e67736",
+      "sienge_contract_id": "354",
+      "numero_contrato": "252",
+      "unidade": "510 C",
+      "cliente": null,
+      "cliente_id": "cbf8178b-4bef-49be-a194-50d7f75637d2",
+      "corretor": null,
+      "excluido": false,
+      "sintomas": {
+        "numero_parcela_duplicado": 0,
+        "drift_pago_30d": 57,
+        "sem_sienge_bill_id": false
+      },
+      "contagens": {
+        "total": 60,
+        "pagos": 60,
+        "pendentes": 0,
+        "cancelados": 0
+      },
+      "score": 1
+    },
+    {
+      "venda_id": "a2879ab1-2f41-42e5-b054-61c6e92811ad",
+      "sienge_contract_id": "357",
+      "numero_contrato": "254",
+      "unidade": "405 B",
+      "cliente": null,
+      "cliente_id": "74716628-5659-4419-95fa-d6206112d490",
+      "corretor": null,
+      "excluido": false,
+      "sintomas": {
+        "numero_parcela_duplicado": 0,
+        "drift_pago_30d": 57,
+        "sem_sienge_bill_id": false
+      },
+      "contagens": {
+        "total": 60,
+        "pagos": 60,
+        "pendentes": 0,
+        "cancelados": 0
+      },
+      "score": 1
+    },
+    {
+      "venda_id": "7787a154-ec62-469f-b330-d9b3b6142dd2",
+      "sienge_contract_id": "361",
+      "numero_contrato": "258",
+      "unidade": "1707 A",
+      "cliente": null,
+      "cliente_id": "74c16f10-c86c-4880-a07f-1cb0a5c1f13f",
+      "corretor": null,
+      "excluido": false,
+      "sintomas": {
+        "numero_parcela_duplicado": 0,
+        "drift_pago_30d": 56,
+        "sem_sienge_bill_id": false
+      },
+      "contagens": {
+        "total": 57,
+        "pagos": 57,
+        "pendentes": 0,
+        "cancelados": 0
+      },
+      "score": 1
+    },
+    {
+      "venda_id": "9581a13a-5d34-44a0-b54d-62a841d757a7",
+      "sienge_contract_id": "341",
+      "numero_contrato": "244",
+      "unidade": "503 B",
+      "cliente": null,
+      "cliente_id": "ceb8d4af-9f05-40cd-99c3-02eb245175f4",
+      "corretor": null,
+      "excluido": false,
+      "sintomas": {
+        "numero_parcela_duplicado": 0,
+        "drift_pago_30d": 56,
+        "sem_sienge_bill_id": false
+      },
+      "contagens": {
+        "total": 60,
+        "pagos": 58,
+        "pendentes": 0,
+        "cancelados": 2
+      },
+      "score": 1
+    },
+    {
+      "venda_id": "16f0a4fd-e669-49be-814d-76789ed6bb4c",
+      "sienge_contract_id": "311",
+      "numero_contrato": "219",
+      "unidade": "803 A",
+      "cliente": null,
+      "cliente_id": "e4d5e2a5-6399-4691-9ef3-26153223baa2",
+      "corretor": null,
+      "excluido": false,
+      "sintomas": {
+        "numero_parcela_duplicado": 0,
+        "drift_pago_30d": 56,
+        "sem_sienge_bill_id": false
+      },
+      "contagens": {
+        "total": 58,
+        "pagos": 58,
+        "pendentes": 0,
+        "cancelados": 0
+      },
+      "score": 1
+    },
+    {
+      "venda_id": "64ffc2fb-b265-41d3-b7d5-cc101d813220",
+      "sienge_contract_id": "284",
+      "numero_contrato": "192",
+      "unidade": "1001 D",
+      "cliente": null,
+      "cliente_id": "5dbb56f5-9a74-470d-ba63-4645fec9692d",
+      "corretor": null,
+      "excluido": false,
+      "sintomas": {
+        "numero_parcela_duplicado": 0,
+        "drift_pago_30d": 55,
+        "sem_sienge_bill_id": false
+      },
+      "contagens": {
+        "total": 59,
+        "pagos": 59,
+        "pendentes": 0,
+        "cancelados": 0
+      },
+      "score": 1
+    },
+    {
+      "venda_id": "64aa2405-0068-4c20-8d15-736e1a1d6b1b",
+      "sienge_contract_id": "168",
+      "numero_contrato": "78",
+      "unidade": "1702 A",
+      "cliente": null,
+      "cliente_id": "68059c38-0bc5-46f3-985e-1a315e75adb1",
+      "corretor": null,
+      "excluido": false,
+      "sintomas": {
+        "numero_parcela_duplicado": 0,
+        "drift_pago_30d": 55,
+        "sem_sienge_bill_id": false
+      },
+      "contagens": {
+        "total": 57,
+        "pagos": 57,
+        "pendentes": 0,
+        "cancelados": 0
+      },
+      "score": 1
+    },
+    {
+      "venda_id": "090eb74d-8ff4-448a-9a52-03d95c9614c5",
+      "sienge_contract_id": "266",
+      "numero_contrato": "174",
+      "unidade": "510 D",
+      "cliente": null,
+      "cliente_id": "fb13c589-c136-478f-8561-3027caa173a4",
+      "corretor": null,
+      "excluido": false,
+      "sintomas": {
+        "numero_parcela_duplicado": 0,
+        "drift_pago_30d": 55,
+        "sem_sienge_bill_id": false
+      },
+      "contagens": {
+        "total": 59,
+        "pagos": 59,
+        "pendentes": 0,
+        "cancelados": 0
+      },
+      "score": 1
+    },
+    {
+      "venda_id": "1ed61c21-97b9-4409-bf45-403cb41e3889",
+      "sienge_contract_id": "186",
+      "numero_contrato": "96",
+      "unidade": "803 B",
+      "cliente": null,
+      "cliente_id": "ec658e85-8218-42b2-a120-dd305d0c6c4d",
+      "corretor": null,
+      "excluido": false,
+      "sintomas": {
+        "numero_parcela_duplicado": 0,
+        "drift_pago_30d": 55,
+        "sem_sienge_bill_id": false
+      },
+      "contagens": {
+        "total": 57,
+        "pagos": 57,
+        "pendentes": 0,
+        "cancelados": 0
+      },
+      "score": 1
+    },
+    {
+      "venda_id": "39d7aad3-aa7b-459c-820a-17a00e1aa7f4",
+      "sienge_contract_id": "79",
+      "numero_contrato": "37",
+      "unidade": "904 A",
+      "cliente": null,
+      "cliente_id": "5ee656be-bdfc-4862-aff1-29353f4d5d83",
+      "corretor": null,
+      "excluido": false,
+      "sintomas": {
+        "numero_parcela_duplicado": 0,
+        "drift_pago_30d": 54,
+        "sem_sienge_bill_id": false
+      },
+      "contagens": {
+        "total": 60,
+        "pagos": 60,
+        "pendentes": 0,
+        "cancelados": 0
+      },
+      "score": 1
+    },
+    {
+      "venda_id": "472d7dfe-e95a-40d7-8739-328d2b576c44",
+      "sienge_contract_id": "145",
+      "numero_contrato": "55",
+      "unidade": "1103 A",
+      "cliente": null,
+      "cliente_id": "fdef8b82-2c9b-4cb5-8d9b-3f09c7d90041",
+      "corretor": null,
+      "excluido": false,
+      "sintomas": {
+        "numero_parcela_duplicado": 0,
+        "drift_pago_30d": 54,
+        "sem_sienge_bill_id": false
+      },
+      "contagens": {
+        "total": 62,
+        "pagos": 60,
+        "pendentes": 0,
+        "cancelados": 2
+      },
+      "score": 1
+    },
+    {
+      "venda_id": "59ff9a4f-ef24-4e80-acab-502606e79741",
+      "sienge_contract_id": "196",
+      "numero_contrato": "104",
+      "unidade": "908 B",
+      "cliente": null,
+      "cliente_id": "7ee8073b-902b-4743-83b3-4a9caf782f45",
+      "corretor": null,
+      "excluido": false,
+      "sintomas": {
+        "numero_parcela_duplicado": 0,
+        "drift_pago_30d": 54,
+        "sem_sienge_bill_id": false
+      },
+      "contagens": {
+        "total": 60,
+        "pagos": 60,
+        "pendentes": 0,
+        "cancelados": 0
+      },
+      "score": 1
+    },
+    {
+      "venda_id": "5cfdabb1-25aa-4633-a6e0-b3c4651cf052",
+      "sienge_contract_id": "42",
+      "numero_contrato": "21",
+      "unidade": "609 A",
+      "cliente": null,
+      "cliente_id": "97064ee1-ee86-4d7f-b144-c5ba9bdb24ac",
+      "corretor": null,
+      "excluido": false,
+      "sintomas": {
+        "numero_parcela_duplicado": 0,
+        "drift_pago_30d": 53,
+        "sem_sienge_bill_id": false
+      },
+      "contagens": {
+        "total": 57,
+        "pagos": 57,
+        "pendentes": 0,
+        "cancelados": 0
+      },
+      "score": 1
+    },
+    {
+      "venda_id": "8b74adf9-e6dc-404b-8144-d026dbb256ed",
+      "sienge_contract_id": "209",
+      "numero_contrato": "117",
+      "unidade": "403 C",
+      "cliente": null,
+      "cliente_id": "195979e2-54d4-4f51-b89e-27d335ca257f",
+      "corretor": null,
+      "excluido": false,
+      "sintomas": {
+        "numero_parcela_duplicado": 0,
+        "drift_pago_30d": 53,
+        "sem_sienge_bill_id": false
+      },
+      "contagens": {
+        "total": 60,
+        "pagos": 60,
+        "pendentes": 0,
+        "cancelados": 0
+      },
+      "score": 1
+    },
+    {
+      "venda_id": "83b8f727-e9a9-4a88-846c-272f6970356a",
+      "sienge_contract_id": "355",
+      "numero_contrato": "253",
+      "unidade": "1707 A",
+      "cliente": null,
+      "cliente_id": "51fd9d11-14fe-440a-8132-f0396f7f9ee9",
+      "corretor": null,
+      "excluido": false,
+      "sintomas": {
+        "numero_parcela_duplicado": 0,
+        "drift_pago_30d": 53,
+        "sem_sienge_bill_id": false
+      },
+      "contagens": {
+        "total": 56,
+        "pagos": 56,
+        "pendentes": 0,
+        "cancelados": 0
+      },
+      "score": 1
+    },
+    {
+      "venda_id": "e1c0ca9b-452f-4955-aeb3-a0e1fc36642c",
+      "sienge_contract_id": "149",
+      "numero_contrato": "59",
+      "unidade": "1304 A",
+      "cliente": null,
+      "cliente_id": "cc89b794-2723-467c-8d04-02a2d8eb4206",
+      "corretor": null,
+      "excluido": false,
+      "sintomas": {
+        "numero_parcela_duplicado": 0,
+        "drift_pago_30d": 53,
+        "sem_sienge_bill_id": false
+      },
+      "contagens": {
+        "total": 60,
+        "pagos": 60,
+        "pendentes": 0,
+        "cancelados": 0
+      },
+      "score": 1
+    },
+    {
+      "venda_id": "335e0f43-2a77-4399-ae27-eb4af0a56a68",
+      "sienge_contract_id": "268",
+      "numero_contrato": "176",
+      "unidade": "604 D",
+      "cliente": null,
+      "cliente_id": "7d7f8101-e4db-4b19-8a9d-d320956dacb6",
+      "corretor": null,
+      "excluido": false,
+      "sintomas": {
+        "numero_parcela_duplicado": 0,
+        "drift_pago_30d": 52,
+        "sem_sienge_bill_id": false
+      },
+      "contagens": {
+        "total": 59,
+        "pagos": 59,
+        "pendentes": 0,
+        "cancelados": 0
+      },
+      "score": 1
+    },
+    {
+      "venda_id": "36965dcf-4d05-42f6-b066-ac480bb1a561",
+      "sienge_contract_id": "315",
+      "numero_contrato": "223",
+      "unidade": "406 A",
+      "cliente": null,
+      "cliente_id": "4fe27e8f-ff18-4eb0-9df8-6f5addff61bb",
+      "corretor": null,
+      "excluido": false,
+      "sintomas": {
+        "numero_parcela_duplicado": 0,
+        "drift_pago_30d": 52,
+        "sem_sienge_bill_id": false
+      },
+      "contagens": {
+        "total": 57,
+        "pagos": 57,
+        "pendentes": 0,
+        "cancelados": 0
+      },
+      "score": 1
+    },
+    {
+      "venda_id": "c2c465e1-cec4-42bc-8f40-db0d7d7d3106",
+      "sienge_contract_id": "141",
+      "numero_contrato": "51",
+      "unidade": "1105 A",
+      "cliente": null,
+      "cliente_id": "807c7346-6c85-444b-a53e-a159d710eb79",
+      "corretor": null,
+      "excluido": false,
+      "sintomas": {
+        "numero_parcela_duplicado": 0,
+        "drift_pago_30d": 52,
+        "sem_sienge_bill_id": false
+      },
+      "contagens": {
+        "total": 60,
+        "pagos": 60,
+        "pendentes": 0,
+        "cancelados": 0
+      },
+      "score": 1
+    },
+    {
+      "venda_id": "ac19aefe-53c9-4f4c-a519-e603fc6aa05e",
+      "sienge_contract_id": "278",
+      "numero_contrato": "186",
+      "unidade": "901 D",
+      "cliente": null,
+      "cliente_id": "276d6707-f79e-4d66-b64d-85f67468e7c9",
+      "corretor": null,
+      "excluido": false,
+      "sintomas": {
+        "numero_parcela_duplicado": 0,
+        "drift_pago_30d": 52,
+        "sem_sienge_bill_id": false
+      },
+      "contagens": {
+        "total": 60,
+        "pagos": 60,
+        "pendentes": 0,
+        "cancelados": 0
+      },
+      "score": 1
+    },
+    {
+      "venda_id": "eb4ac0bc-7de5-49fd-a933-3ab7de549dac",
+      "sienge_contract_id": "181",
+      "numero_contrato": "91",
+      "unidade": "603 B",
+      "cliente": null,
+      "cliente_id": "84033921-262d-4e9f-91c8-014075d3a303",
+      "corretor": null,
+      "excluido": false,
+      "sintomas": {
+        "numero_parcela_duplicado": 0,
+        "drift_pago_30d": 51,
+        "sem_sienge_bill_id": false
+      },
+      "contagens": {
+        "total": 57,
+        "pagos": 57,
+        "pendentes": 0,
+        "cancelados": 0
+      },
+      "score": 1
+    },
+    {
+      "venda_id": "54497681-10e3-4a1a-89d8-b3356fdec09a",
+      "sienge_contract_id": "380",
+      "numero_contrato": "266",
+      "unidade": "507 A",
+      "cliente": null,
+      "cliente_id": "ba0a26d1-6d26-4819-94a7-dcdd752c4a12",
+      "corretor": null,
+      "excluido": false,
+      "sintomas": {
+        "numero_parcela_duplicado": 0,
+        "drift_pago_30d": 50,
+        "sem_sienge_bill_id": false
+      },
+      "contagens": {
+        "total": 52,
+        "pagos": 52,
+        "pendentes": 0,
+        "cancelados": 0
+      },
+      "score": 1
+    },
+    {
+      "venda_id": "d77a7a35-7c36-450a-b4af-9648bc44adc7",
+      "sienge_contract_id": "384",
+      "numero_contrato": "270",
+      "unidade": "604 D",
+      "cliente": null,
+      "cliente_id": "65f7cdf7-7a42-4c3a-965d-830fcf10a8a2",
+      "corretor": null,
+      "excluido": false,
+      "sintomas": {
+        "numero_parcela_duplicado": 0,
+        "drift_pago_30d": 48,
+        "sem_sienge_bill_id": false
+      },
+      "contagens": {
+        "total": 51,
+        "pagos": 51,
+        "pendentes": 0,
+        "cancelados": 0
+      },
+      "score": 1
+    },
+    {
+      "venda_id": "e14ded4d-9161-4d65-bf6e-27d6518d199c",
+      "sienge_contract_id": "259",
+      "numero_contrato": "167",
+      "unidade": "403 D",
+      "cliente": null,
+      "cliente_id": "700e2968-0c6c-4220-baf8-9adf7b5c4606",
+      "corretor": null,
+      "excluido": false,
+      "sintomas": {
+        "numero_parcela_duplicado": 0,
+        "drift_pago_30d": 47,
+        "sem_sienge_bill_id": false
+      },
+      "contagens": {
+        "total": 53,
+        "pagos": 51,
+        "pendentes": 0,
+        "cancelados": 2
+      },
+      "score": 1
+    },
+    {
+      "venda_id": "b7a817c5-aa5e-4461-b04f-0638a24c36e9",
+      "sienge_contract_id": "312",
+      "numero_contrato": "220",
+      "unidade": "712 A",
+      "cliente": null,
+      "cliente_id": "ed2dfd59-2b05-4179-9685-c037a89412a2",
+      "corretor": null,
+      "excluido": false,
+      "sintomas": {
+        "numero_parcela_duplicado": 0,
+        "drift_pago_30d": 10,
+        "sem_sienge_bill_id": false
+      },
+      "contagens": {
+        "total": 65,
+        "pagos": 12,
+        "pendentes": 53,
+        "cancelados": 0
+      },
+      "score": 1
+    },
+    {
+      "venda_id": "63e023d8-2376-498e-9895-b497922f6b24",
+      "sienge_contract_id": "287",
+      "numero_contrato": "195",
+      "unidade": "1004 D",
+      "cliente": null,
+      "cliente_id": "803400dc-a558-4924-a666-3e2d3765a8af",
+      "corretor": null,
+      "excluido": false,
+      "sintomas": {
+        "numero_parcela_duplicado": 0,
+        "drift_pago_30d": 6,
+        "sem_sienge_bill_id": false
+      },
+      "contagens": {
+        "total": 60,
+        "pagos": 7,
+        "pendentes": 53,
+        "cancelados": 0
+      },
+      "score": 1
+    },
+    {
+      "venda_id": "13736419-ed8e-44b8-bd34-5b241981bd23",
+      "sienge_contract_id": "174",
+      "numero_contrato": "84",
+      "unidade": "1806 A",
+      "cliente": null,
+      "cliente_id": "a8578cb6-b1eb-4193-a630-eb740b129590",
+      "corretor": null,
+      "excluido": false,
+      "sintomas": {
+        "numero_parcela_duplicado": 0,
+        "drift_pago_30d": 5,
+        "sem_sienge_bill_id": false
+      },
+      "contagens": {
+        "total": 60,
+        "pagos": 11,
+        "pendentes": 49,
+        "cancelados": 0
+      },
+      "score": 1
+    },
+    {
+      "venda_id": "8d10b601-d088-4023-81bf-e136195fa8a9",
+      "sienge_contract_id": "150",
+      "numero_contrato": "60",
+      "unidade": "1306 A",
+      "cliente": null,
+      "cliente_id": "24dc5eef-4cdd-490e-b798-3f7ced082d52",
+      "corretor": null,
+      "excluido": false,
+      "sintomas": {
+        "numero_parcela_duplicado": 0,
+        "drift_pago_30d": 4,
+        "sem_sienge_bill_id": false
+      },
+      "contagens": {
+        "total": 60,
+        "pagos": 9,
+        "pendentes": 51,
+        "cancelados": 0
+      },
+      "score": 1
+    },
+    {
+      "venda_id": "cffb2c73-edb7-4127-8f74-18f382efbe78",
+      "sienge_contract_id": "351",
+      "numero_contrato": "249",
+      "unidade": "506 A",
+      "cliente": null,
+      "cliente_id": "7ddb7da5-f751-425d-bec7-7bc2a04688cb",
+      "corretor": null,
+      "excluido": false,
+      "sintomas": {
+        "numero_parcela_duplicado": 0,
+        "drift_pago_30d": 4,
+        "sem_sienge_bill_id": false
+      },
+      "contagens": {
+        "total": 59,
+        "pagos": 9,
+        "pendentes": 50,
+        "cancelados": 0
+      },
+      "score": 1
+    },
+    {
+      "venda_id": "71a27446-2dde-4c7e-b366-2083ba84ef81",
+      "sienge_contract_id": "4",
+      "numero_contrato": "3",
+      "unidade": "1008 B",
+      "cliente": null,
+      "cliente_id": "d1f57f83-4dae-42d9-822e-beb23229281c",
+      "corretor": null,
+      "excluido": false,
+      "sintomas": {
+        "numero_parcela_duplicado": 0,
+        "drift_pago_30d": 4,
+        "sem_sienge_bill_id": false
+      },
+      "contagens": {
+        "total": 62,
+        "pagos": 8,
+        "pendentes": 54,
+        "cancelados": 0
+      },
+      "score": 1
+    },
+    {
+      "venda_id": "ec6e2c8d-0988-4b34-94a4-255e3b4d288f",
+      "sienge_contract_id": "260",
+      "numero_contrato": "168",
+      "unidade": "409 D",
+      "cliente": null,
+      "cliente_id": "1d7b3cfb-1962-4f5b-a51b-84d104e997d0",
+      "corretor": null,
+      "excluido": false,
+      "sintomas": {
+        "numero_parcela_duplicado": 0,
+        "drift_pago_30d": 4,
+        "sem_sienge_bill_id": false
+      },
+      "contagens": {
+        "total": 60,
+        "pagos": 11,
+        "pendentes": 49,
+        "cancelados": 0
+      },
+      "score": 1
+    },
+    {
+      "venda_id": "c6100456-03b1-44a9-8f1b-c47dd16997ad",
+      "sienge_contract_id": "230",
+      "numero_contrato": "138",
+      "unidade": "906 C",
+      "cliente": null,
+      "cliente_id": "e07b9a5a-3ebd-452a-9c5d-a47a72af287d",
+      "corretor": null,
+      "excluido": false,
+      "sintomas": {
+        "numero_parcela_duplicado": 0,
+        "drift_pago_30d": 4,
+        "sem_sienge_bill_id": false
+      },
+      "contagens": {
+        "total": 59,
+        "pagos": 8,
+        "pendentes": 51,
+        "cancelados": 0
+      },
+      "score": 1
+    },
+    {
+      "venda_id": "cf012b9e-bf28-476f-9846-a798826509e8",
+      "sienge_contract_id": "178",
+      "numero_contrato": "88",
+      "unidade": "409 B",
+      "cliente": null,
+      "cliente_id": "dc3db0b0-d6da-414e-9ac4-177e25a8ddc6",
+      "corretor": null,
+      "excluido": false,
+      "sintomas": {
+        "numero_parcela_duplicado": 0,
+        "drift_pago_30d": 4,
+        "sem_sienge_bill_id": false
+      },
+      "contagens": {
+        "total": 60,
+        "pagos": 10,
+        "pendentes": 50,
+        "cancelados": 0
+      },
+      "score": 1
+    },
+    {
+      "venda_id": "7978c149-88eb-4568-b57a-3785c93cc953",
+      "sienge_contract_id": "165",
+      "numero_contrato": "75",
+      "unidade": "1606 A",
+      "cliente": null,
+      "cliente_id": "e4f0c83b-73cb-4f53-a79b-e99f3378c534",
+      "corretor": null,
+      "excluido": false,
+      "sintomas": {
+        "numero_parcela_duplicado": 0,
+        "drift_pago_30d": 4,
+        "sem_sienge_bill_id": false
+      },
+      "contagens": {
+        "total": 60,
+        "pagos": 9,
+        "pendentes": 51,
+        "cancelados": 0
+      },
+      "score": 1
+    },
+    {
+      "venda_id": "9441cafe-1606-4a62-8d0b-cf1c2be6fedb",
+      "sienge_contract_id": "248",
+      "numero_contrato": "156",
+      "unidade": "1304 C",
+      "cliente": null,
+      "cliente_id": "4c52eeca-94c3-4529-830a-21a86670032c",
+      "corretor": null,
+      "excluido": false,
+      "sintomas": {
+        "numero_parcela_duplicado": 0,
+        "drift_pago_30d": 4,
+        "sem_sienge_bill_id": false
+      },
+      "contagens": {
+        "total": 60,
+        "pagos": 8,
+        "pendentes": 52,
+        "cancelados": 0
+      },
+      "score": 1
+    },
+    {
+      "venda_id": "e3bd5695-27ce-436b-a578-ce1bfac3d7aa",
+      "sienge_contract_id": "340",
+      "numero_contrato": "243",
+      "unidade": "905 B",
+      "cliente": null,
+      "cliente_id": "80a0cc9f-5298-4766-abda-ce952f9ccd30",
+      "corretor": null,
+      "excluido": false,
+      "sintomas": {
+        "numero_parcela_duplicado": 0,
+        "drift_pago_30d": 3,
+        "sem_sienge_bill_id": false
+      },
+      "contagens": {
+        "total": 64,
+        "pagos": 5,
+        "pendentes": 59,
+        "cancelados": 0
+      },
+      "score": 1
+    },
+    {
+      "venda_id": "677f0acb-1cf8-434d-b6bc-44de97936960",
+      "sienge_contract_id": "328",
+      "numero_contrato": "233",
+      "unidade": "1105 B",
+      "cliente": null,
+      "cliente_id": "5c4782bc-b4bb-4455-bcc2-3fcb177e0470",
+      "corretor": null,
+      "excluido": false,
+      "sintomas": {
+        "numero_parcela_duplicado": 0,
+        "drift_pago_30d": 3,
+        "sem_sienge_bill_id": false
+      },
+      "contagens": {
+        "total": 65,
+        "pagos": 14,
+        "pendentes": 51,
+        "cancelados": 0
+      },
+      "score": 1
+    },
+    {
+      "venda_id": "5c693a17-6a08-4ecd-bb94-6025aad53ff8",
+      "sienge_contract_id": "231",
+      "numero_contrato": "139",
+      "unidade": "907 C",
+      "cliente": null,
+      "cliente_id": "5ceaba30-ed0c-4270-acec-d29dd3451866",
+      "corretor": null,
+      "excluido": false,
+      "sintomas": {
+        "numero_parcela_duplicado": 0,
+        "drift_pago_30d": 3,
+        "sem_sienge_bill_id": false
+      },
+      "contagens": {
+        "total": 58,
+        "pagos": 10,
+        "pendentes": 48,
+        "cancelados": 0
+      },
+      "score": 1
+    },
+    {
+      "venda_id": "c5812545-2a1f-4640-b76f-dd00f555930d",
+      "sienge_contract_id": "288",
+      "numero_contrato": "196",
+      "unidade": "1005 D",
+      "cliente": null,
+      "cliente_id": "d9556c77-7b05-4773-9307-db69128e6af2",
+      "corretor": null,
+      "excluido": false,
+      "sintomas": {
+        "numero_parcela_duplicado": 0,
+        "drift_pago_30d": 3,
+        "sem_sienge_bill_id": false
+      },
+      "contagens": {
+        "total": 64,
+        "pagos": 6,
+        "pendentes": 58,
+        "cancelados": 0
+      },
+      "score": 1
+    },
+    {
+      "venda_id": "3fd94157-57b7-4981-a1d6-4c7aae0a0998",
+      "sienge_contract_id": "136",
+      "numero_contrato": "47",
+      "unidade": "1008 A",
+      "cliente": null,
+      "cliente_id": "664ec631-923c-4e65-9d10-f5339da7eda1",
+      "corretor": null,
+      "excluido": false,
+      "sintomas": {
+        "numero_parcela_duplicado": 0,
+        "drift_pago_30d": 3,
+        "sem_sienge_bill_id": false
+      },
+      "contagens": {
+        "total": 61,
+        "pagos": 10,
+        "pendentes": 51,
+        "cancelados": 0
+      },
+      "score": 1
+    },
+    {
+      "venda_id": "39b748cc-65fd-4504-aad8-14443d07a08a",
+      "sienge_contract_id": "175",
+      "numero_contrato": "85",
+      "unidade": "1807 A",
+      "cliente": null,
+      "cliente_id": "1e21a258-2765-4aa2-ad65-ebfe1222b296",
+      "corretor": null,
+      "excluido": false,
+      "sintomas": {
+        "numero_parcela_duplicado": 0,
+        "drift_pago_30d": 3,
+        "sem_sienge_bill_id": false
+      },
+      "contagens": {
+        "total": 60,
+        "pagos": 12,
+        "pendentes": 48,
+        "cancelados": 0
+      },
+      "score": 1
+    },
+    {
+      "venda_id": "d2847ce1-bc8f-4eb6-a95f-3bc1cab122d5",
+      "sienge_contract_id": "2",
+      "numero_contrato": "1",
+      "unidade": "1006D - FG",
+      "cliente": null,
+      "cliente_id": "4f5d16de-5563-4ec5-a8bf-62a7be0fbec7",
+      "corretor": null,
+      "excluido": false,
+      "sintomas": {
+        "numero_parcela_duplicado": 0,
+        "drift_pago_30d": 2,
+        "sem_sienge_bill_id": false
+      },
+      "contagens": {
+        "total": 59,
+        "pagos": 3,
+        "pendentes": 56,
+        "cancelados": 0
+      },
+      "score": 1
+    },
+    {
+      "venda_id": "e570a347-c613-45de-817c-4844ba204e2c",
+      "sienge_contract_id": "309",
+      "numero_contrato": "217",
+      "unidade": "1002 A",
+      "cliente": null,
+      "cliente_id": "7338b3dd-9719-40f6-98ee-ddb36895864c",
+      "corretor": null,
+      "excluido": false,
+      "sintomas": {
+        "numero_parcela_duplicado": 0,
+        "drift_pago_30d": 2,
+        "sem_sienge_bill_id": false
+      },
+      "contagens": {
+        "total": 65,
+        "pagos": 11,
+        "pendentes": 54,
+        "cancelados": 0
+      },
+      "score": 1
+    },
+    {
+      "venda_id": "a2501437-3de4-4b97-b2cc-93474077de6b",
+      "sienge_contract_id": "334",
+      "numero_contrato": "238",
+      "unidade": "1702 A",
+      "cliente": null,
+      "cliente_id": "0cc1cfae-7d98-4e1e-928e-0c6032cd3444",
+      "corretor": null,
+      "excluido": false,
+      "sintomas": {
+        "numero_parcela_duplicado": 0,
+        "drift_pago_30d": 2,
+        "sem_sienge_bill_id": false
+      },
+      "contagens": {
+        "total": 55,
+        "pagos": 3,
+        "pendentes": 52,
+        "cancelados": 0
+      },
+      "score": 1
+    },
+    {
+      "venda_id": "6a33ac0b-00af-4fc3-8539-7529998a94b2",
+      "sienge_contract_id": "299",
+      "numero_contrato": "207",
+      "unidade": "1305 D",
+      "cliente": null,
+      "cliente_id": "0fbe6c7d-8a26-41b5-8127-df4294c0eb53",
+      "corretor": null,
+      "excluido": false,
+      "sintomas": {
+        "numero_parcela_duplicado": 0,
+        "drift_pago_30d": 2,
+        "sem_sienge_bill_id": false
+      },
+      "contagens": {
+        "total": 63,
+        "pagos": 8,
+        "pendentes": 55,
+        "cancelados": 0
+      },
+      "score": 1
+    },
+    {
+      "venda_id": "8a9bfb6c-c6c1-4e4d-bf60-fa3c477cba4b",
+      "sienge_contract_id": "44",
+      "numero_contrato": "23",
+      "unidade": "612 A",
+      "cliente": null,
+      "cliente_id": "a91b3beb-4b67-44ac-97d2-298573284293",
+      "corretor": null,
+      "excluido": false,
+      "sintomas": {
+        "numero_parcela_duplicado": 0,
+        "drift_pago_30d": 2,
+        "sem_sienge_bill_id": false
+      },
+      "contagens": {
+        "total": 60,
+        "pagos": 13,
+        "pendentes": 47,
+        "cancelados": 0
+      },
+      "score": 1
+    },
+    {
+      "venda_id": "52072fb0-78dc-4374-b0c1-8b4099b6f08d",
+      "sienge_contract_id": "262",
+      "numero_contrato": "170",
+      "unidade": "503 D",
+      "cliente": null,
+      "cliente_id": "3be44be0-c83c-4a98-bb4b-6c7c8a7a4502",
+      "corretor": null,
+      "excluido": false,
+      "sintomas": {
+        "numero_parcela_duplicado": 0,
+        "drift_pago_30d": 2,
+        "sem_sienge_bill_id": false
+      },
+      "contagens": {
+        "total": 39,
+        "pagos": 11,
+        "pendentes": 28,
+        "cancelados": 0
+      },
+      "score": 1
+    },
+    {
+      "venda_id": "ab3def5e-d139-4f60-9669-d4896c74436d",
+      "sienge_contract_id": "314",
+      "numero_contrato": "222",
+      "unidade": "408 A",
+      "cliente": null,
+      "cliente_id": "648c12c6-cda6-4846-84af-6bb0bdbddead",
+      "corretor": null,
+      "excluido": false,
+      "sintomas": {
+        "numero_parcela_duplicado": 0,
+        "drift_pago_30d": 2,
+        "sem_sienge_bill_id": false
+      },
+      "contagens": {
+        "total": 60,
+        "pagos": 11,
+        "pendentes": 49,
+        "cancelados": 0
+      },
+      "score": 1
+    },
+    {
+      "venda_id": "3c30adc1-164f-4e5f-858b-6697c42d6c88",
+      "sienge_contract_id": "295",
+      "numero_contrato": "203",
+      "unidade": "1203 D",
+      "cliente": null,
+      "cliente_id": "08106597-635d-4158-bcf9-e14e5c9a103f",
+      "corretor": null,
+      "excluido": false,
+      "sintomas": {
+        "numero_parcela_duplicado": 0,
+        "drift_pago_30d": 2,
+        "sem_sienge_bill_id": false
+      },
+      "contagens": {
+        "total": 59,
+        "pagos": 7,
+        "pendentes": 52,
+        "cancelados": 0
+      },
+      "score": 1
+    },
+    {
+      "venda_id": "ddfe2380-a927-4ad5-b37f-ed7d0913c333",
+      "sienge_contract_id": "63",
+      "numero_contrato": "27",
+      "unidade": "710 A",
+      "cliente": null,
+      "cliente_id": "5d5f352a-6484-46d0-b370-c688817c9a51",
+      "corretor": null,
+      "excluido": false,
+      "sintomas": {
+        "numero_parcela_duplicado": 0,
+        "drift_pago_30d": 2,
+        "sem_sienge_bill_id": false
+      },
+      "contagens": {
+        "total": 60,
+        "pagos": 8,
+        "pendentes": 52,
+        "cancelados": 0
+      },
+      "score": 1
+    },
+    {
+      "venda_id": "871c99bb-0e79-4bac-8657-6be5b17fb206",
+      "sienge_contract_id": "184",
+      "numero_contrato": "94",
+      "unidade": "703 B",
+      "cliente": null,
+      "cliente_id": "f9a874d6-2595-49b7-a852-01e234077efe",
+      "corretor": null,
+      "excluido": false,
+      "sintomas": {
+        "numero_parcela_duplicado": 0,
+        "drift_pago_30d": 2,
+        "sem_sienge_bill_id": false
+      },
+      "contagens": {
+        "total": 59,
+        "pagos": 10,
+        "pendentes": 49,
+        "cancelados": 0
+      },
+      "score": 1
+    },
+    {
+      "venda_id": "c5e10e5d-cbf4-45df-913e-4eee519ecad7",
+      "sienge_contract_id": "277",
+      "numero_contrato": "185",
+      "unidade": "810 D",
+      "cliente": null,
+      "cliente_id": "843567af-023a-4ed9-81f9-daeb18d5b61b",
+      "corretor": null,
+      "excluido": false,
+      "sintomas": {
+        "numero_parcela_duplicado": 0,
+        "drift_pago_30d": 2,
+        "sem_sienge_bill_id": false
+      },
+      "contagens": {
+        "total": 60,
+        "pagos": 11,
+        "pendentes": 49,
+        "cancelados": 0
+      },
+      "score": 1
+    },
+    {
+      "venda_id": "982f1c2a-b679-4992-bae6-f6aabac8646c",
+      "sienge_contract_id": "156",
+      "numero_contrato": "66",
+      "unidade": "1408 A",
+      "cliente": null,
+      "cliente_id": "fc403830-aa7f-4687-950b-c1317285faa9",
+      "corretor": null,
+      "excluido": false,
+      "sintomas": {
+        "numero_parcela_duplicado": 0,
+        "drift_pago_30d": 2,
+        "sem_sienge_bill_id": false
+      },
+      "contagens": {
+        "total": 58,
+        "pagos": 10,
+        "pendentes": 48,
+        "cancelados": 0
+      },
+      "score": 1
+    },
+    {
+      "venda_id": "2a4e3f59-bd50-4323-b807-9c26c9a1b196",
+      "sienge_contract_id": "26",
+      "numero_contrato": "19",
+      "unidade": "603 A",
+      "cliente": null,
+      "cliente_id": "380c7e73-e978-4c9f-8e08-03b556119c44",
+      "corretor": null,
+      "excluido": false,
+      "sintomas": {
+        "numero_parcela_duplicado": 0,
+        "drift_pago_30d": 1,
+        "sem_sienge_bill_id": false
+      },
+      "contagens": {
+        "total": 60,
+        "pagos": 12,
+        "pendentes": 48,
+        "cancelados": 0
+      },
+      "score": 1
+    },
+    {
+      "venda_id": "e9f21d96-203e-44df-bead-9dddd6a2c250",
+      "sienge_contract_id": "235",
+      "numero_contrato": "143",
+      "unidade": "1006 C",
+      "cliente": null,
+      "cliente_id": "5871e9e5-ee40-4222-98e4-d080d18aa0ff",
+      "corretor": null,
+      "excluido": false,
+      "sintomas": {
+        "numero_parcela_duplicado": 0,
+        "drift_pago_30d": 1,
+        "sem_sienge_bill_id": false
+      },
+      "contagens": {
+        "total": 62,
+        "pagos": 6,
+        "pendentes": 56,
+        "cancelados": 0
+      },
+      "score": 1
+    },
+    {
+      "venda_id": "b517bfcf-2c3a-4b71-a4a7-dae26216d596",
+      "sienge_contract_id": "318",
+      "numero_contrato": "226",
+      "unidade": "1302 A",
+      "cliente": null,
+      "cliente_id": "b164deb1-2af6-4a72-ad69-da1371ec5829",
+      "corretor": null,
+      "excluido": false,
+      "sintomas": {
+        "numero_parcela_duplicado": 0,
+        "drift_pago_30d": 1,
+        "sem_sienge_bill_id": false
+      },
+      "contagens": {
+        "total": 63,
+        "pagos": 12,
+        "pendentes": 51,
+        "cancelados": 0
+      },
+      "score": 1
+    },
+    {
+      "venda_id": "cab91095-4b55-48a6-ab29-045984076cb4",
+      "sienge_contract_id": "214",
+      "numero_contrato": "122",
+      "unidade": "504 C",
+      "cliente": null,
+      "cliente_id": "94acdccd-4674-46cc-be00-cc938edba051",
+      "corretor": null,
+      "excluido": false,
+      "sintomas": {
+        "numero_parcela_duplicado": 0,
+        "drift_pago_30d": 1,
+        "sem_sienge_bill_id": false
+      },
+      "contagens": {
+        "total": 60,
+        "pagos": 11,
+        "pendentes": 49,
+        "cancelados": 0
+      },
+      "score": 1
+    },
+    {
+      "venda_id": "8daa3121-fcfa-42fa-8318-8e39fdac8800",
+      "sienge_contract_id": "80",
+      "numero_contrato": "38",
+      "unidade": "905 A",
+      "cliente": null,
+      "cliente_id": "3d0eb759-59a9-474d-b677-cee70f734276",
+      "corretor": null,
+      "excluido": false,
+      "sintomas": {
+        "numero_parcela_duplicado": 0,
+        "drift_pago_30d": 1,
+        "sem_sienge_bill_id": false
+      },
+      "contagens": {
+        "total": 63,
+        "pagos": 12,
+        "pendentes": 51,
+        "cancelados": 0
+      },
+      "score": 1
+    },
+    {
+      "venda_id": "af896f28-a657-4cb9-8a96-00be5e56a2d1",
+      "sienge_contract_id": "304",
+      "numero_contrato": "212",
+      "unidade": "1406 D",
+      "cliente": null,
+      "cliente_id": "9710b083-108c-4c19-b9d2-13509053012c",
+      "corretor": null,
+      "excluido": false,
+      "sintomas": {
+        "numero_parcela_duplicado": 0,
+        "drift_pago_30d": 1,
+        "sem_sienge_bill_id": false
+      },
+      "contagens": {
+        "total": 57,
+        "pagos": 7,
+        "pendentes": 50,
+        "cancelados": 0
+      },
+      "score": 1
+    },
+    {
+      "venda_id": "ca64e0e4-6e08-45fd-88f3-836892820520",
+      "sienge_contract_id": "317",
+      "numero_contrato": "225",
+      "unidade": "812 D",
+      "cliente": null,
+      "cliente_id": "b5e42213-0773-4b06-942e-75bb896f017a",
+      "corretor": null,
+      "excluido": false,
+      "sintomas": {
+        "numero_parcela_duplicado": 0,
+        "drift_pago_30d": 1,
+        "sem_sienge_bill_id": false
+      },
+      "contagens": {
+        "total": 60,
+        "pagos": 13,
+        "pendentes": 47,
+        "cancelados": 0
+      },
+      "score": 1
+    },
+    {
+      "venda_id": "9760cf8a-5826-4b18-b233-780551ec5586",
+      "sienge_contract_id": "422",
+      "numero_contrato": "293",
+      "unidade": "1603 C",
+      "cliente": null,
+      "cliente_id": "f9db4021-733a-4878-ba06-6c13cba392be",
+      "corretor": null,
+      "excluido": false,
+      "sintomas": {
+        "numero_parcela_duplicado": 0,
+        "drift_pago_30d": 1,
+        "sem_sienge_bill_id": false
+      },
+      "contagens": {
+        "total": 57,
+        "pagos": 3,
+        "pendentes": 54,
+        "cancelados": 0
+      },
+      "score": 1
+    },
+    {
+      "venda_id": "8336834f-ae1f-42fc-b680-7286d4bcd4af",
+      "sienge_contract_id": "247",
+      "numero_contrato": "155",
+      "unidade": "1303 C",
+      "cliente": null,
+      "cliente_id": "23fbaf76-7a63-472b-b774-cb6e8f8ed6d0",
+      "corretor": null,
+      "excluido": false,
+      "sintomas": {
+        "numero_parcela_duplicado": 0,
+        "drift_pago_30d": 1,
+        "sem_sienge_bill_id": false
+      },
+      "contagens": {
+        "total": 59,
+        "pagos": 9,
+        "pendentes": 50,
+        "cancelados": 0
+      },
+      "score": 1
+    },
+    {
+      "venda_id": "c9c377ab-05a4-4e3a-bb67-afa69af8ef98",
+      "sienge_contract_id": "15",
+      "numero_contrato": "13",
+      "unidade": "512 A",
+      "cliente": null,
+      "cliente_id": "f3a6663f-fdcb-49bb-8236-e9948865a491",
+      "corretor": null,
+      "excluido": false,
+      "sintomas": {
+        "numero_parcela_duplicado": 0,
+        "drift_pago_30d": 1,
+        "sem_sienge_bill_id": false
+      },
+      "contagens": {
+        "total": 66,
+        "pagos": 15,
+        "pendentes": 51,
+        "cancelados": 0
+      },
+      "score": 1
+    },
+    {
+      "venda_id": "85f070c7-e436-482c-ac8a-2242602aa984",
+      "sienge_contract_id": "69",
+      "numero_contrato": "30",
+      "unidade": "805 A",
+      "cliente": null,
+      "cliente_id": "82ed5d4f-065d-473d-80c1-e7af44f2a857",
+      "corretor": null,
+      "excluido": false,
+      "sintomas": {
+        "numero_parcela_duplicado": 0,
+        "drift_pago_30d": 1,
+        "sem_sienge_bill_id": false
+      },
+      "contagens": {
+        "total": 66,
+        "pagos": 14,
+        "pendentes": 52,
+        "cancelados": 0
+      },
+      "score": 1
+    },
+    {
+      "venda_id": "4fa28656-f4c5-4e93-862d-256bfe20551a",
+      "sienge_contract_id": "286",
+      "numero_contrato": "194",
+      "unidade": "1003 D",
+      "cliente": null,
+      "cliente_id": "88bfad62-35d9-4065-b5f0-59d5c2bcec46",
+      "corretor": null,
+      "excluido": false,
+      "sintomas": {
+        "numero_parcela_duplicado": 0,
+        "drift_pago_30d": 1,
+        "sem_sienge_bill_id": false
+      },
+      "contagens": {
+        "total": 58,
+        "pagos": 9,
+        "pendentes": 49,
+        "cancelados": 0
+      },
+      "score": 1
+    },
+    {
+      "venda_id": "572c2c6c-99ca-45ec-b7ec-ce925179fd1c",
+      "sienge_contract_id": "383",
+      "numero_contrato": "269",
+      "unidade": "1001 D",
+      "cliente": null,
+      "cliente_id": "5dbb56f5-9a74-470d-ba63-4645fec9692d",
+      "corretor": null,
+      "excluido": false,
+      "sintomas": {
+        "numero_parcela_duplicado": 0,
+        "drift_pago_30d": 1,
+        "sem_sienge_bill_id": false
+      },
+      "contagens": {
+        "total": 52,
+        "pagos": 1,
+        "pendentes": 51,
+        "cancelados": 0
+      },
+      "score": 1
+    },
+    {
+      "venda_id": "9e784457-c682-4bbb-9fe1-0677c980321a",
+      "sienge_contract_id": "208",
+      "numero_contrato": "116",
+      "unidade": "1603 B",
+      "cliente": null,
+      "cliente_id": "3cc1a85b-e5ca-4dd8-9ced-d3270ab165b7",
+      "corretor": null,
+      "excluido": false,
+      "sintomas": {
+        "numero_parcela_duplicado": 0,
+        "drift_pago_30d": 1,
+        "sem_sienge_bill_id": false
+      },
+      "contagens": {
+        "total": 65,
+        "pagos": 13,
+        "pendentes": 52,
+        "cancelados": 0
+      },
+      "score": 1
+    },
+    {
+      "venda_id": "69ba4019-3f78-46aa-bec0-0b00032a3dc4",
+      "sienge_contract_id": "180",
+      "numero_contrato": "90",
+      "unidade": "509 B",
+      "cliente": null,
+      "cliente_id": "58448b39-c5a2-4f0d-a647-38fc3c0ee2c2",
+      "corretor": null,
+      "excluido": false,
+      "sintomas": {
+        "numero_parcela_duplicado": 0,
+        "drift_pago_30d": 1,
+        "sem_sienge_bill_id": false
+      },
+      "contagens": {
+        "total": 60,
+        "pagos": 8,
+        "pendentes": 52,
+        "cancelados": 0
+      },
+      "score": 1
+    },
+    {
+      "venda_id": "dd6819f1-94a7-4394-822e-f86bcd42e8c2",
+      "sienge_contract_id": "8",
+      "numero_contrato": "7",
+      "unidade": "404 A",
+      "cliente": null,
+      "cliente_id": "3e83005e-5463-4c6e-8d77-57d1817af4c0",
+      "corretor": null,
+      "excluido": false,
+      "sintomas": {
+        "numero_parcela_duplicado": 0,
+        "drift_pago_30d": 1,
+        "sem_sienge_bill_id": false
+      },
+      "contagens": {
+        "total": 61,
+        "pagos": 7,
+        "pendentes": 54,
+        "cancelados": 0
+      },
+      "score": 1
+    },
+    {
+      "venda_id": "52a15049-f506-4ae5-93f9-a2fca420b2ae",
+      "sienge_contract_id": "161",
+      "numero_contrato": "71",
+      "unidade": "1506 A",
+      "cliente": null,
+      "cliente_id": "da0e2179-5325-4d2f-898a-8623ef72637f",
+      "corretor": null,
+      "excluido": false,
+      "sintomas": {
+        "numero_parcela_duplicado": 0,
+        "drift_pago_30d": 1,
+        "sem_sienge_bill_id": false
+      },
+      "contagens": {
+        "total": 66,
+        "pagos": 14,
+        "pendentes": 52,
+        "cancelados": 0
+      },
+      "score": 1
+    },
+    {
+      "venda_id": "4c79df6e-23d6-4d6d-90a4-6d0b53412e5a",
+      "sienge_contract_id": "134",
+      "numero_contrato": "45",
+      "unidade": "1004 A",
+      "cliente": null,
+      "cliente_id": "2ae9e2ef-79eb-457b-8ce7-2483e0bce146",
+      "corretor": null,
+      "excluido": false,
+      "sintomas": {
+        "numero_parcela_duplicado": 0,
+        "drift_pago_30d": 1,
+        "sem_sienge_bill_id": false
+      },
+      "contagens": {
+        "total": 60,
+        "pagos": 8,
+        "pendentes": 52,
+        "cancelados": 0
+      },
+      "score": 1
+    },
+    {
+      "venda_id": "8879bea6-eb3b-4306-a9f1-859855b2e77d",
+      "sienge_contract_id": "327",
+      "numero_contrato": "232",
+      "unidade": "1205 A",
+      "cliente": null,
+      "cliente_id": "8e14d8e0-08b5-48a8-ad23-47783918a987",
+      "corretor": null,
+      "excluido": false,
+      "sintomas": {
+        "numero_parcela_duplicado": 0,
+        "drift_pago_30d": 1,
+        "sem_sienge_bill_id": false
+      },
+      "contagens": {
+        "total": 60,
+        "pagos": 6,
+        "pendentes": 54,
+        "cancelados": 0
+      },
+      "score": 1
+    },
+    {
+      "venda_id": "5a6c00dd-e281-460a-90f6-816f4ed85002",
+      "sienge_contract_id": "155",
+      "numero_contrato": "65",
+      "unidade": "1407 A",
+      "cliente": null,
+      "cliente_id": "8b1b0dcf-0967-4758-8856-b9246d44b072",
+      "corretor": null,
+      "excluido": false,
+      "sintomas": {
+        "numero_parcela_duplicado": 0,
+        "drift_pago_30d": 1,
+        "sem_sienge_bill_id": false
+      },
+      "contagens": {
+        "total": 64,
+        "pagos": 12,
+        "pendentes": 52,
+        "cancelados": 0
+      },
+      "score": 1
+    },
+    {
+      "venda_id": "44a4152a-a9a7-4da9-a644-eded258546e0",
+      "sienge_contract_id": "146",
+      "numero_contrato": "56",
+      "unidade": "1204 A",
+      "cliente": null,
+      "cliente_id": "355c4d7a-821b-4e2a-9c54-ec06a1b39ca5",
+      "corretor": null,
+      "excluido": false,
+      "sintomas": {
+        "numero_parcela_duplicado": 0,
+        "drift_pago_30d": 1,
+        "sem_sienge_bill_id": false
+      },
+      "contagens": {
+        "total": 60,
+        "pagos": 6,
+        "pendentes": 54,
+        "cancelados": 0
+      },
+      "score": 1
+    },
+    {
+      "venda_id": "62d4b34f-232f-4251-8ab1-9be0b87128e2",
+      "sienge_contract_id": "176",
+      "numero_contrato": "86",
+      "unidade": "403 B",
+      "cliente": null,
+      "cliente_id": "edce9a90-775d-4e03-819c-cbb6060d5e65",
+      "corretor": null,
+      "excluido": false,
+      "sintomas": {
+        "numero_parcela_duplicado": 0,
+        "drift_pago_30d": 1,
+        "sem_sienge_bill_id": false
+      },
+      "contagens": {
+        "total": 66,
+        "pagos": 14,
+        "pendentes": 52,
+        "cancelados": 0
+      },
+      "score": 1
+    },
+    {
+      "venda_id": "d2aa4822-4727-4e63-9824-76f892082852",
+      "sienge_contract_id": "167",
+      "numero_contrato": "77",
+      "unidade": "1701 A",
+      "cliente": null,
+      "cliente_id": "14cc63e9-e2ef-4662-a188-a138efb22531",
+      "corretor": null,
+      "excluido": false,
+      "sintomas": {
+        "numero_parcela_duplicado": 0,
+        "drift_pago_30d": 1,
+        "sem_sienge_bill_id": false
+      },
+      "contagens": {
+        "total": 59,
+        "pagos": 10,
+        "pendentes": 49,
+        "cancelados": 0
+      },
+      "score": 1
+    },
+    {
+      "venda_id": "cb112568-042f-4e78-b86d-b1a209fa76d4",
+      "sienge_contract_id": "162",
+      "numero_contrato": "72",
+      "unidade": "1507 A",
+      "cliente": null,
+      "cliente_id": "e76b0d43-573f-4336-bf07-522156d251a4",
+      "corretor": null,
+      "excluido": false,
+      "sintomas": {
+        "numero_parcela_duplicado": 0,
+        "drift_pago_30d": 1,
+        "sem_sienge_bill_id": false
+      },
+      "contagens": {
+        "total": 63,
+        "pagos": 2,
+        "pendentes": 61,
+        "cancelados": 0
+      },
+      "score": 1
+    },
+    {
+      "venda_id": "293a5835-fafb-41ad-9a7f-8abd29dbe207",
+      "sienge_contract_id": "226",
+      "numero_contrato": "134",
+      "unidade": "901 C",
+      "cliente": null,
+      "cliente_id": "6f6cb61b-a607-41b4-abea-4f26bbdb2c1f",
+      "corretor": null,
+      "excluido": false,
+      "sintomas": {
+        "numero_parcela_duplicado": 0,
+        "drift_pago_30d": 1,
+        "sem_sienge_bill_id": false
+      },
+      "contagens": {
+        "total": 60,
+        "pagos": 9,
+        "pendentes": 51,
+        "cancelados": 0
+      },
+      "score": 1
+    },
+    {
+      "venda_id": "f3b338a7-2ed6-434b-92ba-c8fd254208b3",
+      "sienge_contract_id": "420",
+      "numero_contrato": "291",
+      "unidade": "1606 C",
+      "cliente": null,
+      "cliente_id": "1691b8f3-91cf-4e53-88b2-44e8fdc20c13",
+      "corretor": null,
+      "excluido": false,
+      "sintomas": {
+        "numero_parcela_duplicado": 0,
+        "drift_pago_30d": 1,
+        "sem_sienge_bill_id": false
+      },
+      "contagens": {
+        "total": 51,
+        "pagos": 4,
+        "pendentes": 47,
+        "cancelados": 0
+      },
+      "score": 1
+    },
+    {
+      "venda_id": "adca045e-9c14-4451-9ecd-4662f60c20f9",
+      "sienge_contract_id": "281",
+      "numero_contrato": "189",
+      "unidade": "905 D",
+      "cliente": null,
+      "cliente_id": "d2a866ef-accf-4014-867a-5253a2dcc56e",
+      "corretor": null,
+      "excluido": false,
+      "sintomas": {
+        "numero_parcela_duplicado": 0,
+        "drift_pago_30d": 1,
+        "sem_sienge_bill_id": false
+      },
+      "contagens": {
+        "total": 60,
+        "pagos": 9,
+        "pendentes": 51,
+        "cancelados": 0
+      },
+      "score": 1
+    },
+    {
+      "venda_id": "f62fedaa-c66a-4abf-b36e-ce12c46334d8",
+      "sienge_contract_id": "206",
+      "numero_contrato": "114",
+      "unidade": "1303 B",
+      "cliente": null,
+      "cliente_id": "ad5b651d-a9fd-404c-a19e-f12d253bd460",
+      "corretor": null,
+      "excluido": false,
+      "sintomas": {
+        "numero_parcela_duplicado": 0,
+        "drift_pago_30d": 1,
+        "sem_sienge_bill_id": false
+      },
+      "contagens": {
+        "total": 66,
+        "pagos": 8,
+        "pendentes": 58,
+        "cancelados": 0
+      },
+      "score": 1
+    },
+    {
+      "venda_id": "5c6c8318-2dc3-4fd7-b4e0-756c90308af8",
+      "sienge_contract_id": "319",
+      "numero_contrato": "227",
+      "unidade": "510 B",
+      "cliente": null,
+      "cliente_id": "46064993-3034-4352-8bc8-a5732ead172c",
+      "corretor": null,
+      "excluido": false,
+      "sintomas": {
+        "numero_parcela_duplicado": 0,
+        "drift_pago_30d": 1,
+        "sem_sienge_bill_id": false
+      },
+      "contagens": {
+        "total": 40,
+        "pagos": 15,
+        "pendentes": 25,
+        "cancelados": 0
+      },
+      "score": 1
+    },
+    {
+      "venda_id": "36810789-4453-4544-9523-3651bd74d027",
+      "sienge_contract_id": "240",
+      "numero_contrato": "148",
+      "unidade": "1107 C",
+      "cliente": null,
+      "cliente_id": "769b7872-8d89-45bc-aaea-b00bd8665edb",
+      "corretor": null,
+      "excluido": false,
+      "sintomas": {
+        "numero_parcela_duplicado": 0,
+        "drift_pago_30d": 1,
+        "sem_sienge_bill_id": false
+      },
+      "contagens": {
+        "total": 32,
+        "pagos": 5,
+        "pendentes": 27,
+        "cancelados": 0
+      },
+      "score": 1
+    },
+    {
+      "venda_id": "137d0df9-2c8e-49da-b3a3-528129babfd2",
+      "sienge_contract_id": "166",
+      "numero_contrato": "76",
+      "unidade": "1607 A",
+      "cliente": null,
+      "cliente_id": "c87d1b68-f15d-49b1-9f13-dc4ec5e173e5",
+      "corretor": null,
+      "excluido": false,
+      "sintomas": {
+        "numero_parcela_duplicado": 3,
+        "drift_pago_30d": 0,
+        "sem_sienge_bill_id": false
+      },
+      "contagens": {
+        "total": 58,
+        "pagos": 7,
+        "pendentes": 48,
+        "cancelados": 3
+      },
+      "score": 1
+    }
+  ]
+}

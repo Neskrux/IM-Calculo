@@ -15,14 +15,18 @@ import { resolve } from 'node:path'
 import { createHash } from 'node:crypto'
 
 function loadEnv() {
-  const raw = readFileSync('.env', 'utf8')
   const env = {}
-  for (const line of raw.split('\n')) {
-    if (!line.includes('=') || line.trim().startsWith('#')) continue
-    const idx = line.indexOf('=')
-    const k = line.slice(0, idx).trim()
-    const v = line.slice(idx + 1).trim().replace(/^["']|["']$/g, '')
-    env[k] = v
+  try {
+    const raw = readFileSync('.env', 'utf8')
+    for (const line of raw.split('\n')) {
+      if (!line.includes('=') || line.trim().startsWith('#')) continue
+      const idx = line.indexOf('=')
+      const k = line.slice(0, idx).trim()
+      const v = line.slice(idx + 1).trim().replace(/^["']|["']$/g, '')
+      env[k] = v
+    }
+  } catch {
+    // .env ausente (CI runner) — usa apenas process.env
   }
   return { ...process.env, ...env }
 }

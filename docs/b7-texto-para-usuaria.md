@@ -1,145 +1,173 @@
-# Pontas soltas pós-validação financeira — precisa de confirmação (Etapa B.7)
+# Rodada B.7 — Parcelas duplicadas no banco (numero_parcela repetido)
 
-Após a validação dos R$ 8,6M com o financeiro, a auditoria automática achou **30 casos** que precisam da sua decisão (descartei 4 casos óbvios de teste — `jonas beton`/`jonas@teste.com` — vou cancelar sem perguntar).
+Encontrei **11 vendas** com pares de parcelas duplicadas no nosso banco — duas linhas com o mesmo `numero_parcela` e mesmo tipo, sendo uma cancelada e outra ativa. Isso veio do backfill antigo de pagamentos, que não amarrava as parcelas pelo id real do Sienge.
 
-Dividi em **4 grupos** por nível de risco e tipo de decisão:
-
-- **Grupo 1 — 11 vendas sem pro-soluto (PU/PA/Permuta):** confirmadas no Sienge. Só queria seu OK pra deixar como "venda quitada/permuta".
-- **Grupo 2 — 1 venda duplicada (1804 A):** evidência clara de duplicata por usuário de teste, mas tem pagamento baixado. Precisa decisão antes de excluir.
-- **Grupo 3 — Contrato 138 com 8 datas duplicadas:** cronograma do banco tem repetição. Precisa olhar Sienge pra decidir.
-- **Grupo 4 — 13 vendas sem corretor:** Sienge não expõe corretor pela API. Você preenche planilha.
+**Importante:** o Sienge está correto. A bagunça é só no nosso banco. Vou corrigir respeitando o Sienge como fonte da verdade.
 
 ---
 
-## Grupo 1 — 11 vendas sem pro-soluto (confirmadas no Sienge)
+## Grupo 1 — Casos com par PAGO (risco alto) — aguardar re-baixa Sienge
 
-Validação: payload Sienge `paymentConditions[]` **não tem** condição `PM` (Parcelas Mensais) em nenhuma das 11. São vendas legitimamente à vista, anuais ou via permuta. **Por isso não geram cronograma de pro-soluto**.
+11 vendas tem pelo menos um par onde uma das linhas duplicadas está **paga**. Nesses casos, não vou cancelar nada antes de confirmar com o Sienge qual linha realmente recebeu pagamento.
 
-### 1A — 8 vendas do GONÇALVES DE MENDONÇA PARTICIPAÇÕES LTDA (corretor: Watson Slonski)
+### Contrato 183 — Sienge 275 — Unidade 803 D
+- **Cliente:** SAMUEL MUELLER LEMOS — CPF 11319608906 — Tel (47) 99660-0856
+- **Corretor:** -
+- **Valor venda:** R$ 410.443,77
+- **Pagamentos:** 8 pagos, 33 pendentes, 16 cancelados — 16 pares duplicados, 4 com linha paga
+- **Pares duplicados:**
+  - parc 2 / parcela_entrada: cancelado(R$ 2650, prev 2025-11-10, pago -) + pago(R$ 1500, prev 2027-06-10, pago 2025-11-10)
+  - parc 3 / parcela_entrada: pago(R$ 1500, prev 2027-07-10, pago 2025-12-10) + cancelado(R$ 1500, prev 2027-07-10, pago -)
+  - parc 6 / parcela_entrada: pago(R$ 1500, prev 2027-10-10, pago 2026-03-10) + cancelado(R$ 1500, prev 2027-10-10, pago -)
+  - parc 7 / parcela_entrada: pago(R$ 1500, prev 2027-11-10, pago 2026-04-10) + cancelado(R$ 1500, prev 2027-11-10, pago -)
+  - parc 8 / parcela_entrada: pendente(R$ 1500, prev 2027-12-10, pago -) + cancelado(R$ 1500, prev 2027-12-10, pago -)
+  - parc 9 / parcela_entrada: pendente(R$ 1500, prev 2028-01-10, pago -) + cancelado(R$ 1500, prev 2028-01-10, pago -)
+  - parc 10 / parcela_entrada: pendente(R$ 1500, prev 2028-02-10, pago -) + cancelado(R$ 1500, prev 2028-02-10, pago -)
+  - parc 11 / parcela_entrada: cancelado(R$ 1500, prev 2028-03-10, pago -) + pendente(R$ 2650, prev 2028-03-10, pago -)
+  - parc 12 / parcela_entrada: cancelado(R$ 2650, prev 2028-04-10, pago -) + pendente(R$ 1500, prev 2028-04-10, pago -)
+  - parc 13 / parcela_entrada: pendente(R$ 1500, prev 2028-05-10, pago -) + cancelado(R$ 2650, prev 2028-05-10, pago -)
+  - parc 14 / parcela_entrada: cancelado(R$ 1500, prev 2028-06-10, pago -) + pendente(R$ 2650, prev 2028-06-10, pago -)
+  - parc 15 / parcela_entrada: pendente(R$ 1500, prev 2028-07-10, pago -) + cancelado(R$ 2650, prev 2028-07-10, pago -)
+  - parc 16 / parcela_entrada: pendente(R$ 1500, prev 2028-08-10, pago -) + cancelado(R$ 1500, prev 2028-08-10, pago -)
+  - parc 17 / parcela_entrada: pendente(R$ 1500, prev 2028-09-10, pago -) + cancelado(R$ 2650, prev 2028-09-10, pago -)
+  - parc 18 / parcela_entrada: cancelado(R$ 1500, prev 2028-10-10, pago -) + pendente(R$ 2650, prev 2028-10-10, pago -)
+  - parc 19 / parcela_entrada: cancelado(R$ 1500, prev 2028-11-10, pago -) + pendente(R$ 2650, prev 2028-11-10, pago -)
+- **Ação proposta:** aguardar re-baixa de `/bulk-data/v1/income` (quota Sienge esgotou hoje 2026-05-13) → popular `sienge_installment_id` (migration 023) → re-amarrar parcelas pelo id real → cancelar a duplicata redundante.
 
-Todas R$ 500.000, contratos sequenciais, mesmo cliente. Diferença é só o tipo de pagamento Sienge:
+### Contrato 268 — Sienge 382 — Unidade 1305 A
+- **Cliente:** ALISSON RODRIGUES DO CARMO
+- **Corretor:** -
+- **Valor venda:** R$ 457.103,88
+- **Pagamentos:** 3 pagos, 41 pendentes, 10 cancelados — 10 pares duplicados, 1 com linha paga
+- **Pares duplicados:**
+  - parc 2 / parcela_entrada: cancelado(R$ 875, prev 2026-03-10, pago -) + pago(R$ 1723.01, prev 2027-02-10, pago 2026-03-06)
+  - parc 3 / parcela_entrada: pendente(R$ 875, prev 2027-03-10, pago -) + cancelado(R$ 875, prev 2027-03-10, pago -)
+  - parc 4 / parcela_entrada: cancelado(R$ 1723.01, prev 2027-04-10, pago -) + pendente(R$ 875, prev 2027-04-10, pago -)
+  - parc 5 / parcela_entrada: cancelado(R$ 875, prev 2027-05-10, pago -) + pendente(R$ 1723.01, prev 2027-05-10, pago -)
+  - parc 6 / parcela_entrada: pendente(R$ 875, prev 2027-06-10, pago -) + cancelado(R$ 1723.01, prev 2027-06-10, pago -)
+  - parc 7 / parcela_entrada: pendente(R$ 875, prev 2027-07-10, pago -) + cancelado(R$ 1723.01, prev 2027-07-10, pago -)
+  - parc 8 / parcela_entrada: cancelado(R$ 1723.01, prev 2027-08-10, pago -) + pendente(R$ 875, prev 2027-08-10, pago -)
+  - parc 9 / parcela_entrada: cancelado(R$ 1723.01, prev 2027-09-10, pago -) + pendente(R$ 875, prev 2027-09-10, pago -)
+  - parc 10 / parcela_entrada: pendente(R$ 875, prev 2027-10-10, pago -) + cancelado(R$ 1723.01, prev 2027-10-10, pago -)
+  - parc 11 / parcela_entrada: pendente(R$ 875, prev 2027-11-10, pago -) + cancelado(R$ 1723.01, prev 2027-11-10, pago -)
+- **Ação proposta:** aguardar re-baixa de `/bulk-data/v1/income` (quota Sienge esgotou hoje 2026-05-13) → popular `sienge_installment_id` (migration 023) → re-amarrar parcelas pelo id real → cancelar a duplicata redundante.
 
-| Contrato | Sienge | Tipo Sienge |
-|----------|--------|-------------|
-| 275 | 393 | PARCELA UNICA (à vista) |
-| 276 | 394 | PARCELAS ANUAIS |
-| 277 | 395 | PARCELA UNICA |
-| 278 | 396 | PARCELAS ANUAIS |
-| 279 | 397 | PARCELA UNICA |
-| 280 | 398 | PARCELA UNICA |
-| 281 | 399 | PARCELA UNICA |
-| 282 | 400 | PARCELA UNICA |
+### Contrato 163 — Sienge 255 — Unidade 1405 C
+- **Cliente:** ANDREY LUIZ MESSIAS SANTOS  — CPF 05319809522 — Tel (47)99282-8064
+- **Corretor:** -
+- **Valor venda:** R$ 363.369,59
+- **Pagamentos:** 58 pagos, 0 pendentes, 7 cancelados — 7 pares duplicados, 7 com linha paga
+- **Pares duplicados:**
+  - parc 1 / parcela_entrada: pago(R$ 400, prev 2025-06-20, pago 2025-12-29) + cancelado(R$ 1221.23, prev 2026-01-20, pago -)
+  - parc 2 / parcela_entrada: cancelado(R$ 400, prev 2025-07-20, pago -) + pago(R$ 400, prev 2025-07-20, pago 2025-12-29)
+  - parc 3 / parcela_entrada: pago(R$ 400, prev 2025-08-20, pago 2025-12-29) + cancelado(R$ 400, prev 2025-08-20, pago -)
+  - parc 4 / parcela_entrada: pago(R$ 400, prev 2025-09-20, pago 2025-12-29) + cancelado(R$ 400, prev 2025-09-20, pago -)
+  - parc 5 / parcela_entrada: cancelado(R$ 400, prev 2025-10-20, pago -) + pago(R$ 1221.23, prev 2026-05-20, pago 2025-12-29)
+  - parc 6 / parcela_entrada: pago(R$ 400, prev 2025-11-20, pago 2025-12-29) + cancelado(R$ 400, prev 2025-11-20, pago -)
+  - parc 7 / parcela_entrada: cancelado(R$ 400, prev 2025-12-20, pago -) + pago(R$ 400, prev 2025-12-20, pago 2025-12-29)
+- **Ação proposta:** aguardar re-baixa de `/bulk-data/v1/income` (quota Sienge esgotou hoje 2026-05-13) → popular `sienge_installment_id` (migration 023) → re-amarrar parcelas pelo id real → cancelar a duplicata redundante.
 
-**Ação sugerida:** "Pode deixar como está — vendas quitadas / parceladas anualmente, sem cronograma mensal."
-**Pendência:** todas estão **sem cliente vinculado** no cadastro local — só tem o nome no banco. Se quiser, complemento depois.
+### Contrato 73 — Sienge 163 — Unidade 1603 A
+- **Cliente:** DIOGO DA LUZ DOS SANTOS — CPF 09233207927 — Tel (47)99724-4138
+- **Corretor:** -
+- **Valor venda:** R$ 346.440,81
+- **Pagamentos:** 10 pagos, 42 pendentes, 9 cancelados — 6 pares duplicados, 3 com linha paga
+- **Pares duplicados:**
+  - parc 1 / parcela_entrada: pago(R$ 1275.07, prev 2026-08-20, pago 2025-06-21) + cancelado(R$ 1275.07, prev 2026-08-20, pago -) + cancelado(R$ 1275.07, prev 2026-08-20, pago -)
+  - parc 2 / parcela_entrada: cancelado(R$ 500, prev 2025-11-20, pago -) + cancelado(R$ 1136.66, prev 2026-09-20, pago -) + pago(R$ 1275.07, prev 2026-09-20, pago 2025-06-21)
+  - parc 4 / parcela_entrada: cancelado(R$ 1275.07, prev 2026-11-20, pago -) + cancelado(R$ 1136.66, prev 2026-11-20, pago -) + pago(R$ 1275.07, prev 2026-11-20, pago 2026-01-19)
+  - parc 8 / parcela_entrada: pendente(R$ 1275.07, prev 2027-03-20, pago -) + cancelado(R$ 500, prev 2027-03-20, pago -)
+  - parc 9 / parcela_entrada: cancelado(R$ 500, prev 2027-04-20, pago -) + pendente(R$ 500, prev 2027-04-20, pago -)
+  - parc 10 / parcela_entrada: cancelado(R$ 500, prev 2027-05-20, pago -) + pendente(R$ 500, prev 2027-05-20, pago -)
+- **Ação proposta:** aguardar re-baixa de `/bulk-data/v1/income` (quota Sienge esgotou hoje 2026-05-13) → popular `sienge_installment_id` (migration 023) → re-amarrar parcelas pelo id real → cancelar a duplicata redundante.
 
-### 1B — 3 vendas FERRETTI CONSULTORIA (PERMUTA)
+### Contrato 40 — Sienge 87 — Unidade 908 A
+- **Cliente:** LEANDRO DE OLIVEIRA VICENTIN  — CPF 18757055890 — Tel (47)98420-3075
+- **Corretor:** -
+- **Valor venda:** R$ 418.341,97
+- **Pagamentos:** 8 pagos, 49 pendentes, 4 cancelados — 4 pares duplicados, 3 com linha paga
+- **Pares duplicados:**
+  - parc 1 / parcela_entrada: pago(R$ 1394.47, prev 2026-02-20, pago 2026-02-03) + cancelado(R$ 1000, prev 2026-02-20, pago -) + pago(R$ 2761.39, prev 2026-02-20, pago 2026-02-02)
+  - parc 2 / parcela_entrada: cancelado(R$ 1000, prev 2026-03-20, pago -) + pago(R$ 1000, prev 2026-03-20, pago 2026-03-03)
+  - parc 4 / parcela_entrada: cancelado(R$ 1000, prev 2025-09-20, pago -) + pago(R$ 1394.47, prev 2026-05-20, pago 2025-05-08)
+  - parc 6 / parcela_entrada: cancelado(R$ 1000, prev 2025-11-20, pago -) + pendente(R$ 1394.47, prev 2026-07-20, pago -)
+- **Ação proposta:** aguardar re-baixa de `/bulk-data/v1/income` (quota Sienge esgotou hoje 2026-05-13) → popular `sienge_installment_id` (migration 023) → re-amarrar parcelas pelo id real → cancelar a duplicata redundante.
 
-| Contrato | Sienge | Unidade Sienge | Valor |
-|----------|--------|----------------|-------|
-| 300 | 433 | 1008 D | R$ 499.437,96 |
-| 301 | 434 | 908 D | R$ 494.493,06 |
-| 302 | 435 | 1208 A | R$ 509.476,67 |
+### Contrato 154 — Sienge 246 — Unidade 1302 C
+- **Cliente:** MARIA VITORIA DA SILVA FRANCISCO — CPF 11625933932 — Tel (43)99669-8714
+- **Corretor:** -
+- **Valor venda:** R$ 427.221,03
+- **Pagamentos:** 53 pagos, 0 pendentes, 3 cancelados — 3 pares duplicados, 3 com linha paga
+- **Pares duplicados:**
+  - parc 1 / parcela_entrada: cancelado(R$ 500, prev 2025-10-20, pago -) + pago(R$ 1553.53, prev 2026-01-20, pago 2026-01-20)
+  - parc 2 / parcela_entrada: cancelado(R$ 500, prev 2025-11-20, pago -) + pago(R$ 1553.53, prev 2026-02-20, pago 2026-02-09)
+  - parc 3 / parcela_entrada: pago(R$ 500, prev 2025-12-20, pago 2026-03-05) + cancelado(R$ 1553.53, prev 2026-03-20, pago -)
+- **Ação proposta:** aguardar re-baixa de `/bulk-data/v1/income` (quota Sienge esgotou hoje 2026-05-13) → popular `sienge_installment_id` (migration 023) → re-amarrar parcelas pelo id real → cancelar a duplicata redundante.
 
-**Total:** R$ 1.503.407,69 em permutas. Sem corretor e sem cliente vinculados no local.
+### Contrato 177 — Sienge 269 — Unidade 609 D
+- **Cliente:** DIEGO RAMOS — CPF 10099686961 — Tel (47)99629-9164
+- **Corretor:** -
+- **Valor venda:** R$ 383.188,92
+- **Pagamentos:** 12 pagos, 36 pendentes, 18 cancelados — 3 pares duplicados, 3 com linha paga
+- **Pares duplicados:**
+  - parc 1 / parcela_entrada: cancelado(R$ 1300, prev 2025-07-10, pago -) + cancelado(R$ 1600, prev 2030-07-10, pago -) + cancelado(R$ 2200, prev 2030-07-10, pago -) + pago(R$ 1600, prev 2030-07-10, pago 2025-07-09) + cancelado(R$ 2800, prev 2030-07-10, pago -) + cancelado(R$ 1900, prev 2030-07-10, pago -) + cancelado(R$ 3200, prev 2030-07-10, pago -)
+  - parc 2 / parcela_entrada: cancelado(R$ 1300, prev 2025-08-10, pago -) + cancelado(R$ 2500, prev 2030-08-10, pago -) + pago(R$ 2800, prev 2030-08-10, pago 2025-08-08) + cancelado(R$ 2500, prev 2030-08-10, pago -) + cancelado(R$ 2200, prev 2030-08-10, pago -) + cancelado(R$ 1900, prev 2030-08-10, pago -) + cancelado(R$ 1600, prev 2030-08-10, pago -)
+  - parc 5 / parcela_entrada: cancelado(R$ 1300, prev 2025-11-10, pago -) + cancelado(R$ 1900, prev 2030-11-10, pago -) + pago(R$ 2500, prev 2030-11-10, pago 2025-11-06) + cancelado(R$ 1600, prev 2030-11-10, pago -) + cancelado(R$ 2500, prev 2030-11-10, pago -) + cancelado(R$ 3200, prev 2030-11-10, pago -) + cancelado(R$ 2800, prev 2030-11-10, pago -)
+- **Ação proposta:** aguardar re-baixa de `/bulk-data/v1/income` (quota Sienge esgotou hoje 2026-05-13) → popular `sienge_installment_id` (migration 023) → re-amarrar parcelas pelo id real → cancelar a duplicata redundante.
 
-**Decisão:**
-1. **"Permuta interna, mantém sem corretor/cliente"** — fica como está, fora do fluxo de comissão.
-2. **"Falta cadastrar — vou complementar"** — me passa nome do corretor (ou se é interno).
+### Contrato 76 — Sienge 166 — Unidade 1607 A
+- **Cliente:** GHIZIERI JENNINFER FREITAS COSTA BOSZCZOWSKI — CPF 08401031907 — Tel (47)988623130
+- **Corretor:** -
+- **Valor venda:** R$ 440.166,26
+- **Pagamentos:** 7 pagos, 48 pendentes, 3 cancelados — 3 pares duplicados, 3 com linha paga
+- **Pares duplicados:**
+  - parc 2 / parcela_entrada: cancelado(R$ 1604.4, prev 2026-02-20, pago -) + pago(R$ 600, prev 2026-02-20, pago 2026-01-21)
+  - parc 3 / parcela_entrada: cancelado(R$ 1604.4, prev 2026-03-20, pago -) + pago(R$ 1604.4, prev 2026-03-20, pago 2026-03-04)
+  - parc 4 / parcela_entrada: pago(R$ 600, prev 2026-04-20, pago 2026-04-07) + cancelado(R$ 1604.4, prev 2026-04-20, pago -)
+- **Ação proposta:** aguardar re-baixa de `/bulk-data/v1/income` (quota Sienge esgotou hoje 2026-05-13) → popular `sienge_installment_id` (migration 023) → re-amarrar parcelas pelo id real → cancelar a duplicata redundante.
+
+### Contrato 112 — Sienge 204 — Unidade 1204 B
+- **Cliente:** SARA JANE DE OLIVEIRA BARBOSA — CPF 04304256009 — Tel (47)99245-8784
+- **Corretor:** -
+- **Valor venda:** R$ 431.026,76
+- **Pagamentos:** 8 pagos, 54 pendentes, 2 cancelados — 2 pares duplicados, 2 com linha paga
+- **Pares duplicados:**
+  - parc 1 / parcela_entrada: cancelado(R$ 1000, prev 2025-11-20, pago -) + pago(R$ 1461.11, prev 2025-11-20, pago 2025-11-24)
+  - parc 3 / parcela_entrada: cancelado(R$ 1461.11, prev 2026-01-20, pago -) + pago(R$ 1000, prev 2026-01-20, pago 2026-01-21)
+- **Ação proposta:** aguardar re-baixa de `/bulk-data/v1/income` (quota Sienge esgotou hoje 2026-05-13) → popular `sienge_installment_id` (migration 023) → re-amarrar parcelas pelo id real → cancelar a duplicata redundante.
+
+### Contrato 246 — Sienge 346 — Unidade 508 A
+- **Cliente:** MICHEL CHRISTIAN BORBA — CPF 09786118960 — Tel (47)99713-2318
+- **Corretor:** -
+- **Valor venda:** R$ 295.289,72
+- **Pagamentos:** 7 pagos, 46 pendentes, 1 cancelados — 1 pares duplicados, 1 com linha paga
+- **Pares duplicados:**
+  - parc 4 / parcela_entrada: cancelado(R$ 1200, prev 2026-07-10, pago -) + pago(R$ 1200, prev 2026-07-10, pago 2026-03-05)
+- **Ação proposta:** aguardar re-baixa de `/bulk-data/v1/income` (quota Sienge esgotou hoje 2026-05-13) → popular `sienge_installment_id` (migration 023) → re-amarrar parcelas pelo id real → cancelar a duplicata redundante.
+
+### Contrato 164 — Sienge 256 — Unidade 1406 C
+- **Cliente:** WANDERLEY ROSA GUIMARÃES JÚNIOR — CPF 05204505903 — Tel (47)99617-9440
+- **Corretor:** -
+- **Valor venda:** R$ 431.493,25
+- **Pagamentos:** 8 pagos, 50 pendentes, 1 cancelados — 1 pares duplicados, 1 com linha paga
+- **Pares duplicados:**
+  - parc 1 / parcela_entrada: cancelado(R$ 500, prev 2026-03-20, pago -) + pago(R$ 500, prev 2026-03-20, pago 2026-03-20)
+- **Ação proposta:** aguardar re-baixa de `/bulk-data/v1/income` (quota Sienge esgotou hoje 2026-05-13) → popular `sienge_installment_id` (migration 023) → re-amarrar parcelas pelo id real → cancelar a duplicata redundante.
 
 ---
 
-## Grupo 2 — Venda duplicada do bloco A unidade 1804 (1 caso)
+## Grupo 2 — Casos sem par pago (risco médio) — podem ser cancelados em massa
 
-### Cliente: GIOVANE DOS SANTOS — CPF 03063230952 — Tel (47)99180-0266
-
-Existem **duas vendas** distintas pra a mesma unidade do mesmo cliente, **com pagamento baixado idêntico em ambas** (R$ 1.267,19 em 2026-02-20, parcela #9):
-
-| Venda | Criada | Corretor |
-|-------|--------|----------|
-| `ac644733...` | 17/03/2026 | **MATHEUS DE S. PIRES** (real) |
-| `9d279176...` | 09/04/2026 | **jonas beton** (`jonas@teste.com` — usuário de teste) |
-
-**Hipótese forte:** a duplicata é teste. Mas o sistema não me deixa excluir uma venda que tem pagamento baixado (proteção de auditoria).
-
-**Decisão:**
-1. **"Confirma: estornar a baixa do pagamento fantasma `c779389c...` e excluir a venda `9d279176...`"** — recomendado.
-2. **"Os dois pagamentos são reais (cliente pagou em duplicidade)"** — caso raro mas possível.
-3. **"Investiga manualmente no Sienge antes"** — verificar qual paymentId é o oficial.
+0 vendas têm duplicatas apenas em `pendente + cancelado`. Posso manter a linha ativa e marcar a redundante como cancelada com segurança — não afeta nenhum dado financeiro confirmado.
 
 ---
-
-## Grupo 3 — Contrato 138 com 8 datas duplicadas
-
-### Contrato 138 — Sienge 230 — Unidade 906 C
-- **Cliente:** JOÃO PEDRO MARASCA — CPF 09762700916 — Tel (47) 99670-3160
-- **Pro-soluto:** R$ 78.199,66 = exatamente 58 parcelas de R$ 1.348,27
-
-**Problema:** parcelas 21–28 têm a **mesma `data_prevista`** que 13–20 (abr/27 a nov/27). Sequência das outras (29–58) está limpa. Bug do gerador antigo.
-
-**Hipóteses (sem cronograma Sienge live não dá pra decidir):**
-
-1. **Hipótese A — São 50 parcelas reais:** as 8 duplicadas são lixo. Ação: cancelar parcelas 21–28 + ajustar `valor_pro_soluto` pra R$ 67.413,50.
-2. **Hipótese B — São 58 parcelas reais:** datas 21–28 deveriam estender depois da 58. Ação: deslocar datas pra jun/30..jan/31. Pro-soluto fica como está.
-3. **"Vou olhar no Sienge"** — confirmar quantidade real de parcelas.
-
-⚠️ **Enquanto não decidir:** financeiro do cliente continua coerente (pro-soluto bate com 58 parcelas), só visual fica esquisito (datas repetidas no cronograma).
-
----
-
-## Grupo 4 — 13 vendas sem corretor (precisam preenchimento manual)
-
-A API do Sienge **não expõe** o corretor dessas vendas (testei 9 endpoints diferentes — todos 404 ou 403, e `linkedCommissions` retorna `null` no payload). Não tem como mapear automático.
-
-| # | Contrato | Sienge | Unidade | Cliente | Data Contrato | Valor |
-|---|----------|--------|---------|---------|---------------|-------|
-| 1 | 35 | 75 | 902 A | RICARDO JOSÉ GIRARD | 2025-05-22 | R$ 390.993,15 |
-| 2 | 37 | 79 | 904 A | BRYAN LUCAS MACCALLI | 2025-06-04 | R$ 418.341,97 |
-| 3 | 71 | 161 | 1506 A | LUCAS PORTO MARTINS | 2025-06-16 | R$ 310.250,00 |
-| 4 | 84 | 174 | 1806 A | ALEX WILLIAN BERNARDES | 2025-05-09 | R$ 388.744,70 |
-| 5 | 86 | 176 | 403 B | MILENA PAULA NASCIMENTO SANTOS | 2025-06-02 | R$ 310.442,00 |
-| 6 | 121 | 213 | 503 C | ANTONIO DOS SANTOS ESTEVÃO | 2025-05-22 | R$ 313.546,14 |
-| 7 | 144 | 236 | 1007 C | CLAUDIO MARTIRE | 2025-05-16 | R$ 384.110,14 ⚠️ ver b6 grupo 3 |
-| 8 | 202 | 294 | 1201 D | ANNE MAYARA BRANCO VIEIRA | 2025-05-06 | R$ 356.209,78 |
-| 9 | 273 | 390 | 1008 C | CLAUDIO MARTIRE | 2025-05-16 | R$ 384.110,14 |
-| 10 | 287 | 411 | 603 B | CAYO KAMENAC RAMOS DA SILVA | 2026-02-09 | R$ 426.900,16 |
-| 11 | 300 | 433 | 1008 D | FERRETTI (permuta — ver Grupo 1B) | 2026-03-24 | R$ 499.437,96 |
-| 12 | 301 | 434 | 908 D | FERRETTI (permuta — ver Grupo 1B) | 2026-03-23 | R$ 494.493,06 |
-| 13 | 302 | 435 | 1208 A | FERRETTI (permuta — ver Grupo 1B) | 2026-03-24 | R$ 509.476,67 |
-
-**Resposta esperada:** uma planilha (CSV ou texto) no formato:
-
-```
-sienge_contract_id, nome_corretor
-75, [nome do corretor]
-79, ...
-```
-
-Se algum não tem corretor mesmo (caso permuta interna): escreve `SEM_CORRETOR`. Aplico todas as respostas com origem `manual` — protegido contra sobrescrita por sync futuro.
-
----
-
-## Resumo
-
-| Grupo | Casos | Ação |
-|---|---|---|
-| 1A — Vendas Gonçalves de Mendonça (PU/PA) | 8 | Confirmar status (sugestão aprovada tacitamente) |
-| 1B — Permutas Ferretti | 3 | **Decidir** se tem corretor/cliente |
-| 2 — Duplicata 1804 A | 1 | **Decidir** estorno + exclusão |
-| 3 — Contrato 138 datas duplicadas | 1 | **Decidir** com Sienge ou aguardar |
-| 4 — Sem corretor (planilha) | 13 | **Preencher** corretores |
-| **Total** | **30** | |
 
 ## O que fazer agora
 
-Quando puder, me responde:
+**Eu não vou alterar nada no banco ainda.** Esse documento e o JSON `docs/b7-duplicatas-numero-parcela.json` são pra você revisar e me dar o sinal verde caso a caso.
 
-1. **Grupo 1A:** um "ok, pode deixar como está" ou alguma exceção.
-2. **Grupo 1B (3 permutas Ferretti):** opção 1 ou 2.
-3. **Grupo 2 (1804 A duplicata):** opção 1, 2 ou 3.
-4. **Grupo 3 (contrato 138):** A, B ou "vou olhar no Sienge".
-5. **Grupo 4 (planilha de corretores):** lista preenchida.
+**Resposta esperada por linha:**
+- Para Grupo 1: "ok, aguarda re-baixa Sienge" ou "investiga o contrato X primeiro"
+- Para Grupo 2: "ok, cancela as redundantes" ou "deixa como está"
 
-**Nota:** os 5 balões de teste (jonas beton/jonas cliente, K 002) já vou cancelar sem perguntar. Os outros 35 balões sem data prevista (5 vendas locais reais) precisam de planilha sua com `numero_parcela, data_prevista` — mas isso é menor, posso mandar separado depois se quiser.
-
-Referência: [docs/b7-revisao-humana.json](docs/b7-revisao-humana.json)
+Quando você responder, transcrevo em `docs/b7-respostas.json` e rodo a aplicação respeitando as regras de [.claude/rules/sincronizacao-sienge.md](../.claude/rules/sincronizacao-sienge.md).

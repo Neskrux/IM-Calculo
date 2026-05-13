@@ -1,0 +1,90 @@
+# Reconciliacao diaria de data_prevista em pagamentos_prosoluto.
+#
+# Roda toda manha 08h BRT (11h UTC). Pode ser disparado manualmente.
+#
+# O que faz:
+#   1. Baixa /bulk-data/v1/income do Sienge (sem quota — bulk-data eh sem limite diario).
+#   2. Cruza com pagamentos_prosoluto local pra encontrar drift de data_prevista.
+#   3. Aplica correcao automatica em drifts de 2 a 365 dias (Sienge eh fonte da
+#      verdade temporal — migration 020 autoriza UPDATE mesmo em status=pago).
+#   4. Salva report em artifact pra auditoria.
+#
+# Drifts > 365d e parcelas sem-match no Sienge nao sao tocados — caem na fila
+# de revisao humana (ver docs/b7-*.md, .claude/rules/rodadas-b.md).
+#
+# Idempotente: rodar 2x no mesmo dia = 0 updates no segundo run.
+#
+# Pre-requisitos (configurar uma vez nos Secrets do repo):
+#   VITE_SUPABASE_URL
+#   VITE_SUPABASE_ANON_KEY      (ou SUPABASE_SERVICE_ROLE_KEY pra full priv)
+#   SIENGE_USERNAME
+#   SIENGE_PASSWORD
+#   SIENGE_SUBDOMAIN
+
+name: Reconciliacao Pagamentos
+
+on:
+  schedule:
+    - cron: '0 11 * * *' # 08:00 BRT
+  workflow_dispatch: # disparo manual via aba Actions
+
+jobs:
+  reconciliar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install deps
+        run: npm ci
+
+      - name: Gerar plano de correcao
+        run: node scripts/gerar-plano-correcao-data-prevista.mjs
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          SIENGE_USERNAME: ${{ secrets.SIENGE_USERNAME }}
+          SIENGE_PASSWORD: ${{ secrets.SIENGE_PASSWORD }}
+          SIENGE_SUBDOMAIN: ${{ secrets.SIENGE_SUBDOMAIN }}
+
+      - name: Aplicar plano
+        run: node scripts/aplicar-correcao-data-prevista.mjs --apply
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+
+      - name: Upload report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: reconciliation-report-${{ github.run_id }}
+          path: |
+            docs/plano-correcao-data-prevista-*.json
+            docs/aplicacao-data-prevista-*.json
+          retention-days: 30
+
+      # Falha ruidosa: se houver erros na aplicacao, marca o job como failed
+      # pra disparar email do GitHub Actions e aparecer na aba Actions.
+      - name: Verificar erros
+        run: |
+          LATEST_REPORT=$(ls -t docs/aplicacao-data-prevista-*.json 2>/dev/null | head -1)
+          if [ -z "$LATEST_REPORT" ]; then
+            echo "::warning::Sem report — script de aplicacao pode ter falhado antes de salvar"
+            exit 0
+          fi
+          ERRORS=$(jq '.counts.errors' "$LATEST_REPORT")
+          UPDATED=$(jq '.counts.updated' "$LATEST_REPORT")
+          SKIPPED=$(jq '.counts.skipped_idempotent' "$LATEST_REPORT")
+          echo "Reconciliacao: updated=$UPDATED skipped=$SKIPPED errors=$ERRORS"
+          if [ "$ERRORS" -gt 0 ]; then
+            echo "::error::Reconciliacao reportou $ERRORS erros — veja o artifact"
+            exit 1
+          fi
