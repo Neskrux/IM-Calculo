@@ -37,6 +37,9 @@ Thumbs.db
 *.tmp
 *.temp
 
+# Cache local dos scripts Sienge (TTL 1h, regenera sob demanda)
+.sienge-cache/
+
 # Graphify (knowledge graph artifacts)
 .graphify_*.json
 graphify-out/
