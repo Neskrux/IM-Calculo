@@ -3695,6 +3695,11 @@
   opacity: 0.7;
 }
 
+.parcela-row.cancelado {
+  opacity: 0.45;
+  border-style: dashed;
+}
+
 .parcela-main {
   display: flex;
   flex-wrap: wrap;
@@ -3780,6 +3785,13 @@
   background: rgba(234, 179, 8, 0.15);
   border: 1px solid rgba(234, 179, 8, 0.3);
   color: #facc15;
+}
+
+.status-pill.cancelado {
+  background: rgba(148, 163, 184, 0.12);
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  color: #94a3b8;
+  text-decoration: line-through;
 }
 
 .parcela-acao {

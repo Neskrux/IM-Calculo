@@ -2079,7 +2079,7 @@ const CorretorDashboard = () => {
                                         return (
                                           <div 
                                             key={pagamento.id} 
-                                            className={`corretor-parcela-row ${pagamento.status === 'pago' ? 'pago' : ''}`}
+                                            className={`corretor-parcela-row ${pagamento.status === 'pago' ? 'pago' : pagamento.status === 'cancelado' ? 'cancelado' : ''}`}
                                           >
                                             <div className="corretor-parcela-tipo">
                                               {pagamento.tipo === 'sinal' && 'Sinal'}
@@ -2099,7 +2099,7 @@ const CorretorDashboard = () => {
                                             </div>
                                             <div className="corretor-parcela-status">
                                               <span className={`status-pill ${pagamento.status}`}>
-                                                {pagamento.status === 'pago' ? 'Pago' : 'Pendente'}
+                                                {pagamento.status === 'pago' ? 'Pago' : pagamento.status === 'cancelado' ? 'Cancelado' : 'Pendente'}
                                               </span>
                                             </div>
                                           </div>
@@ -2145,7 +2145,7 @@ const CorretorDashboard = () => {
                                               return (
                                                 <div 
                                                   key={pagamento.id} 
-                                                  className={`corretor-parcela-row ${pagamento.status === 'pago' ? 'pago' : ''}`}
+                                                  className={`corretor-parcela-row ${pagamento.status === 'pago' ? 'pago' : pagamento.status === 'cancelado' ? 'cancelado' : ''}`}
                                                 >
                                                   <div className="corretor-parcela-tipo">
                                                     {pagamento.tipo === 'sinal' && 'Sinal'}
@@ -2165,7 +2165,7 @@ const CorretorDashboard = () => {
                                                   </div>
                                                   <div className="corretor-parcela-status">
                                                     <span className={`status-pill ${pagamento.status}`}>
-                                                      {pagamento.status === 'pago' ? 'Pago' : 'Pendente'}
+                                                      {pagamento.status === 'pago' ? 'Pago' : pagamento.status === 'cancelado' ? 'Cancelado' : 'Pendente'}
                                                     </span>
                                                   </div>
                                                 </div>
@@ -2470,7 +2470,7 @@ const CorretorDashboard = () => {
                                     const minhaComissao = venda ? calcularComissaoPagamento(pag) : 0
                                     
                                     return (
-                                      <div key={pag.id} className={`parcela-row ${pag.status === 'pago' ? 'pago' : ''}`}>
+                                      <div key={pag.id} className={`parcela-row ${pag.status === 'pago' ? 'pago' : pag.status === 'cancelado' ? 'cancelado' : ''}`}>
                                         <div className="parcela-main">
                                           <div className="parcela-tipo">
                                             {pag.tipo === 'sinal' && 'Sinal'}
@@ -2487,7 +2487,7 @@ const CorretorDashboard = () => {
                                           </div>
                                           <div className="parcela-status">
                                             <span className={`status-pill ${pag.status}`}>
-                                              {pag.status === 'pago' ? 'Pago' : 'Pendente'}
+                                              {pag.status === 'pago' ? 'Pago' : pag.status === 'cancelado' ? 'Cancelado' : 'Pendente'}
                                             </span>
                                           </div>
                                         </div>

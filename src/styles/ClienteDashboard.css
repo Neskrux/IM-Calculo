@@ -625,6 +625,11 @@
   background: rgba(16, 185, 129, 0.15);
 }
 
+.cliente-parcela-row.cancelado {
+  opacity: 0.45;
+  border-style: dashed;
+}
+
 .cliente-parcela-tipo {
   flex: 0 0 120px;
   font-size: 13px;

@@ -169,6 +169,15 @@ function detectarMudancaEstrutural(pagamentosExistentes, vendaForm) {
  * Propaga mudanças de cronograma (data_entrada, periodicidade, overrides)
  * para pagamentos existentes, atualizando APENAS data_prevista das linhas pago
  * e substituindo linhas pendente. RF-3 / §E da SPEC.
+ *
+ * Particiona em 3 grupos por status:
+ *   - pagos: imutáveis (só data_prevista pode mudar — migration 020)
+ *   - pendentes: editáveis (UPDATE/INSERT/DELETE conforme grade nova)
+ *   - cancelados: IGNORADOS. Permanecem no banco pra auditoria mas não participam
+ *     de match nem de delete. Antes (pré-2026-05-13) o filter `!== 'pago'` agregava
+ *     cancelados como pendentes — gerando duplicatas de numero_parcela quando o
+ *     gerador re-inseria a chave colidida (ver varredura 2026-05-13: 11 vendas
+ *     com par cancelado+ativo). Spec: .claude/rules/sincronizacao-sienge.md.
  */
 async function propagarCronogramaCirurgico({
   supabaseClient,
@@ -179,7 +188,8 @@ async function propagarCronogramaCirurgico({
   const chaveDe = (p) => `${p.tipo}__${p.numero_parcela ?? ''}`
 
   const pagos = pagamentosExistentes.filter(p => p.status === 'pago')
-  const pendentes = pagamentosExistentes.filter(p => p.status !== 'pago')
+  const pendentes = pagamentosExistentes.filter(p => p.status === 'pendente')
+  // cancelados: nao tocar — sao apenas registros historicos
 
   // 1) Linhas PAGAS: só atualizar data_prevista (demais campos bloqueados pelo trigger 018)
   for (const pago of pagos) {
@@ -229,9 +239,8 @@ async function propagarCronogramaCirurgico({
   }
 
   // DELETE pendentes antigos sem correspondente no novo cronograma.
-  // .neq('status', 'pago') eh defesa em profundidade — trigger 017 ja bloqueia
-  // delete de pago no DB, mas explicitar aqui evita erro silencioso caso a
-  // filtragem JS de cima ('pendentes') receba algum pago por bug.
+  // .eq('status', 'pendente') eh defesa em profundidade — trigger 017 ja bloqueia
+  // delete de pago no DB, e cancelados nao devem ser tocados por esta funcao.
   const idsParaRemover = pendentes
     .filter(p => !chavesNovasAplicaveis.has(chaveDe(p)))
     .map(p => p.id)
@@ -240,7 +249,7 @@ async function propagarCronogramaCirurgico({
       .from('pagamentos_prosoluto')
       .delete()
       .in('id', idsParaRemover)
-      .neq('status', 'pago')
+      .eq('status', 'pendente')
     if (error) throw error
   }
 
@@ -579,6 +588,11 @@ const AdminDashboard = () => {
         }
       }
       acc[vendaIdStr].pagamentos.push(pag)
+      // Linhas com status='cancelado' permanecem na lista pra auditoria mas
+      // nao entram em nenhum total. Ver .claude/rules/visualizacao-totais.md +
+      // varredura 2026-05-13: 11 vendas tem duplicatas (cancelado+ativo) que
+      // antes inflavam totalPendente.
+      if (pag.status === 'cancelado') continue
       acc[vendaIdStr].totalValor += parseFloat(pag.valor) || 0
       acc[vendaIdStr].totalComissao += parseFloat(pag.comissao_gerada) || 0
       if (pag.status === 'pago') {
@@ -4144,8 +4158,11 @@ const AdminDashboard = () => {
         }, new Map())
         dadosFiltrados = vendas.map(venda => {
           const pags = pagsPorVenda.get(venda.id) || []
-          const totalComissao = pags.reduce((acc, p) => acc + (parseFloat(p.comissao_gerada) || 0), 0)
-          const totalPago = pags.filter(p => p.status === 'pago').reduce((acc, p) => acc + (parseFloat(p.comissao_gerada) || 0), 0)
+          // Canceladas ficam no array (auditoria) mas fora dos totais — mesmo
+          // criterio do useMemo pagamentosAgrupados (linha ~582).
+          const pagsAtivos = pags.filter(p => p.status !== 'cancelado')
+          const totalComissao = pagsAtivos.reduce((acc, p) => acc + (parseFloat(p.comissao_gerada) || 0), 0)
+          const totalPago = pagsAtivos.filter(p => p.status === 'pago').reduce((acc, p) => acc + (parseFloat(p.comissao_gerada) || 0), 0)
           return {
             venda_id: venda.id,
             venda: venda,
@@ -4255,6 +4272,7 @@ const AdminDashboard = () => {
       if (relatorioFiltros.cargoId && !isTotalCargo) {
         dadosFiltrados.forEach(grupo => {
           grupo.pagamentos.forEach(pag => {
+            if (pag.status === 'cancelado') return
             const comissoesCargo = calcularComissaoPorCargoPagamento(pag)
             const cargoEncontrado = comissoesCargo.find(c => c.nome_cargo === relatorioFiltros.cargoId)
             if (cargoEncontrado) {
@@ -4266,6 +4284,7 @@ const AdminDashboard = () => {
       } else if ((isTotalCargo || isTodosCargos)) {
         dadosFiltrados.forEach(grupo => {
           grupo.pagamentos.forEach(pag => {
+            if (pag.status === 'cancelado') return
             const comissao = parseFloat(pag.comissao_gerada) || 0
             totalComissao += comissao
             if (pag.status === 'pago') totalPago += comissao
@@ -4278,6 +4297,7 @@ const AdminDashboard = () => {
         // o que subestima — ignora a relacao valor_venda/pro_soluto que o fator captura.
         dadosFiltrados.forEach(grupo => {
           grupo.pagamentos.forEach(pag => {
+            if (pag.status === 'cancelado') return
             const cargos = calcularComissaoPorCargoPagamento(pag)
             const cargoCorretor = cargos.find(c => c.nome_cargo === 'Corretor' || c.nome_cargo?.toLowerCase().includes('corretor'))
             const comissao = cargoCorretor?.valor ?? 0
@@ -4288,6 +4308,7 @@ const AdminDashboard = () => {
       } else {
         dadosFiltrados.forEach(grupo => {
           grupo.pagamentos.forEach(pag => {
+            if (pag.status === 'cancelado') return
             const comissao = parseFloat(pag.comissao_gerada) || 0
             totalComissao += comissao
             if (pag.status === 'pago') totalPago += comissao
@@ -4491,7 +4512,11 @@ const AdminDashboard = () => {
         let pctColIdx
         let comissaoColIdx
         
+        // Parcelas canceladas (duplicatas do gerador antigo) ficam de fora
+        // do relatorio financeiro — auditoria visual sobre essas linhas e' no
+        // dashboard admin.
         const pagamentosOrdenados = sortParcelas(grupo.pagamentos, 'calendario')
+          .filter(p => p.status !== 'cancelado')
 
         if (mostrarTodosCargos) {
           parcelas = []
@@ -4501,7 +4526,7 @@ const AdminDashboard = () => {
             const tipoFormatado = formatTipo(pag)
             const dataStr = formatDataBR(pag.data_prevista)
             const valorStr = formatCurrency(pag.valor)
-            const statusStr = pag.status === 'pago' ? 'PAGO' : 'PENDENTE'
+            const statusStr = pag.status === 'pago' ? 'PAGO' : pag.status === 'cancelado' ? 'CANCELADO' : 'PENDENTE'
             cargos.forEach(c => {
               const pct = valorParcela > 0 ? ((c.valor / valorParcela) * 100).toFixed(2) : '0,00'
               parcelas.push([tipoFormatado, dataStr, valorStr, statusStr, c.nome_cargo, `${pct.replace('.', ',')}%`, formatCurrency(c.valor)])
@@ -4539,7 +4564,7 @@ const AdminDashboard = () => {
               tipoFormatado,
               formatDataBR(pag.data_prevista),
               formatCurrency(pag.valor),
-              pag.status === 'pago' ? 'PAGO' : 'PENDENTE',
+              pag.status === 'pago' ? 'PAGO' : pag.status === 'cancelado' ? 'CANCELADO' : 'PENDENTE',
               `${percentualUsado.toFixed(2).replace('.', ',')}%`,
               formatCurrency(comissaoExibir)
             ]
@@ -6913,7 +6938,7 @@ const AdminDashboard = () => {
                         <div className="venda-pagamento-body">
                           {sortParcelas(grupo.pagamentos, visaoParcelas)
                             .map((pag) => (
-                            <div key={pag.id} className={`parcela-row ${pag.status === 'pago' ? 'pago' : ''}`}>
+                            <div key={pag.id} className={`parcela-row ${pag.status === 'pago' ? 'pago' : pag.status === 'cancelado' ? 'cancelado' : ''}`}>
                               <div className="parcela-main">
                                 <div className="parcela-tipo">
                                   {pag.tipo === 'sinal' && 'Sinal'}
@@ -6926,11 +6951,11 @@ const AdminDashboard = () => {
                                 <div className="parcela-valor">{formatCurrency(pag.valor)}</div>
                                 <div className="parcela-status">
                                   <span className={`status-pill ${pag.status}`}>
-                                    {pag.status === 'pago' ? 'Pago' : 'Pendente'}
+                                    {pag.status === 'pago' ? 'Pago' : pag.status === 'cancelado' ? 'Cancelado' : 'Pendente'}
                                   </span>
                                 </div>
                                 <div className="parcela-acao">
-                                  <button 
+                                  <button
                                     className="btn-ver-detalhe"
                                     onClick={(e) => { e.stopPropagation(); setPagamentoDetalhe(pag); }}
                                     title="Ver detalhes"
@@ -6938,16 +6963,17 @@ const AdminDashboard = () => {
                                     <Eye size={14} />
                                     Ver
                                   </button>
-                                  {pag.status !== 'pago' ? (
-                                    <button 
+                                  {pag.status === 'pendente' && (
+                                    <button
                                       className="btn-small-confirm"
                                       onClick={(e) => { e.stopPropagation(); confirmarPagamento(pag); }}
                                     >
                                       Confirmar
                                     </button>
-                                  ) : (
+                                  )}
+                                  {pag.status === 'pago' && (
                                     <>
-                                      <button 
+                                      <button
                                         className="btn-ver-detalhe"
                                         onClick={(e) => { e.stopPropagation(); editarBaixa(pag); }}
                                         title="Editar baixa"
@@ -6955,7 +6981,7 @@ const AdminDashboard = () => {
                                         <Edit2 size={14} />
                                         Editar
                                       </button>
-                                      <button 
+                                      <button
                                         className="btn-small-danger"
                                         onClick={(e) => { e.stopPropagation(); excluirBaixa(pag); }}
                                         title="Reverter baixa"

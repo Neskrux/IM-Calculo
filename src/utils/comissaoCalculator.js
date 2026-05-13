@@ -35,6 +35,7 @@ export const STATUS = Object.freeze({
 export const isPago = (pag) => pag?.status === STATUS.PAGO
 export const isPendente = (pag) => pag?.status === STATUS.PENDENTE
 export const isCancelado = (pag) => pag?.status === STATUS.CANCELADO
+export const isAtivo = (pag) => pag?.status !== STATUS.CANCELADO
 
 /**
  * Data efetiva para relatórios e filtros temporais:
@@ -125,7 +126,10 @@ export function calcularComissaoPagamentoCompleto(pagamento, opts = {}) {
 export function somarComissao(pagamentos, opts = {}) {
   if (!Array.isArray(pagamentos)) return 0
   const { predicate, vendas, percentualFallback } = opts
-  const lista = predicate ? pagamentos.filter(predicate) : pagamentos
+  // Default: ignora canceladas (parcela cancelada nao deve entrar em soma
+  // financeira). Quem precisa do total bruto pra auditoria passa
+  // predicate explicito (ex: () => true).
+  const lista = predicate ? pagamentos.filter(predicate) : pagamentos.filter(isAtivo)
   return lista.reduce(
     (acc, pag) => acc + calcularComissaoPagamentoCompleto(pag, { vendas, percentualFallback }),
     0,

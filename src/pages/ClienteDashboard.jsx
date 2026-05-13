@@ -897,7 +897,7 @@ const ClienteDashboard = () => {
                                     {sortParcelas(pagamentosCompra, 'calendario').map((pagamento) => (
                                       <div 
                                         key={pagamento.id} 
-                                        className={`cliente-parcela-row ${pagamento.status === 'pago' ? 'pago' : ''}`}
+                                        className={`cliente-parcela-row ${pagamento.status === 'pago' ? 'pago' : pagamento.status === 'cancelado' ? 'cancelado' : ''}`}
                                       >
                                         <div className="cliente-parcela-tipo">
                                           {pagamento.tipo === 'sinal' && 'Sinal'}
@@ -913,7 +913,7 @@ const ClienteDashboard = () => {
                                         </div>
                                         <div className="cliente-parcela-status">
                                           <span className={`status-pill ${pagamento.status}`}>
-                                            {pagamento.status === 'pago' ? 'Pago' : 'Pendente'}
+                                            {pagamento.status === 'pago' ? 'Pago' : pagamento.status === 'cancelado' ? 'Cancelado' : 'Pendente'}
                                           </span>
                                         </div>
                                       </div>
@@ -953,7 +953,7 @@ const ClienteDashboard = () => {
                                             {pagamentosExibidos.map((pagamento) => (
                                               <div 
                                                 key={pagamento.id} 
-                                                className={`cliente-parcela-row ${pagamento.status === 'pago' ? 'pago' : ''}`}
+                                                className={`cliente-parcela-row ${pagamento.status === 'pago' ? 'pago' : pagamento.status === 'cancelado' ? 'cancelado' : ''}`}
                                               >
                                                 <div className="cliente-parcela-tipo">
                                                   {pagamento.tipo === 'sinal' && 'Sinal'}
@@ -969,7 +969,7 @@ const ClienteDashboard = () => {
                                                 </div>
                                                 <div className="cliente-parcela-status">
                                                   <span className={`status-pill ${pagamento.status}`}>
-                                                    {pagamento.status === 'pago' ? 'Pago' : 'Pendente'}
+                                                    {pagamento.status === 'pago' ? 'Pago' : pagamento.status === 'cancelado' ? 'Cancelado' : 'Pendente'}
                                                   </span>
                                                 </div>
                                               </div>

@@ -145,6 +145,7 @@ const HomeDashboard = ({
     let externo = 0
     let interno = 0
     for (const p of pagamentos) {
+      if (p.status === 'cancelado') continue
       const tipo = tipoPorVenda.get(p.venda_id)
       const valor = parseFloat(p.comissao_gerada) || 0
       if (tipo === 'externo') externo += valor
