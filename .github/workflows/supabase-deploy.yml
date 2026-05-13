@@ -1,0 +1,41 @@
+# Deploy automatico das Edge Functions do Supabase.
+#
+# Dispara quando: push pra main que altere algo em supabase/functions/.
+# Resultado: codigo das edge functions atualizado no Supabase Cloud em ~1min.
+#
+# Pre-requisitos (configurar uma vez nos Secrets do repo):
+#   SUPABASE_ACCESS_TOKEN  - Personal Access Token gerado em
+#                             https://supabase.com/dashboard/account/tokens
+#   SUPABASE_PROJECT_REF   - ref do projeto Supabase (na URL do dashboard).
+#
+# Migrations SQL NAO entram aqui de proposito — sao aplicadas manualmente
+# no SQL Editor pra forcar revisao humana antes de tocar o schema. Ver
+# docs/ci-cd-setup.md.
+
+name: Deploy Supabase Edge Functions
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'supabase/functions/**'
+      - '.github/workflows/supabase-deploy.yml'
+  workflow_dispatch: # Permite disparar manualmente pela aba Actions do GitHub.
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Deploy sienge-sync
+        run: supabase functions deploy sienge-sync --project-ref $SUPABASE_PROJECT_REF
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
