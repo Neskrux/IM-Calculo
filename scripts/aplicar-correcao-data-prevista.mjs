@@ -40,18 +40,29 @@ if (!SERVICE) console.warn('[INFO] SUPABASE_SERVICE_ROLE_KEY nao encontrada; usa
 
 const H = { apikey: KEY, Authorization: `Bearer ${KEY}`, 'Content-Type': 'application/json', Prefer: 'return=representation' }
 
-// Achar o plano mais recente
-const planoFile = readdirSync('docs')
+// Achar o plano mais recente — por meta.geradoEm (timestamp real), NAO por
+// ordem alfabetica do nome. O nome alfabetico fazia "ampla-2026-05-13" sempre
+// ganhar de "2026-05-14" ('a' > '2'), entao o cron reaplicava o plano antigo
+// commitado em vez do gerado no dia.
+const candidatos = readdirSync('docs')
   .filter((f) => f.startsWith('plano-correcao-data-prevista-') && f.endsWith('.json'))
-  .sort()
-  .pop()
-if (!planoFile) {
+  .map((f) => {
+    try {
+      const j = JSON.parse(readFileSync(`docs/${f}`, 'utf8'))
+      return { file: f, geradoEm: j.meta?.geradoEm || '', rows: j.plano || [] }
+    } catch {
+      return { file: f, geradoEm: '', rows: [] }
+    }
+  })
+  .sort((a, b) => String(a.geradoEm).localeCompare(String(b.geradoEm)))
+const maisRecente = candidatos[candidatos.length - 1]
+if (!maisRecente) {
   console.error('Nenhum plano encontrado em docs/plano-correcao-data-prevista-*.json. Rode antes scripts/gerar-plano-correcao-data-prevista.mjs.')
   process.exit(1)
 }
-console.log(`Usando plano: docs/${planoFile}`)
-const plano = JSON.parse(readFileSync(`docs/${planoFile}`, 'utf8'))
-const rows = plano.plano || []
+const planoFile = maisRecente.file
+const rows = maisRecente.rows
+console.log(`Usando plano: docs/${planoFile} (geradoEm=${maisRecente.geradoEm || '?'})`)
 console.log(`Linhas no plano: ${rows.length}\n`)
 
 const report = {
