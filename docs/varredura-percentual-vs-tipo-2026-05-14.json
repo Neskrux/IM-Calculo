@@ -1,0 +1,603 @@
+{
+  "meta": {
+    "geradoEm": "2026-05-14T17:37:48.834Z",
+    "regra": "percentual_comissao_total dos pagamentos != esperado pelo tipo_corretor (interno=6.5, externo=7)",
+    "total_vendas_divergentes": 27,
+    "soma_diferenca_comissao": 24754.72
+  },
+  "casos": [
+    {
+      "venda_id": "8daa3121-fcfa-42fa-8318-8e39fdac8800",
+      "sienge_contract_id": "80",
+      "numero_contrato": "38",
+      "unidade": "905 A",
+      "cliente_id": "3d0eb759-59a9-474d-b677-cee70f734276",
+      "tipo_corretor": "externo",
+      "pct_esperado": 7,
+      "pcts_encontrados": {
+        "7": 62,
+        "6.5": 1
+      },
+      "pcts_divergentes": [
+        6.5
+      ],
+      "total_pagamentos_ativos": 63,
+      "pagos": 12,
+      "comissao_atual": 46673.76,
+      "comissao_correta_estimada": 29041.62,
+      "diferenca": 17632.14,
+      "cliente": "TAYARA GUERRA DE BARROS"
+    },
+    {
+      "venda_id": "67240a63-fd0f-4d21-8dd6-5ea34e4c0c76",
+      "sienge_contract_id": "290",
+      "numero_contrato": "198",
+      "unidade": "1008 D",
+      "cliente_id": "84d93608-a4ef-42c3-bf38-d474253379f3",
+      "tipo_corretor": "interno",
+      "pct_esperado": 6.5,
+      "pcts_encontrados": {
+        "7": 65
+      },
+      "pcts_divergentes": [
+        7
+      ],
+      "total_pagamentos_ativos": 65,
+      "pagos": 65,
+      "comissao_atual": 24443.45,
+      "comissao_correta_estimada": 22697.42,
+      "diferenca": 1746.03,
+      "cliente": "SIDNEY DE JESUS JUNIOR"
+    },
+    {
+      "venda_id": "85f070c7-e436-482c-ac8a-2242602aa984",
+      "sienge_contract_id": "69",
+      "numero_contrato": "30",
+      "unidade": "805 A",
+      "cliente_id": "82ed5d4f-065d-473d-80c1-e7af44f2a857",
+      "tipo_corretor": "externo",
+      "pct_esperado": 7,
+      "pcts_encontrados": {
+        "7": 62,
+        "6.5": 4
+      },
+      "pcts_divergentes": [
+        6.5
+      ],
+      "total_pagamentos_ativos": 66,
+      "pagos": 14,
+      "comissao_atual": 16036.23,
+      "comissao_correta_estimada": 16761.95,
+      "diferenca": -725.72,
+      "cliente": "LEANDRO APARECIDO DO ROSÁRIO"
+    },
+    {
+      "venda_id": "b517bfcf-2c3a-4b71-a4a7-dae26216d596",
+      "sienge_contract_id": "318",
+      "numero_contrato": "226",
+      "unidade": "1302 A",
+      "cliente_id": "b164deb1-2af6-4a72-ad69-da1371ec5829",
+      "tipo_corretor": "interno",
+      "pct_esperado": 6.5,
+      "pcts_encontrados": {
+        "7": 12,
+        "6.5": 51
+      },
+      "pcts_divergentes": [
+        7
+      ],
+      "total_pagamentos_ativos": 63,
+      "pagos": 12,
+      "comissao_atual": 28472.49,
+      "comissao_correta_estimada": 27769.37,
+      "diferenca": 703.12,
+      "cliente": "LUIZ CARLOS DA SILVA"
+    },
+    {
+      "venda_id": "fbaad3e1-ab0f-451a-a90e-b015d6845368",
+      "sienge_contract_id": "135",
+      "numero_contrato": "46",
+      "unidade": "1005 A",
+      "cliente_id": "82ed5d4f-065d-473d-80c1-e7af44f2a857",
+      "tipo_corretor": "externo",
+      "pct_esperado": 7,
+      "pcts_encontrados": {
+        "7": 62,
+        "6.5": 4
+      },
+      "pcts_divergentes": [
+        6.5
+      ],
+      "total_pagamentos_ativos": 66,
+      "pagos": 14,
+      "comissao_atual": 22588.03,
+      "comissao_correta_estimada": 23135.82,
+      "diferenca": -547.79,
+      "cliente": "LEANDRO APARECIDO DO ROSÁRIO"
+    },
+    {
+      "venda_id": "62d4b34f-232f-4251-8ab1-9be0b87128e2",
+      "sienge_contract_id": "176",
+      "numero_contrato": "86",
+      "unidade": "403 B",
+      "cliente_id": "edce9a90-775d-4e03-819c-cbb6060d5e65",
+      "tipo_corretor": "interno",
+      "pct_esperado": 6.5,
+      "pcts_encontrados": {
+        "7": 14,
+        "6.5": 52
+      },
+      "pcts_divergentes": [
+        7
+      ],
+      "total_pagamentos_ativos": 66,
+      "pagos": 14,
+      "comissao_atual": 20619.23,
+      "comissao_correta_estimada": 20178.73,
+      "diferenca": 440.5,
+      "cliente": "MILENA PAULA NASCIMENTO SANTOS"
+    },
+    {
+      "venda_id": "b5da7d59-925c-400e-a909-fc125f060b63",
+      "sienge_contract_id": "199",
+      "numero_contrato": "107",
+      "unidade": "1004 B",
+      "cliente_id": "8bd8e334-bcf3-4111-9120-11f3efa6c7ca",
+      "tipo_corretor": "interno",
+      "pct_esperado": 6.5,
+      "pcts_encontrados": {
+        "7": 10,
+        "6.5": 49
+      },
+      "pcts_divergentes": [
+        7
+      ],
+      "total_pagamentos_ativos": 59,
+      "pagos": 10,
+      "comissao_atual": 27822.6,
+      "comissao_correta_estimada": 27464.7,
+      "diferenca": 357.9,
+      "cliente": "EDSON SANTANA "
+    },
+    {
+      "venda_id": "ccfd72af-cd67-40a7-b1a6-e05527ebe793",
+      "sienge_contract_id": "170",
+      "numero_contrato": "80",
+      "unidade": "1704 A",
+      "cliente_id": "dc2c5493-ff98-494a-aebe-69faa0f355a7",
+      "tipo_corretor": "interno",
+      "pct_esperado": 6.5,
+      "pcts_encontrados": {
+        "7": 12,
+        "6.5": 49
+      },
+      "pcts_divergentes": [
+        7
+      ],
+      "total_pagamentos_ativos": 61,
+      "pagos": 13,
+      "comissao_atual": 24687.82,
+      "comissao_correta_estimada": 24334.7,
+      "diferenca": 353.12,
+      "cliente": "JOÃO VICTOR NASCIMENTO DA SILVA WANDREY "
+    },
+    {
+      "venda_id": "f55c264d-3d37-48b7-be1c-757d985ee025",
+      "sienge_contract_id": "263",
+      "numero_contrato": "171",
+      "unidade": "504 D",
+      "cliente_id": "a0dac81d-6765-4a5f-b0f8-e48badb14e08",
+      "tipo_corretor": "interno",
+      "pct_esperado": 6.5,
+      "pcts_encontrados": {
+        "7": 12,
+        "6.5": 48
+      },
+      "pcts_divergentes": [
+        7
+      ],
+      "total_pagamentos_ativos": 60,
+      "pagos": 12,
+      "comissao_atual": 22763.28,
+      "comissao_correta_estimada": 22418.57,
+      "diferenca": 344.71,
+      "cliente": "MARIA EDUARDA EVANGELISTA"
+    },
+    {
+      "venda_id": "fbd6741a-394c-49b0-8761-34460ec938dd",
+      "sienge_contract_id": "216",
+      "numero_contrato": "124",
+      "unidade": "603 C",
+      "cliente_id": "3557a9d5-4984-4871-8932-596876cc8d8e",
+      "tipo_corretor": "interno",
+      "pct_esperado": 6.5,
+      "pcts_encontrados": {
+        "7": 13,
+        "6.5": 47
+      },
+      "pcts_divergentes": [
+        7
+      ],
+      "total_pagamentos_ativos": 60,
+      "pagos": 13,
+      "comissao_atual": 20927.27,
+      "comissao_correta_estimada": 20584.4,
+      "diferenca": 342.87,
+      "cliente": "FRANCISCO DE ASSIS MENDES DE SOUZA"
+    },
+    {
+      "venda_id": "982f1c2a-b679-4992-bae6-f6aabac8646c",
+      "sienge_contract_id": "156",
+      "numero_contrato": "66",
+      "unidade": "1408 A",
+      "cliente_id": "fc403830-aa7f-4687-950b-c1317285faa9",
+      "tipo_corretor": "interno",
+      "pct_esperado": 6.5,
+      "pcts_encontrados": {
+        "7": 9,
+        "6.5": 49
+      },
+      "pcts_divergentes": [
+        7
+      ],
+      "total_pagamentos_ativos": 58,
+      "pagos": 10,
+      "comissao_atual": 26320.64,
+      "comissao_correta_estimada": 25980.93,
+      "diferenca": 339.71,
+      "cliente": "CAIO GORGULHO CAMPOS"
+    },
+    {
+      "venda_id": "2e15fd31-4ba4-480a-8668-4d0f9001803c",
+      "sienge_contract_id": "306",
+      "numero_contrato": "214",
+      "unidade": "1707 D",
+      "cliente_id": "7282e8e8-c72e-4484-8681-bcb69f489bed",
+      "tipo_corretor": "interno",
+      "pct_esperado": 6.5,
+      "pcts_encontrados": {
+        "7": 12,
+        "6.5": 53
+      },
+      "pcts_divergentes": [
+        7
+      ],
+      "total_pagamentos_ativos": 65,
+      "pagos": 12,
+      "comissao_atual": 23075.14,
+      "comissao_correta_estimada": 22743.76,
+      "diferenca": 331.38,
+      "cliente": "JOSÉ CARLOS PICINELI MALUCELLI JUNIOR"
+    },
+    {
+      "venda_id": "e6f3e603-37f8-4381-bb78-e24d7f73e852",
+      "sienge_contract_id": "133",
+      "numero_contrato": "44",
+      "unidade": "1003 A",
+      "cliente_id": "9186cafb-b241-4acd-b325-652ca7b622fe",
+      "tipo_corretor": "interno",
+      "pct_esperado": 6.5,
+      "pcts_encontrados": {
+        "7": 12,
+        "6.5": 48
+      },
+      "pcts_divergentes": [
+        7
+      ],
+      "total_pagamentos_ativos": 60,
+      "pagos": 13,
+      "comissao_atual": 21540,
+      "comissao_correta_estimada": 21213.59,
+      "diferenca": 326.41,
+      "cliente": "MARCELO GOMES DA SILVA"
+    },
+    {
+      "venda_id": "6f15deae-c66f-406c-87a1-30bcc4715a15",
+      "sienge_contract_id": "66",
+      "numero_contrato": "29",
+      "unidade": "804 A",
+      "cliente_id": "314aec0d-df7c-4ce1-90cb-1ef98659a4ad",
+      "tipo_corretor": "interno",
+      "pct_esperado": 6.5,
+      "pcts_encontrados": {
+        "7": 11,
+        "6.5": 49
+      },
+      "pcts_divergentes": [
+        7
+      ],
+      "total_pagamentos_ativos": 60,
+      "pagos": 11,
+      "comissao_atual": 23427.62,
+      "comissao_correta_estimada": 23102.05,
+      "diferenca": 325.57,
+      "cliente": "WELMITON FERREIRA GOMES "
+    },
+    {
+      "venda_id": "84079391-b600-4ffe-b4b3-6a1b635b3c37",
+      "sienge_contract_id": "274",
+      "numero_contrato": "182",
+      "unidade": "710 D",
+      "cliente_id": "103a922e-cb1c-414d-ba41-da22cc886757",
+      "tipo_corretor": "interno",
+      "pct_esperado": 6.5,
+      "pcts_encontrados": {
+        "7": 12,
+        "6.5": 48
+      },
+      "pcts_divergentes": [
+        7
+      ],
+      "total_pagamentos_ativos": 60,
+      "pagos": 13,
+      "comissao_atual": 21109.92,
+      "comissao_correta_estimada": 20790.12,
+      "diferenca": 319.8,
+      "cliente": "RENATO CARLOS SILVA DO NASCIMENTO "
+    },
+    {
+      "venda_id": "9467ac8a-786e-4658-8aac-c714875f8deb",
+      "sienge_contract_id": "160",
+      "numero_contrato": "70",
+      "unidade": "1505 A",
+      "cliente_id": "add3a0e4-5653-40c9-b003-c6ad329f0548",
+      "tipo_corretor": "interno",
+      "pct_esperado": 6.5,
+      "pcts_encontrados": {
+        "7": 11,
+        "6.5": 50
+      },
+      "pcts_divergentes": [
+        7
+      ],
+      "total_pagamentos_ativos": 61,
+      "pagos": 11,
+      "comissao_atual": 24171.98,
+      "comissao_correta_estimada": 23855.21,
+      "diferenca": 316.77,
+      "cliente": "JISIANE APARECIDA REICHERT"
+    },
+    {
+      "venda_id": "f03dc7d9-21e6-4db8-9ae5-e42b10b0b788",
+      "sienge_contract_id": "21",
+      "numero_contrato": "15",
+      "unidade": "503 A",
+      "cliente_id": "645fd1c3-9a89-45c1-8b76-68adf923890e",
+      "tipo_corretor": "interno",
+      "pct_esperado": 6.5,
+      "pcts_encontrados": {
+        "7": 12,
+        "6.5": 49
+      },
+      "pcts_divergentes": [
+        7
+      ],
+      "total_pagamentos_ativos": 61,
+      "pagos": 13,
+      "comissao_atual": 20695.44,
+      "comissao_correta_estimada": 20380.52,
+      "diferenca": 314.92,
+      "cliente": "RAISSA SANTOS  FERREIRA"
+    },
+    {
+      "venda_id": "169d52ea-2062-477f-b2f4-218d32e66593",
+      "sienge_contract_id": "47",
+      "numero_contrato": "26",
+      "unidade": "709 A",
+      "cliente_id": "b61de7b7-9623-47ea-af9a-5fc4dcfb4e6f",
+      "tipo_corretor": "interno",
+      "pct_esperado": 6.5,
+      "pcts_encontrados": {
+        "7": 12,
+        "6.5": 49
+      },
+      "pcts_divergentes": [
+        7
+      ],
+      "total_pagamentos_ativos": 61,
+      "pagos": 12,
+      "comissao_atual": 21103.45,
+      "comissao_correta_estimada": 20790.17,
+      "diferenca": 313.28,
+      "cliente": "JAMILE KATE MARTINS SANTOS"
+    },
+    {
+      "venda_id": "c5000de1-654b-42c5-9c9c-c0e29e439432",
+      "sienge_contract_id": "77",
+      "numero_contrato": "36",
+      "unidade": "903 A",
+      "cliente_id": "703537c1-fc15-41cc-851c-a80172abf375",
+      "tipo_corretor": "interno",
+      "pct_esperado": 6.5,
+      "pcts_encontrados": {
+        "7": 12,
+        "6.5": 49
+      },
+      "pcts_divergentes": [
+        7
+      ],
+      "total_pagamentos_ativos": 61,
+      "pagos": 13,
+      "comissao_atual": 21309.17,
+      "comissao_correta_estimada": 21003.58,
+      "diferenca": 305.59,
+      "cliente": "THAINARA DA CUNHA KANGERSKI"
+    },
+    {
+      "venda_id": "c5e10e5d-cbf4-45df-913e-4eee519ecad7",
+      "sienge_contract_id": "277",
+      "numero_contrato": "185",
+      "unidade": "810 D",
+      "cliente_id": "843567af-023a-4ed9-81f9-daeb18d5b61b",
+      "tipo_corretor": "interno",
+      "pct_esperado": 6.5,
+      "pcts_encontrados": {
+        "7": 11,
+        "6.5": 49
+      },
+      "pcts_divergentes": [
+        7
+      ],
+      "total_pagamentos_ativos": 60,
+      "pagos": 11,
+      "comissao_atual": 21294.32,
+      "comissao_correta_estimada": 20998.07,
+      "diferenca": 296.25,
+      "cliente": "RAIMUNDO SEBASTIAO PORFIRIO BRAGA"
+    },
+    {
+      "venda_id": "7295782a-b03d-409b-b21d-3a257ec8b61f",
+      "sienge_contract_id": "12",
+      "numero_contrato": "11",
+      "unidade": "509 A",
+      "cliente_id": "0e46393d-e7ec-4dc9-81e1-01a01179fbd6",
+      "tipo_corretor": "interno",
+      "pct_esperado": 6.5,
+      "pcts_encontrados": {
+        "7": 11,
+        "6.5": 54
+      },
+      "pcts_divergentes": [
+        7
+      ],
+      "total_pagamentos_ativos": 65,
+      "pagos": 11,
+      "comissao_atual": 20668.11,
+      "comissao_correta_estimada": 20380.52,
+      "diferenca": 287.59,
+      "cliente": "MAX EMILIANO DE OLIVEIRA"
+    },
+    {
+      "venda_id": "e3bd5695-27ce-436b-a578-ce1bfac3d7aa",
+      "sienge_contract_id": "340",
+      "numero_contrato": "243",
+      "unidade": "905 B",
+      "cliente_id": "80a0cc9f-5298-4766-abda-ce952f9ccd30",
+      "tipo_corretor": "externo",
+      "pct_esperado": 7,
+      "pcts_encontrados": {
+        "7": 56,
+        "6.5": 3
+      },
+      "pcts_divergentes": [
+        6.5
+      ],
+      "total_pagamentos_ativos": 59,
+      "pagos": 5,
+      "comissao_atual": 21934.08,
+      "comissao_correta_estimada": 22205.73,
+      "diferenca": -271.65,
+      "cliente": "CAROLINE SARAIVA DA SILVEIRA RODRIGUES "
+    },
+    {
+      "venda_id": "6d729ea0-32e0-4234-814b-0c7cb14d33fd",
+      "sienge_contract_id": "316",
+      "numero_contrato": "224",
+      "unidade": "902 D",
+      "cliente_id": "45d6067b-f7a3-4a41-b6ac-5ac9279bbc1c",
+      "tipo_corretor": "interno",
+      "pct_esperado": 6.5,
+      "pcts_encontrados": {
+        "7": 12,
+        "6.5": 53
+      },
+      "pcts_divergentes": [
+        7
+      ],
+      "total_pagamentos_ativos": 65,
+      "pagos": 13,
+      "comissao_atual": 21242.44,
+      "comissao_correta_estimada": 21003.55,
+      "diferenca": 238.89,
+      "cliente": "JOSIAS GRAMINHO MACHADO"
+    },
+    {
+      "venda_id": "8a9bfb6c-c6c1-4e4d-bf60-fa3c477cba4b",
+      "sienge_contract_id": "44",
+      "numero_contrato": "23",
+      "unidade": "612 A",
+      "cliente_id": "a91b3beb-4b67-44ac-97d2-298573284293",
+      "tipo_corretor": "interno",
+      "pct_esperado": 6.5,
+      "pcts_encontrados": {
+        "7": 12,
+        "6.5": 48
+      },
+      "pcts_divergentes": [
+        7
+      ],
+      "total_pagamentos_ativos": 60,
+      "pagos": 13,
+      "comissao_atual": 15492.72,
+      "comissao_correta_estimada": 15257.97,
+      "diferenca": 234.75,
+      "cliente": "GUSTAVO KAUE SAIBERT "
+    },
+    {
+      "venda_id": "9e784457-c682-4bbb-9fe1-0677c980321a",
+      "sienge_contract_id": "208",
+      "numero_contrato": "116",
+      "unidade": "1603 B",
+      "cliente_id": "3cc1a85b-e5ca-4dd8-9ced-d3270ab165b7",
+      "tipo_corretor": "interno",
+      "pct_esperado": 6.5,
+      "pcts_encontrados": {
+        "7": 13,
+        "6.5": 52
+      },
+      "pcts_divergentes": [
+        7
+      ],
+      "total_pagamentos_ativos": 65,
+      "pagos": 13,
+      "comissao_atual": 22735.81,
+      "comissao_correta_estimada": 22518.65,
+      "diferenca": 217.16,
+      "cliente": "CRISTIANO FERRETTI ADRIANO "
+    },
+    {
+      "venda_id": "12df0ff7-62c6-48b7-822c-41bd26443196",
+      "sienge_contract_id": "258",
+      "numero_contrato": "166",
+      "unidade": "1408 C",
+      "cliente_id": "9792ff7e-8718-483e-824d-b948296f4a67",
+      "tipo_corretor": "interno",
+      "pct_esperado": 6.5,
+      "pcts_encontrados": {
+        "7": 9,
+        "6.5": 55
+      },
+      "pcts_divergentes": [
+        7
+      ],
+      "total_pagamentos_ativos": 64,
+      "pagos": 9,
+      "comissao_atual": 23801.52,
+      "comissao_correta_estimada": 23619.02,
+      "diferenca": 182.5,
+      "cliente": "FLÁVIO RODOLFO DO NASCIMENTO"
+    },
+    {
+      "venda_id": "7137bf0e-9738-4451-8c5f-53fac9593003",
+      "sienge_contract_id": "169",
+      "numero_contrato": "79",
+      "unidade": "1703 A",
+      "cliente_id": "ffb1b164-de8d-4ad5-9848-e27d5d8d7ca1",
+      "tipo_corretor": "interno",
+      "pct_esperado": 6.5,
+      "pcts_encontrados": {
+        "7": 1,
+        "6.5": 59
+      },
+      "pcts_divergentes": [
+        7
+      ],
+      "total_pagamentos_ativos": 60,
+      "pagos": 1,
+      "comissao_atual": 22772.76,
+      "comissao_correta_estimada": 22743.84,
+      "diferenca": 28.92,
+      "cliente": "RUAN FERNANDO RICARDO "
+    }
+  ]
+}
