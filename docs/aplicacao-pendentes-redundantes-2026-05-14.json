@@ -1,0 +1,18 @@
+{
+  "meta": {
+    "geradoEm": "2026-05-14T18:56:04.076Z",
+    "spec_ref": ".claude/rules/sincronizacao-sienge.md, .claude/rules/rodadas-b.md",
+    "script": "scripts/cancelar-pendentes-redundantes.mjs",
+    "modo": "apply",
+    "criterio": "pendente com mesmo (venda, tipo, numero_parcela, valor, data_prevista) que uma parcela paga -> cancelar pendente"
+  },
+  "counts": {
+    "matched": 0,
+    "updated": 0,
+    "skipped": 0,
+    "errors": 0,
+    "skipped_idempotent": 0
+  },
+  "drift": [],
+  "errors": []
+}
