@@ -1,102 +1,80 @@
-# Percentual de comissão divergente — revisão — 2026-05-14
+# Percentual de comissão divergente — 2026-05-14
 
-Você reportou que a venda da **THAINARA (903 A)** estava com o percentual errado. Investiguei e **você está certa** — e o problema não é só nela. Varri todas as vendas e achei **27 vendas** no mesmo caso.
-
----
-
-## O que está acontecendo
-
-Cada venda tem um percentual de comissão conforme o tipo do corretor:
-- **Interno:** 6,5%
-- **Externo:** 7,0%
-
-Nessas 27 vendas, **parte das parcelas foi gerada com o percentual errado**. O padrão é quase sempre o mesmo — exemplo da THAINARA:
-
-> 12 parcelas a **7%** (errado) + 49 parcelas a **6,5%** (certo)
-
-As **parcelas mais antigas** (geralmente as que já foram pagas) ficaram no percentual velho; as mais novas foram geradas no percentual certo. Isso indica que a venda foi **cadastrada com um tipo de corretor e depois trocada** — e as parcelas antigas não foram atualizadas junto.
+Você reportou que a venda da **THAINARA (903 A)** estava com o percentual errado. Você estava certa — investiguei e achei **27 vendas** no mesmo caso.
 
 ---
 
-## A pergunta que preciso te fazer
+## ✅ O que eu já verifiquei e resolvi
 
-Pra cada uma dessas vendas, **qual o percentual correto de verdade?**
+### A pergunta "qual o percentual certo" — respondida
+Conferi as 27 vendas: em **100% delas**, o tipo da venda bate com o tipo do corretor cadastrado. Então o percentual certo é **inequívoco** — não precisa você decidir caso a caso:
+- Corretor **interno** → 6,5%
+- Corretor **externo** → 7,0%
 
-- Se a venda **sempre foi interno** (e o 7% foi erro de cadastro) → as parcelas a 7% **pagaram comissão a mais** e precisam ser corrigidas.
-- Se a venda **foi vendida como externo e depois reclassificada** → as parcelas a 7% foram pagas corretamente na época, e o histórico fica como está.
+As parcelas com percentual divergente são **erro de geração** (o sistema antigo gerava a 7% por padrão), não reclassificação de venda.
 
-**Isso é decisão sua** — eu não tenho como saber qual era o tipo do corretor no momento da venda. Mas pelo que você reportou na THAINARA, parece que o caso é "sempre foi interno, o 7% foi erro".
-
----
-
-## Grupo 1 — Vendas INTERNO com parcelas a 7% (23 vendas)
-
-Comissão **inflada** — total de **R$ 8.667,74** a mais.
-
-| Cliente | Unidade | Parcelas erradas | Já pagas | A mais |
-|---|---|---|---:|---:|
-| SIDNEY DE JESUS JUNIOR | 1008 D | **65 (todas!)** | 65 | R$ 1.746,03 |
-| LUIZ CARLOS DA SILVA | 1302 A | 12 | 12 | R$ 703,12 |
-| MILENA PAULA NASCIMENTO SANTOS | 403 B | 14 | 14 | R$ 440,50 |
-| EDSON SANTANA | 1004 B | 10 | 10 | R$ 357,90 |
-| JOÃO VICTOR NASCIMENTO DA SILVA WANDREY | 1704 A | 12 | 13 | R$ 353,12 |
-| MARIA EDUARDA EVANGELISTA | 504 D | 12 | 12 | R$ 344,71 |
-| FRANCISCO DE ASSIS MENDES DE SOUZA | 603 C | 13 | 13 | R$ 342,87 |
-| CAIO GORGULHO CAMPOS | 1408 A | 9 | 10 | R$ 339,71 |
-| JOSÉ CARLOS PICINELI MALUCELLI JUNIOR | 1707 D | 12 | 12 | R$ 331,38 |
-| MARCELO GOMES DA SILVA | 1003 A | 12 | 13 | R$ 326,41 |
-| WELMITON FERREIRA GOMES | 804 A | 11 | 11 | R$ 325,57 |
-| RENATO CARLOS SILVA DO NASCIMENTO | 710 D | 12 | 13 | R$ 319,80 |
-| JISIANE APARECIDA REICHERT | 1505 A | 11 | 11 | R$ 316,77 |
-| RAISSA SANTOS FERREIRA | 503 A | 12 | 13 | R$ 314,92 |
-| JAMILE KATE MARTINS SANTOS | 709 A | 12 | 12 | R$ 313,28 |
-| **THAINARA DA CUNHA KANGERSKI** | **903 A** | 12 | 13 | R$ 305,59 |
-| RAIMUNDO SEBASTIAO PORFIRIO BRAGA | 810 D | 11 | 11 | R$ 296,25 |
-| MAX EMILIANO DE OLIVEIRA | 509 A | 11 | 11 | R$ 287,59 |
-| JOSIAS GRAMINHO MACHADO | 902 D | 12 | 13 | R$ 238,89 |
-| GUSTAVO KAUE SAIBERT | 612 A | 12 | 13 | R$ 234,75 |
-| CRISTIANO FERRETTI ADRIANO | 1603 B | 13 | 13 | R$ 217,16 |
-| FLÁVIO RODOLFO DO NASCIMENTO | 1408 C | 9 | 9 | R$ 182,50 |
-| RUAN FERNANDO RICARDO | 1703 A | 1 | 1 | R$ 28,92 |
-
-> Destaque: **SIDNEY DE JESUS (1008 D)** tem **todas as 65 parcelas** a 7% — essa venda nunca foi regenerada, está 100% no percentual errado.
+### As parcelas pendentes — já corrigi
+**11 parcelas pendentes** estavam erradas (3 vendas de corretor externo que estavam a 6,5% em vez de 7%). Já corrigi — eram a favor do corretor (comissão estava subestimada):
+- LEANDRO APARECIDO DO ROSÁRIO (805 A) — 4 parcelas
+- LEANDRO APARECIDO DO ROSÁRIO (1005 A) — 4 parcelas
+- CAROLINE SARAIVA (905 B) — 3 parcelas
 
 ---
 
-## Grupo 2 — Vendas EXTERNO com parcelas a 6,5% (3 vendas)
+## 🟡 O que precisa da sua decisão — parcelas JÁ PAGAS
 
-Comissão **subestimada** — total de **R$ 1.545,16** a menos (a IM pagou comissão a menos pro corretor).
+Sobram **310 parcelas que já foram pagas** com o percentual errado, em 23 vendas de corretor **interno** que pagaram a **7%** em vez de **6,5%**.
 
-| Cliente | Unidade | Parcelas erradas | Já pagas | A menos |
-|---|---|---|---:|---:|
-| LEANDRO APARECIDO DO ROSÁRIO | 805 A | 4 | 14 | R$ 725,72 |
-| LEANDRO APARECIDO DO ROSÁRIO | 1005 A | 4 | 14 | R$ 547,79 |
-| CAROLINE SARAIVA DA SILVEIRA RODRIGUES | 905 B | 3 | 5 | R$ 271,65 |
+O sistema **protege parcelas pagas** contra alteração (pra ninguém mexer em pagamento já auditado). Então essas 310 não dá pra "corrigir sozinho" — e mais importante: **mexer nelas é decisão financeira sua**, porque significa que o corretor recebeu comissão a mais.
 
----
+**Impacto:** cerca de **R$ 8.668** de comissão paga a mais, distribuído nas 23 vendas (a maioria entre R$ 200 e R$ 700 por venda — exceção: SIDNEY DE JESUS 1008 D, com R$ 1.746).
 
-## Caso à parte — TAYARA GUERRA DE BARROS (905 A)
+### Suas opções
 
-Aparece na varredura mas é **falso alarme** pra esse problema — só 1 das 63 parcelas está divergente. Essa venda tem outro problema já conhecido (o valor do pro-soluto está cadastrado errado, igual ao valor da venda) — está na lista de revisão da rodada b6.
+| Opção | O que significa |
+|---|---|
+| **A — Aceitar o histórico** | Deixa as parcelas pagas como estão. O que foi pago, foi pago. Daqui pra frente já está tudo certo (as pendentes foram corrigidas). |
+| **B — Acertar com os corretores** | Eu marco as 310 parcelas com o percentual correto e gero um relatório de quanto cada corretor recebeu a mais, pra você descontar nos próximos repasses. |
 
----
-
-## O que eu preciso de você
-
-1. **Confirmar a regra:** essas vendas do Grupo 1 são "sempre foram interno, o 7% foi erro"? (Se alguma foi reclassificada de verdade, me avisa quais.)
-2. **Decidir o que fazer com as parcelas já pagas:**
-   - **Opção A:** corrigir tudo (pagas e pendentes) pro percentual certo — implica que a IM tem crédito/débito a acertar com os corretores.
-   - **Opção B:** corrigir só as parcelas **pendentes** (daqui pra frente) e deixar as pagas como estão (histórico).
-3. Pro Grupo 2, mesma pergunta — corrigir tudo ou só pendente?
-
-Quando você decidir, eu preparo a correção. As parcelas pendentes eu corrijo direto; as pagas têm proteção no sistema e precisam do seu OK explícito (mesma regra que protege contra alteração indevida de pagamento auditado).
+> A lista completa das 23 vendas (cliente, unidade, quanto a mais) está no [Anexo](#anexo). A maioria é valor pequeno por venda.
 
 ---
 
 ## Resumo
 
-| Grupo | Vendas | Impacto | Status |
-|---|---:|---|---|
-| Interno a 7% (inflado) | 23 | +R$ 8.667,74 | Aguardando sua decisão |
-| Externo a 6,5% (subestimado) | 3 | −R$ 1.545,16 | Aguardando sua decisão |
-| TAYARA (falso alarme) | 1 | — | Já na rodada b6 |
+| Item | Status |
+|---|---|
+| Qual percentual é o certo | ✅ Verificado — inequívoco (tipo do corretor) |
+| 11 parcelas pendentes erradas | ✅ Corrigidas |
+| 310 parcelas pagas a 7% (deviam 6,5%) | 🟡 **Sua decisão: Opção A ou B** |
+| Contrato 80 (TAYARA) — falso alarme | já está na rodada b6 (outro problema) |
+
+---
+
+## Anexo — as 23 vendas com parcelas pagas a 7% (deviam 6,5%)
+
+| Cliente | Unidade | Parcelas pagas a 7% | Comissão a mais |
+|---|---|---:|---:|
+| SIDNEY DE JESUS JUNIOR | 1008 D | 65 | R$ 1.746,03 |
+| LUIZ CARLOS DA SILVA | 1302 A | 12 | R$ 703,12 |
+| MILENA PAULA NASCIMENTO SANTOS | 403 B | 14 | R$ 440,50 |
+| EDSON SANTANA | 1004 B | 10 | R$ 357,90 |
+| JOÃO VICTOR NASCIMENTO DA SILVA WANDREY | 1704 A | 12 | R$ 353,12 |
+| MARIA EDUARDA EVANGELISTA | 504 D | 12 | R$ 344,71 |
+| FRANCISCO DE ASSIS MENDES DE SOUZA | 603 C | 13 | R$ 342,87 |
+| CAIO GORGULHO CAMPOS | 1408 A | 9 | R$ 339,71 |
+| JOSÉ CARLOS PICINELI MALUCELLI JUNIOR | 1707 D | 12 | R$ 331,38 |
+| MARCELO GOMES DA SILVA | 1003 A | 12 | R$ 326,41 |
+| WELMITON FERREIRA GOMES | 804 A | 11 | R$ 325,57 |
+| RENATO CARLOS SILVA DO NASCIMENTO | 710 D | 12 | R$ 319,80 |
+| JISIANE APARECIDA REICHERT | 1505 A | 11 | R$ 316,77 |
+| RAISSA SANTOS FERREIRA | 503 A | 12 | R$ 314,92 |
+| JAMILE KATE MARTINS SANTOS | 709 A | 12 | R$ 313,28 |
+| THAINARA DA CUNHA KANGERSKI | 903 A | 12 | R$ 305,59 |
+| RAIMUNDO SEBASTIAO PORFIRIO BRAGA | 810 D | 11 | R$ 296,25 |
+| MAX EMILIANO DE OLIVEIRA | 509 A | 11 | R$ 287,59 |
+| JOSIAS GRAMINHO MACHADO | 902 D | 12 | R$ 238,89 |
+| GUSTAVO KAUE SAIBERT | 612 A | 12 | R$ 234,75 |
+| CRISTIANO FERRETTI ADRIANO | 1603 B | 13 | R$ 217,16 |
+| FLÁVIO RODOLFO DO NASCIMENTO | 1408 C | 9 | R$ 182,50 |
+| RUAN FERNANDO RICARDO | 1703 A | 1 | R$ 28,92 |

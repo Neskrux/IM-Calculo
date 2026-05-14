@@ -1,0 +1,15 @@
+{
+  "meta": {
+    "geradoEm": "2026-05-14T18:27:30.059Z",
+    "modo": "apply",
+    "spec_ref": ".claude/rules/fator-comissao.md"
+  },
+  "counts": {
+    "matched": 0,
+    "updated": 0,
+    "skipped": 0,
+    "errors": 0
+  },
+  "drift": [],
+  "errors": []
+}
