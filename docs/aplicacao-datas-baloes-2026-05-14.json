@@ -1,0 +1,128 @@
+{
+  "meta": {
+    "geradoEm": "2026-05-14T17:11:28.632Z",
+    "modo": "apply",
+    "autorizacao": "gestora 2026-05-14"
+  },
+  "counts": {
+    "matched": 16,
+    "updated": 16,
+    "skipped": 0,
+    "errors": 0
+  },
+  "drift": [
+    {
+      "id": "bf618af9-4be2-4e07-b51a-d7e3e950104a",
+      "campo": "data_prevista",
+      "antes": null,
+      "depois": "2027-03-20",
+      "motivo": "balao sem data — gestora informou 2026-05-14"
+    },
+    {
+      "id": "2dcadc79-e50f-4f4b-b00b-5ebb31244e1e",
+      "campo": "data_prevista",
+      "antes": null,
+      "depois": "2028-03-20",
+      "motivo": "balao sem data — gestora informou 2026-05-14"
+    },
+    {
+      "id": "410239f1-3442-41ef-8396-72fe2e72baf1",
+      "campo": "data_prevista",
+      "antes": null,
+      "depois": "2029-03-20",
+      "motivo": "balao sem data — gestora informou 2026-05-14"
+    },
+    {
+      "id": "a49c733e-b51c-49e1-9630-d8e2bf876aaa",
+      "campo": "data_prevista",
+      "antes": null,
+      "depois": "2030-03-20",
+      "motivo": "balao sem data — gestora informou 2026-05-14"
+    },
+    {
+      "id": "a1cf5d93-b91f-4b94-a72a-739d066d8108",
+      "campo": "data_prevista",
+      "antes": null,
+      "depois": "2027-12-20",
+      "motivo": "balao sem data — gestora informou 2026-05-14"
+    },
+    {
+      "id": "d7e125e2-b234-4bb2-ad28-27ed73ed6da8",
+      "campo": "data_prevista",
+      "antes": null,
+      "depois": "2028-12-20",
+      "motivo": "balao sem data — gestora informou 2026-05-14"
+    },
+    {
+      "id": "0571ad14-c556-4212-bea0-f21abb75e694",
+      "campo": "data_prevista",
+      "antes": null,
+      "depois": "2029-12-20",
+      "motivo": "balao sem data — gestora informou 2026-05-14"
+    },
+    {
+      "id": "be53c870-a6fa-450b-8ad3-1549741b3b4c",
+      "campo": "data_prevista",
+      "antes": null,
+      "depois": "2026-12-20",
+      "motivo": "balao sem data — gestora informou 2026-05-14"
+    },
+    {
+      "id": "c46712fb-8808-4a89-b653-a3c5d9eca66e",
+      "campo": "data_prevista",
+      "antes": null,
+      "depois": "2027-12-20",
+      "motivo": "balao sem data — gestora informou 2026-05-14"
+    },
+    {
+      "id": "1b53d58b-8945-40de-8d6e-d9b31debba14",
+      "campo": "data_prevista",
+      "antes": null,
+      "depois": "2028-12-20",
+      "motivo": "balao sem data — gestora informou 2026-05-14"
+    },
+    {
+      "id": "6c5f9815-8a3c-4463-b164-fc40d9f0573d",
+      "campo": "data_prevista",
+      "antes": null,
+      "depois": "2029-12-20",
+      "motivo": "balao sem data — gestora informou 2026-05-14"
+    },
+    {
+      "id": "2a2f7f68-9399-461b-b32c-8f6c5fcb68c5",
+      "campo": "data_prevista",
+      "antes": null,
+      "depois": "2026-12-20",
+      "motivo": "balao sem data — gestora informou 2026-05-14"
+    },
+    {
+      "id": "2d6a403d-2759-48cc-884c-6adae137bca0",
+      "campo": "data_prevista",
+      "antes": null,
+      "depois": "2027-12-20",
+      "motivo": "balao sem data — gestora informou 2026-05-14"
+    },
+    {
+      "id": "44afea7d-dc35-426d-a5d4-ee1fa9566acb",
+      "campo": "data_prevista",
+      "antes": null,
+      "depois": "2028-12-20",
+      "motivo": "balao sem data — gestora informou 2026-05-14"
+    },
+    {
+      "id": "c3ad7412-d78f-4d8c-92d7-1cc590f68032",
+      "campo": "data_prevista",
+      "antes": null,
+      "depois": "2029-12-20",
+      "motivo": "balao sem data — gestora informou 2026-05-14"
+    },
+    {
+      "id": "9829bc4a-e3ce-4ce2-9880-dfafd7f8f5f1",
+      "campo": "data_prevista",
+      "antes": null,
+      "depois": "2026-12-20",
+      "motivo": "balao sem data — gestora informou 2026-05-14"
+    }
+  ],
+  "errors": []
+}

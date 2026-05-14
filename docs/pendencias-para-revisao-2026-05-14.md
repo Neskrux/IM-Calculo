@@ -1,65 +1,56 @@
 # Pendências para revisão — 2026-05-14
 
-Resumo da auditoria de pagamentos. Tem **1 coisa já resolvida** (só ciência) e **1 frente que precisa da sua resposta** (balões).
+Status da auditoria de pagamentos. Quase tudo resolvido — sobrou **1 confirmação**.
 
 ---
 
-## ✅ Já resolvido — CLAUDIO MARTIRE (venda duplicada)
+## ✅ Já resolvido
 
-O contrato do CLAUDIO foi reemitido no Sienge (Cód.Contrato 236 → 390). O sistema tinha as duas versões cadastradas, fazendo ele aparecer duas vezes.
+### CLAUDIO MARTIRE — venda duplicada
+Contrato reemitido no Sienge (236 → 390). Eliminei a versão antiga (236). Ele agora aparece só uma vez, na venda correta (390, unidade 1008 C).
 
-Você autorizou e **já eliminei a versão antiga (236)**. Agora ele aparece só uma vez, na venda correta (Cód.Contrato 390, unidade 1008 C, 60 parcelas, 12 pagas). Nada foi perdido — os pagamentos reais estavam todos na versão nova.
+### Balões sem data de vencimento
+Com as datas que você passou, preenchi **16 balões** em 5 vendas:
+- **LURDES COLMAN LOPES** (1305 D) — 4 balões: mar/2027 a mar/2030
+- **CAROLINE SARAIVA** (905 B) — 3 balões: dez/2027 a dez/2029
+- **CAYO KAMENAC** (603) — 4 balões: dez/2026 a dez/2029
+- **FELIX ROMAN MUNIEWEG** (1307) — 4 balões: dez/2026 a dez/2029
+- **ALISSON RODRIGUES DO CARMO** (1305) — 1 balão: dez/2026
 
-*Nenhuma ação necessária — só registrando que foi feito.*
-
----
-
-## 🟡 Precisa da sua resposta — Balões sem data de vencimento
-
-Encontrei **26 balões** (parcelas grandes, anuais) em **7 vendas** que estão **sem data de vencimento** no sistema. Sem a data, o balão não aparece no calendário nem nos filtros por período.
-
-**Nenhum desses balões está pago** — são todos pendentes. Sem risco financeiro, é só organização do cronograma.
-
-### Grupo 1 — Vendas do Sienge (o Sienge já tem as datas)
-
-Essas 2 vieram do Sienge e ele tem as datas dos balões registradas. Só preciso confirmar o encaixe:
-
-**LURDES COLMAN LOPES — Unidade 1305 D — Contrato Sienge 299**
-- 4 balões sem data, R$ 4.364,15 cada
-- No Sienge os balões vencem em **março de 2026, 2027, 2028, 2029 e 2030** (5 balões)
-- Pergunta: nossos 4 balões são os 4 primeiros (2026 a 2029)?
-
-**CAROLINE SARAIVA DA SILVEIRA RODRIGUES — Unidade 905 B — Contrato Sienge 340**
-- 3 balões sem data, R$ 3.624,00 cada
-- No Sienge os balões vencem em **dezembro de 2026, 2027, 2028 e 2029** (4 balões)
-- Pergunta: nossos 3 balões são os 3 primeiros (2026 a 2028)?
-
-> Se você confirmar ("sim, são os primeiros"), eu acerto as datas automaticamente puxando do Sienge.
-
-### Grupo 2 — Vendas cadastradas manualmente (sem contrato no Sienge)
-
-Essas 5 não têm contrato no Sienge — foram cadastradas direto no sistema. Preciso saber, **pra cada uma**, se é venda real ou cadastro de teste:
-
-| Cliente | Unidade | Balões | Valor cada | Observação |
-|---|---|---:|---:|---|
-| RAYLTON GOMES DA COSTA | 401 | 5 | R$ 4.000,00 | — |
-| **jonas cliente** | **002** | 5 | R$ 300,00 | ⚠️ Parece cadastro de teste |
-| CAYO KAMENAC RAMOS DA SILVA | 603 | 4 | R$ 10.000,00 | — |
-| Felix Roman Munieweg | 1307 | 4 | R$ 5.000,00 | — |
-| ALISSON RODRIGUES DO CARMO | 1305 | 1 | R$ 11.375,00 | — |
-
-Pra cada uma, me responde:
-- **"é teste, pode excluir"** → eu removo a venda
-- **"é real"** → me passa as datas dos balões (ou o 1º vencimento + de quanto em quanto tempo) que eu preencho
+### jonas cliente (002) — cadastro de teste
+Confirmado por você. Removido do sistema.
 
 ---
 
-## Resumo do que eu preciso de você
+## 🟡 Precisa da sua confirmação — RAYLTON GOMES DA COSTA
 
-| Item | O que preciso |
+Você mencionou que o RAYLTON tem "2 contratos no IM Cálculo". Confirmei: **é o mesmo caso do CLAUDIO** — a venda está duplicada no sistema.
+
+| | Venda 1 (manual) | Venda 2 (do Sienge) |
+|---|---|---|
+| Contrato Sienge | nenhum | **431** (nº 299) |
+| Unidade | 401 | 401 B |
+| Valor | R$ 310.200,39 | R$ 310.200,39 |
+| Origem | cadastro manual | sincronizada do Sienge |
+| Criada em | 23/03/2026 | 22/04/2026 |
+
+São a mesma venda (mesmo cliente, mesmo valor). A **venda do Sienge (contrato 431)** é a que deve ficar — você disse que arrumou as datas lá. A **venda manual (unidade "401")** é a duplicata antiga.
+
+**Preciso da sua confirmação:** posso eliminar a venda manual duplicada do RAYLTON (a da unidade "401", sem contrato Sienge)?
+
+> Atenção: a venda manual tem 2 parcelas marcadas como pagas. Se você confirmar, eu elimino do mesmo jeito que fiz com o CLAUDIO — os dados ficam preservados, a venda só some do dashboard.
+
+Também notei que existem **2 cadastros de cliente** pro RAYLTON (um com CPF, um sem) — depois de resolver as vendas, vale unificar. Mas isso é secundário.
+
+---
+
+## Resumo
+
+| Item | Status |
 |---|---|
-| ✅ CLAUDIO MARTIRE | Nada — já resolvido |
-| 🟡 Balões Grupo 1 (LURDES, CAROLINE) | Confirmar que são "os primeiros" do cronograma do Sienge |
-| 🟡 Balões Grupo 2 (5 vendas manuais) | Pra cada uma: "é teste" ou "é real + datas" |
+| CLAUDIO MARTIRE | ✅ Resolvido |
+| 16 balões (LURDES, CAROLINE, CAYO, Felix, ALISSON) | ✅ Resolvido |
+| jonas cliente (teste) | ✅ Removido |
+| **RAYLTON — venda duplicada** | 🟡 **Aguardando seu "pode eliminar"** |
 
-*As 11 vendas com parcelas duplicadas e os ajustes da Mariane/Andressa continuam sendo resolvidos automaticamente — não precisam de você.*
+*As 11 vendas com parcelas duplicadas e os ajustes da Mariane/Andressa continuam sendo resolvidos automaticamente.*
