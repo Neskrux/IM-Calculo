@@ -1,0 +1,265 @@
+{
+  "meta": {
+    "geradoEm": "2026-05-14T18:36:36.421Z",
+    "totalParcelas": 310,
+    "somaTotal": 8669.22,
+    "somaCorretor": 3334.32
+  },
+  "corretores": [
+    {
+      "corretor": "LAURICIO FESTA",
+      "parcelas": 130,
+      "dif_comissao_total": 3645.51,
+      "dif_parte_corretor": 1402.12,
+      "vendas": [
+        {
+          "cliente": "SIDNEY DE JESUS JUNIOR",
+          "unidade": "1008 D",
+          "sienge_contract_id": "290",
+          "tipo_corretor": "interno",
+          "parcelas_pagas_erradas": 65,
+          "dif_total": 1746.03,
+          "dif_parte_corretor": 671.55
+        },
+        {
+          "cliente": "EDSON SANTANA ",
+          "unidade": "1004 B",
+          "sienge_contract_id": "199",
+          "tipo_corretor": "interno",
+          "parcelas_pagas_erradas": 10,
+          "dif_total": 358.07,
+          "dif_parte_corretor": 137.72
+        },
+        {
+          "cliente": "MARIA EDUARDA EVANGELISTA",
+          "unidade": "504 D",
+          "sienge_contract_id": "263",
+          "tipo_corretor": "interno",
+          "parcelas_pagas_erradas": 12,
+          "dif_total": 344.85,
+          "dif_parte_corretor": 132.63
+        },
+        {
+          "cliente": "CAIO GORGULHO CAMPOS",
+          "unidade": "1408 A",
+          "sienge_contract_id": "156",
+          "tipo_corretor": "interno",
+          "parcelas_pagas_erradas": 9,
+          "dif_total": 339.92,
+          "dif_parte_corretor": 130.74
+        },
+        {
+          "cliente": "WELMITON FERREIRA GOMES ",
+          "unidade": "804 A",
+          "sienge_contract_id": "66",
+          "tipo_corretor": "interno",
+          "parcelas_pagas_erradas": 11,
+          "dif_total": 325.77,
+          "dif_parte_corretor": 125.3
+        },
+        {
+          "cliente": "RAIMUNDO SEBASTIAO PORFIRIO BRAGA",
+          "unidade": "810 D",
+          "sienge_contract_id": "277",
+          "tipo_corretor": "interno",
+          "parcelas_pagas_erradas": 11,
+          "dif_total": 296.14,
+          "dif_parte_corretor": 113.9
+        },
+        {
+          "cliente": "GUSTAVO KAUE SAIBERT ",
+          "unidade": "612 A",
+          "sienge_contract_id": "44",
+          "tipo_corretor": "interno",
+          "parcelas_pagas_erradas": 12,
+          "dif_total": 234.73,
+          "dif_parte_corretor": 90.28
+        }
+      ]
+    },
+    {
+      "corretor": "Édina mea de Oliveira",
+      "parcelas": 72,
+      "dif_comissao_total": 1835.62,
+      "dif_parte_corretor": 706.01,
+      "vendas": [
+        {
+          "cliente": "FRANCISCO DE ASSIS MENDES DE SOUZA",
+          "unidade": "603 C",
+          "sienge_contract_id": "216",
+          "tipo_corretor": "interno",
+          "parcelas_pagas_erradas": 13,
+          "dif_total": 343.03,
+          "dif_parte_corretor": 131.93
+        },
+        {
+          "cliente": "JOSÉ CARLOS PICINELI MALUCELLI JUNIOR",
+          "unidade": "1707 D",
+          "sienge_contract_id": "306",
+          "tipo_corretor": "interno",
+          "parcelas_pagas_erradas": 12,
+          "dif_total": 331.18,
+          "dif_parte_corretor": 127.38
+        },
+        {
+          "cliente": "RENATO CARLOS SILVA DO NASCIMENTO ",
+          "unidade": "710 D",
+          "sienge_contract_id": "274",
+          "tipo_corretor": "interno",
+          "parcelas_pagas_erradas": 12,
+          "dif_total": 319.9,
+          "dif_parte_corretor": 123.04
+        },
+        {
+          "cliente": "RAISSA SANTOS  FERREIRA",
+          "unidade": "503 A",
+          "sienge_contract_id": "21",
+          "tipo_corretor": "interno",
+          "parcelas_pagas_erradas": 12,
+          "dif_total": 315.14,
+          "dif_parte_corretor": 121.21
+        },
+        {
+          "cliente": "MAX EMILIANO DE OLIVEIRA",
+          "unidade": "509 A",
+          "sienge_contract_id": "12",
+          "tipo_corretor": "interno",
+          "parcelas_pagas_erradas": 11,
+          "dif_total": 287.36,
+          "dif_parte_corretor": 110.52
+        },
+        {
+          "cliente": "JOSIAS GRAMINHO MACHADO",
+          "unidade": "902 D",
+          "sienge_contract_id": "316",
+          "tipo_corretor": "interno",
+          "parcelas_pagas_erradas": 12,
+          "dif_total": 239.01,
+          "dif_parte_corretor": 91.93
+        }
+      ]
+    },
+    {
+      "corretor": "ALEX DA SILVEIRA PENHA",
+      "parcelas": 47,
+      "dif_comissao_total": 1289.15,
+      "dif_parte_corretor": 495.83,
+      "vendas": [
+        {
+          "cliente": "JOÃO VICTOR NASCIMENTO DA SILVA WANDREY ",
+          "unidade": "1704 A",
+          "sienge_contract_id": "170",
+          "tipo_corretor": "interno",
+          "parcelas_pagas_erradas": 12,
+          "dif_total": 353.32,
+          "dif_parte_corretor": 135.89
+        },
+        {
+          "cliente": "JISIANE APARECIDA REICHERT",
+          "unidade": "1505 A",
+          "sienge_contract_id": "160",
+          "tipo_corretor": "interno",
+          "parcelas_pagas_erradas": 11,
+          "dif_total": 316.93,
+          "dif_parte_corretor": 121.9
+        },
+        {
+          "cliente": "JAMILE KATE MARTINS SANTOS",
+          "unidade": "709 A",
+          "sienge_contract_id": "47",
+          "tipo_corretor": "interno",
+          "parcelas_pagas_erradas": 12,
+          "dif_total": 313.26,
+          "dif_parte_corretor": 120.48
+        },
+        {
+          "cliente": "THAINARA DA CUNHA KANGERSKI",
+          "unidade": "903 A",
+          "sienge_contract_id": "77",
+          "tipo_corretor": "interno",
+          "parcelas_pagas_erradas": 12,
+          "dif_total": 305.64,
+          "dif_parte_corretor": 117.55
+        }
+      ]
+    },
+    {
+      "corretor": "PATRICK SANTOS DA SILVA ",
+      "parcelas": 21,
+      "dif_comissao_total": 885.71,
+      "dif_parte_corretor": 340.66,
+      "vendas": [
+        {
+          "cliente": "LUIZ CARLOS DA SILVA",
+          "unidade": "1302 A",
+          "sienge_contract_id": "318",
+          "tipo_corretor": "interno",
+          "parcelas_pagas_erradas": 12,
+          "dif_total": 703.19,
+          "dif_parte_corretor": 270.46
+        },
+        {
+          "cliente": "FLÁVIO RODOLFO DO NASCIMENTO",
+          "unidade": "1408 C",
+          "sienge_contract_id": "258",
+          "tipo_corretor": "interno",
+          "parcelas_pagas_erradas": 9,
+          "dif_total": 182.52,
+          "dif_parte_corretor": 70.2
+        }
+      ]
+    },
+    {
+      "corretor": "EDUARDO ROLAO MORO ",
+      "parcelas": 26,
+      "dif_comissao_total": 572.87,
+      "dif_parte_corretor": 220.33,
+      "vendas": [
+        {
+          "cliente": "MARCELO GOMES DA SILVA",
+          "unidade": "1003 A",
+          "sienge_contract_id": "133",
+          "tipo_corretor": "interno",
+          "parcelas_pagas_erradas": 12,
+          "dif_total": 326.4,
+          "dif_parte_corretor": 125.54
+        },
+        {
+          "cliente": "CRISTIANO FERRETTI ADRIANO ",
+          "unidade": "1603 B",
+          "sienge_contract_id": "208",
+          "tipo_corretor": "interno",
+          "parcelas_pagas_erradas": 13,
+          "dif_total": 217.31,
+          "dif_parte_corretor": 83.58
+        },
+        {
+          "cliente": "RUAN FERNANDO RICARDO ",
+          "unidade": "1703 A",
+          "sienge_contract_id": "169",
+          "tipo_corretor": "interno",
+          "parcelas_pagas_erradas": 1,
+          "dif_total": 29.16,
+          "dif_parte_corretor": 11.21
+        }
+      ]
+    },
+    {
+      "corretor": "MATHEUS DE S. PIRES NEGOCIOS IMOBILIARIOS",
+      "parcelas": 14,
+      "dif_comissao_total": 440.36,
+      "dif_parte_corretor": 169.37,
+      "vendas": [
+        {
+          "cliente": "MILENA PAULA NASCIMENTO SANTOS",
+          "unidade": "403 B",
+          "sienge_contract_id": "176",
+          "tipo_corretor": "interno",
+          "parcelas_pagas_erradas": 14,
+          "dif_total": 440.36,
+          "dif_parte_corretor": 169.37
+        }
+      ]
+    }
+  ]
+}
