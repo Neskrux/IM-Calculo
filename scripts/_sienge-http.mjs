@@ -33,11 +33,13 @@ function loadEnv() {
 
 const env = loadEnv()
 
-const SIENGE_USERNAME = env.SIENGE_USERNAME
-const SIENGE_PASSWORD = env.SIENGE_PASSWORD
-const SIENGE_SUBDOMAIN = env.SIENGE_SUBDOMAIN
+// .trim() defensivo — GitHub Secrets podem vir com whitespace/newline acidental
+// quando colados pela UI; isso faz Basic Auth retornar 401.
+const SIENGE_USERNAME = (env.SIENGE_USERNAME || '').trim()
+const SIENGE_PASSWORD = (env.SIENGE_PASSWORD || '').trim()
+const SIENGE_SUBDOMAIN = (env.SIENGE_SUBDOMAIN || '').trim()
 if (!SIENGE_USERNAME || !SIENGE_PASSWORD || !SIENGE_SUBDOMAIN) {
-  console.error('ERRO: faltando SIENGE_USERNAME / SIENGE_PASSWORD / SIENGE_SUBDOMAIN no .env')
+  console.error('ERRO: faltando SIENGE_USERNAME / SIENGE_PASSWORD / SIENGE_SUBDOMAIN no .env (ou env vars)')
   process.exit(1)
 }
 
