@@ -39,6 +39,20 @@ const URL = process.env.VITE_SUPABASE_URL || fromFile('VITE_SUPABASE_URL')
 const KEY = process.env.VITE_SUPABASE_ANON_KEY || fromFile('VITE_SUPABASE_ANON_KEY')
 const supa = createClient(URL, KEY)
 const H = { apikey: KEY, Authorization: `Bearer ${KEY}`, 'Content-Type': 'application/json', Prefer: 'return=representation' }
+
+// fetch com retry — apply massivo (~15k requests) sofre ECONNRESET transitorio
+async function fetchRetry(url, opts, tentativas = 4) {
+  let ultimoErro
+  for (let t = 1; t <= tentativas; t++) {
+    try {
+      return await fetch(url, opts)
+    } catch (e) {
+      ultimoErro = e
+      await new Promise((r) => setTimeout(r, 500 * t))
+    }
+  }
+  throw ultimoErro
+}
 const FIGUEIRA = '0d7d01f4-c398-4d9a-a280-13f44c957279'
 const norm = (x) => Number(x).toFixed(2)
 const PAGE = 1000
@@ -234,21 +248,21 @@ let okPop = 0, okMarc = 0, okReat = 0, okCriar = 0, err = 0
 const errosDetalhe = []
 for (const venda of resultado.processadas) {
   for (const a of venda.acoes.popular) {
-    const res = await fetch(`${URL}/rest/v1/pagamentos_prosoluto?id=eq.${a.id}`, { method: 'PATCH', headers: H, body: JSON.stringify({ sienge_installment_id: a.instId, sienge_bill_id: venda.bill, updated_at: new Date().toISOString() }) })
+    const res = await fetchRetry(`${URL}/rest/v1/pagamentos_prosoluto?id=eq.${a.id}`, { method: 'PATCH', headers: H, body: JSON.stringify({ sienge_installment_id: a.instId, sienge_bill_id: venda.bill, updated_at: new Date().toISOString() }) })
     if (res.ok) okPop++; else { err++; errosDetalhe.push({ acao: 'popular', id: a.id, status: res.status }) }
   }
   for (const a of venda.acoes.marcar_pago) {
-    const res = await fetch(`${URL}/rest/v1/pagamentos_prosoluto?id=eq.${a.id}&status=eq.pendente`, { method: 'PATCH', headers: H, body: JSON.stringify({ status: 'pago', data_pagamento: a.data_pagamento, sienge_installment_id: a.instId, sienge_bill_id: venda.bill, updated_at: new Date().toISOString() }) })
+    const res = await fetchRetry(`${URL}/rest/v1/pagamentos_prosoluto?id=eq.${a.id}&status=eq.pendente`, { method: 'PATCH', headers: H, body: JSON.stringify({ status: 'pago', data_pagamento: a.data_pagamento, sienge_installment_id: a.instId, sienge_bill_id: venda.bill, updated_at: new Date().toISOString() }) })
     if (res.ok) okMarc++; else { err++; errosDetalhe.push({ acao: 'marcar_pago', id: a.id, status: res.status }) }
   }
   for (const a of venda.acoes.reativar) {
     const patch = { status: a.novo_status, sienge_installment_id: a.instId, sienge_bill_id: venda.bill, updated_at: new Date().toISOString() }
     if (a.data_pagamento) patch.data_pagamento = a.data_pagamento
-    const res = await fetch(`${URL}/rest/v1/pagamentos_prosoluto?id=eq.${a.id}&status=eq.cancelado`, { method: 'PATCH', headers: H, body: JSON.stringify(patch) })
+    const res = await fetchRetry(`${URL}/rest/v1/pagamentos_prosoluto?id=eq.${a.id}&status=eq.cancelado`, { method: 'PATCH', headers: H, body: JSON.stringify(patch) })
     if (res.ok) okReat++; else { err++; errosDetalhe.push({ acao: 'reativar', id: a.id, status: res.status }) }
   }
   for (const a of venda.acoes.criar) {
-    const res = await fetch(`${URL}/rest/v1/pagamentos_prosoluto`, { method: 'POST', headers: H, body: JSON.stringify({ ...a, created_at: new Date().toISOString(), updated_at: new Date().toISOString() }) })
+    const res = await fetchRetry(`${URL}/rest/v1/pagamentos_prosoluto`, { method: 'POST', headers: H, body: JSON.stringify({ ...a, created_at: new Date().toISOString(), updated_at: new Date().toISOString() }) })
     if (res.ok) okCriar++; else { const t = await res.text(); err++; errosDetalhe.push({ acao: 'criar', venda: venda.venda_id, status: res.status, msg: t.slice(0, 120) }) }
   }
 }
