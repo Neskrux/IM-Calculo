@@ -4,11 +4,16 @@
 // Equivalente ao botao "Sincronizar Sienge" do admin dashboard, mas roda
 // sem UI — pra cron diario fechar o ciclo de automacao.
 //
-// Authentica via SUPABASE_SERVICE_ROLE_KEY (a edge function aceita).
-// Sem service_role, falha (anon nao tem permissao pra disparar).
+// Authentica via SUPABASE_SERVICE_ROLE_KEY (a edge function aceita via
+// bypass em lib/auth.ts).
+//
+// Usa /sync/incremental por default (modifiedAfter, so delta) — consumo
+// Sienge MUITO menor que /sync/full. Em dias sem mudanca, puxa zero.
+// Pra forcar puxar tudo: FULL=1 node scripts/sincronizar-vendas-sienge.mjs
 //
 // Uso:
-//   node scripts/sincronizar-vendas-sienge.mjs
+//   node scripts/sincronizar-vendas-sienge.mjs           # incremental
+//   FULL=1 node scripts/sincronizar-vendas-sienge.mjs    # full sync
 
 import { readFileSync, existsSync, writeFileSync } from 'node:fs'
 
@@ -62,12 +67,15 @@ async function aguardarRun(runId, timeoutMs = 10 * 60 * 1000) {
 
 const report = { meta: { geradoEm: new Date().toISOString() }, runs: [], errors: [] }
 
+const MODO = process.env.FULL === '1' ? '/sync/full' : '/sync/incremental'
+console.log(`Modo: ${MODO}`)
+
 // dispara as 2 entidades (sales-contracts e receivable-bills) em sequencia
 // — a edge function dispara em background e retorna runId.
 for (const entity of ['sales-contracts', 'receivable-bills']) {
   console.log(`\n=== ${entity} ===`)
   try {
-    const kick = await post('/sync/full', { entities: [entity] })
+    const kick = await post(MODO, { entities: [entity] })
     console.log(`  runId: ${kick.runId}`)
     const run = await aguardarRun(kick.runId)
     console.log(`  status: ${run.status} | metrics:`, JSON.stringify(run.metrics).slice(0, 400))

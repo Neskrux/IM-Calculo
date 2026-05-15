@@ -62,7 +62,7 @@ if (!income.length) {
   console.log('  cache vazio — baixando /bulk-data/v1/income...')
   const res = await siengeGet({
     path: '/bulk-data/v1/income',
-    query: { startDate: '2023-01-01', endDate: '2030-12-31', selectionType: 'D', companyId: 5 },
+    query: { startDate: '2023-01-01', endDate: '2031-12-31', selectionType: 'D', companyId: 5 },
   })
   income = extractRows(res.data)
   console.log(`  API: ${income.length} linhas`)
