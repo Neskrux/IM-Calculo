@@ -1,25 +1,23 @@
-# Reconciliacao diaria de data_prevista em pagamentos_prosoluto.
+# Reconciliacao diaria de pagamentos_prosoluto contra Sienge income.
 #
 # Roda toda manha 08h BRT (11h UTC). Pode ser disparado manualmente.
 #
-# O que faz:
-#   1. Baixa /bulk-data/v1/income do Sienge (sem quota — bulk-data eh sem limite diario).
-#   2. Cruza com pagamentos_prosoluto local pra encontrar drift de data_prevista.
-#   3. Aplica correcao automatica em drifts de 2 a 365 dias (Sienge eh fonte da
-#      verdade temporal — migration 020 autoriza UPDATE mesmo em status=pago).
-#   4. Salva report em artifact pra auditoria.
-#
-# Drifts > 365d e parcelas sem-match no Sienge nao sao tocados — caem na fila
-# de revisao humana (ver docs/b7-*.md, .claude/rules/rodadas-b.md).
+# O que faz (em ordem):
+#   1. Corrige drift de data_prevista (gerar-plano + aplicar-correcao-data-prevista).
+#   2. Reconciliacao GERAL contra Sienge (reconciliar-todas-vendas.mjs --apply):
+#      - popula sienge_installment_id (ancoragem 1:1)
+#      - marca pago parcelas que o Sienge confirma como pagas
+#      - reativa canceladas que sao validas no Sienge
+#      - cria parcelas faltantes
+#      Com 5 salvaguardas: pula venda se houver qualquer ambiguidade.
+#   3. Salva reports em artifact.
+#   4. Falha o job se houver erros (dispara email).
 #
 # Idempotente: rodar 2x no mesmo dia = 0 updates no segundo run.
 #
-# Pre-requisitos (configurar uma vez nos Secrets do repo):
-#   VITE_SUPABASE_URL
-#   VITE_SUPABASE_ANON_KEY      (ou SUPABASE_SERVICE_ROLE_KEY pra full priv)
-#   SIENGE_USERNAME
-#   SIENGE_PASSWORD
-#   SIENGE_SUBDOMAIN
+# Pre-requisitos (Secrets do repo):
+#   VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY (ou SUPABASE_SERVICE_ROLE_KEY)
+#   SIENGE_USERNAME, SIENGE_PASSWORD, SIENGE_SUBDOMAIN
 
 name: Reconciliacao Pagamentos
 
@@ -61,6 +59,20 @@ jobs:
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
 
+      # Reconciliacao geral — todas as 298 vendas contra income Sienge.
+      # Aplicado em massa pela primeira vez em 2026-05-14 (256 vendas, ~15k
+      # operacoes). A partir daqui, o cron diario pega so o incremental
+      # (parcelas pagas novas, divergencias que surgirem).
+      - name: Reconciliar todas as vendas
+        run: node scripts/reconciliar-todas-vendas.mjs --apply
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          SIENGE_USERNAME: ${{ secrets.SIENGE_USERNAME }}
+          SIENGE_PASSWORD: ${{ secrets.SIENGE_PASSWORD }}
+          SIENGE_SUBDOMAIN: ${{ secrets.SIENGE_SUBDOMAIN }}
+
       - name: Upload report
         if: always()
         uses: actions/upload-artifact@v4
@@ -69,22 +81,35 @@ jobs:
           path: |
             docs/plano-correcao-data-prevista-*.json
             docs/aplicacao-data-prevista-*.json
+            docs/reconciliacao-geral-*.json
           retention-days: 30
 
-      # Falha ruidosa: se houver erros na aplicacao, marca o job como failed
-      # pra disparar email do GitHub Actions e aparecer na aba Actions.
+      # Falha ruidosa: se houver erros em qualquer report, marca o job como
+      # failed pra disparar email do GitHub Actions.
       - name: Verificar erros
         run: |
-          LATEST_REPORT=$(ls -t docs/aplicacao-data-prevista-*.json 2>/dev/null | head -1)
-          if [ -z "$LATEST_REPORT" ]; then
-            echo "::warning::Sem report — script de aplicacao pode ter falhado antes de salvar"
-            exit 0
+          set -e
+          fail=0
+          # data_prevista
+          R=$(ls -t docs/aplicacao-data-prevista-*.json 2>/dev/null | head -1)
+          if [ -n "$R" ]; then
+            E=$(jq '.counts.errors' "$R"); U=$(jq '.counts.updated' "$R")
+            echo "data_prevista: updated=$U errors=$E ($R)"
+            [ "$E" -gt 0 ] && fail=1
           fi
-          ERRORS=$(jq '.counts.errors' "$LATEST_REPORT")
-          UPDATED=$(jq '.counts.updated' "$LATEST_REPORT")
-          SKIPPED=$(jq '.counts.skipped_idempotent' "$LATEST_REPORT")
-          echo "Reconciliacao: updated=$UPDATED skipped=$SKIPPED errors=$ERRORS"
-          if [ "$ERRORS" -gt 0 ]; then
-            echo "::error::Reconciliacao reportou $ERRORS erros — veja o artifact"
+          # reconciliacao geral
+          R=$(ls -t docs/reconciliacao-geral-*-aplicado.json 2>/dev/null | head -1)
+          if [ -n "$R" ]; then
+            E=$(jq '.aplicacao.err // 0' "$R")
+            P=$(jq '.aplicacao.okPop // 0' "$R")
+            M=$(jq '.aplicacao.okMarc // 0' "$R")
+            Rt=$(jq '.aplicacao.okReat // 0' "$R")
+            C=$(jq '.aplicacao.okCriar // 0' "$R")
+            RH=$(jq '.revisao_humana | length' "$R")
+            echo "reconciliacao geral: populados=$P marcados=$M reativados=$Rt criados=$C revisao_humana=$RH errors=$E"
+            [ "$E" -gt 0 ] && fail=1
+          fi
+          if [ "$fail" -ne 0 ]; then
+            echo "::error::Reconciliacao reportou erros — veja o artifact"
             exit 1
           fi
