@@ -3,6 +3,8 @@
 # Roda toda manha 08h BRT (11h UTC). Pode ser disparado manualmente.
 #
 # O que faz (em ordem):
+#   0. Sincroniza sales-contracts + receivable-bills do Sienge (traz vendas novas)
+#      via edge function sienge-sync (auth: service_role bypass em auth.ts).
 #   1. Corrige drift de data_prevista (gerar-plano + aplicar-correcao-data-prevista).
 #   2. Reconciliacao GERAL contra Sienge (reconciliar-todas-vendas.mjs --apply):
 #      - popula sienge_installment_id (ancoragem 1:1)
@@ -42,6 +44,16 @@ jobs:
 
       - name: Install deps
         run: npm ci
+
+      # Etapa 0 — sincroniza sales-contracts + receivable-bills do Sienge
+      # via edge function (autentica com service_role; bypass em auth.ts).
+      # Fecha o ciclo: sem isso, vendas novas precisavam do botao manual.
+      - name: Sincronizar vendas Sienge
+        run: node scripts/sincronizar-vendas-sienge.mjs
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
 
       - name: Gerar plano de correcao
         run: node scripts/gerar-plano-correcao-data-prevista.mjs
