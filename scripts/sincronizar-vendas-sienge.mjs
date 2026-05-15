@@ -67,15 +67,21 @@ async function aguardarRun(runId, timeoutMs = 10 * 60 * 1000) {
 
 const report = { meta: { geradoEm: new Date().toISOString() }, runs: [], errors: [] }
 
-const MODO = process.env.FULL === '1' ? '/sync/full' : '/sync/incremental'
-console.log(`Modo: ${MODO}`)
+// Modo por entidade — sales-contracts nao aceita o formato de modifiedAfter
+// que a edge envia (Sienge devolve 400 "Failed to convert property value").
+// receivable-bills aceita incremental normalmente.
+// FULL=1 forca tudo pra full.
+const forcaFull = process.env.FULL === '1'
+const modoPorEntidade = {
+  'sales-contracts': '/sync/full',          // sempre full (Sienge nao aceita modifiedAfter aqui)
+  'receivable-bills': forcaFull ? '/sync/full' : '/sync/incremental',
+}
 
-// dispara as 2 entidades (sales-contracts e receivable-bills) em sequencia
-// — a edge function dispara em background e retorna runId.
 for (const entity of ['sales-contracts', 'receivable-bills']) {
-  console.log(`\n=== ${entity} ===`)
+  const modo = modoPorEntidade[entity]
+  console.log(`\n=== ${entity} (${modo}) ===`)
   try {
-    const kick = await post(MODO, { entities: [entity] })
+    const kick = await post(modo, { entities: [entity] })
     console.log(`  runId: ${kick.runId}`)
     const run = await aguardarRun(kick.runId)
     console.log(`  status: ${run.status} | metrics:`, JSON.stringify(run.metrics).slice(0, 400))
