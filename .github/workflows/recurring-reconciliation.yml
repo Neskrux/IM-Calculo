@@ -24,8 +24,12 @@
 name: Reconciliacao Pagamentos
 
 on:
-  schedule:
-    - cron: '0 11 * * *' # 08:00 BRT
+  # schedule pausado em 2026-05-18: cron estoura quota /bulk-data/v1/income
+  # do Sienge (cache em disco nao persiste entre runs do Actions). Reativar
+  # apos alinhamento com Bruno + decisao sobre cache persistente (banco ou
+  # actions/cache@v4). Disparo manual continua disponivel via workflow_dispatch.
+  # schedule:
+  #   - cron: '0 11 * * *' # 08:00 BRT
   workflow_dispatch: # disparo manual via aba Actions
 
 jobs:
