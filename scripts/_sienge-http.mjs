@@ -47,7 +47,14 @@ const AUTH = 'Basic ' + Buffer.from(`${SIENGE_USERNAME}:${SIENGE_PASSWORD}`).toS
 const BULK_BASE = `https://api.sienge.com.br/${SIENGE_SUBDOMAIN}/public/api`
 const REST_BASE = `https://api.sienge.com.br/${SIENGE_SUBDOMAIN}/public/api/v1`
 
-const MAX_RPM = 180
+// Limite oficial do Sienge bulk-data: 20 req/min (ver
+// https://api.sienge.com.br/docs/general-bulk.html). Usamos 15 pra ter margem
+// e evitar circuit-breaker — quando excedido repetidamente, o Sienge aplica
+// um bloqueio agressivo com retry-after de ~9h que se auto-renova a cada
+// tentativa (o histórico de runs de 14-15/05 e 19/05 confirma esse padrão).
+// REST v1 nao tem limite por minuto documentado, mas usar mesmo limite por
+// seguranca — a quota diaria de 100 ja eh a restricao dominante la.
+const MAX_RPM = Number(env.SIENGE_MAX_RPM || 15)
 const WINDOW_MS = 60_000
 const REQUEST_TIMEOUT_MS = 60_000
 const MAX_RETRIES = 3
@@ -180,10 +187,17 @@ export async function siengeGet({ path, query = {}, noCache = false }) {
       clearTimeout(timer)
       if (res.status === 429) {
         const retryAfter = Number(res.headers.get('Retry-After') ?? '30')
-        const waitMs = Math.min(Math.max(retryAfter, 1), 120) * 1000
         const body = await res.text().catch(() => '')
         console.warn(`[429] ${path} retry-after=${retryAfter}s body=${body.slice(0, 150)}`)
         lastErr = new Error(`Sienge 429 after ${retryAfter}s: ${body.slice(0, 200)}`)
+        // Retry-after > 5min indica bloqueio agressivo (circuit-breaker do
+        // Sienge). Continuar retentando RENOVA o bloqueio. Aborta logo e deixa
+        // stale-on-error servir cache vencido, ou propagar o erro pro caller.
+        if (retryAfter > 300) {
+          console.warn(`[429] retry-after muito alto (${retryAfter}s) — abortando retries pra nao renovar bloqueio`)
+          break
+        }
+        const waitMs = Math.min(Math.max(retryAfter, 1), 120) * 1000
         await new Promise((r) => setTimeout(r, waitMs))
         continue
       }
