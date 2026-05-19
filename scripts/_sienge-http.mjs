@@ -82,6 +82,19 @@ function cacheGet(url) {
   } catch { return null }
 }
 
+// cacheGetStale: ignora TTL — usado como fallback quando Sienge retorna
+// 429/5xx ou rede falha. Servir dados velhos e' melhor que crashar o job.
+function cacheGetStale(url) {
+  if (CACHE_DISABLED) return null
+  const f = resolve(CACHE_DIR, `${cacheKey(url)}.json`)
+  try {
+    if (!existsSync(f)) return null
+    const ageMin = Math.round((Date.now() - statSync(f).mtimeMs) / 60000)
+    const payload = JSON.parse(readFileSync(f, 'utf8'))
+    return { ...payload, _staleAgeMin: ageMin }
+  } catch { return null }
+}
+
 function cachePut(url, payload) {
   if (CACHE_DISABLED) return
   const f = resolve(CACHE_DIR, `${cacheKey(url)}.json`)
@@ -197,6 +210,18 @@ export async function siengeGet({ path, query = {}, noCache = false }) {
       console.warn(`[err] ${path} attempt=${attempt} err=${String(err).slice(0, 200)}`)
       const backoff = Math.min(2000 * attempt, 10_000)
       await new Promise((r) => setTimeout(r, backoff))
+    }
+  }
+  // Stale-on-error: antes de propagar, tenta servir cache vencido. Permite
+  // o cron sobreviver a 429 residual / instabilidade do Sienge sem quebrar
+  // o job — proximo run atualiza naturalmente quando Sienge voltar.
+  // Pra desativar (ex: testes que precisam de erro real): SIENGE_NO_STALE=1.
+  if (!noCache && env.SIENGE_NO_STALE !== '1') {
+    const stale = cacheGetStale(url)
+    if (stale) {
+      cat.cacheHits++
+      console.warn(`[stale] ${path} servindo cache de ${stale._staleAgeMin}min atras (Sienge indisponivel: ${String(lastErr).slice(0, 100)})`)
+      return { status: stale.status, data: stale.data, url, cached: true, stale: true, staleAgeMin: stale._staleAgeMin }
     }
   }
   stats.errors++

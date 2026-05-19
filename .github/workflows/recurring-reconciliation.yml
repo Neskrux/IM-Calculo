@@ -49,6 +49,41 @@ jobs:
       - name: Install deps
         run: npm ci
 
+      # Persiste o cache /bulk-data/v1/income entre runs do cron.
+      # Combinado com SIENGE_CACHE_TTL_MS=4h e stale-on-error no
+      # _sienge-http.mjs, garante que o job sobrevive a rate-limit
+      # residual do Sienge.
+      - name: Restore Sienge cache
+        id: sienge-cache
+        uses: actions/cache@v4
+        with:
+          path: .sienge-cache
+          key: sienge-cache-${{ github.run_id }}
+          restore-keys: |
+            sienge-cache-
+
+      # Seed inicial — pula se cache nao-vazio OU se secret SIENGE_CACHE_SEED_URL
+      # ausente. URL deve apontar pra um zip do .sienge-cache/ (Supabase Storage
+      # privado, GitHub Release asset privado, etc). Procedimento documentado em
+      # docs/specs/sienge-cache-seed.md.
+      - name: Seed cache (so se vazio e secret presente)
+        env:
+          SIENGE_CACHE_SEED_URL: ${{ secrets.SIENGE_CACHE_SEED_URL }}
+        run: |
+          if [ -z "$SIENGE_CACHE_SEED_URL" ]; then
+            echo "SIENGE_CACHE_SEED_URL ausente, pulando seed. Stale-on-error vai sustentar caso o Sienge falhe."
+            exit 0
+          fi
+          if [ -d .sienge-cache ] && [ -n "$(ls -A .sienge-cache 2>/dev/null)" ]; then
+            echo "Cache nao-vazio, pulando seed ($(ls .sienge-cache | wc -l) arquivos)"
+            exit 0
+          fi
+          echo "Cache vazio, baixando seed..."
+          mkdir -p .sienge-cache
+          curl -fsSL "$SIENGE_CACHE_SEED_URL" -o /tmp/seed.zip
+          unzip -q /tmp/seed.zip -d .sienge-cache
+          echo "Seed restaurado: $(ls .sienge-cache | wc -l) arquivos"
+
       # Etapa 0 — sincroniza sales-contracts + receivable-bills do Sienge
       # via edge function (autentica com service_role; bypass em auth.ts).
       # Fecha o ciclo: sem isso, vendas novas precisavam do botao manual.
@@ -67,6 +102,7 @@ jobs:
           SIENGE_USERNAME: ${{ secrets.SIENGE_USERNAME }}
           SIENGE_PASSWORD: ${{ secrets.SIENGE_PASSWORD }}
           SIENGE_SUBDOMAIN: ${{ secrets.SIENGE_SUBDOMAIN }}
+          SIENGE_CACHE_TTL_MS: '14400000' # 4h — folga entre steps do mesmo run
 
       - name: Aplicar plano
         run: node scripts/aplicar-correcao-data-prevista.mjs --apply
@@ -88,6 +124,7 @@ jobs:
           SIENGE_USERNAME: ${{ secrets.SIENGE_USERNAME }}
           SIENGE_PASSWORD: ${{ secrets.SIENGE_PASSWORD }}
           SIENGE_SUBDOMAIN: ${{ secrets.SIENGE_SUBDOMAIN }}
+          SIENGE_CACHE_TTL_MS: '14400000' # 4h — lê cache populado pelo step anterior
 
       - name: Upload report
         if: always()
