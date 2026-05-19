@@ -98,7 +98,18 @@ console.log(`  income indexado: ${incomeIdx.size} chaves (billId, numero)`)
 
 // 3. Carregar vendas afetadas
 console.log('\n=== 2. Carregando vendas afetadas ===')
-const varredura = JSON.parse(readFileSync('docs/varredura-pagamentos-bagunca-2026-05-13.json', 'utf8'))
+// Apos reorganizacao de docs/ em 2026-05-18 (commit 87493e1), arquivos
+// foram movidos pra subpastas. Tenta o caminho atual primeiro, depois o legado.
+const VARREDURA_PATHS = [
+  'docs/auditorias/2026-05-13-drift/varredura-pagamentos-bagunca-2026-05-13.json',
+  'docs/varredura-pagamentos-bagunca-2026-05-13.json',
+]
+const varreduraPath = VARREDURA_PATHS.find((p) => existsSync(p))
+if (!varreduraPath) {
+  console.error('Nao achei varredura-pagamentos-bagunca-2026-05-13.json em nenhum dos paths conhecidos.')
+  process.exit(1)
+}
+const varredura = JSON.parse(readFileSync(varreduraPath, 'utf8'))
 const vendasIds = varredura.vendas.map((v) => v.venda_id)
 console.log(`  vendas afetadas: ${vendasIds.length}`)
 
