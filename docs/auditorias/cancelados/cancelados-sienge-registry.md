@@ -2,9 +2,9 @@
 
 **Gerado em:** 2026-04-24
 **Origem:** `GET /bulk-data/v1/sales?enterpriseId=2104&companyId=5&situation=CANCELED`
-**RAW bruto:** [docs/fase5-sales-cancelados-RAW.json](fase5-sales-cancelados-RAW.json)
-**Detalhamento linha-a-linha:** [docs/cancelados-resumo-final.json](cancelados-resumo-final.json)
-**Regra de referência:** [.claude/rules/sincronizacao-sienge.md](../.claude/rules/sincronizacao-sienge.md)
+**RAW bruto:** [fase5-sales-cancelados-RAW.json](../fase5/fase5-sales-cancelados-RAW.json)
+**Detalhamento linha-a-linha:** [cancelados-resumo-final.json](cancelados-resumo-final.json)
+**Regra de referência:** [.claude/rules/sincronizacao-sienge.md](../../../.claude/rules/sincronizacao-sienge.md)
 
 ---
 
@@ -178,4 +178,4 @@ ORDER BY comissao_total_repassada DESC;
 
 ## Próximo passo (Etapa 5B-cancelados)
 
-Executar UPDATE das 297 parcelas `pendente` → `cancelado`. Script: `scripts/executar-cancelados.mjs`. Plano dry-run em [docs/fase5-plano-cancelados-v2.json](fase5-plano-cancelados-v2.json).
+Executar UPDATE das 297 parcelas `pendente` → `cancelado`. Script: `scripts/executar-cancelados.mjs`. Plano dry-run em [fase5-plano-cancelados-v2.json](../fase5/fase5-plano-cancelados-v2.json).
