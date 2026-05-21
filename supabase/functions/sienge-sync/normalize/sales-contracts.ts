@@ -340,7 +340,7 @@ async function mergePagamentos(vendaId: string, desejados: PagamentoRow[]): Prom
 async function upsertVenda(
   contract: SalesContractPayload,
   maps: Maps,
-): Promise<{ vendaId: string | null; p: PaymentData; percentualTotal: number }> {
+): Promise<{ vendaId: string | null; p: PaymentData; percentualTotal: number; valorVenda: number }> {
   const supa = publicClient()
   const cliP = contract.salesContractCustomers?.find((c) => c.main) ?? contract.salesContractCustomers?.[0]
   const uniP = contract.salesContractUnits?.find((u) => u.main) ?? contract.salesContractUnits?.[0]
@@ -363,11 +363,11 @@ async function upsertVenda(
     }))
   }
 
-  const tipoCorretor = corretor?.tipo ?? "externo"
-  const percentualTotal = empInfo ? (tipoCorretor === "interno" ? empInfo.com_int : empInfo.com_ext) : 7
+  const tipoCorretorSync = corretor?.tipo ?? "externo"
+  const percentualTotalSync = empInfo ? (tipoCorretorSync === "interno" ? empInfo.com_int : empInfo.com_ext) : 7
   const paymentData = mapearPaymentConditions(contract.paymentConditions)
   const valorVenda = Number(contract.value) || 0
-  const fatorComissao = calcularFator(valorVenda, paymentData.valor_pro_soluto, percentualTotal)
+  const fatorComissao = calcularFator(valorVenda, paymentData.valor_pro_soluto, percentualTotalSync)
   const situacao = normalizarSituacao(contract.situation)
 
   const row = {
@@ -377,7 +377,7 @@ async function upsertVenda(
     cliente_id: clienteId,
     empreendimento_id: empInfo?.id ?? null,
     unidade_id: unidadeId,
-    tipo_corretor: tipoCorretor,
+    tipo_corretor: tipoCorretorSync,
     valor_venda: valorVenda,
     valor_venda_total: Number(contract.totalSellingValue ?? contract.value ?? 0) || 0,
     data_venda: contract.contractDate || null,
@@ -413,12 +413,14 @@ async function upsertVenda(
   // de origem. Sem isso, todo sync sobrescreve a correcao — a flag virava decorativa.
   const { data: existente } = await supa
     .from("vendas")
-    .select("corretor_id, corretor_id_origem, cliente_id, cliente_id_origem, tipo_corretor")
+    .select("corretor_id, corretor_id_origem, cliente_id, cliente_id_origem, tipo_corretor, valor_venda, valor_venda_total, fator_comissao")
     .eq("sienge_contract_id", String(contract.id))
     .maybeSingle()
 
   const rowProtegido = { ...row } as Record<string, unknown>
-  if (existente?.corretor_id_origem === "manual" || existente?.corretor_id_origem === "api_commissions") {
+  const origemCorretorProtegida =
+    existente?.corretor_id_origem === "manual" || existente?.corretor_id_origem === "api_commissions"
+  if (origemCorretorProtegida) {
     rowProtegido.corretor_id = existente.corretor_id
     // tipo_corretor anda junto: se corretor manual aponta pra interno, manter interno;
     // senao o sync recalcularia percentualTotal com base no tipo errado.
@@ -430,6 +432,26 @@ async function upsertVenda(
     rowProtegido.cliente_id_origem = existente.cliente_id_origem
   }
 
+  const tipoCorretorFinal = String(rowProtegido.tipo_corretor ?? tipoCorretorSync)
+  const percentualTotalFinal = empInfo ? (tipoCorretorFinal === "interno" ? empInfo.com_int : empInfo.com_ext) : 7
+
+  // Correcoes manuais podem proteger tambem um valor/fator ja ajustado pela controladoria.
+  // Sem isso, a etapa final do cron recriaria parcelas pendentes com o fator bruto do Sienge.
+  const fatorSyncComTipoFinal = calcularFator(Number(rowProtegido.valor_venda) || 0, paymentData.valor_pro_soluto, percentualTotalFinal)
+  const fatorExistente = Number(existente?.fator_comissao)
+  if (
+    origemCorretorProtegida &&
+    Number.isFinite(fatorExistente) &&
+    fatorExistente > 0 &&
+    Math.abs(fatorExistente - fatorSyncComTipoFinal) > 0.0001
+  ) {
+    rowProtegido.valor_venda = Number(existente?.valor_venda) || rowProtegido.valor_venda
+    rowProtegido.valor_venda_total = Number(existente?.valor_venda_total ?? existente?.valor_venda) || rowProtegido.valor_venda_total
+  }
+
+  const valorVendaFinal = Number(rowProtegido.valor_venda) || 0
+  rowProtegido.fator_comissao = calcularFator(valorVendaFinal, paymentData.valor_pro_soluto, percentualTotalFinal)
+
   const now = new Date().toISOString()
   // Idempotente: upsert por sienge_contract_id evita race em múltiplos runs simultâneos
   // (dois workers chegando no mesmo contrato não explodem com UNIQUE violation — o 2º vira UPDATE)
@@ -439,7 +461,7 @@ async function upsertVenda(
     .select("id")
     .single()
   if (error) throw new Error(`vendas.upsert: ${error.message}`)
-  return { vendaId: (data as { id: string }).id, p: paymentData, percentualTotal }
+  return { vendaId: (data as { id: string }).id, p: paymentData, percentualTotal: percentualTotalFinal, valorVenda: valorVendaFinal }
 }
 
 /* ------------------------------------------------------------------
@@ -497,9 +519,8 @@ export async function normalizeSalesContracts(
     const results = await Promise.all(batch.map(async (r) => {
       try {
         const existedBefore = existingVendas.has(String(r.payload.id))
-        const { vendaId, p, percentualTotal } = await upsertVenda(r.payload, maps)
+        const { vendaId, p, percentualTotal, valorVenda } = await upsertVenda(r.payload, maps)
         if (!vendaId) return { ok: false as const }
-        const valorVenda = Number(r.payload.value) || 0
         const desejados = montarPagamentos(vendaId, p, valorVenda, percentualTotal, r.payload.contractDate ?? null)
         const merge = await mergePagamentos(vendaId, desejados)
         return { ok: true as const, existedBefore, merge }
