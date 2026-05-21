@@ -1409,8 +1409,23 @@ const CorretorDashboard = () => {
     }
   }, [tab, navigate, location.pathname])
 
+  const goTo = (path) => {
+    navigate(path)
+    if (typeof window !== 'undefined' && window.innerWidth <= 1024) {
+      setMenuOpen(false)
+    }
+  }
+
+  const mobileNavItems = [
+    { tab: 'dashboard', path: '/corretor/dashboard', label: 'Início', icon: LayoutDashboard },
+    { tab: 'vendas', path: '/corretor/vendas', label: 'Vendas', icon: DollarSign },
+    { tab: 'pagamentos', path: '/corretor/pagamentos', label: 'Receber', icon: CreditCard },
+    { tab: 'clientes', path: '/corretor/clientes', label: 'Clientes', icon: Users },
+    { tab: 'perfil', path: '/corretor/perfil', label: 'Perfil', icon: User },
+  ]
+
   return (
-    <div className="dashboard-container">
+    <div className={`dashboard-container corretor-shell corretor-tab-${activeTab}`}>
       {/* Sidebar Overlay for Mobile */}
       <div 
         className={`sidebar-overlay ${menuOpen ? 'active' : ''}`}
@@ -1432,7 +1447,7 @@ const CorretorDashboard = () => {
         <nav className="sidebar-nav">
           <button 
             className={`nav-item ${activeTab === 'dashboard' ? 'active' : ''}`}
-            onClick={() => navigate('/corretor/dashboard')}
+            onClick={() => goTo('/corretor/dashboard')}
             title="Dashboard"
           >
             <LayoutDashboard size={20} />
@@ -1440,7 +1455,7 @@ const CorretorDashboard = () => {
           </button>
           <button 
             className={`nav-item ${activeTab === 'vendas' ? 'active' : ''}`}
-            onClick={() => navigate('/corretor/vendas')}
+            onClick={() => goTo('/corretor/vendas')}
             title="Minhas Vendas"
           >
             <DollarSign size={20} />
@@ -1448,7 +1463,7 @@ const CorretorDashboard = () => {
           </button>
           <button 
             className={`nav-item ${activeTab === 'pagamentos' ? 'active' : ''}`}
-            onClick={() => navigate('/corretor/pagamentos')}
+            onClick={() => goTo('/corretor/pagamentos')}
             title="Meus Pagamentos"
           >
             <CreditCard size={20} />
@@ -1456,7 +1471,7 @@ const CorretorDashboard = () => {
           </button>
           <button 
             className={`nav-item ${activeTab === 'clientes' ? 'active' : ''}`}
-            onClick={() => navigate('/corretor/clientes')}
+            onClick={() => goTo('/corretor/clientes')}
             title="Meus Clientes"
           >
             <Users size={20} />
@@ -1464,7 +1479,7 @@ const CorretorDashboard = () => {
           </button>
           <button 
             className={`nav-item ${activeTab === 'empreendimentos' ? 'active' : ''}`}
-            onClick={() => navigate('/corretor/empreendimentos')}
+            onClick={() => goTo('/corretor/empreendimentos')}
             title="Empreendimentos"
           >
             <Building size={20} />
@@ -1472,7 +1487,7 @@ const CorretorDashboard = () => {
           </button>
           <button 
             className={`nav-item ${activeTab === 'relatorios' ? 'active' : ''}`}
-            onClick={() => navigate('/corretor/relatorios')}
+            onClick={() => goTo('/corretor/relatorios')}
             title="Relatórios"
           >
             <FileText size={20} />
@@ -1480,7 +1495,7 @@ const CorretorDashboard = () => {
           </button>
           <button 
             className={`nav-item ${activeTab === 'solicitacoes' ? 'active' : ''}`}
-            onClick={() => navigate('/corretor/solicitacoes')}
+            onClick={() => goTo('/corretor/solicitacoes')}
             title="Solicitações"
           >
             <ClipboardList size={20} />
@@ -1488,7 +1503,7 @@ const CorretorDashboard = () => {
           </button>
           <button 
             className={`nav-item ${activeTab === 'perfil' ? 'active' : ''}`}
-            onClick={() => navigate('/corretor/perfil')}
+            onClick={() => goTo('/corretor/perfil')}
             title="Meu Perfil"
           >
             <User size={20} />
@@ -1726,7 +1741,7 @@ const CorretorDashboard = () => {
             <h3>Últimas Vendas</h3>
             <button 
               className="chart-action-btn"
-              onClick={() => navigate('/corretor/vendas')}
+              onClick={() => goTo('/corretor/vendas')}
             >
               Ver todas
             </button>
@@ -3383,7 +3398,7 @@ const CorretorDashboard = () => {
                   
                   <button 
                     className="action-card"
-                    onClick={() => navigate('/corretor/relatorios')}
+                    onClick={() => goTo('/corretor/relatorios')}
                   >
                     <FileText size={24} />
                     <div>
@@ -3394,7 +3409,7 @@ const CorretorDashboard = () => {
                   
                   <button 
                     className="action-card"
-                    onClick={() => navigate('/corretor/pagamentos')}
+                    onClick={() => goTo('/corretor/pagamentos')}
                   >
                     <Wallet size={24} />
                     <div>
@@ -3855,6 +3870,23 @@ const CorretorDashboard = () => {
           )
         })()}
       </main>
+
+      <nav className="mobile-broker-nav" aria-label="Navegação principal do corretor">
+        {mobileNavItems.map((item) => {
+          const Icon = item.icon
+          return (
+            <button
+              key={item.tab}
+              type="button"
+              className={`mobile-broker-nav-item ${activeTab === item.tab ? 'active' : ''}`}
+              onClick={() => goTo(item.path)}
+            >
+              <Icon size={18} />
+              <span>{item.label}</span>
+            </button>
+          )
+        })}
+      </nav>
     </div>
   )
 }
