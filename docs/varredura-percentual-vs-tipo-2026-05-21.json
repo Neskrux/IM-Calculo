@@ -1,9 +1,9 @@
 {
   "meta": {
-    "geradoEm": "2026-05-21T16:14:49.432Z",
+    "geradoEm": "2026-05-21T16:26:44.373Z",
     "regra": "percentual_comissao_total dos pagamentos != esperado pelo tipo_corretor (interno=6.5, externo=7)",
-    "total_vendas_divergentes": 50,
-    "soma_diferenca_comissao": 34837
+    "total_vendas_divergentes": 48,
+    "soma_diferenca_comissao": 33673.53
   },
   "casos": [
     {
@@ -70,50 +70,6 @@
       "comissao_correta_estimada": 27769.37,
       "diferenca": 703.12,
       "cliente": "LUIZ CARLOS DA SILVA"
-    },
-    {
-      "venda_id": "803041f5-8778-4b59-ab73-63df35a8ac3e",
-      "sienge_contract_id": "148",
-      "numero_contrato": "58",
-      "unidade": "1303 A",
-      "cliente_id": "44304f88-4492-4736-943f-89d4bc87dfba",
-      "tipo_corretor": "interno",
-      "pct_esperado": 6.5,
-      "pcts_encontrados": {
-        "7": 3,
-        "6.5": 62
-      },
-      "pcts_divergentes": [
-        7
-      ],
-      "total_pagamentos_ativos": 65,
-      "pagos": 12,
-      "comissao_atual": 22478.72,
-      "comissao_correta_estimada": 21874.13,
-      "diferenca": 604.59,
-      "cliente": "THIAGO DOS SANTOS "
-    },
-    {
-      "venda_id": "fbaad3e1-ab0f-451a-a90e-b015d6845368",
-      "sienge_contract_id": "135",
-      "numero_contrato": "46",
-      "unidade": "1005 A",
-      "cliente_id": "82ed5d4f-065d-473d-80c1-e7af44f2a857",
-      "tipo_corretor": "interno",
-      "pct_esperado": 6.5,
-      "pcts_encontrados": {
-        "7": 4,
-        "6.5": 62
-      },
-      "pcts_divergentes": [
-        7
-      ],
-      "total_pagamentos_ativos": 66,
-      "pagos": 14,
-      "comissao_atual": 22010.23,
-      "comissao_correta_estimada": 21483.26,
-      "diferenca": 526.97,
-      "cliente": "LEANDRO APARECIDO DO ROSÁRIO"
     },
     {
       "venda_id": "183085e7-9972-4a7f-bbc8-70a4b59ae1ef",
@@ -842,28 +798,6 @@
       "cliente": "MARIANA CIDRAL ROCHA DA COSTA"
     },
     {
-      "venda_id": "7c3ca9b3-8251-469b-ae71-5f8a433a6d3e",
-      "sienge_contract_id": "163",
-      "numero_contrato": "73",
-      "unidade": "1603 A",
-      "cliente_id": "d7b8b964-98a7-4d1c-84e6-4a893a985d8f",
-      "tipo_corretor": "interno",
-      "pct_esperado": 6.5,
-      "pcts_encontrados": {
-        "7": 6,
-        "6.5": 45
-      },
-      "pcts_divergentes": [
-        7
-      ],
-      "total_pagamentos_ativos": 51,
-      "pagos": 10,
-      "comissao_atual": 19553.51,
-      "comissao_correta_estimada": 19306.17,
-      "diferenca": 247.34,
-      "cliente": "DIOGO DA LUZ DOS SANTOS"
-    },
-    {
       "venda_id": "6d729ea0-32e0-4234-814b-0c7cb14d33fd",
       "sienge_contract_id": "316",
       "numero_contrato": "224",
@@ -950,6 +884,28 @@
       "comissao_correta_estimada": 22518.65,
       "diferenca": 217.16,
       "cliente": "CRISTIANO FERRETTI ADRIANO "
+    },
+    {
+      "venda_id": "7c3ca9b3-8251-469b-ae71-5f8a433a6d3e",
+      "sienge_contract_id": "163",
+      "numero_contrato": "73",
+      "unidade": "1603 A",
+      "cliente_id": "d7b8b964-98a7-4d1c-84e6-4a893a985d8f",
+      "tipo_corretor": "interno",
+      "pct_esperado": 6.5,
+      "pcts_encontrados": {
+        "7": 5,
+        "6.5": 46
+      },
+      "pcts_divergentes": [
+        7
+      ],
+      "total_pagamentos_ativos": 51,
+      "pagos": 10,
+      "comissao_atual": 19521.6,
+      "comissao_correta_estimada": 19306.17,
+      "diferenca": 215.43,
+      "cliente": "DIOGO DA LUZ DOS SANTOS"
     },
     {
       "venda_id": "fc6ffa37-4354-4f2b-842f-19f4779986d3",
