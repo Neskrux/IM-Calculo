@@ -1,9 +1,11 @@
 import { loadSiengeConfig, type SiengeConfig } from "../lib/env.ts"
 import { log } from "../lib/log.ts"
 
-const MAX_RPM = 180
+// Bulk-data tem limite oficial de 20 req/min. Usamos margem porque o Sienge
+// aplica bloqueios longos quando recebe rajadas perto do teto.
+const MAX_RPM = 15
 const WINDOW_MS = 60_000
-const MAX_RETRIES = 2
+const MAX_RETRIES = 3
 const REQUEST_TIMEOUT_MS = 20_000
 
 class TokenBucket {
@@ -82,11 +84,15 @@ export async function siengeGet<T = unknown>(opts: SiengeGetOptions): Promise<Si
       const res = await doFetch(url, headers)
       if (res.status === 429) {
         const retryAfter = Number(res.headers.get("Retry-After") ?? "5")
-        const waitMs = Math.min(Math.max(retryAfter, 1), 60) * 1000
         const body = await res.text().catch(() => "")
-        log("warn", "sienge_429", { attempt, waitMs, url, body: body.slice(0, 200) })
+        log("warn", "sienge_429", { attempt, retryAfter, url, body: body.slice(0, 200) })
         // Preserva info pro erro final — continue pula o catch, lastErr ficaria null
         lastErr = new Error(`Sienge 429 on ${opts.path} (Retry-After=${retryAfter}s): ${body.slice(0, 200)}`)
+        if (retryAfter > 300) {
+          log("warn", "sienge_429_long_retry_after_abort", { retryAfter, url })
+          break
+        }
+        const waitMs = Math.min(Math.max(retryAfter, 1), 60) * 1000
         await new Promise((r) => setTimeout(r, waitMs))
         continue
       }

@@ -23,6 +23,7 @@ interface IncomePayload {
   // Campos esperados do /bulk-data/v1/income (descobertos via probe):
   companyId?: number | string
   enterpriseId?: number | string
+  billId?: number | string
   receivableBillId?: number | string
   billReceivableId?: number | string
   contractId?: number | string
@@ -36,6 +37,7 @@ interface IncomePayload {
   netAmount?: number | string
   paidAmount?: number | string
   paidValue?: number | string
+  paymentTerm?: { id?: string | number; description?: string | null }
   receipts?: Array<{ paymentDate?: string; netAmount?: number; grossAmount?: number }>
 }
 
@@ -64,6 +66,7 @@ function extractRows(pageData: BulkResponse | IncomePayload[] | unknown): Income
 interface PagRow {
   id: string
   venda_id: string
+  tipo: string | null
   numero_parcela: number | null
   valor: number
   data_prevista: string | null
@@ -99,25 +102,37 @@ function firstPaymentDate(inc: IncomePayload): string | null {
   return null
 }
 
-function contractIdOf(inc: IncomePayload): string | null {
-  const c = inc.contractId ?? inc.salesContractId ?? inc.receivableBillId ?? inc.billReceivableId
+function billIdOf(inc: IncomePayload): string | null {
+  const c = inc.billId ?? inc.receivableBillId ?? inc.billReceivableId
   return c != null ? String(c) : null
 }
 
 function installmentNumOf(inc: IncomePayload): number | null {
-  const n = Number(inc.installmentNumber)
+  const n = Number(String(inc.installmentNumber ?? "").split("/")[0])
   return Number.isFinite(n) && n > 0 ? n : null
 }
 
 function valueOf(inc: IncomePayload): number {
-  const v = Number(inc.paidAmount ?? inc.paidValue ?? inc.netAmount ?? inc.generatedAmount ?? inc.originalAmount)
+  const v = Number(inc.originalAmount ?? inc.generatedAmount ?? inc.paidAmount ?? inc.paidValue ?? inc.netAmount)
   return Number.isFinite(v) ? v : 0
 }
 
+function tipoInternoOf(inc: IncomePayload): string | null {
+  const term = String(inc.paymentTerm?.id ?? "").toUpperCase()
+  if (term === "PM") return "parcela_entrada"
+  if (term === "SN" || term === "AT") return "sinal"
+  if (term === "EN") return "entrada"
+  if (term === "BA" || /^B[1-9]$/.test(term)) return "balao"
+  return null
+}
+
 function matchPag(inc: IncomePayload, pags: PagRow[]): PagRow | null {
+  const tipo = tipoInternoOf(inc)
+  const candidatos = (tipo ? pags.filter((p) => p.tipo === tipo) : pags)
+    .sort((a, b) => (a.status === "cancelado" ? 1 : 0) - (b.status === "cancelado" ? 1 : 0))
   const num = installmentNumOf(inc)
   if (num) {
-    const exact = pags.find((p) => p.numero_parcela === num)
+    const exact = candidatos.find((p) => p.numero_parcela === num)
     if (exact) return exact
   }
   const valor = valueOf(inc)
@@ -125,7 +140,7 @@ function matchPag(inc: IncomePayload, pags: PagRow[]): PagRow | null {
   if (!valor || !due) return null
   let best: PagRow | null = null
   let bestScore = Infinity
-  for (const p of pags) {
+  for (const p of candidatos) {
     if (Math.abs(p.valor - valor) > 0.01) continue
     const prev = parseDate(p.data_prevista)
     const diff = prev ? daysDiff(prev, due) : 9999
@@ -147,13 +162,13 @@ export async function normalizeReceivableBills(
   // Carrega índice venda↔pagamentos uma vez (evita query por contrato).
   const { data: vendas, error: vErr } = await supa
     .from("vendas")
-    .select("id,sienge_contract_id")
-    .not("sienge_contract_id", "is", null)
+    .select("id,sienge_receivable_bill_id")
+    .not("sienge_receivable_bill_id", "is", null)
   if (vErr) throw new Error(`vendas.select: ${vErr.message}`)
-  const vendaByContract = new Map<string, string>()
-  for (const v of vendas ?? []) if (v.sienge_contract_id) vendaByContract.set(String(v.sienge_contract_id), v.id)
+  const vendaByBill = new Map<string, string>()
+  for (const v of vendas ?? []) if (v.sienge_receivable_bill_id) vendaByBill.set(String(v.sienge_receivable_bill_id), v.id)
 
-  const vendaIds = Array.from(new Set(Array.from(vendaByContract.values())))
+  const vendaIds = Array.from(new Set(Array.from(vendaByBill.values())))
   const pagByVenda = new Map<string, PagRow[]>()
 
   // Paginar pagamentos_prosoluto em batches de 100 ids (URL fica ~4KB, evita HTTP/2 stream error).
@@ -162,13 +177,14 @@ export async function normalizeReceivableBills(
     const slice = vendaIds.slice(i, i + BATCH)
     const { data: pgs, error: pErr } = await supa
       .from("pagamentos_prosoluto")
-      .select("id,venda_id,numero_parcela,valor,data_prevista,status,data_pagamento")
+      .select("id,venda_id,tipo,numero_parcela,valor,data_prevista,status,data_pagamento")
       .in("venda_id", slice)
     if (pErr) throw new Error(`pagamentos.select: ${pErr.message}`)
     for (const p of pgs ?? []) {
       const row: PagRow = {
         id: p.id,
         venda_id: p.venda_id,
+        tipo: p.tipo,
         numero_parcela: p.numero_parcela,
         valor: Number(p.valor) || 0,
         data_prevista: p.data_prevista,
@@ -182,13 +198,13 @@ export async function normalizeReceivableBills(
   }
 
   log("info", "normalize_rb_bulk_scope", {
-    companyId: COMPANY_ID, startDate, endDate, vendas: vendaByContract.size, apiBudget,
+    companyId: COMPANY_ID, startDate, endDate, vendas: vendaByBill.size, apiBudget,
   })
 
   let apiCalls = 0
   let offset = 0
   let totalRowsSeen = 0
-  let matched = 0, noMatch = 0, noContractMatch = 0, noPaymentDate = 0
+  let matched = 0, noMatch = 0, noBillMatch = 0, noPaymentDate = 0, ignoredPaymentTerm = 0
   let updated = 0, drift = 0, invalidDate = 0, errUpdate = 0
   let budgetExhausted = false
 
@@ -224,10 +240,11 @@ export async function normalizeReceivableBills(
     if (rows.length === 0) break
 
     for (const inc of rows) {
-      const contractId = contractIdOf(inc)
-      if (!contractId) { noContractMatch++; continue }
-      const vendaId = vendaByContract.get(contractId)
-      if (!vendaId) { noContractMatch++; continue }
+      if (!tipoInternoOf(inc)) { ignoredPaymentTerm++; continue }
+      const billId = billIdOf(inc)
+      if (!billId) { noBillMatch++; continue }
+      const vendaId = vendaByBill.get(billId)
+      if (!vendaId) { noBillMatch++; continue }
       const pd = firstPaymentDate(inc)
       if (!pd) { noPaymentDate++; continue }
 
@@ -241,7 +258,6 @@ export async function normalizeReceivableBills(
       if (hit.status === "pago") {
         drift++
         log("warn", "rb_drift", { id: hit.id, banco: hit.data_pagamento, sienge: pd })
-        continue
       }
 
       const { error } = await supa.from("pagamentos_prosoluto").update({
@@ -278,8 +294,8 @@ export async function normalizeReceivableBills(
     extra: {
       companyId: COMPANY_ID, startDate, endDate,
       apiCalls, apiBudget, budgetExhausted,
-      totalRowsSeen, matched, noMatch, noContractMatch, noPaymentDate,
-      drift, invalidDate,
+      totalRowsSeen, matched, noMatch, noBillMatch, noPaymentDate,
+      ignoredPaymentTerm, drift, invalidDate,
     },
   }
 }
