@@ -4337,6 +4337,13 @@
   margin: 0;
 }
 
+.relatorios-vendas .empty-table-cell {
+  padding: 28px 16px;
+  text-align: center;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
 /* Modal Styles */
 .cliente-detalhe-header {
   display: flex;

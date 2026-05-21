@@ -980,41 +980,84 @@ const CorretorDashboard = () => {
   }
 
   // Gerar relatório PDF do corretor
+  const getRelatorioVendasBase = () => {
+    const dataInicio = parseDataLocal(relatorioFiltros.dataInicio)
+    const dataFim = parseDataLocal(relatorioFiltros.dataFim)
+
+    return vendas.filter((venda) => {
+      if (relatorioFiltros.empreendimento && venda.empreendimento_nome !== relatorioFiltros.empreendimento) {
+        return false
+      }
+
+      const dataVenda = parseDataLocal(venda.data_venda)
+      if (dataInicio && (!dataVenda || dataVenda < dataInicio)) return false
+      if (dataFim && (!dataVenda || dataVenda > dataFim)) return false
+
+      return true
+    })
+  }
+
+  const getRelatorioDados = () => {
+    const vendasBase = getRelatorioVendasBase()
+    const vendaIds = new Set(vendasBase.map((venda) => venda.id))
+
+    const pagamentosFiltrados = meusPagamentos.filter((pagamento) => {
+      if (!vendaIds.has(pagamento.venda_id)) return false
+      if (pagamento.status === 'cancelado') return false
+      if (relatorioFiltros.status !== 'todos' && pagamento.status !== relatorioFiltros.status) return false
+      return true
+    })
+
+    const vendasComPagamentoFiltrado = new Set(pagamentosFiltrados.map((pagamento) => pagamento.venda_id))
+    const vendasFiltradas = relatorioFiltros.status === 'todos'
+      ? vendasBase
+      : vendasBase.filter((venda) => vendasComPagamentoFiltrado.has(venda.id))
+
+    return { vendasFiltradas, pagamentosFiltrados }
+  }
+
+  const getRelatorioResumo = () => {
+    const { vendasFiltradas, pagamentosFiltrados } = getRelatorioDados()
+    const valorTotalVendas = vendasFiltradas.reduce((acc, v) => acc + (parseFloat(v.valor_venda) || 0), 0)
+    const comissaoTotal = pagamentosFiltrados.reduce((acc, pag) => acc + calcularComissaoPagamento(pag), 0)
+    const comissaoPaga = pagamentosFiltrados
+      .filter(pag => pag.status === 'pago')
+      .reduce((acc, pag) => acc + calcularComissaoPagamento(pag), 0)
+    const comissaoPendente = pagamentosFiltrados
+      .filter(pag => pag.status === 'pendente')
+      .reduce((acc, pag) => acc + calcularComissaoPagamento(pag), 0)
+
+    return {
+      vendasFiltradas,
+      pagamentosFiltrados,
+      totalVendas: vendasFiltradas.length,
+      valorTotalVendas,
+      comissaoTotal,
+      comissaoPaga,
+      comissaoPendente,
+    }
+  }
+
   const gerarMeuRelatorioPDF = async () => {
     setGerandoPdf(true)
     try {
-      // Filtrar vendas baseado nos filtros do relatório
-      let vendasFiltradas = [...vendas]
-      
-      if (relatorioFiltros.empreendimento) {
-        vendasFiltradas = vendasFiltradas.filter(v => v.empreendimento_nome === relatorioFiltros.empreendimento)
-      }
-      // Filtro por status: sempre via pagamentos (R2) — inclui vendas parcialmente pagas.
-      if (relatorioFiltros.status !== 'todos') {
-        vendasFiltradas = vendasFiltradas.filter(v =>
-          meusPagamentos.some(p => p.venda_id === v.id && p.status === relatorioFiltros.status)
-        )
-      }
-      if (relatorioFiltros.dataInicio) {
-        vendasFiltradas = vendasFiltradas.filter(v => parseDataLocal(v.data_venda) >= parseDataLocal(relatorioFiltros.dataInicio))
-      }
-      if (relatorioFiltros.dataFim) {
-        vendasFiltradas = vendasFiltradas.filter(v => parseDataLocal(v.data_venda) <= parseDataLocal(relatorioFiltros.dataFim))
-      }
+      const { vendasFiltradas, pagamentosFiltrados } = getRelatorioDados()
 
-      // Calcular totais usando PAGAMENTOS (regra correta)
+      // Calcular totais usando PAGAMENTOS ativos (regra correta)
       const totalVendas = vendasFiltradas.length
       const valorTotalVendas = vendasFiltradas.reduce((acc, v) => acc + (parseFloat(v.valor_venda) || 0), 0)
-      
-      // Filtrar pagamentos das vendas filtradas
-      const vendaIdsFiltradas = vendasFiltradas.map(v => v.id)
-      const pagamentosFiltrados = meusPagamentos.filter(p => vendaIdsFiltradas.includes(p.venda_id))
-      
       const comissaoTotal = pagamentosFiltrados.reduce((acc, pag) => acc + calcularComissaoPagamento(pag), 0)
       const comissaoPaga = pagamentosFiltrados
         .filter(p => p.status === 'pago')
         .reduce((acc, pag) => acc + calcularComissaoPagamento(pag), 0)
-      const comissaoPendente = comissaoTotal - comissaoPaga
+      const comissaoPendente = pagamentosFiltrados
+        .filter(p => p.status === 'pendente')
+        .reduce((acc, pag) => acc + calcularComissaoPagamento(pag), 0)
+      const statusFiltroTexto = relatorioFiltros.status === 'pago'
+        ? 'Pagos'
+        : relatorioFiltros.status === 'pendente'
+          ? 'Pendentes'
+          : 'Todos'
 
       // Criar PDF
       const doc = new jsPDF()
@@ -1049,11 +1092,14 @@ const CorretorDashboard = () => {
       doc.setTextColor(...cores.dourado)
       doc.setFontSize(10)
       doc.text(`Gerado em: ${new Date().toLocaleDateString('pt-BR')} as ${new Date().toLocaleTimeString('pt-BR')}`, 105, 45, { align: 'center' })
+      doc.setTextColor(...cores.preto)
+      doc.setFontSize(9)
+      doc.text(`Status: ${statusFiltroTexto}`, 14, 53)
 
       // Resumo
-      let yPos = 60
+      let yPos = 64
       doc.setFillColor(...cores.preto)
-      doc.roundedRect(14, yPos - 5, 182, 35, 3, 3, 'F')
+      doc.roundedRect(14, yPos - 5, 182, 43, 3, 3, 'F')
       
       doc.setTextColor(...cores.branco)
       doc.setFontSize(10)
@@ -1070,9 +1116,12 @@ const CorretorDashboard = () => {
       doc.text(formatCurrency(comissaoTotal), 115, yPos + 18)
       doc.setTextColor(...cores.verde)
       doc.text(formatCurrency(comissaoPaga), 160, yPos + 18)
+      doc.setTextColor(...cores.amarelo)
+      doc.setFontSize(9)
+      doc.text(`Pendente: ${formatCurrency(comissaoPendente)}`, 160, yPos + 30)
 
       // Tabela de vendas
-      yPos = 105
+      yPos = 116
       doc.setTextColor(...cores.preto)
       doc.setFontSize(14)
       doc.setFont('helvetica', 'bold')
@@ -1423,6 +1472,8 @@ const CorretorDashboard = () => {
     { tab: 'clientes', path: '/corretor/clientes', label: 'Clientes', icon: Users },
     { tab: 'perfil', path: '/corretor/perfil', label: 'Perfil', icon: User },
   ]
+
+  const relatorioResumo = getRelatorioResumo()
 
   return (
     <div className={`dashboard-container corretor-shell corretor-tab-${activeTab}`}>
@@ -2980,19 +3031,19 @@ const CorretorDashboard = () => {
                 <div className="resumo-cards">
                   <div className="resumo-card-item">
                     <span className="resumo-titulo">Total de Vendas</span>
-                    <span className="resumo-numero">{vendas.length}</span>
+                    <span className="resumo-numero">{relatorioResumo.totalVendas}</span>
                   </div>
                   <div className="resumo-card-item">
                     <span className="resumo-titulo">Comissão Total</span>
-                    <span className="resumo-numero verde">{formatCurrency(getTotalComissao())}</span>
+                    <span className="resumo-numero verde">{formatCurrency(relatorioResumo.comissaoTotal)}</span>
                   </div>
                   <div className="resumo-card-item">
                     <span className="resumo-titulo">Comissão Recebida</span>
-                    <span className="resumo-numero azul">{formatCurrency(getComissaoPaga())}</span>
+                    <span className="resumo-numero azul">{formatCurrency(relatorioResumo.comissaoPaga)}</span>
                   </div>
                   <div className="resumo-card-item">
                     <span className="resumo-titulo">Comissão Pendente</span>
-                    <span className="resumo-numero amarelo">{formatCurrency(getComissaoPendente())}</span>
+                    <span className="resumo-numero amarelo">{formatCurrency(relatorioResumo.comissaoPendente)}</span>
                   </div>
                 </div>
               </div>
@@ -3014,9 +3065,16 @@ const CorretorDashboard = () => {
                       </tr>
                     </thead>
                     <tbody>
-                      {vendas.slice(0, 10).map(venda => {
+                      {relatorioResumo.vendasFiltradas.length === 0 ? (
+                        <tr>
+                          <td colSpan="7" className="empty-table-cell">
+                            Nenhuma venda encontrada para os filtros selecionados
+                          </td>
+                        </tr>
+                      ) : (
+                        relatorioResumo.vendasFiltradas.slice(0, 10).map(venda => {
                         // Calcular comissão baseado em PAGAMENTOS
-                        const pagamentosVenda = meusPagamentos.filter(p => p.venda_id === venda.id)
+                        const pagamentosVenda = relatorioResumo.pagamentosFiltrados.filter(p => p.venda_id === venda.id)
                         const comissaoVenda = pagamentosVenda.reduce((acc, pag) => acc + calcularComissaoPagamento(pag), 0)
                         const comissaoPagaVenda = pagamentosVenda
                           .filter(p => p.status === 'pago')
@@ -3051,7 +3109,8 @@ const CorretorDashboard = () => {
                             </td>
                           </tr>
                         )
-                      })}
+                        })
+                      )}
                     </tbody>
                   </table>
                 </div>
