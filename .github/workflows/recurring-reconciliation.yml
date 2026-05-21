@@ -1,35 +1,43 @@
 # Reconciliacao diaria de pagamentos_prosoluto contra Sienge income.
 #
-# Roda toda manha 08h BRT (11h UTC). Pode ser disparado manualmente.
+# Roda 00:30 UTC (21:30 BRT) — logo apos o reset da quota diaria do Sienge.
+# Pode ser disparado manualmente.
 #
 # O que faz (em ordem):
-#   0. Sincroniza sales-contracts + receivable-bills do Sienge (traz vendas novas)
-#      via edge function sienge-sync (auth: service_role bypass em auth.ts).
-#   1. Corrige drift de data_prevista (gerar-plano + aplicar-correcao-data-prevista).
+#   1. Corrige drift de data_prevista (gerar-plano + aplicar-correcao).
 #   2. Reconciliacao GERAL contra Sienge (reconciliar-todas-vendas.mjs --apply):
 #      - popula sienge_installment_id (ancoragem 1:1)
-#      - marca pago parcelas que o Sienge confirma como pagas
-#      - reativa canceladas que sao validas no Sienge
-#      - cria parcelas faltantes
+#      - marca pago / reativa canceladas validas / cria parcelas faltantes
 #      Com 5 salvaguardas: pula venda se houver qualquer ambiguidade.
-#   3. Salva reports em artifact.
-#   4. Falha o job se houver erros (dispara email).
+#   3. Sincroniza sales-contracts + receivable-bills (vendas novas) via edge
+#      function. Roda POR ULTIMO e e best-effort (continue-on-error): consome
+#      ~10 chamadas bulk-data e a quota diaria do Sienge e pequena, entao
+#      gerar-plano/reconciliar furam a fila primeiro. Vendas novas entram na
+#      reconciliacao do dia seguinte (lag de 1 dia e aceitavel).
+#   4. Salva reports em artifact.
+#   5. Falha o job se a reconciliacao reportar erros (dispara email).
+#
+# Resiliencia a quota Sienge:
+#   - actions/cache@v4 persiste .sienge-cache/ entre runs.
+#   - SIENGE_CACHE_TTL_MS=7d: o income so e re-baixado ~1x/semana; nos demais
+#     dias o cron le o cache persistido (0 chamadas income).
+#   - stale-on-error em _sienge-http.mjs: se o Sienge bloquear, serve cache
+#     vencido em vez de quebrar o job.
 #
 # Idempotente: rodar 2x no mesmo dia = 0 updates no segundo run.
 #
 # Pre-requisitos (Secrets do repo):
-#   VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY (ou SUPABASE_SERVICE_ROLE_KEY)
+#   VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY
 #   SIENGE_USERNAME, SIENGE_PASSWORD, SIENGE_SUBDOMAIN
 
 name: Reconciliacao Pagamentos
 
 on:
-  # schedule pausado em 2026-05-18: cron estoura quota /bulk-data/v1/income
-  # do Sienge (cache em disco nao persiste entre runs do Actions). Reativar
-  # apos alinhamento com Bruno + decisao sobre cache persistente (banco ou
-  # actions/cache@v4). Disparo manual continua disponivel via workflow_dispatch.
-  # schedule:
-  #   - cron: '0 11 * * *' # 08:00 BRT
+  # 00:30 UTC = 21:30 BRT: a quota bulk-data do Sienge reseta a 00h UTC,
+  # entao rodar logo depois pega a quota cheia e o app ao vivo ocioso.
+  # GitHub so dispara schedule a partir do branch default (main).
+  schedule:
+    - cron: '30 0 * * *' # 21:30 BRT
   workflow_dispatch: # disparo manual via aba Actions
 
 jobs:
@@ -49,16 +57,44 @@ jobs:
       - name: Install deps
         run: npm ci
 
-      # Etapa 0 — sincroniza sales-contracts + receivable-bills do Sienge
-      # via edge function (autentica com service_role; bypass em auth.ts).
-      # Fecha o ciclo: sem isso, vendas novas precisavam do botao manual.
-      - name: Sincronizar vendas Sienge
-        run: node scripts/sincronizar-vendas-sienge.mjs
-        env:
-          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
-          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      # Persiste o cache /bulk-data/v1/income entre runs do cron.
+      # Combinado com SIENGE_CACHE_TTL_MS=7d e stale-on-error no
+      # _sienge-http.mjs, garante que o job sobrevive a quota diaria
+      # do Sienge: o income so e baixado de verdade ~1x/semana.
+      - name: Restore Sienge cache
+        id: sienge-cache
+        uses: actions/cache@v4
+        with:
+          path: .sienge-cache
+          key: sienge-cache-${{ github.run_id }}
+          restore-keys: |
+            sienge-cache-
 
+      # Seed inicial — pula se cache nao-vazio OU se secret SIENGE_CACHE_SEED_URL
+      # ausente. URL deve apontar pra um zip do .sienge-cache/ (Supabase Storage
+      # privado, GitHub Release asset privado, etc). Procedimento documentado em
+      # docs/specs/sienge-cache-seed.md.
+      - name: Seed cache (so se vazio e secret presente)
+        env:
+          SIENGE_CACHE_SEED_URL: ${{ secrets.SIENGE_CACHE_SEED_URL }}
+        run: |
+          if [ -z "$SIENGE_CACHE_SEED_URL" ]; then
+            echo "SIENGE_CACHE_SEED_URL ausente, pulando seed. Stale-on-error vai sustentar caso o Sienge falhe."
+            exit 0
+          fi
+          if [ -d .sienge-cache ] && [ -n "$(ls -A .sienge-cache 2>/dev/null)" ]; then
+            echo "Cache nao-vazio, pulando seed ($(ls .sienge-cache | wc -l) arquivos)"
+            exit 0
+          fi
+          echo "Cache vazio, baixando seed..."
+          mkdir -p .sienge-cache
+          curl -fsSL "$SIENGE_CACHE_SEED_URL" -o /tmp/seed.zip
+          unzip -q /tmp/seed.zip -d .sienge-cache
+          echo "Seed restaurado: $(ls .sienge-cache | wc -l) arquivos"
+
+      # Etapa 1 — corrige drift de data_prevista. Roda PRIMEIRO pra a chamada
+      # de income (1 call bulk-data) pegar a quota Sienge cheia. Em dias sem
+      # refresh de cache, le do cache persistido (0 chamadas).
       - name: Gerar plano de correcao
         run: node scripts/gerar-plano-correcao-data-prevista.mjs
         env:
@@ -67,6 +103,7 @@ jobs:
           SIENGE_USERNAME: ${{ secrets.SIENGE_USERNAME }}
           SIENGE_PASSWORD: ${{ secrets.SIENGE_PASSWORD }}
           SIENGE_SUBDOMAIN: ${{ secrets.SIENGE_SUBDOMAIN }}
+          SIENGE_CACHE_TTL_MS: '604800000' # 7d — reusa cache persistido; re-baixa income ~1x/semana
 
       - name: Aplicar plano
         run: node scripts/aplicar-correcao-data-prevista.mjs --apply
@@ -75,10 +112,8 @@ jobs:
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
 
-      # Reconciliacao geral — todas as 298 vendas contra income Sienge.
-      # Aplicado em massa pela primeira vez em 2026-05-14 (256 vendas, ~15k
-      # operacoes). A partir daqui, o cron diario pega so o incremental
-      # (parcelas pagas novas, divergencias que surgirem).
+      # Etapa 2 — reconciliacao geral. Le o income do cache populado pela
+      # etapa 1 (mesma URL/range => cache hit, 0 chamadas Sienge).
       - name: Reconciliar todas as vendas
         run: node scripts/reconciliar-todas-vendas.mjs --apply
         env:
@@ -88,6 +123,19 @@ jobs:
           SIENGE_USERNAME: ${{ secrets.SIENGE_USERNAME }}
           SIENGE_PASSWORD: ${{ secrets.SIENGE_PASSWORD }}
           SIENGE_SUBDOMAIN: ${{ secrets.SIENGE_SUBDOMAIN }}
+          SIENGE_CACHE_TTL_MS: '604800000' # 7d — reusa cache persistido
+
+      # Etapa 3 — sincroniza sales-contracts + receivable-bills via edge
+      # function (service_role; bypass em auth.ts). Best-effort: roda por
+      # ultimo e nao derruba o job se a quota Sienge acabar aqui — o nucleo
+      # (reconciliacao) ja rodou. Vendas novas entram no run seguinte.
+      - name: Sincronizar vendas Sienge
+        continue-on-error: true
+        run: node scripts/sincronizar-vendas-sienge.mjs
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
 
       - name: Upload report
         if: always()
@@ -98,6 +146,7 @@ jobs:
             docs/plano-correcao-data-prevista-*.json
             docs/aplicacao-data-prevista-*.json
             docs/reconciliacao-geral-*.json
+            docs/sincronizacao-vendas-sienge-*.json
           retention-days: 30
 
       # Falha ruidosa: se houver erros em qualquer report, marca o job como

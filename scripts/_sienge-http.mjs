@@ -47,7 +47,14 @@ const AUTH = 'Basic ' + Buffer.from(`${SIENGE_USERNAME}:${SIENGE_PASSWORD}`).toS
 const BULK_BASE = `https://api.sienge.com.br/${SIENGE_SUBDOMAIN}/public/api`
 const REST_BASE = `https://api.sienge.com.br/${SIENGE_SUBDOMAIN}/public/api/v1`
 
-const MAX_RPM = 180
+// Limite oficial do Sienge bulk-data: 20 req/min (ver
+// https://api.sienge.com.br/docs/general-bulk.html). Usamos 15 pra ter margem
+// e evitar circuit-breaker — quando excedido repetidamente, o Sienge aplica
+// um bloqueio agressivo com retry-after de ~9h que se auto-renova a cada
+// tentativa (o histórico de runs de 14-15/05 e 19/05 confirma esse padrão).
+// REST v1 nao tem limite por minuto documentado, mas usar mesmo limite por
+// seguranca — a quota diaria de 100 ja eh a restricao dominante la.
+const MAX_RPM = Number(env.SIENGE_MAX_RPM || 15)
 const WINDOW_MS = 60_000
 const REQUEST_TIMEOUT_MS = 60_000
 const MAX_RETRIES = 3
@@ -79,6 +86,19 @@ function cacheGet(url) {
     const age = Date.now() - statSync(f).mtimeMs
     if (age > CACHE_TTL_MS) return null
     return JSON.parse(readFileSync(f, 'utf8'))
+  } catch { return null }
+}
+
+// cacheGetStale: ignora TTL — usado como fallback quando Sienge retorna
+// 429/5xx ou rede falha. Servir dados velhos e' melhor que crashar o job.
+function cacheGetStale(url) {
+  if (CACHE_DISABLED) return null
+  const f = resolve(CACHE_DIR, `${cacheKey(url)}.json`)
+  try {
+    if (!existsSync(f)) return null
+    const ageMin = Math.round((Date.now() - statSync(f).mtimeMs) / 60000)
+    const payload = JSON.parse(readFileSync(f, 'utf8'))
+    return { ...payload, _staleAgeMin: ageMin }
   } catch { return null }
 }
 
@@ -167,10 +187,17 @@ export async function siengeGet({ path, query = {}, noCache = false }) {
       clearTimeout(timer)
       if (res.status === 429) {
         const retryAfter = Number(res.headers.get('Retry-After') ?? '30')
-        const waitMs = Math.min(Math.max(retryAfter, 1), 120) * 1000
         const body = await res.text().catch(() => '')
         console.warn(`[429] ${path} retry-after=${retryAfter}s body=${body.slice(0, 150)}`)
         lastErr = new Error(`Sienge 429 after ${retryAfter}s: ${body.slice(0, 200)}`)
+        // Retry-after > 5min indica bloqueio agressivo (circuit-breaker do
+        // Sienge). Continuar retentando RENOVA o bloqueio. Aborta logo e deixa
+        // stale-on-error servir cache vencido, ou propagar o erro pro caller.
+        if (retryAfter > 300) {
+          console.warn(`[429] retry-after muito alto (${retryAfter}s) — abortando retries pra nao renovar bloqueio`)
+          break
+        }
+        const waitMs = Math.min(Math.max(retryAfter, 1), 120) * 1000
         await new Promise((r) => setTimeout(r, waitMs))
         continue
       }
@@ -197,6 +224,18 @@ export async function siengeGet({ path, query = {}, noCache = false }) {
       console.warn(`[err] ${path} attempt=${attempt} err=${String(err).slice(0, 200)}`)
       const backoff = Math.min(2000 * attempt, 10_000)
       await new Promise((r) => setTimeout(r, backoff))
+    }
+  }
+  // Stale-on-error: antes de propagar, tenta servir cache vencido. Permite
+  // o cron sobreviver a 429 residual / instabilidade do Sienge sem quebrar
+  // o job — proximo run atualiza naturalmente quando Sienge voltar.
+  // Pra desativar (ex: testes que precisam de erro real): SIENGE_NO_STALE=1.
+  if (!noCache && env.SIENGE_NO_STALE !== '1') {
+    const stale = cacheGetStale(url)
+    if (stale) {
+      cat.cacheHits++
+      console.warn(`[stale] ${path} servindo cache de ${stale._staleAgeMin}min atras (Sienge indisponivel: ${String(lastErr).slice(0, 100)})`)
+      return { status: stale.status, data: stale.data, url, cached: true, stale: true, staleAgeMin: stale._staleAgeMin }
     }
   }
   stats.errors++
