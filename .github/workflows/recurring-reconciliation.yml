@@ -33,11 +33,11 @@
 name: Reconciliacao Pagamentos
 
 on:
-  # schedule reativar APOS um run manual verde (workflow_dispatch). 00:30 UTC
-  # = 21:30 BRT: a quota bulk-data do Sienge reseta a 00h UTC, entao rodar
-  # logo depois pega a quota cheia e o app ao vivo ocioso.
-  # schedule:
-  #   - cron: '30 0 * * *' # 21:30 BRT
+  # 00:30 UTC = 21:30 BRT: a quota bulk-data do Sienge reseta a 00h UTC,
+  # entao rodar logo depois pega a quota cheia e o app ao vivo ocioso.
+  # GitHub so dispara schedule a partir do branch default (main).
+  schedule:
+    - cron: '30 0 * * *' # 21:30 BRT
   workflow_dispatch: # disparo manual via aba Actions
 
 jobs:
