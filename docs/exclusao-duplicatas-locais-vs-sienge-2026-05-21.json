@@ -1,0 +1,733 @@
+{
+  "meta": {
+    "geradoEm": "2026-05-21T17:57:48.500Z",
+    "script": "scripts/excluir-duplicatas-locais-vs-sienge-2026-05-21.mjs",
+    "modo": "apply",
+    "empreendimento_id": "0d7d01f4-c398-4d9a-a280-13f44c957279",
+    "autorizacao": "usuario autorizou remover duplicatas locais erradas em 2026-05-21",
+    "criterio": "mesmo cliente normalizado + corretor_id + unidade/bloco normalizados, com venda Sienge ativa e venda local sem sienge_contract_id",
+    "finalizadoEm": "2026-05-21T17:59:03.753Z",
+    "observacao": "Primeira aplicacao cancelou pagamentos e reverteu baixas; finalizacao marcou vendas por id exato apos ajuste do filtro de update.",
+    "pagamentosRestantesFinalizadosEm": "2026-05-21T18:01:00.601Z"
+  },
+  "resumo": {
+    "candidatos": 25,
+    "duplicatas_sem_baixa": 9,
+    "duplicatas_com_baixa": 16,
+    "grupos_com_multiplos_contratos_sienge": 1,
+    "parcelas_ativas": 1303,
+    "parcelas_pagas": 25,
+    "comissao_ativa": 757710.57
+  },
+  "acoes": [
+    {
+      "venda_duplicada_id": "68373e1c-8996-4dc1-a334-7aa3b21cf33f",
+      "cliente": "ADRYELLE THUANNY DA SILVA",
+      "corretor": "Rodrigo Fernando Viapiana Parada",
+      "unidade": "1806 D",
+      "contratos_sienge_preservados": [
+        "379"
+      ],
+      "venda_sienge_ids_preservadas": [
+        "f79be55a-ed21-49cc-a893-72380178f1c7"
+      ],
+      "multiplos_contratos_sienge": false,
+      "parcelas_ativas_antes": 52,
+      "parcelas_pagas_antes": 2,
+      "comissao_ativa_antes": 33348.12,
+      "pagos_revertidos": 2,
+      "pagamentos_cancelados": 52,
+      "venda_excluida": 1,
+      "skipped_idempotent": 0,
+      "errors": [],
+      "finalizacao_pagamentos_restantes": {
+        "ativos_encontrados": 13,
+        "pagos_encontrados": 0,
+        "pagos_revertidos": 0,
+        "pagamentos_cancelados": 13,
+        "comissao_ativa": 8337.03
+      }
+    },
+    {
+      "venda_duplicada_id": "95c3686f-781f-42de-8474-3b9b0bfa2a3b",
+      "cliente": "AMANDA MATOS DA CRUZ ",
+      "corretor": "CARLOS BRUNO NEGOCIOS IMOBILIARIOS LTDA",
+      "unidade": "1403 B",
+      "contratos_sienge_preservados": [
+        "409"
+      ],
+      "venda_sienge_ids_preservadas": [
+        "d3c61971-2f4a-4884-ba49-b8ff70db2097"
+      ],
+      "multiplos_contratos_sienge": false,
+      "parcelas_ativas_antes": 52,
+      "parcelas_pagas_antes": 2,
+      "comissao_ativa_antes": 32047.08,
+      "pagos_revertidos": 2,
+      "pagamentos_cancelados": 52,
+      "venda_excluida": 1,
+      "skipped_idempotent": 0,
+      "errors": [],
+      "finalizacao_pagamentos_restantes": {
+        "ativos_encontrados": 12,
+        "pagos_encontrados": 0,
+        "pagos_revertidos": 0,
+        "pagamentos_cancelados": 12,
+        "comissao_ativa": 7395.48
+      }
+    },
+    {
+      "venda_duplicada_id": "d09743fd-8d6e-4e68-a4d7-229ac6d401f5",
+      "cliente": "CYNTIA ROBERTO HAGER",
+      "corretor": "Rodrigo Fernando Viapiana Parada",
+      "unidade": "1807 D",
+      "contratos_sienge_preservados": [
+        "389"
+      ],
+      "venda_sienge_ids_preservadas": [
+        "fc365e7f-71a1-43cd-8390-240875d6b900"
+      ],
+      "multiplos_contratos_sienge": false,
+      "parcelas_ativas_antes": 52,
+      "parcelas_pagas_antes": 2,
+      "comissao_ativa_antes": 33348.12,
+      "pagos_revertidos": 2,
+      "pagamentos_cancelados": 52,
+      "venda_excluida": 1,
+      "skipped_idempotent": 0,
+      "errors": [],
+      "finalizacao_pagamentos_restantes": {
+        "ativos_encontrados": 13,
+        "pagos_encontrados": 0,
+        "pagos_revertidos": 0,
+        "pagamentos_cancelados": 13,
+        "comissao_ativa": 8337.03
+      }
+    },
+    {
+      "venda_duplicada_id": "624897e1-f9a7-4803-9c48-cafb0021733f",
+      "cliente": "DIEGO DA COSTA",
+      "corretor": "DENIS ALEXANDRE MOREIRA MAGNI PINTO",
+      "unidade": "401 A",
+      "contratos_sienge_preservados": [
+        "427"
+      ],
+      "venda_sienge_ids_preservadas": [
+        "c850d6b4-742b-412e-8477-33ec538fcdc4"
+      ],
+      "multiplos_contratos_sienge": false,
+      "parcelas_ativas_antes": 56,
+      "parcelas_pagas_antes": 3,
+      "comissao_ativa_antes": 21714.19,
+      "pagos_revertidos": 3,
+      "pagamentos_cancelados": 56,
+      "venda_excluida": 1,
+      "skipped_idempotent": 0,
+      "errors": [],
+      "finalizacao_pagamentos_restantes": {
+        "ativos_encontrados": 13,
+        "pagos_encontrados": 1,
+        "pagos_revertidos": 1,
+        "pagamentos_cancelados": 13,
+        "comissao_ativa": 3729.8
+      }
+    },
+    {
+      "venda_duplicada_id": "2ccbc032-fcd4-4106-a755-6cbbd96933c2",
+      "cliente": "LIZANDRA SANTA CRUZ DE SOUZA",
+      "corretor": "CARLOS BRUNO NEGOCIOS IMOBILIARIOS LTDA",
+      "unidade": "403 C",
+      "contratos_sienge_preservados": [
+        "378"
+      ],
+      "venda_sienge_ids_preservadas": [
+        "41dc416b-0335-4cc2-90d2-0e21a6a50540"
+      ],
+      "multiplos_contratos_sienge": false,
+      "parcelas_ativas_antes": 52,
+      "parcelas_pagas_antes": 2,
+      "comissao_ativa_antes": 29294.2,
+      "pagos_revertidos": 2,
+      "pagamentos_cancelados": 52,
+      "venda_excluida": 1,
+      "skipped_idempotent": 0,
+      "errors": [],
+      "finalizacao_pagamentos_restantes": {
+        "ativos_encontrados": 12,
+        "pagos_encontrados": 0,
+        "pagos_revertidos": 0,
+        "pagamentos_cancelados": 12,
+        "comissao_ativa": 6760.2
+      }
+    },
+    {
+      "venda_duplicada_id": "cb5aa582-5e88-4ecc-866a-91e224115b9f",
+      "cliente": "Ana Claudia Ventura da Silva",
+      "corretor": "LEAL NEGOCIOS IMOBILIARIOS LTDA",
+      "unidade": "1506 D",
+      "contratos_sienge_preservados": [
+        "377"
+      ],
+      "venda_sienge_ids_preservadas": [
+        "822c2f3b-5933-485c-8946-195be7daac86"
+      ],
+      "multiplos_contratos_sienge": false,
+      "parcelas_ativas_antes": 53,
+      "parcelas_pagas_antes": 1,
+      "comissao_ativa_antes": 30506.8,
+      "pagos_revertidos": 1,
+      "pagamentos_cancelados": 53,
+      "venda_excluida": 1,
+      "skipped_idempotent": 0,
+      "errors": [],
+      "finalizacao_pagamentos_restantes": {
+        "ativos_encontrados": 14,
+        "pagos_encontrados": 0,
+        "pagos_revertidos": 0,
+        "pagamentos_cancelados": 14,
+        "comissao_ativa": 8058.4
+      }
+    },
+    {
+      "venda_duplicada_id": "a008f85a-13f7-4c75-a0b9-fdd1578a12fb",
+      "cliente": "DANILO FERNANDES MOITA",
+      "corretor": "CARLOS BRUNO NEGOCIOS IMOBILIARIOS LTDA",
+      "unidade": "1506 C",
+      "contratos_sienge_preservados": [
+        "419"
+      ],
+      "venda_sienge_ids_preservadas": [
+        "2b7cda44-45fe-4e9b-b783-29605b362342"
+      ],
+      "multiplos_contratos_sienge": false,
+      "parcelas_ativas_antes": 51,
+      "parcelas_pagas_antes": 1,
+      "comissao_ativa_antes": 32367.5,
+      "pagos_revertidos": 1,
+      "pagamentos_cancelados": 51,
+      "venda_excluida": 1,
+      "skipped_idempotent": 0,
+      "errors": [],
+      "finalizacao_pagamentos_restantes": {
+        "ativos_encontrados": 12,
+        "pagos_encontrados": 0,
+        "pagos_revertidos": 0,
+        "pagamentos_cancelados": 12,
+        "comissao_ativa": 7650.6
+      }
+    },
+    {
+      "venda_duplicada_id": "26fc2ac4-a7a4-4dc4-9e91-4dcc618890ae",
+      "cliente": "DAVID DOUGLAS SOUZA",
+      "corretor": "MATEUS GABRIEL DE OLIVEIRA",
+      "unidade": "1502 D",
+      "contratos_sienge_preservados": [
+        "381"
+      ],
+      "venda_sienge_ids_preservadas": [
+        "bf92e73a-edce-4a19-a32a-02c7ed296f6d"
+      ],
+      "multiplos_contratos_sienge": false,
+      "parcelas_ativas_antes": 53,
+      "parcelas_pagas_antes": 1,
+      "comissao_ativa_antes": 30099.76,
+      "pagos_revertidos": 1,
+      "pagamentos_cancelados": 53,
+      "venda_excluida": 1,
+      "skipped_idempotent": 0,
+      "errors": [],
+      "finalizacao_pagamentos_restantes": {
+        "ativos_encontrados": 13,
+        "pagos_encontrados": 0,
+        "pagos_revertidos": 0,
+        "pagamentos_cancelados": 13,
+        "comissao_ativa": 7382.96
+      }
+    },
+    {
+      "venda_duplicada_id": "986e8b2c-84ec-4fd5-aa63-f6335d74ced3",
+      "cliente": "GABRIELA REBECA DALLAQUA CARDOSO",
+      "corretor": "DENIS ALEXANDRE MOREIRA MAGNI PINTO",
+      "unidade": "901 D",
+      "contratos_sienge_preservados": [
+        "428"
+      ],
+      "venda_sienge_ids_preservadas": [
+        "85794a4e-df31-4a19-89bd-9743ba2cbb68"
+      ],
+      "multiplos_contratos_sienge": false,
+      "parcelas_ativas_antes": 50,
+      "parcelas_pagas_antes": 1,
+      "comissao_ativa_antes": 32624.5,
+      "pagos_revertidos": 1,
+      "pagamentos_cancelados": 50,
+      "venda_excluida": 1,
+      "skipped_idempotent": 0,
+      "errors": [],
+      "finalizacao_pagamentos_restantes": {
+        "ativos_encontrados": 10,
+        "pagos_encontrados": 0,
+        "pagos_revertidos": 0,
+        "pagamentos_cancelados": 10,
+        "comissao_ativa": 6524.9
+      }
+    },
+    {
+      "venda_duplicada_id": "90d58687-ed27-42ff-b77d-a4d9d87c6134",
+      "cliente": "JADER DA SILVA MENEZES",
+      "corretor": "ALECXANDER SOUZA E SILVA",
+      "unidade": "609 A",
+      "contratos_sienge_preservados": [
+        "410"
+      ],
+      "venda_sienge_ids_preservadas": [
+        "ef1b6708-e632-457a-94d5-3b424ce42d4e"
+      ],
+      "multiplos_contratos_sienge": false,
+      "parcelas_ativas_antes": 51,
+      "parcelas_pagas_antes": 2,
+      "comissao_ativa_antes": 29883,
+      "pagos_revertidos": 2,
+      "pagamentos_cancelados": 51,
+      "venda_excluida": 1,
+      "skipped_idempotent": 0,
+      "errors": [],
+      "finalizacao_pagamentos_restantes": {
+        "ativos_encontrados": 11,
+        "pagos_encontrados": 1,
+        "pagos_revertidos": 1,
+        "pagamentos_cancelados": 11,
+        "comissao_ativa": 8776.6
+      }
+    },
+    {
+      "venda_duplicada_id": "3832f966-73fc-460e-b42b-32e5606705de",
+      "cliente": "LEONARDO HENRIQUE PEIXER ",
+      "corretor": "CARLOS BRUNO NEGOCIOS IMOBILIARIOS LTDA",
+      "unidade": "1607 C",
+      "contratos_sienge_preservados": [
+        "421"
+      ],
+      "venda_sienge_ids_preservadas": [
+        "df70d805-c0a7-4157-8e8a-9a3ff9d72c4e"
+      ],
+      "multiplos_contratos_sienge": false,
+      "parcelas_ativas_antes": 51,
+      "parcelas_pagas_antes": 1,
+      "comissao_ativa_antes": 32691,
+      "pagos_revertidos": 1,
+      "pagamentos_cancelados": 51,
+      "venda_excluida": 1,
+      "skipped_idempotent": 0,
+      "errors": [],
+      "finalizacao_pagamentos_restantes": {
+        "ativos_encontrados": 12,
+        "pagos_encontrados": 0,
+        "pagos_revertidos": 0,
+        "pagamentos_cancelados": 12,
+        "comissao_ativa": 7692
+      }
+    },
+    {
+      "venda_duplicada_id": "8224b391-adff-4e0d-8696-7f72a6501625",
+      "cliente": "MIGUEL FIRMO EVARISTO",
+      "corretor": "ALECXANDER SOUZA E SILVA",
+      "unidade": "803 B",
+      "contratos_sienge_preservados": [
+        "429"
+      ],
+      "venda_sienge_ids_preservadas": [
+        "d3b2e8a0-7706-4717-81e9-8ae6916a0e7d"
+      ],
+      "multiplos_contratos_sienge": false,
+      "parcelas_ativas_antes": 50,
+      "parcelas_pagas_antes": 1,
+      "comissao_ativa_antes": 30510.38,
+      "pagos_revertidos": 1,
+      "pagamentos_cancelados": 50,
+      "venda_excluida": 1,
+      "skipped_idempotent": 0,
+      "errors": [],
+      "finalizacao_pagamentos_restantes": {
+        "ativos_encontrados": 10,
+        "pagos_encontrados": 0,
+        "pagos_revertidos": 0,
+        "pagamentos_cancelados": 10,
+        "comissao_ativa": 8463.58
+      }
+    },
+    {
+      "venda_duplicada_id": "22833c5c-759c-483e-b266-d680f2f8416d",
+      "cliente": "RAYLTON GOMES DA COSTA  ",
+      "corretor": "DENIS ALEXANDRE MOREIRA MAGNI PINTO",
+      "unidade": "401 B",
+      "contratos_sienge_preservados": [
+        "431"
+      ],
+      "venda_sienge_ids_preservadas": [
+        "1dfd5558-328f-483b-b19c-39ab45b43ed1"
+      ],
+      "multiplos_contratos_sienge": false,
+      "parcelas_ativas_antes": 57,
+      "parcelas_pagas_antes": 2,
+      "comissao_ativa_antes": 21714.2,
+      "pagos_revertidos": 2,
+      "pagamentos_cancelados": 57,
+      "venda_excluida": 1,
+      "skipped_idempotent": 0,
+      "errors": [],
+      "finalizacao_pagamentos_restantes": {
+        "ativos_encontrados": 12,
+        "pagos_encontrados": 1,
+        "pagos_revertidos": 1,
+        "pagamentos_cancelados": 12,
+        "comissao_ativa": 3448.15
+      }
+    },
+    {
+      "venda_duplicada_id": "ff950500-466d-4fe8-a8db-72d6f2664a35",
+      "cliente": "ROSANA DA SILVA",
+      "corretor": "CARLOS BRUNO NEGOCIOS IMOBILIARIOS LTDA",
+      "unidade": "1602 C",
+      "contratos_sienge_preservados": [
+        "417"
+      ],
+      "venda_sienge_ids_preservadas": [
+        "10e16431-7bcd-435d-9379-102945570482"
+      ],
+      "multiplos_contratos_sienge": false,
+      "parcelas_ativas_antes": 51,
+      "parcelas_pagas_antes": 1,
+      "comissao_ativa_antes": 32691,
+      "pagos_revertidos": 1,
+      "pagamentos_cancelados": 51,
+      "venda_excluida": 1,
+      "skipped_idempotent": 0,
+      "errors": [],
+      "finalizacao_pagamentos_restantes": {
+        "ativos_encontrados": 11,
+        "pagos_encontrados": 0,
+        "pagos_revertidos": 0,
+        "pagamentos_cancelados": 11,
+        "comissao_ativa": 7051
+      }
+    },
+    {
+      "venda_duplicada_id": "1ddf9705-7c27-4b1c-bca1-a51a7ec77adf",
+      "cliente": "TATIANA SANTOS DE SOUSA ",
+      "corretor": "Felipe Madona",
+      "unidade": "510 C",
+      "contratos_sienge_preservados": [
+        "412"
+      ],
+      "venda_sienge_ids_preservadas": [
+        "bd50c322-a9f6-4a65-86ab-76721bfb954b"
+      ],
+      "multiplos_contratos_sienge": false,
+      "parcelas_ativas_antes": 52,
+      "parcelas_pagas_antes": 1,
+      "comissao_ativa_antes": 29586.96,
+      "pagos_revertidos": 1,
+      "pagamentos_cancelados": 52,
+      "venda_excluida": 1,
+      "skipped_idempotent": 0,
+      "errors": [],
+      "finalizacao_pagamentos_restantes": {
+        "ativos_encontrados": 12,
+        "pagos_encontrados": 0,
+        "pagos_revertidos": 0,
+        "pagamentos_cancelados": 12,
+        "comissao_ativa": 6827.76
+      }
+    },
+    {
+      "venda_duplicada_id": "ff98dc24-ac20-4b36-81ae-807869353add",
+      "cliente": "Valdemir da Silva",
+      "corretor": "ALECXANDER SOUZA E SILVA",
+      "unidade": "1702 C",
+      "contratos_sienge_preservados": [
+        "424"
+      ],
+      "venda_sienge_ids_preservadas": [
+        "350e54e6-023b-47cb-b4b0-7f82a0db3e07"
+      ],
+      "multiplos_contratos_sienge": false,
+      "parcelas_ativas_antes": 50,
+      "parcelas_pagas_antes": 1,
+      "comissao_ativa_antes": 33018.11,
+      "pagos_revertidos": 1,
+      "pagamentos_cancelados": 50,
+      "venda_excluida": 1,
+      "skipped_idempotent": 0,
+      "errors": [],
+      "finalizacao_pagamentos_restantes": {
+        "ativos_encontrados": 11,
+        "pagos_encontrados": 0,
+        "pagos_revertidos": 0,
+        "pagamentos_cancelados": 11,
+        "comissao_ativa": 9524.12
+      }
+    },
+    {
+      "venda_duplicada_id": "e1220449-7207-4d62-b558-57004ae9cee6",
+      "cliente": "ALISSON RODRIGUES DO CARMO",
+      "corretor": "MATEUS GABRIEL DE OLIVEIRA",
+      "unidade": "1305 A",
+      "contratos_sienge_preservados": [
+        "382"
+      ],
+      "venda_sienge_ids_preservadas": [
+        "e476bbdb-88ce-464d-9238-ebbe6badb81b"
+      ],
+      "multiplos_contratos_sienge": false,
+      "parcelas_ativas_antes": 54,
+      "parcelas_pagas_antes": 0,
+      "comissao_ativa_antes": 31997.3,
+      "pagos_revertidos": 0,
+      "pagamentos_cancelados": 54,
+      "venda_excluida": 1,
+      "skipped_idempotent": 0,
+      "errors": [],
+      "finalizacao_pagamentos_restantes": {
+        "ativos_encontrados": 13,
+        "pagos_encontrados": 0,
+        "pagos_revertidos": 0,
+        "pagamentos_cancelados": 13,
+        "comissao_ativa": 7618.09
+      }
+    },
+    {
+      "venda_duplicada_id": "86488d6e-7ebb-46ec-8931-f77e6f1dc8eb",
+      "cliente": "Cristina Dos Santos",
+      "corretor": "ALECXANDER SOUZA E SILVA",
+      "unidade": "604 D",
+      "contratos_sienge_preservados": [
+        "384"
+      ],
+      "venda_sienge_ids_preservadas": [
+        "d77a7a35-7c36-450a-b4af-9648bc44adc7"
+      ],
+      "multiplos_contratos_sienge": false,
+      "parcelas_ativas_antes": 51,
+      "parcelas_pagas_antes": 0,
+      "comissao_ativa_antes": 29882.94,
+      "pagos_revertidos": 0,
+      "pagamentos_cancelados": 51,
+      "venda_excluida": 1,
+      "skipped_idempotent": 0,
+      "errors": [],
+      "finalizacao_pagamentos_restantes": {
+        "ativos_encontrados": 12,
+        "pagos_encontrados": 0,
+        "pagos_revertidos": 0,
+        "pagamentos_cancelados": 12,
+        "comissao_ativa": 7031.28
+      }
+    },
+    {
+      "venda_duplicada_id": "ff6997f6-fb32-4a7a-ac57-afb32d2c30ba",
+      "cliente": "DAIANE RODRIGUES APOLINÁRIO",
+      "corretor": "Felipe Madona",
+      "unidade": "1203 A",
+      "contratos_sienge_preservados": [
+        "376"
+      ],
+      "venda_sienge_ids_preservadas": [
+        "6edda208-cfca-4258-93f7-3051bcccb94f"
+      ],
+      "multiplos_contratos_sienge": false,
+      "parcelas_ativas_antes": 52,
+      "parcelas_pagas_antes": 0,
+      "comissao_ativa_antes": 29609.32,
+      "pagos_revertidos": 0,
+      "pagamentos_cancelados": 52,
+      "venda_excluida": 1,
+      "skipped_idempotent": 0,
+      "errors": [],
+      "finalizacao_pagamentos_restantes": {
+        "ativos_encontrados": 13,
+        "pagos_encontrados": 0,
+        "pagos_revertidos": 0,
+        "pagamentos_cancelados": 13,
+        "comissao_ativa": 7402.33
+      }
+    },
+    {
+      "venda_duplicada_id": "bd0483d9-e3a2-4c30-a010-d4eb93769972",
+      "cliente": "Felix Roman Munieweg",
+      "corretor": "Rodrigo Fernando Viapiana Parada",
+      "unidade": "1307 D",
+      "contratos_sienge_preservados": [
+        "391"
+      ],
+      "venda_sienge_ids_preservadas": [
+        "abd5b02f-8087-4aac-bb65-3c1f282b3e57"
+      ],
+      "multiplos_contratos_sienge": false,
+      "parcelas_ativas_antes": 56,
+      "parcelas_pagas_antes": 0,
+      "comissao_ativa_antes": 31729.68,
+      "pagos_revertidos": 0,
+      "pagamentos_cancelados": 56,
+      "venda_excluida": 1,
+      "skipped_idempotent": 0,
+      "errors": [],
+      "finalizacao_pagamentos_restantes": {
+        "ativos_encontrados": 13,
+        "pagos_encontrados": 0,
+        "pagos_revertidos": 0,
+        "pagamentos_cancelados": 13,
+        "comissao_ativa": 6182.41
+      }
+    },
+    {
+      "venda_duplicada_id": "18944c05-6807-4f6f-9c31-bfff7c1e6f3e",
+      "cliente": "JERONIMO JOSE DOS SANTOS JUNIOR",
+      "corretor": "Rodrigo Fernando Viapiana Parada",
+      "unidade": "1001 D",
+      "contratos_sienge_preservados": [
+        "284",
+        "383"
+      ],
+      "venda_sienge_ids_preservadas": [
+        "64ffc2fb-b265-41d3-b7d5-cc101d813220",
+        "572c2c6c-99ca-45ec-b7ec-ce925179fd1c"
+      ],
+      "multiplos_contratos_sienge": true,
+      "parcelas_ativas_antes": 52,
+      "parcelas_pagas_antes": 0,
+      "comissao_ativa_antes": 31056.04,
+      "pagos_revertidos": 0,
+      "pagamentos_cancelados": 52,
+      "venda_excluida": 1,
+      "skipped_idempotent": 0,
+      "errors": [],
+      "finalizacao_pagamentos_restantes": {
+        "ativos_encontrados": 13,
+        "pagos_encontrados": 0,
+        "pagos_revertidos": 0,
+        "pagamentos_cancelados": 13,
+        "comissao_ativa": 7761.73
+      }
+    },
+    {
+      "venda_duplicada_id": "a03e4c10-4a5b-4adf-b603-56d8cb73de3e",
+      "cliente": "NATHALIA GRANCONATO TEIXEIRA",
+      "corretor": "Felipe Madona",
+      "unidade": "507 A",
+      "contratos_sienge_preservados": [
+        "380"
+      ],
+      "venda_sienge_ids_preservadas": [
+        "54497681-10e3-4a1a-89d8-b3356fdec09a"
+      ],
+      "multiplos_contratos_sienge": false,
+      "parcelas_ativas_antes": 52,
+      "parcelas_pagas_antes": 0,
+      "comissao_ativa_antes": 20465.64,
+      "pagos_revertidos": 0,
+      "pagamentos_cancelados": 52,
+      "venda_excluida": 1,
+      "skipped_idempotent": 0,
+      "errors": [],
+      "finalizacao_pagamentos_restantes": {
+        "ativos_encontrados": 13,
+        "pagos_encontrados": 0,
+        "pagos_revertidos": 0,
+        "pagamentos_cancelados": 13,
+        "comissao_ativa": 5116.41
+      }
+    },
+    {
+      "venda_duplicada_id": "683dfeef-9e09-4f97-a315-498ec3416a6f",
+      "cliente": "Renan Da Silva Marinho",
+      "corretor": "CARLOS BRUNO NEGOCIOS IMOBILIARIOS LTDA",
+      "unidade": "1507 D",
+      "contratos_sienge_preservados": [
+        "430"
+      ],
+      "venda_sienge_ids_preservadas": [
+        "e41e24ca-3ceb-4642-86b6-7883249efa79"
+      ],
+      "multiplos_contratos_sienge": false,
+      "parcelas_ativas_antes": 50,
+      "parcelas_pagas_antes": 0,
+      "comissao_ativa_antes": 34342,
+      "pagos_revertidos": 0,
+      "pagamentos_cancelados": 50,
+      "venda_excluida": 1,
+      "skipped_idempotent": 0,
+      "errors": [],
+      "finalizacao_pagamentos_restantes": {
+        "ativos_encontrados": 10,
+        "pagos_encontrados": 0,
+        "pagos_revertidos": 0,
+        "pagamentos_cancelados": 10,
+        "comissao_ativa": 6868.4
+      }
+    },
+    {
+      "venda_duplicada_id": "db0e76dc-1eca-4410-bca6-35bf094bc9ba",
+      "cliente": "THIAGO DOS SANTOS CARVALHO BORGES",
+      "corretor": "Felipe Madona",
+      "unidade": "906 A",
+      "contratos_sienge_preservados": [
+        "385"
+      ],
+      "venda_sienge_ids_preservadas": [
+        "6353bb51-3c58-49c9-8e9f-593ad6edc954"
+      ],
+      "multiplos_contratos_sienge": false,
+      "parcelas_ativas_antes": 52,
+      "parcelas_pagas_antes": 0,
+      "comissao_ativa_antes": 30491.76,
+      "pagos_revertidos": 0,
+      "pagamentos_cancelados": 52,
+      "venda_excluida": 1,
+      "skipped_idempotent": 0,
+      "errors": [],
+      "finalizacao_pagamentos_restantes": {
+        "ativos_encontrados": 13,
+        "pagos_encontrados": 0,
+        "pagos_revertidos": 0,
+        "pagamentos_cancelados": 13,
+        "comissao_ativa": 7622.94
+      }
+    },
+    {
+      "venda_duplicada_id": "1d4cae3b-2430-447a-ad1b-2c5cf6853403",
+      "cliente": "ZAQUIEL DA SILVA",
+      "corretor": "ALECXANDER SOUZA E SILVA",
+      "unidade": "1606 C",
+      "contratos_sienge_preservados": [
+        "420"
+      ],
+      "venda_sienge_ids_preservadas": [
+        "f3b338a7-2ed6-434b-92ba-c8fd254208b3"
+      ],
+      "multiplos_contratos_sienge": false,
+      "parcelas_ativas_antes": 51,
+      "parcelas_pagas_antes": 1,
+      "comissao_ativa_antes": 32690.97,
+      "pagos_revertidos": 1,
+      "pagamentos_cancelados": 51,
+      "venda_excluida": 1,
+      "skipped_idempotent": 0,
+      "errors": [],
+      "finalizacao_pagamentos_restantes": {
+        "ativos_encontrados": 12,
+        "pagos_encontrados": 1,
+        "pagos_revertidos": 1,
+        "pagamentos_cancelados": 12,
+        "comissao_ativa": 9921.99
+      }
+    }
+  ],
+  "errors": [],
+  "totais_aplicados": {
+    "pagos_revertidos": 25,
+    "pagamentos_cancelados": 1303,
+    "vendas_excluidas": 25,
+    "errors": 0
+  }
+}
