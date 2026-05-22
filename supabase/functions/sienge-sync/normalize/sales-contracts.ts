@@ -250,26 +250,47 @@ function montarPagamentos(vendaId: string, p: PaymentData, valorVenda: number, p
  *
  * Chave de match: (venda_id, tipo, numero_parcela)
  * - pago  → NÃO altera valor/tipo/data_pagamento/comissao_gerada
- * - pendente existente → update valor, data_prevista, snapshots, comissao_gerada
+ * - pendente existente -> update valor/snapshots/comissao_gerada; preserva data_prevista existente
  * - novo → insert
  * ---------------------------------------------------------------- */
+
+interface PagamentoExistente {
+  id: string
+  tipo: string
+  numero_parcela: number | null
+  status: string | null
+  valor: number | null
+  data_prevista: string | null
+  comissao_gerada: number | null
+  fator_comissao_aplicado: number | null
+  percentual_comissao_total: number | null
+}
+
+function moneyChanged(a: unknown, b: unknown): boolean {
+  return Math.abs((Number(a) || 0) - (Number(b) || 0)) > 0.005
+}
+
+function numberChanged(a: unknown, b: unknown): boolean {
+  return Math.abs((Number(a) || 0) - (Number(b) || 0)) > 0.000001
+}
 
 async function mergePagamentos(vendaId: string, desejados: PagamentoRow[]): Promise<{ ins: number; upd: number; skip: number }> {
   const supa = publicClient()
   const { data: existentes, error } = await supa
     .from("pagamentos_prosoluto")
-    .select("id, tipo, numero_parcela, status")
+    .select("id, tipo, numero_parcela, status, valor, data_prevista, comissao_gerada, fator_comissao_aplicado, percentual_comissao_total")
     .eq("venda_id", vendaId)
   if (error) throw new Error(`pagamentos.select: ${error.message}`)
 
   const key = (tipo: string, np: number | null) => `${tipo}|${np ?? "null"}`
-  const mapEx = new Map<string, { id: string; status: string | null }>()
-  for (const r of existentes ?? []) mapEx.set(key(r.tipo, r.numero_parcela), { id: r.id, status: r.status })
+  const mapEx = new Map<string, PagamentoExistente>()
+  for (const r of existentes ?? []) mapEx.set(key(r.tipo, r.numero_parcela), r as PagamentoExistente)
 
   const now = new Date().toISOString()
   const toInsert: Record<string, unknown>[] = []
   const updatesPendente: Array<{ id: string; body: Record<string, unknown> }> = []
   const updatesPago: Array<{ id: string; body: Record<string, unknown> }> = []
+  let ins = 0, upd = 0, skip = 0
 
   for (const d of desejados) {
     const k = key(d.tipo, d.numero_parcela)
@@ -279,30 +300,22 @@ async function mergePagamentos(vendaId: string, desejados: PagamentoRow[]): Prom
     } else if (ex.status === "pago") {
       // Migration 017: não tocar em valor/tipo/data_pagamento/comissao_gerada.
       // Snapshots de fator/percentual são editáveis (migration 018).
-      updatesPago.push({
-        id: ex.id,
-        body: {
-          fator_comissao_aplicado: d.fator_comissao_aplicado,
-          percentual_comissao_total: d.percentual_comissao_total,
-          updated_at: now,
-        },
-      })
+      const body: Record<string, unknown> = {}
+      if (numberChanged(ex.fator_comissao_aplicado, d.fator_comissao_aplicado)) body.fator_comissao_aplicado = d.fator_comissao_aplicado
+      if (numberChanged(ex.percentual_comissao_total, d.percentual_comissao_total)) body.percentual_comissao_total = d.percentual_comissao_total
+      if (Object.keys(body).length > 0) updatesPago.push({ id: ex.id, body: { ...body, updated_at: now } })
+      else skip++
     } else {
-      updatesPendente.push({
-        id: ex.id,
-        body: {
-          valor: d.valor,
-          data_prevista: d.data_prevista,
-          comissao_gerada: d.comissao_gerada,
-          fator_comissao_aplicado: d.fator_comissao_aplicado,
-          percentual_comissao_total: d.percentual_comissao_total,
-          updated_at: now,
-        },
-      })
+      const body: Record<string, unknown> = {}
+      if (moneyChanged(ex.valor, d.valor)) body.valor = d.valor
+      if (!ex.data_prevista && d.data_prevista) body.data_prevista = d.data_prevista
+      if (moneyChanged(ex.comissao_gerada, d.comissao_gerada)) body.comissao_gerada = d.comissao_gerada
+      if (numberChanged(ex.fator_comissao_aplicado, d.fator_comissao_aplicado)) body.fator_comissao_aplicado = d.fator_comissao_aplicado
+      if (numberChanged(ex.percentual_comissao_total, d.percentual_comissao_total)) body.percentual_comissao_total = d.percentual_comissao_total
+      if (Object.keys(body).length > 0) updatesPendente.push({ id: ex.id, body: { ...body, updated_at: now } })
+      else skip++
     }
   }
-
-  let ins = 0, upd = 0, skip = 0
 
   if (toInsert.length > 0) {
     const { error: e } = await supa.from("pagamentos_prosoluto").insert(toInsert)
