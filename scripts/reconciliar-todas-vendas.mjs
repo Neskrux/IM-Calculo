@@ -7,7 +7,7 @@
 //   BA, B1..B8    -> balao
 //   (CA = financiamento, BN/PU/PA/CV ignorados — nao entram no pro-soluto)
 //
-// Por venda, match por (tipo_interno, valor, data_prevista):
+// Por venda, match primeiro por sienge_installment_id; fallback por (tipo_interno, valor, data_prevista):
 //   - ativa casa     -> popula sienge_installment_id; Sienge pago + banco
 //                       pendente -> marca pago
 //   - so cancelada   -> reativa (pago se Sienge pago, senao pendente)
@@ -90,7 +90,7 @@ for (let i = 0; i < vendaIds.length; i += 50) {
   for (let f = 0; ; f += PAGE) {
     const { data } = await supa
       .from('pagamentos_prosoluto')
-      .select('id, venda_id, numero_parcela, tipo, valor, data_prevista, data_pagamento, status, sienge_installment_id')
+      .select('id, venda_id, numero_parcela, tipo, valor, data_prevista, data_pagamento, status, sienge_bill_id, sienge_installment_id')
       .in('venda_id', chunk).order('id').range(f, f + PAGE - 1)
     if (!data?.length) break
     pagamentos.push(...data)
@@ -179,14 +179,19 @@ for (const v of vendas) {
     const siengePago = !!pd && recebido > 0
     const instId = String(i.installmentId ?? i.installmentNumber ?? '')
     const k = chave(i._tipoInterno, valor, due)
-    const cand = pags.filter((p) => !usados.has(p.id) && chave(p.tipo, p.valor, p.data_prevista) === k)
+    const porInstallmentId = instId
+      ? pags.find((p) => !usados.has(p.id) && String(p.sienge_installment_id || '') === instId)
+      : null
+    const cand = porInstallmentId
+      ? [porInstallmentId]
+      : pags.filter((p) => !usados.has(p.id) && chave(p.tipo, p.valor, p.data_prevista) === k)
     const ativa = cand.find((p) => p.status !== 'cancelado')
     const cancelada = cand.find((p) => p.status === 'cancelado')
 
     if (ativa) {
       usados.add(ativa.id)
       if (siengePago && ativa.status === 'pendente') acoes.marcar_pago.push({ id: ativa.id, data_pagamento: pd, instId })
-      else if (ativa.sienge_installment_id !== instId) acoes.popular.push({ id: ativa.id, instId })
+      else if (String(ativa.sienge_installment_id || '') !== instId) acoes.popular.push({ id: ativa.id, instId })
     } else if (cancelada) {
       usados.add(cancelada.id)
       acoes.reativar.push({ id: cancelada.id, novo_status: siengePago ? 'pago' : 'pendente', data_pagamento: siengePago ? pd : null, instId })
