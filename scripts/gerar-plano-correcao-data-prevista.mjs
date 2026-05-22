@@ -156,6 +156,23 @@ for (let i = 0; i < vendasIds.length; i += CHUNK_VENDAS) {
 }
 console.log(`\n  total pagamentos: ${pagamentos.length}`)
 
+const vendasAmbiguas = new Set()
+const pagamentosPorVenda = new Map()
+for (const p of pagamentos) {
+  if (!pagamentosPorVenda.has(p.venda_id)) pagamentosPorVenda.set(p.venda_id, [])
+  pagamentosPorVenda.get(p.venda_id).push(p)
+}
+for (const [vendaId, pags] of pagamentosPorVenda.entries()) {
+  const seen = new Map()
+  for (const p of pags) {
+    if (p.status === 'cancelado') continue
+    const k = `${p.tipo}__${Number(p.valor || 0).toFixed(2)}__${p.data_prevista || ''}`
+    seen.set(k, (seen.get(k) || 0) + 1)
+  }
+  if ([...seen.values()].some((n) => n > 1)) vendasAmbiguas.add(vendaId)
+}
+console.log(`  vendas ambiguas por duplicidade ativa (ignoradas): ${vendasAmbiguas.size}`)
+
 // 5. Cruzar — pra cada pagamento, encontrar (dueDate Sienge) e calcular drift
 console.log('\n=== 4. Cruzando local vs Sienge cache ===')
 const TIPOS_SIENGE_PM = ['PM']
@@ -171,11 +188,26 @@ const sem_match = []
 const ja_ok = []
 const drift_grande = [] // > 365d — suspeito
 const aplicaveis = []
+const vendas_ambiguas = []
+const vendasAmbiguasRegistradas = new Set()
 
 for (const p of pagamentos) {
   if (p.numero_parcela == null) continue // sinal e similares — pula
   if (!TIPOS_LOCAL_PM.includes(p.tipo)) continue // foco em parcela_entrada
   if (p.status === 'cancelado') continue
+  if (vendasAmbiguas.has(p.venda_id)) {
+    if (!vendasAmbiguasRegistradas.has(p.venda_id)) {
+      const v = vendasMeta.get(p.venda_id)
+      vendas_ambiguas.push({
+        venda_id: p.venda_id,
+        contract: v?.sienge_contract_id,
+        unidade: v?.unidade,
+        motivo: 'duplicidade ativa em pagamentos_prosoluto; exige reconciliacao/revisao humana',
+      })
+      vendasAmbiguasRegistradas.add(p.venda_id)
+    }
+    continue
+  }
   const v = vendasMeta.get(p.venda_id)
   if (!v?.sienge_receivable_bill_id) continue
 
@@ -252,6 +284,7 @@ console.log(`  pagamentos com drift > 365d (revisao humana): ${drift_grande.leng
 console.log(`  pagamentos sem match no Sienge income:        ${sem_match.length}`)
 console.log(`  pagamentos ja ok (drift <= 1d):               ${ja_ok.length}`)
 console.log(`  vendas afetadas pelo plano:                   ${porVenda.size}`)
+console.log(`  vendas ambiguas ignoradas:                    ${vendas_ambiguas.length}`)
 
 const data = new Date().toISOString().slice(0, 10)
 const outFile = `docs/plano-correcao-data-prevista-${data}.json`
@@ -272,6 +305,7 @@ const out = {
     sem_match: sem_match.length,
     ja_ok: ja_ok.length,
     vendas_afetadas_plano: porVenda.size,
+    vendas_ambiguas_ignoradas: vendas_ambiguas.length,
   },
   resumo_por_venda: [...porVenda.entries()].map(([vid, arr]) => ({
     venda_id: vid,
@@ -284,6 +318,7 @@ const out = {
   plano: planoUpdate,
   drift_grande_amostras: drift_grande.slice(0, 30),
   sem_match_amostras: sem_match.slice(0, 30),
+  vendas_ambiguas,
 }
 writeFileSync(outFile, JSON.stringify(out, null, 2))
 console.log(`\nSalvo: ${outFile} (${(JSON.stringify(out).length / 1024).toFixed(0)} KB)`)
