@@ -56,8 +56,12 @@ const REST_BASE = `https://api.sienge.com.br/${SIENGE_SUBDOMAIN}/public/api/v1`
 // seguranca — a quota diaria de 100 ja eh a restricao dominante la.
 const MAX_RPM = Number(env.SIENGE_MAX_RPM || 15)
 const WINDOW_MS = 60_000
-const REQUEST_TIMEOUT_MS = 60_000
-const MAX_RETRIES = 3
+const REQUEST_TIMEOUT_MS = Number(env.SIENGE_REQUEST_TIMEOUT_MS || 60_000)
+const MAX_RETRIES = Number(env.SIENGE_MAX_RETRIES || (env.GITHUB_ACTIONS ? 6 : 3))
+const RETRY_5XX_BASE_MS = Number(env.SIENGE_5XX_BASE_DELAY_MS || (env.GITHUB_ACTIONS ? 15_000 : 2_000))
+const RETRY_5XX_MAX_MS = Number(env.SIENGE_5XX_MAX_DELAY_MS || (env.GITHUB_ACTIONS ? 90_000 : 10_000))
+const RETRY_NETWORK_BASE_MS = Number(env.SIENGE_NETWORK_BASE_DELAY_MS || (env.GITHUB_ACTIONS ? 10_000 : 2_000))
+const RETRY_NETWORK_MAX_MS = Number(env.SIENGE_NETWORK_MAX_DELAY_MS || (env.GITHUB_ACTIONS ? 60_000 : 10_000))
 
 // Quota diaria REST v1 (referencia .claude/rules/sincronizacao-sienge.md).
 // Bulk-data nao tem quota. Sienge nao expoe contador via API, entao
@@ -205,7 +209,7 @@ export async function siengeGet({ path, query = {}, noCache = false }) {
         const body = await res.text().catch(() => '')
         lastErr = new Error(`Sienge ${res.status}: ${body.slice(0, 300)}`)
         console.warn(`[${res.status}] ${path} attempt=${attempt} body=${body.slice(0, 150)}`)
-        const backoff = Math.min(2000 * attempt, 10_000)
+        const backoff = Math.min(RETRY_5XX_BASE_MS * attempt, RETRY_5XX_MAX_MS)
         await new Promise((r) => setTimeout(r, backoff))
         continue
       }
@@ -222,7 +226,7 @@ export async function siengeGet({ path, query = {}, noCache = false }) {
       clearTimeout(timer)
       lastErr = err
       console.warn(`[err] ${path} attempt=${attempt} err=${String(err).slice(0, 200)}`)
-      const backoff = Math.min(2000 * attempt, 10_000)
+      const backoff = Math.min(RETRY_NETWORK_BASE_MS * attempt, RETRY_NETWORK_MAX_MS)
       await new Promise((r) => setTimeout(r, backoff))
     }
   }

@@ -40,10 +40,14 @@ on:
     - cron: '30 0 * * *' # 21:30 BRT
   workflow_dispatch: # disparo manual via aba Actions
 
+concurrency:
+  group: reconciliacao-pagamentos-prod
+  cancel-in-progress: false
+
 jobs:
   reconciliar:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -57,16 +61,19 @@ jobs:
       - name: Install deps
         run: npm ci
 
+      - name: Ensure Sienge cache dir
+        run: mkdir -p .sienge-cache
+
       # Persiste o cache /bulk-data/v1/income entre runs do cron.
       # Combinado com SIENGE_CACHE_TTL_MS=7d e stale-on-error no
       # _sienge-http.mjs, garante que o job sobrevive a quota diaria
       # do Sienge: o income so e baixado de verdade ~1x/semana.
       - name: Restore Sienge cache
         id: sienge-cache
-        uses: actions/cache@v4
+        uses: actions/cache/restore@v4
         with:
           path: .sienge-cache
-          key: sienge-cache-${{ github.run_id }}
+          key: sienge-cache-${{ github.run_id }}-${{ github.run_attempt }}
           restore-keys: |
             sienge-cache-
 
@@ -79,7 +86,7 @@ jobs:
           SIENGE_CACHE_SEED_URL: ${{ secrets.SIENGE_CACHE_SEED_URL }}
         run: |
           if [ -z "$SIENGE_CACHE_SEED_URL" ]; then
-            echo "SIENGE_CACHE_SEED_URL ausente, pulando seed. Stale-on-error vai sustentar caso o Sienge falhe."
+            echo "SIENGE_CACHE_SEED_URL ausente, pulando seed. Se o cache restaurado estiver vazio e o Sienge falhar, o job vai falhar com erro claro."
             exit 0
           fi
           if [ -d .sienge-cache ] && [ -n "$(ls -A .sienge-cache 2>/dev/null)" ]; then
@@ -103,6 +110,9 @@ jobs:
           SIENGE_USERNAME: ${{ secrets.SIENGE_USERNAME }}
           SIENGE_PASSWORD: ${{ secrets.SIENGE_PASSWORD }}
           SIENGE_SUBDOMAIN: ${{ secrets.SIENGE_SUBDOMAIN }}
+          SIENGE_MAX_RETRIES: '6'
+          SIENGE_5XX_BASE_DELAY_MS: '15000'
+          SIENGE_5XX_MAX_DELAY_MS: '90000'
           SIENGE_CACHE_TTL_MS: '604800000' # 7d — reusa cache persistido; re-baixa income ~1x/semana
 
       - name: Aplicar plano
@@ -123,6 +133,9 @@ jobs:
           SIENGE_USERNAME: ${{ secrets.SIENGE_USERNAME }}
           SIENGE_PASSWORD: ${{ secrets.SIENGE_PASSWORD }}
           SIENGE_SUBDOMAIN: ${{ secrets.SIENGE_SUBDOMAIN }}
+          SIENGE_MAX_RETRIES: '6'
+          SIENGE_5XX_BASE_DELAY_MS: '15000'
+          SIENGE_5XX_MAX_DELAY_MS: '90000'
           SIENGE_CACHE_TTL_MS: '604800000' # 7d — reusa cache persistido
 
       # Etapa 3 — sincroniza sales-contracts + receivable-bills via edge
@@ -148,6 +161,23 @@ jobs:
             docs/reconciliacao-geral-*.json
             docs/sincronizacao-vendas-sienge-*.json
           retention-days: 30
+
+      - name: Check Sienge cache contents
+        id: sienge-cache-state
+        if: always()
+        run: |
+          if find .sienge-cache -type f -name '*.json' | grep -q .; then
+            echo "has-files=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has-files=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Save Sienge cache
+        if: always() && steps.sienge-cache-state.outputs.has-files == 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: .sienge-cache
+          key: sienge-cache-${{ github.run_id }}-${{ github.run_attempt }}
 
       # Falha ruidosa: se houver erros em qualquer report, marca o job como
       # failed pra disparar email do GitHub Actions.
