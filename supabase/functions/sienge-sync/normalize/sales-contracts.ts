@@ -282,6 +282,17 @@ async function mergePagamentos(vendaId: string, desejados: PagamentoRow[]): Prom
     .eq("venda_id", vendaId)
   if (error) throw new Error(`pagamentos.select: ${error.message}`)
 
+  const activeKeys = new Map<string, number>()
+  for (const r of existentes ?? []) {
+    if (r.status === "cancelado") continue
+    const k = `${r.tipo}|${Number(r.valor || 0).toFixed(2)}|${r.data_prevista || ""}`
+    activeKeys.set(k, (activeKeys.get(k) || 0) + 1)
+  }
+  if ([...activeKeys.values()].some((n) => n > 1)) {
+    log("warn", "pagamentos_merge_skip_ambiguous", { vendaId, reason: "duplicidade ativa em pagamentos_prosoluto" })
+    return { ins: 0, upd: 0, skip: existentes?.length ?? 0 }
+  }
+
   const key = (tipo: string, np: number | null) => `${tipo}|${np ?? "null"}`
   const mapEx = new Map<string, PagamentoExistente>()
   for (const r of existentes ?? []) mapEx.set(key(r.tipo, r.numero_parcela), r as PagamentoExistente)
