@@ -1,9 +1,9 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useLayoutEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { supabase } from '../lib/supabase'
 import { Mail, Lock, ArrowRight, AlertCircle, ChevronLeft, ChevronRight, Building2, Palette } from 'lucide-react'
-import logo from '../imgs/logo.png'
+import brandLogo from '../imgs/brasao.png'
 import LoginTransition from '../components/LoginTransition'
 import '../styles/Login.css'
 
@@ -28,6 +28,83 @@ const Login = () => {
 
   // Tema de cores (gold ou blue)
   const [theme, setTheme] = useState('gold')
+
+  // Intro: mede o slot da marca dentro do form para a logo flutuante
+  // viajar do centro da tela ate a posicao exata, em qualquer viewport.
+  const logoSlotRef = useRef(null)
+  const [introReady, setIntroReady] = useState(false)
+
+  useLayoutEffect(() => {
+    let cancelled = false
+    let raf1 = 0
+    let raf2 = 0
+    let resizeObserver = null
+    let fallbackTimer = 0
+
+    const measure = () => {
+      const el = logoSlotRef.current
+      if (!el || cancelled) return
+      const rect = el.getBoundingClientRect()
+      if (!rect.width || !rect.height) return
+      const targetX = rect.left + rect.width / 2
+      const targetY = rect.top + rect.height / 2
+      const targetWidth = rect.width
+      const targetHeight = rect.height
+      const viewportW = document.documentElement.clientWidth || window.innerWidth
+      const viewportH = window.visualViewport?.height || document.documentElement.clientHeight || window.innerHeight
+      const fromX = viewportW / 2 - targetX
+      const fromY = viewportH / 2 - targetY
+
+      const root = document.documentElement
+      root.style.setProperty('--intro-center-x', `${viewportW / 2}px`)
+      root.style.setProperty('--intro-center-y', `${viewportH / 2}px`)
+      root.style.setProperty('--floating-logo-x', `${targetX}px`)
+      root.style.setProperty('--floating-logo-y', `${targetY}px`)
+      root.style.setProperty('--floating-logo-width', `${targetWidth}px`)
+      root.style.setProperty('--floating-logo-height', `${targetHeight}px`)
+      root.style.setProperty('--floating-logo-from-x', `${fromX}px`)
+      root.style.setProperty('--floating-logo-from-y', `${fromY}px`)
+      setIntroReady(true)
+    }
+
+    const scheduleMeasure = () => {
+      cancelAnimationFrame(raf1)
+      cancelAnimationFrame(raf2)
+      raf1 = requestAnimationFrame(() => {
+        raf2 = requestAnimationFrame(measure)
+      })
+    }
+
+    scheduleMeasure()
+
+    const el = logoSlotRef.current
+    if (el && 'ResizeObserver' in window) {
+      resizeObserver = new ResizeObserver(scheduleMeasure)
+      resizeObserver.observe(el)
+      const container = el.closest('.login-glass-container')
+      if (container) resizeObserver.observe(container)
+    }
+
+    if (el?.decode) el.decode().then(scheduleMeasure).catch(() => {})
+    if (document.fonts?.ready) document.fonts.ready.then(scheduleMeasure).catch(() => {})
+    fallbackTimer = window.setTimeout(scheduleMeasure, 450)
+
+    const onResize = () => scheduleMeasure()
+    window.addEventListener('resize', onResize)
+    window.addEventListener('orientationchange', onResize)
+    window.visualViewport?.addEventListener('resize', onResize)
+
+    return () => {
+      cancelled = true
+      cancelAnimationFrame(raf1)
+      cancelAnimationFrame(raf2)
+      window.clearTimeout(fallbackTimer)
+      resizeObserver?.disconnect()
+      window.removeEventListener('resize', onResize)
+      window.removeEventListener('orientationchange', onResize)
+      window.visualViewport?.removeEventListener('resize', onResize)
+    }
+  }, [])
 
   // Carrossel de empreendimentos
   const [empreendimentos, setEmpreendimentos] = useState([])
@@ -303,7 +380,13 @@ const Login = () => {
   }
 
   return (
-    <div className={`premium-login theme-${theme}`}>
+    <div className={`premium-login login-with-intro theme-${theme} ${introReady ? 'intro-ready' : ''}`}>
+      {/* Intro: cortina preta que dissolve */}
+      <div className="login-intro" aria-hidden="true" />
+
+      {/* Marca unica: nasce no centro e pousa no topo do form */}
+      <img src={brandLogo} alt="" className="floating-logo" aria-hidden="true" />
+
       {/* Carrossel de Background */}
       <div className="carousel-container">
         {empreendimentos.map((emp, index) => (
@@ -384,16 +467,15 @@ const Login = () => {
         <div className="login-branding">
           <div className="logo-container">
             <div className="logo-glow"></div>
-            <img src={logo} alt="IM Incorporadora" className="login-logo" />
+            {/* Slot invisivel: define a posicao/tamanho final da floating-logo */}
+            <img ref={logoSlotRef} src={brandLogo} alt="" className="login-logo login-brand-logo login-logo-slot" aria-hidden="true" />
           </div>
-          <div className="brand-text">
-            <h1>IM Incorporadora</h1>
+          <div className="brand-text brand-text-minimal">
             <div className="brand-divider">
               <span className="line"></span>
               <span className="diamond">◆</span>
               <span className="line"></span>
             </div>
-            <p className="brand-tagline">Sistema de Comissões</p>
           </div>
         </div>
 

@@ -59,6 +59,8 @@
 .premium-login {
   position: relative;
   min-height: 100vh;
+  min-height: 100svh;
+  min-height: 100dvh;
   width: 100%;
   display: flex;
   align-items: center;
@@ -67,6 +69,8 @@
   overflow: hidden;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   background: var(--premium-black);
+  --intro-duration: 3.25s;
+  --intro-logo-scale: 1.35;
 }
 
 /* ============================================
@@ -352,7 +356,17 @@
   box-shadow: 
     0 25px 50px -12px rgba(0, 0, 0, 0.5),
     0 0 0 1px rgba(255, 255, 255, 0.03) inset;
-  animation: glass-appear 1s var(--transition-smooth) 0.3s both;
+  animation: glass-appear 1.2s cubic-bezier(0.22, 1, 0.36, 1) 1.8s both;
+}
+
+.premium-login.login-with-intro .login-glass-container {
+  animation: none;
+  opacity: 0;
+  transform: none;
+}
+
+.premium-login.login-with-intro.intro-ready .login-glass-container {
+  animation: glass-appear-stable 1.05s cubic-bezier(0.22, 1, 0.36, 1) 2.05s forwards;
 }
 
 @keyframes glass-appear {
@@ -363,6 +377,17 @@
   to {
     opacity: 1;
     transform: translateX(0) scale(1);
+  }
+}
+
+@keyframes glass-appear-stable {
+  from {
+    opacity: 0;
+    filter: blur(10px);
+  }
+  to {
+    opacity: 1;
+    filter: blur(0);
   }
 }
 
@@ -424,9 +449,37 @@
   animation: logo-float 6s ease-in-out infinite;
 }
 
+.premium-login .login-brand-logo {
+  width: 330px;
+  height: 118px;
+  object-fit: cover;
+  object-position: 50% 56%;
+  filter: brightness(1.15) contrast(1.05);
+}
+
 @keyframes logo-float {
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-8px); }
+}
+
+.brand-text {
+  animation: brand-emerge 0.8s cubic-bezier(0.22, 1, 0.36, 1) 3.4s both;
+  will-change: transform, opacity;
+}
+
+.premium-login.login-with-intro .brand-text {
+  animation: none;
+  opacity: 0;
+  transform: translateY(10px);
+}
+
+.premium-login.login-with-intro.intro-ready .brand-text {
+  animation: brand-emerge 0.72s cubic-bezier(0.22, 1, 0.36, 1) 2.9s forwards;
+}
+
+@keyframes brand-emerge {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
 .brand-text h1 {
@@ -792,48 +845,264 @@
   }
 }
 
+/* ============================================
+   MOBILE — Bottom Sheet Layout
+   ============================================ */
 @media (max-width: 768px) {
   .premium-login {
-    padding: 16px;
+    padding: 0;
+    align-items: stretch;
+    justify-content: stretch;
   }
 
+  /* Carrossel ocupa o topo da tela (~38% da viewport) */
+  .carousel-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: auto;
+    height: 38vh;
+  }
+
+  /* Overlay mais sutil: vinheta de cima pra baixo (a sheet cobre o resto) */
+  .slide-overlay {
+    background:
+      linear-gradient(to bottom,
+        rgba(0, 0, 0, 0.1) 0%,
+        rgba(0, 0, 0, 0.35) 65%,
+        rgba(10, 10, 10, 0.85) 100%);
+  }
+
+  .fallback-slide .slide-overlay {
+    background:
+      radial-gradient(ellipse at top, var(--accent-subtle) 0%, transparent 60%),
+      linear-gradient(to bottom, rgba(10, 10, 10, 0.4), rgba(10, 10, 10, 0.9));
+  }
+
+  /* Re-expor info do empreendimento no topo (em vez de esconder) */
+  .empreendimento-info {
+    display: block;
+    position: fixed;
+    top: calc(env(safe-area-inset-top, 0px) + 16px);
+    left: 18px;
+    right: 70px;  /* deixa espaço pro theme-toggle */
+    bottom: auto;
+    z-index: 25;
+    animation: fade-in-soft 0.6s var(--transition-smooth);
+  }
+
+  @keyframes fade-in-soft {
+    from { opacity: 0; transform: translateY(-8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .info-badge {
+    padding: 5px 10px;
+    margin-bottom: 6px;
+  }
+
+  .info-badge span {
+    font-size: 9px;
+    letter-spacing: 1.5px;
+  }
+
+  .info-nome {
+    font-size: 20px;
+    margin-bottom: 0;
+    letter-spacing: 0;
+  }
+
+  .info-logo {
+    max-width: 130px;
+    max-height: 52px;
+    filter: drop-shadow(0 2px 12px rgba(0, 0, 0, 0.7));
+  }
+
+  /* Indicadores do carrossel: linha de pontinhos logo abaixo do topo */
+  .carousel-indicators {
+    position: fixed;
+    top: calc(38vh - 20px);
+    bottom: auto;
+    left: 50%;
+    transform: translateX(-50%);
+    gap: 6px;
+    z-index: 26;
+  }
+
+  .indicator {
+    width: 16px;
+    height: 3px;
+    border-radius: 2px;
+    background: rgba(255, 255, 255, 0.35);
+  }
+
+  .indicator.active {
+    background: rgba(255, 255, 255, 0.85);
+  }
+
+  /* Esconde setas (gesto/auto-play bastam no mobile) */
+  .carousel-btn {
+    display: none;
+  }
+
+  /* ============ Bottom Sheet ============ */
   .login-glass-container {
-    padding: 32px 24px;
+    position: relative;
+    width: 100%;
     max-width: 100%;
-    border-radius: 20px;
+    margin-top: 34vh;
+    min-height: 66vh;
+    padding: 32px 22px calc(28px + env(safe-area-inset-bottom, 0px));
+    background: rgba(8, 8, 8, 0.94);
+    backdrop-filter: blur(28px) saturate(140%);
+    -webkit-backdrop-filter: blur(28px) saturate(140%);
+    border: none;
+    border-radius: 28px 28px 0 0;
+    box-shadow: 0 -20px 60px -10px rgba(0, 0, 0, 0.6);
+    z-index: 10;
+    animation: sheet-rise 1.2s cubic-bezier(0.22, 1, 0.36, 1) 1.8s both;
+  }
+
+  @keyframes sheet-rise {
+    from { opacity: 0; transform: translateY(40px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Borda gradiente no topo (substitui o ::before do desktop) */
+  .login-glass-container::before {
+    inset: 0;
+    border-radius: 28px 28px 0 0;
+    padding: 1px 0 0 0;
+    background: linear-gradient(90deg,
+      transparent 0%,
+      var(--accent-glow) 50%,
+      transparent 100%);
+  }
+
+  /* Handle decorativo no topo (estilo iOS sheet) */
+  .login-glass-container::after {
+    content: '';
+    position: absolute;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 40px;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.18);
+    border-radius: 999px;
+  }
+
+  /* Branding compacto */
+  .login-branding {
+    margin-top: 4px;
+    margin-bottom: 26px;
+  }
+
+  .logo-container {
+    margin-bottom: 22px;
   }
 
   .login-logo {
-    width: 80px;
-    height: 80px;
+    width: 64px;
+    height: 64px;
+  }
+
+  .premium-login .login-brand-logo {
+    width: min(250px, 74vw);
+    height: 88px;
+  }
+
+  .logo-glow {
+    inset: -10px;
+    filter: blur(14px);
   }
 
   .brand-text h1 {
-    font-size: 24px;
+    font-size: 22px;
+    letter-spacing: 0.5px;
+    margin-bottom: 10px;
+  }
+
+  .brand-divider {
+    gap: 12px;
+    margin-bottom: 10px;
+  }
+
+  .brand-divider .line {
+    width: 32px;
+  }
+
+  .brand-divider .diamond {
+    font-size: 6px;
   }
 
   .brand-tagline {
     font-size: 10px;
     letter-spacing: 3px;
+    opacity: 0.85;
+  }
+
+  /* Form mais espaçado pra toque */
+  .login-form {
+    gap: 18px;
+  }
+
+  .input-group label {
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    margin-bottom: 8px;
   }
 
   .input-wrapper input {
-    padding: 14px 14px 14px 46px;
-    font-size: 14px;
+    padding: 15px 16px 15px 46px;
+    font-size: 15px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.04);
   }
 
+  /* CTA preenchida (mais convidativa no mobile) */
   .login-button {
-    padding: 16px 24px;
+    background: var(--btn-gradient);
+    color: var(--btn-text);
+    border: none;
+    padding: 17px 24px;
     font-size: 13px;
+    letter-spacing: 2px;
+    box-shadow: 0 8px 24px var(--btn-shadow);
   }
 
-  .carousel-indicators {
-    bottom: 24px;
-    gap: 8px;
+  .login-button::before {
+    display: none;
   }
 
-  .indicator {
-    width: 24px;
+  .login-button:hover:not(:disabled),
+  .login-button:active:not(:disabled) {
+    background: var(--btn-gradient-hover);
+    color: var(--btn-text);
+    transform: translateY(-1px);
+  }
+
+  .forgot-password-link {
+    color: rgba(255, 255, 255, 0.55);
+    font-size: 13px;
+    margin-top: 8px;
+  }
+
+  .forgot-password-link:hover,
+  .forgot-password-link:active {
+    color: var(--accent);
+  }
+
+  .login-footer {
+    flex-direction: column;
+    gap: 4px;
+    margin-top: 20px;
+    padding-top: 18px;
+  }
+
+  .login-footer .separator {
+    display: none;
   }
 
   .particles {
@@ -841,71 +1110,62 @@
   }
 }
 
+/* Refinamentos pra telas pequenas */
 @media (max-width: 480px) {
-  .premium-login {
-    padding: 0;
-    align-items: flex-end;
+  .carousel-container {
+    height: 34vh;
+  }
+
+  .empreendimento-info {
+    top: calc(env(safe-area-inset-top, 0px) + 12px);
+    left: 16px;
+    right: 64px;
+  }
+
+  .info-nome {
+    font-size: 18px;
+  }
+
+  .info-logo {
+    max-width: 110px;
+    max-height: 44px;
+  }
+
+  .carousel-indicators {
+    top: calc(34vh - 18px);
   }
 
   .login-glass-container {
-    border-radius: 24px 24px 0 0;
-    max-width: 100%;
-    margin: 0;
-    padding: 32px 20px 40px;
-    background: rgba(10, 10, 10, 0.9);
-  }
-
-  .login-glass-container::before {
-    border-radius: 25px 25px 0 0;
+    margin-top: 30vh;
+    min-height: 70vh;
+    padding: 30px 20px calc(24px + env(safe-area-inset-bottom, 0px));
   }
 
   .login-branding {
-    margin-bottom: 32px;
-  }
-
-  .logo-container {
-    margin-bottom: 16px;
+    margin-bottom: 22px;
   }
 
   .login-logo {
-    width: 70px;
-    height: 70px;
+    width: 58px;
+    height: 58px;
+  }
+
+  .premium-login .login-brand-logo {
+    width: min(226px, 76vw);
+    height: 80px;
   }
 
   .brand-text h1 {
-    font-size: 22px;
-  }
-
-  .brand-divider {
+    font-size: 20px;
     margin-bottom: 8px;
   }
 
   .brand-divider .line {
-    width: 30px;
+    width: 26px;
   }
 
   .login-form {
-    gap: 20px;
-  }
-
-  .input-group label {
-    font-size: 10px;
-  }
-
-  .login-footer {
-    flex-direction: column;
-    gap: 4px;
-    margin-top: 24px;
-    padding-top: 20px;
-  }
-
-  .login-footer .separator {
-    display: none;
-  }
-
-  .carousel-indicators {
-    bottom: auto;
-    top: 20px;
+    gap: 16px;
   }
 }
 
@@ -952,13 +1212,19 @@
 
 @media (max-width: 768px) {
   .theme-toggle {
-    top: auto;
-    bottom: 24px;
-    right: 24px;
-    padding: 8px 12px;
-    font-size: 10px;
+    top: calc(env(safe-area-inset-top, 0px) + 14px);
+    bottom: auto;
+    right: 14px;
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    border-radius: 50%;
+    justify-content: center;
+    background: rgba(10, 10, 10, 0.55);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
   }
-  
+
   .theme-toggle span {
     display: none;
   }
@@ -1130,5 +1396,141 @@
 .forgot-btn-primary {
   flex: 1.4;
   margin-top: 0 !important;
+}
+
+/* ============================================
+   INTRO + FLOATING LOGO (logo única, estilo C6)
+   - .login-intro: cortina preta que dissolve
+   - .floating-logo: única logo do app. Parte do centro
+     da viewport (grande), viaja até o "slot" invisível
+     dentro do form e fica lá. JS mede o slot e seta as
+     CSS vars usadas pelo keyframe.
+   ============================================ */
+
+.login-intro {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: var(--premium-black);
+  pointer-events: none;
+  opacity: 1;
+  will-change: opacity;
+}
+
+.premium-login.login-with-intro.intro-ready .login-intro {
+  animation: intro-bg-dissolve var(--intro-duration) cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes intro-bg-dissolve {
+  0%, 58% { opacity: 1; }
+  100% {
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+
+/* Slot dentro do form: ocupa espaço no layout mas é invisível.
+   Serve como referência de posição final pra floating-logo. */
+.login-logo-slot {
+  visibility: hidden;
+  animation: none !important;
+}
+
+/* Logo unica, visivel em todos os momentos.
+   Posicao final vem das CSS vars setadas pelo JS;
+   posicao inicial e offset (centro da viewport) + scale up. */
+.floating-logo {
+  position: fixed;
+  top: var(--floating-logo-y, 50vh);
+  left: var(--floating-logo-x, 50vw);
+  width: var(--floating-logo-width, 250px);
+  height: var(--floating-logo-height, 94px);
+  margin-top: calc(var(--floating-logo-height, 94px) * -0.5);
+  margin-left: calc(var(--floating-logo-width, 250px) * -0.5);
+  z-index: 1001;
+  object-fit: cover;
+  object-position: 50% 56%;
+  pointer-events: none;
+  opacity: 0;
+  will-change: transform, opacity, filter;
+}
+
+.premium-login.login-with-intro.intro-ready .floating-logo {
+  animation: logo-journey var(--intro-duration) cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+@keyframes logo-journey {
+  0% {
+    transform:
+      translate(var(--floating-logo-from-x, 0px), var(--floating-logo-from-y, 0px))
+      scale(var(--intro-logo-scale, 1.35));
+    opacity: 0;
+    filter: brightness(1.15) drop-shadow(0 0 36px var(--accent-glow));
+  }
+  10% {
+    opacity: 1;
+  }
+  56% {
+    transform:
+      translate(var(--floating-logo-from-x, 0px), var(--floating-logo-from-y, 0px))
+      scale(var(--intro-logo-scale, 1.35));
+    opacity: 1;
+    filter: brightness(1.15) drop-shadow(0 0 36px var(--accent-glow));
+  }
+  100% {
+    transform: translate(0, 0) scale(1);
+    opacity: 1;
+    filter: brightness(1.1) drop-shadow(0 0 0 transparent);
+  }
+}
+
+/* Em telas pequenas, scale inicial um pouco menor pra caber bem */
+@media (max-width: 480px) {
+  @keyframes logo-journey {
+    0% {
+      transform:
+        translate(var(--floating-logo-from-x, 0px), var(--floating-logo-from-y, 0px))
+        scale(1.28);
+      opacity: 0;
+      filter: brightness(1.15) drop-shadow(0 0 30px var(--accent-glow));
+    }
+    10% { opacity: 1; }
+    56% {
+      transform:
+        translate(var(--floating-logo-from-x, 0px), var(--floating-logo-from-y, 0px))
+        scale(1.28);
+      opacity: 1;
+      filter: brightness(1.15) drop-shadow(0 0 30px var(--accent-glow));
+    }
+    100% {
+      transform: translate(0, 0) scale(1);
+      opacity: 1;
+      filter: brightness(1.1) drop-shadow(0 0 0 transparent);
+    }
+  }
+}
+
+/* Respeita usuários que pedem menos movimento — intro instantânea */
+@media (prefers-reduced-motion: reduce) {
+  .login-intro {
+    animation: none !important;
+    opacity: 0;
+    visibility: hidden;
+  }
+
+  .floating-logo {
+    animation: none !important;
+    opacity: 1;
+    transform: none;
+    filter: brightness(1.1);
+  }
+
+  .login-glass-container,
+  .logo-container,
+  .brand-text {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
 }
 
