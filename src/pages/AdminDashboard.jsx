@@ -8,7 +8,7 @@ import autoTable from 'jspdf-autotable'
 import { 
   Users, DollarSign, TrendingUp, Plus, Edit2, Trash2, 
   Search, Filter, LogOut, Menu, X, ChevronDown, Save, Eye,
-  Calculator, Calendar, User, Briefcase, CheckCircle, Clock, UserPlus, Mail, Lock, Percent, Building, PlusCircle, CreditCard, Check, Upload, FileText, Trash, UserCircle, Phone, MapPin, Camera, Download, FileDown, LayoutDashboard, ChevronLeft, ChevronRight, PanelLeftClose, PanelLeft, AlertCircle, RefreshCw, ClipboardList, CheckCircle2, XCircle, MessageSquare
+  Calculator, Calendar, User, Briefcase, CheckCircle, Clock, UserPlus, Mail, Lock, Percent, Building, PlusCircle, CreditCard, Check, Upload, FileText, Trash, UserCircle, Phone, MapPin, Camera, Download, FileDown, LayoutDashboard, ChevronLeft, ChevronRight, PanelLeftClose, PanelLeft, AlertCircle, RefreshCw, ClipboardList, CheckCircle2, XCircle, MessageSquare, ShieldAlert, Radar, ArrowRight, ListChecks
 } from 'lucide-react'
 import logo from '../imgs/logo.png'
 import Ticker from '../components/Ticker'
@@ -84,6 +84,414 @@ const COLUNAS_IMUTAVEIS_PAGO = [
   'tipo', 'status', 'comissao_gerada',
   'created_at', 'valor', 'data_pagamento',
 ]
+
+const AUDITORIA_TIPOS = {
+  duplicidade_parcela: { label: 'Parcela duplicada', tone: 'danger' },
+  duplicidade_cancelada: { label: 'Cancelada + ativa', tone: 'warning' },
+  baixa_futura: { label: 'Baixa futura', tone: 'danger' },
+  baixa_adiantada: { label: 'Baixa adiantada', tone: 'warning' },
+  sequencia_faltando: { label: 'Sequencia faltando', tone: 'danger' },
+  unidade_duplicada: { label: 'Unidade duplicada', tone: 'danger' },
+  unidade_parecida: { label: 'Unidade parecida', tone: 'warning' },
+  corretor_divergente: { label: 'Corretor divergente', tone: 'warning' },
+  comissao_divergente: { label: 'Comissao divergente', tone: 'danger' },
+  venda_sem_pagamento: { label: 'Venda sem parcelas', tone: 'warning' },
+}
+
+const AUDITORIA_SEVERIDADE = {
+  alta: { label: 'Alta', priority: 3 },
+  media: { label: 'Media', priority: 2 },
+  baixa: { label: 'Baixa', priority: 1 },
+}
+
+const normalizeAuditText = (value = '') =>
+  String(value)
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+
+const getVendaClienteNome = (venda) =>
+  venda?.cliente?.nome || venda?.cliente_nome || venda?.nome_cliente || 'Cliente nao informado'
+
+const getVendaCorretorNome = (venda) =>
+  venda?.corretor?.nome || venda?.corretor_nome || 'Corretor nao informado'
+
+const getVendaEmpreendimentoNome = (venda) =>
+  venda?.empreendimento?.nome || venda?.empreendimento_nome || 'Empreendimento nao informado'
+
+const getVendaUnidadeLabel = (venda) => {
+  const bloco = venda?.bloco ? `Bloco ${venda.bloco} - ` : ''
+  return `${bloco}Unidade ${venda?.unidade || '-'}`
+}
+
+const getAuditPaymentKey = (pag) =>
+  `${pag?.tipo || 'sem_tipo'}|${pag?.numero_parcela ?? 'sem_numero'}`
+
+const getAuditMonth = (dateStr) => {
+  const data = parseDataLocal(dateStr)
+  return data ? data.getMonth() + 1 : null
+}
+
+const extractAuditMonths = (text) => {
+  const normalized = normalizeAuditText(text)
+  const months = new Set()
+  const monthNames = {
+    janeiro: 1, jan: 1,
+    fevereiro: 2, fev: 2,
+    marco: 3, mar: 3,
+    abril: 4, abr: 4,
+    maio: 5, mai: 5,
+    junho: 6, jun: 6,
+    julho: 7, jul: 7,
+    agosto: 8, ago: 8,
+    setembro: 9, set: 9,
+    outubro: 10, out: 10,
+    novembro: 11, nov: 11,
+    dezembro: 12, dez: 12,
+  }
+
+  for (const [name, month] of Object.entries(monthNames)) {
+    if (normalized.includes(name)) months.add(month)
+  }
+
+  const monthPattern = /\bmes\s*(\d{1,2})\b|\bm\s*(\d{1,2})\b/g
+  let match
+  while ((match = monthPattern.exec(normalized)) !== null) {
+    const month = Number(match[1] || match[2])
+    if (month >= 1 && month <= 12) months.add(month)
+  }
+
+  return Array.from(months)
+}
+
+const detectAuditIntentTypes = (text) => {
+  const normalized = normalizeAuditText(text)
+  const types = new Set()
+  if (!normalized) return []
+
+  if (/(duplic|igual|repetid|mesma unidade|unidade iguais|corretores diferentes)/.test(normalized)) {
+    types.add('duplicidade_parcela')
+    types.add('unidade_duplicada')
+    types.add('unidade_parecida')
+  }
+  if (/(baixa|baixad|pago|pagou|pagamento)/.test(normalized) && /(futur|mes 6|mes 7|junho|julho|adiant)/.test(normalized)) {
+    types.add('baixa_futura')
+    types.add('baixa_adiantada')
+  }
+  if (/(falt|nao tem|sem parcela|sumiu|ausente|mes 5|maio)/.test(normalized)) {
+    types.add('sequencia_faltando')
+    types.add('venda_sem_pagamento')
+  }
+  if (/(interno|externo|corretor|percent|porcent|20|22|20 08)/.test(normalized)) {
+    types.add('corretor_divergente')
+    types.add('comissao_divergente')
+  }
+  if (/(cancelad|cancelado)/.test(normalized)) {
+    types.add('duplicidade_cancelada')
+  }
+
+  return Array.from(types)
+}
+
+const createAuditIssue = (issue) => {
+  const venda = issue.venda
+  const textParts = [
+    issue.type,
+    AUDITORIA_TIPOS[issue.type]?.label,
+    issue.title,
+    issue.description,
+    issue.severity,
+    getVendaEmpreendimentoNome(venda),
+    getVendaCorretorNome(venda),
+    getVendaClienteNome(venda),
+    getVendaUnidadeLabel(venda),
+    ...(issue.tags || []),
+  ]
+
+  return {
+    ...issue,
+    id: issue.id || `${issue.type}-${issue.venda?.id || 'sem-venda'}-${issue.ref || Math.random().toString(36).slice(2)}`,
+    searchableText: normalizeAuditText(textParts.join(' ')),
+  }
+}
+
+const addAuditIssue = (issues, issue) => {
+  issues.push(createAuditIssue(issue))
+}
+
+const buildAuditIssues = ({ vendas = [], pagamentos = [] }) => {
+  const issues = []
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+
+  const vendaMap = new Map(vendas.map((venda) => [String(venda.id), venda]))
+  const pagamentosPorVenda = new Map()
+  const allByVendaKey = new Map()
+  const activeByVendaKey = new Map()
+
+  for (const pag of pagamentos) {
+    if (!pag?.venda_id) continue
+    const vendaId = String(pag.venda_id)
+    if (!pagamentosPorVenda.has(vendaId)) pagamentosPorVenda.set(vendaId, [])
+    pagamentosPorVenda.get(vendaId).push(pag)
+
+    const key = `${vendaId}|${getAuditPaymentKey(pag)}`
+    if (!allByVendaKey.has(key)) allByVendaKey.set(key, [])
+    allByVendaKey.get(key).push(pag)
+    if (pag.status !== 'cancelado') {
+      if (!activeByVendaKey.has(key)) activeByVendaKey.set(key, [])
+      activeByVendaKey.get(key).push(pag)
+    }
+  }
+
+  for (const [key, group] of activeByVendaKey.entries()) {
+    if (group.length <= 1) continue
+    const [vendaId] = key.split('|')
+    const venda = vendaMap.get(vendaId) || group[0]?.venda
+    addAuditIssue(issues, {
+      type: 'duplicidade_parcela',
+      severity: 'alta',
+      venda,
+      pagamentos: group,
+      ref: key,
+      title: `${group.length} parcelas ativas com a mesma identidade`,
+      description: `Mesmo tipo e numero de parcela aparecem ativos mais de uma vez em ${getVendaUnidadeLabel(venda)}.`,
+      tags: ['parcela', 'duplicada', 'ativa'],
+      months: group.flatMap((p) => [getAuditMonth(p.data_prevista), getAuditMonth(p.data_pagamento)]).filter(Boolean),
+    })
+  }
+
+  for (const [key, group] of allByVendaKey.entries()) {
+    const ativos = group.filter((p) => p.status !== 'cancelado')
+    const cancelados = group.filter((p) => p.status === 'cancelado')
+    if (!ativos.length || !cancelados.length) continue
+    const [vendaId] = key.split('|')
+    const venda = vendaMap.get(vendaId) || group[0]?.venda
+    addAuditIssue(issues, {
+      type: 'duplicidade_cancelada',
+      severity: 'media',
+      venda,
+      pagamentos: group,
+      ref: key,
+      title: 'Parcela cancelada convive com parcela ativa igual',
+      description: `${cancelados.length} cancelada(s) e ${ativos.length} ativa(s) com o mesmo tipo/numero. Pode ser historico correto, mas vale revisar se apareceu na tela.`,
+      tags: ['cancelado', 'duplicidade', 'historico'],
+      months: group.flatMap((p) => [getAuditMonth(p.data_prevista), getAuditMonth(p.data_pagamento)]).filter(Boolean),
+    })
+  }
+
+  for (const pag of pagamentos) {
+    if (pag.status === 'cancelado') continue
+    const venda = vendaMap.get(String(pag.venda_id)) || pag.venda
+    const dataPagamento = parseDataLocal(pag.data_pagamento)
+    const dataPrevista = parseDataLocal(pag.data_prevista)
+
+    if (pag.status === 'pago' && dataPagamento) {
+      const dataPagamentoDia = new Date(dataPagamento)
+      dataPagamentoDia.setHours(0, 0, 0, 0)
+      if (dataPagamentoDia > today) {
+        addAuditIssue(issues, {
+          type: 'baixa_futura',
+          severity: 'alta',
+          venda,
+          pagamentos: [pag],
+          ref: pag.id,
+          title: 'Baixa marcada com data futura',
+          description: `Parcela ${pag.numero_parcela || '-'} esta como paga em ${formatDataBR(pag.data_pagamento)}, depois da data de hoje.`,
+          tags: ['baixa', 'futura', 'pago'],
+          months: [getAuditMonth(pag.data_pagamento), getAuditMonth(pag.data_prevista)].filter(Boolean),
+        })
+      }
+
+      if (dataPrevista) {
+        const diasAntecipados = Math.round((dataPrevista - dataPagamentoDia) / (1000 * 60 * 60 * 24))
+        if (diasAntecipados >= 20) {
+          addAuditIssue(issues, {
+            type: 'baixa_adiantada',
+            severity: 'media',
+            venda,
+            pagamentos: [pag],
+            ref: pag.id,
+            title: 'Baixa muito antes da data prevista',
+            description: `Parcela ${pag.numero_parcela || '-'} foi baixada ${diasAntecipados} dias antes da previsao. Pode ser adiantamento real ou drift de sync.`,
+            tags: ['baixa', 'adiantada', 'sync'],
+            months: [getAuditMonth(pag.data_pagamento), getAuditMonth(pag.data_prevista)].filter(Boolean),
+          })
+        }
+      }
+    }
+
+    const valor = parseFloat(pag.valor) || 0
+    const fator = parseFloat(pag.fator_comissao_aplicado) || 0
+    const comissao = parseFloat(pag.comissao_gerada) || 0
+    if (valor > 0 && fator > 0 && comissao > 0) {
+      const esperada = valor * fator
+      const diferenca = Math.abs(esperada - comissao)
+      if (diferenca > Math.max(0.1, esperada * 0.01)) {
+        addAuditIssue(issues, {
+          type: 'comissao_divergente',
+          severity: 'alta',
+          venda,
+          pagamentos: [pag],
+          ref: pag.id,
+          title: 'Comissao gravada diverge do fator aplicado',
+          description: `Parcela ${pag.numero_parcela || '-'} tem diferenca de R$ ${diferenca.toFixed(2)} entre fator e comissao gravada.`,
+          tags: ['comissao', 'fator', 'percentual'],
+          months: [getAuditMonth(pag.data_prevista), getAuditMonth(pag.data_pagamento)].filter(Boolean),
+        })
+      }
+    }
+  }
+
+  for (const venda of vendas) {
+    const vendaId = String(venda.id)
+    const pagamentosVenda = pagamentosPorVenda.get(vendaId) || []
+    const ativos = pagamentosVenda.filter((p) => p.status !== 'cancelado')
+    const valorProSoluto = parseFloat(venda.valor_pro_soluto) || 0
+    if (valorProSoluto > 0 && ativos.length === 0) {
+      addAuditIssue(issues, {
+        type: 'venda_sem_pagamento',
+        severity: 'media',
+        venda,
+        pagamentos: [],
+        ref: venda.id,
+        title: 'Venda com pro-soluto sem parcelas ativas',
+        description: `Venda possui pro-soluto de R$ ${valorProSoluto.toFixed(2)}, mas nao tem pagamentos ativos vinculados.`,
+        tags: ['sem parcelas', 'pro soluto', 'pagamentos'],
+      })
+    }
+
+    const porTipo = new Map()
+    for (const pag of ativos) {
+      if (!['parcela', 'parcela_entrada', 'balao'].includes(pag.tipo)) continue
+      const numero = Number(pag.numero_parcela)
+      if (!numero || numero < 1) continue
+      const key = pag.tipo
+      if (!porTipo.has(key)) porTipo.set(key, new Set())
+      porTipo.get(key).add(numero)
+    }
+
+    for (const [tipo, numeros] of porTipo.entries()) {
+      const lista = Array.from(numeros).sort((a, b) => a - b)
+      const max = lista[lista.length - 1]
+      if (!max || max < 3) continue
+      const faltando = []
+      for (let n = 1; n <= max; n++) {
+        if (!numeros.has(n)) faltando.push(n)
+      }
+      if (faltando.length) {
+        addAuditIssue(issues, {
+          type: 'sequencia_faltando',
+          severity: 'alta',
+          venda,
+          pagamentos: ativos.filter((p) => p.tipo === tipo),
+          ref: `${venda.id}-${tipo}`,
+          title: `Sequencia de ${tipo.replace('_', ' ')} com lacuna`,
+          description: `Faltam as parcelas ${faltando.slice(0, 8).join(', ')} antes da parcela ${max}.`,
+          tags: ['sequencia', 'faltando', 'parcela'],
+          missingNumbers: faltando,
+        })
+      }
+    }
+
+    const tipoVenda = normalizeAuditText(venda.tipo_corretor)
+    const tipoCorretor = normalizeAuditText(venda.corretor?.tipo_corretor)
+    if (tipoVenda && tipoCorretor && tipoVenda !== tipoCorretor) {
+      addAuditIssue(issues, {
+        type: 'corretor_divergente',
+        severity: 'media',
+        venda,
+        pagamentos: ativos,
+        ref: venda.id,
+        title: 'Tipo do corretor diverge da venda',
+        description: `Venda esta como ${venda.tipo_corretor}, mas cadastro do corretor esta como ${venda.corretor?.tipo_corretor}.`,
+        tags: ['corretor', 'interno', 'externo', 'tipo'],
+      })
+    }
+  }
+
+  const exactUnitGroups = new Map()
+  const digitUnitGroups = new Map()
+  for (const venda of vendas) {
+    const unidadeRaw = String(venda.unidade || '').trim()
+    if (!unidadeRaw) continue
+    const empKey = String(venda.empreendimento_id || 'sem-emp')
+    const blocoKey = normalizeAuditText(venda.bloco || 'sem-bloco')
+    const unitKey = normalizeAuditText(unidadeRaw).replace(/\s/g, '')
+    const digitsKey = unidadeRaw.replace(/\D/g, '')
+    const exactKey = `${empKey}|${blocoKey}|${unitKey}`
+    if (!exactUnitGroups.has(exactKey)) exactUnitGroups.set(exactKey, [])
+    exactUnitGroups.get(exactKey).push(venda)
+    if (digitsKey) {
+      const digitKey = `${empKey}|${blocoKey}|${digitsKey}`
+      if (!digitUnitGroups.has(digitKey)) digitUnitGroups.set(digitKey, [])
+      digitUnitGroups.get(digitKey).push(venda)
+    }
+  }
+
+  for (const [key, group] of exactUnitGroups.entries()) {
+    if (group.length <= 1) continue
+    const corretoresIds = new Set(group.map((v) => v.corretor_id).filter(Boolean))
+    const clientesIds = new Set(group.map((v) => v.cliente_id).filter(Boolean))
+    addAuditIssue(issues, {
+      type: 'unidade_duplicada',
+      severity: corretoresIds.size > 1 || clientesIds.size > 1 ? 'alta' : 'media',
+      venda: group[0],
+      vendasRelacionadas: group,
+      ref: key,
+      title: `${group.length} vendas para a mesma unidade`,
+      description: `Mesmo empreendimento/bloco/unidade aparece em ${group.length} vendas. Corretores: ${corretoresIds.size || 1}. Clientes: ${clientesIds.size || 1}.`,
+      tags: ['unidade', 'duplicada', 'corretores diferentes'],
+    })
+  }
+
+  for (const [key, group] of digitUnitGroups.entries()) {
+    const unidades = new Set(group.map((v) => normalizeAuditText(v.unidade).replace(/\s/g, '')))
+    if (group.length <= 1 || unidades.size <= 1) continue
+    addAuditIssue(issues, {
+      type: 'unidade_parecida',
+      severity: 'media',
+      venda: group[0],
+      vendasRelacionadas: group,
+      ref: key,
+      title: 'Unidades parecidas pelo numero',
+      description: `Unidades com o mesmo numero podem estar faltando letra ou sufixo: ${Array.from(unidades).slice(0, 6).join(', ')}.`,
+      tags: ['unidade', 'letra', 'parecida'],
+    })
+  }
+
+  return issues.sort((a, b) => {
+    const sev = (AUDITORIA_SEVERIDADE[b.severity]?.priority || 0) - (AUDITORIA_SEVERIDADE[a.severity]?.priority || 0)
+    if (sev !== 0) return sev
+    return (b.pagamentos?.length || b.vendasRelacionadas?.length || 0) - (a.pagamentos?.length || a.vendasRelacionadas?.length || 0)
+  })
+}
+
+const scoreAuditIssue = (issue, reportText) => {
+  const query = normalizeAuditText(reportText)
+  if (!query) return 1
+
+  const intentTypes = detectAuditIntentTypes(query)
+  const queryMonths = extractAuditMonths(query)
+  let score = 0
+
+  if (intentTypes.includes(issue.type)) score += 8
+  if (issue.searchableText.includes(query)) score += 6
+
+  const words = query.split(' ').filter((word) => word.length >= 3)
+  for (const word of words) {
+    if (issue.searchableText.includes(word)) score += 1
+  }
+
+  if (queryMonths.length && issue.months?.some((month) => queryMonths.includes(month))) {
+    score += 4
+  }
+
+  return score
+}
 
 /**
  * Verifica se uma venda possui ao menos uma parcela auditada (status='pago').
@@ -443,6 +851,10 @@ const AdminDashboard = () => {
     dataFim: '',
     buscaVenda: ''
   })
+
+  const [auditoriaRelato, setAuditoriaRelato] = useState('')
+  const [auditoriaTipoFiltro, setAuditoriaTipoFiltro] = useState('todos')
+  const [auditoriaSeveridadeFiltro, setAuditoriaSeveridadeFiltro] = useState('todos')
   
   // Filtros para Corretores
   const [filtrosCorretores, setFiltrosCorretores] = useState({
@@ -4996,6 +5408,29 @@ const AdminDashboard = () => {
     return matchBusca && matchFgts && matchComplemento
   })
 
+  const auditoriaIssues = useMemo(() => buildAuditIssues({ vendas, pagamentos }), [vendas, pagamentos])
+
+  const auditoriaResumo = useMemo(() => {
+    return auditoriaIssues.reduce((acc, issue) => {
+      acc.total += 1
+      acc[issue.severity] = (acc[issue.severity] || 0) + 1
+      acc.porTipo[issue.type] = (acc.porTipo[issue.type] || 0) + 1
+      return acc
+    }, { total: 0, alta: 0, media: 0, baixa: 0, porTipo: {} })
+  }, [auditoriaIssues])
+
+  const auditoriaResultados = useMemo(() => {
+    return auditoriaIssues
+      .map(issue => ({ ...issue, matchScore: scoreAuditIssue(issue, auditoriaRelato) }))
+      .filter(issue => auditoriaTipoFiltro === 'todos' || issue.type === auditoriaTipoFiltro)
+      .filter(issue => auditoriaSeveridadeFiltro === 'todos' || issue.severity === auditoriaSeveridadeFiltro)
+      .filter(issue => !normalizeAuditText(auditoriaRelato) || issue.matchScore > 0)
+      .sort((a, b) => {
+        if (b.matchScore !== a.matchScore) return b.matchScore - a.matchScore
+        return (AUDITORIA_SEVERIDADE[b.severity]?.priority || 0) - (AUDITORIA_SEVERIDADE[a.severity]?.priority || 0)
+      })
+  }, [auditoriaIssues, auditoriaRelato, auditoriaTipoFiltro, auditoriaSeveridadeFiltro])
+
   // Quando seleciona um corretor na venda, atualiza o tipo automaticamente
   const handleCorretorChange = (corretorId) => {
     const corretor = corretores.find(c => c.id === corretorId)
@@ -5017,6 +5452,16 @@ const AdminDashboard = () => {
       tipo_corretor: tipo,
       percentual_corretor: defaultPercentual
     })
+  }
+
+  const abrirVendaAuditoria = (venda) => {
+    if (!venda?.id) return
+    const vendaCompleta = vendas.find(v => String(v.id) === String(venda.id)) || venda
+    setSelectedItem(vendaCompleta)
+    setModalType('visualizar-venda')
+    setAbaVisualizarVenda('detalhes')
+    setShowModal(true)
+    fetchPagamentosVisualizacao(vendaCompleta.id)
   }
 
 
@@ -5221,6 +5666,17 @@ const AdminDashboard = () => {
             <CreditCard size={20} />
             <span>Pagamentos</span>
           </button>
+          <button
+            className={`nav-item ${activeTab === 'auditoria' ? 'active' : ''}`}
+            onClick={() => navigate('/admin/auditoria')}
+            title="Auditoria"
+          >
+            <ShieldAlert size={20} />
+            <span>Auditoria</span>
+            {auditoriaResumo.alta > 0 && (
+              <span className="nav-badge">{auditoriaResumo.alta}</span>
+            )}
+          </button>
           <button 
             className={`nav-item ${activeTab === 'clientes' ? 'active' : ''}`}
             onClick={() => navigate('/admin/clientes')}
@@ -5328,6 +5784,7 @@ const AdminDashboard = () => {
             {activeTab === 'corretores' && 'Corretores'}
             {activeTab === 'empreendimentos' && 'Empreendimentos'}
             {activeTab === 'pagamentos' && 'Acompanhamento de Pagamentos'}
+            {activeTab === 'auditoria' && 'Central de Auditoria'}
             {activeTab === 'clientes' && 'Cadastro de Clientes'}
             {activeTab === 'relatorios' && 'Relatórios'}
             {activeTab === 'preview-pdf' && 'Ver PDF'}
@@ -7280,6 +7737,234 @@ const AdminDashboard = () => {
                 )}
               </>
             )}
+          </div>
+        )}
+
+        {activeTab === 'auditoria' && (
+          <div className="auditoria-page">
+            <section className="auditoria-hero">
+              <div>
+                <div className="auditoria-eyebrow">
+                  <Radar size={16} />
+                  Similaridade de erros
+                </div>
+                <h2>Reporte um erro e encontre casos parecidos</h2>
+                <p>
+                  Descreva o que a ADM viu. O sistema cruza o relato com vendas,
+                  parcelas, baixas, unidades e snapshots de comissao para apontar
+                  ocorrencias semelhantes.
+                </p>
+              </div>
+              <div className="auditoria-health-card">
+                <span className="health-label">Saude atual</span>
+                <strong>{auditoriaResumo.total === 0 ? 'Sem alertas' : `${auditoriaResumo.total} alertas`}</strong>
+                <small>{auditoriaResumo.alta} alta / {auditoriaResumo.media} media / {auditoriaResumo.baixa} baixa</small>
+              </div>
+            </section>
+
+            <section className="auditoria-report-card">
+              <div className="auditoria-report-header">
+                <div>
+                  <h3>Relato do erro</h3>
+                  <p>Use a linguagem natural da mensagem recebida. Ex.: "tem baixa do mes 6 e nao tem parcela do mes 5".</p>
+                </div>
+                <button
+                  className="btn-secondary"
+                  onClick={() => {
+                    setAuditoriaRelato('')
+                    setAuditoriaTipoFiltro('todos')
+                    setAuditoriaSeveridadeFiltro('todos')
+                  }}
+                >
+                  Limpar
+                </button>
+              </div>
+              <textarea
+                className="auditoria-textarea"
+                value={auditoriaRelato}
+                onChange={(e) => setAuditoriaRelato(e.target.value)}
+                placeholder="Cole aqui o relato da ADM ou descreva o problema..."
+                rows={4}
+              />
+              <div className="auditoria-sugestoes">
+                {[
+                  'unidade duplicada com corretores diferentes',
+                  'baixa futura no mes 6 sem cliente pagar adiantado',
+                  'nao tem parcela do mes 5',
+                  'corretor interno continua calculando como externo',
+                  'percentual ou comissao do corretor esta errado',
+                ].map((sugestao) => (
+                  <button
+                    key={sugestao}
+                    type="button"
+                    onClick={() => setAuditoriaRelato(sugestao)}
+                  >
+                    {sugestao}
+                  </button>
+                ))}
+              </div>
+            </section>
+
+            <section className="auditoria-metrics">
+              <div className="auditoria-metric danger">
+                <ShieldAlert size={22} />
+                <span>Alta prioridade</span>
+                <strong>{auditoriaResumo.alta}</strong>
+              </div>
+              <div className="auditoria-metric warning">
+                <AlertCircle size={22} />
+                <span>Revisar</span>
+                <strong>{auditoriaResumo.media}</strong>
+              </div>
+              <div className="auditoria-metric">
+                <ListChecks size={22} />
+                <span>Resultados parecidos</span>
+                <strong>{auditoriaResultados.length}</strong>
+              </div>
+              <div className="auditoria-metric">
+                <Building size={22} />
+                <span>Vendas analisadas</span>
+                <strong>{vendas.length}</strong>
+              </div>
+            </section>
+
+            <section className="auditoria-workspace">
+              <aside className="auditoria-sidebar">
+                <div className="auditoria-filter-block">
+                  <label>Tipo de alerta</label>
+                  <select
+                    value={auditoriaTipoFiltro}
+                    onChange={(e) => setAuditoriaTipoFiltro(e.target.value)}
+                  >
+                    <option value="todos">Todos os tipos</option>
+                    {Object.entries(AUDITORIA_TIPOS).map(([type, meta]) => (
+                      <option key={type} value={type}>
+                        {meta.label} ({auditoriaResumo.porTipo[type] || 0})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="auditoria-filter-block">
+                  <label>Severidade</label>
+                  <select
+                    value={auditoriaSeveridadeFiltro}
+                    onChange={(e) => setAuditoriaSeveridadeFiltro(e.target.value)}
+                  >
+                    <option value="todos">Todas</option>
+                    <option value="alta">Alta</option>
+                    <option value="media">Media</option>
+                    <option value="baixa">Baixa</option>
+                  </select>
+                </div>
+                <div className="auditoria-insight">
+                  <strong>Como usar</strong>
+                  <p>Quando um erro aparecer no WhatsApp, cole o texto acima. Os cards mais parecidos sobem automaticamente.</p>
+                </div>
+              </aside>
+
+              <div className="auditoria-results">
+                <div className="auditoria-results-header">
+                  <div>
+                    <h3>Casos encontrados</h3>
+                    <p>
+                      {normalizeAuditText(auditoriaRelato)
+                        ? `${auditoriaResultados.length} caso(s) parecidos com o relato`
+                        : `${auditoriaResultados.length} alerta(s) automaticos`}
+                    </p>
+                  </div>
+                  <button className="btn-secondary" onClick={fetchData}>
+                    <RefreshCw size={16} />
+                    Atualizar dados
+                  </button>
+                </div>
+
+                {auditoriaResultados.length === 0 ? (
+                  <div className="auditoria-empty">
+                    <CheckCircle2 size={42} />
+                    <h3>Nenhum caso parecido encontrado</h3>
+                    <p>Tente descrever com cliente, unidade, mes, corretor ou palavra-chave do erro.</p>
+                  </div>
+                ) : (
+                  <div className="auditoria-list">
+                    {auditoriaResultados.slice(0, 80).map((issue) => {
+                      const meta = AUDITORIA_TIPOS[issue.type] || {}
+                      const venda = issue.venda
+                      const relacionadas = issue.vendasRelacionadas || []
+                      return (
+                        <article key={issue.id} className={`auditoria-card severity-${issue.severity}`}>
+                          <div className="auditoria-card-main">
+                            <div className="auditoria-card-top">
+                              <span className={`audit-type ${meta.tone || 'neutral'}`}>{meta.label || issue.type}</span>
+                              <span className={`audit-severity ${issue.severity}`}>{AUDITORIA_SEVERIDADE[issue.severity]?.label || issue.severity}</span>
+                              {normalizeAuditText(auditoriaRelato) && (
+                                <span className="audit-match">match {issue.matchScore}</span>
+                              )}
+                            </div>
+                            <h4>{issue.title}</h4>
+                            <p>{issue.description}</p>
+                            <div className="audit-context">
+                              <span><Building size={14} /> {getVendaEmpreendimentoNome(venda)}</span>
+                              <span><User size={14} /> {getVendaCorretorNome(venda)}</span>
+                              <span><Users size={14} /> {getVendaClienteNome(venda)}</span>
+                              <span><MapPin size={14} /> {getVendaUnidadeLabel(venda)}</span>
+                            </div>
+
+                            {issue.pagamentos?.length > 0 && (
+                              <div className="audit-payment-strip">
+                                {issue.pagamentos.slice(0, 4).map((pag) => (
+                                  <span key={pag.id || `${pag.tipo}-${pag.numero_parcela}`}>
+                                    {pag.tipo || 'parcela'} {pag.numero_parcela || ''}
+                                    {' - '}
+                                    {pag.status || 'sem status'}
+                                    {pag.data_pagamento ? ` - baixa ${formatDataBR(pag.data_pagamento)}` : ''}
+                                    {pag.data_prevista ? ` - prev. ${formatDataBR(pag.data_prevista)}` : ''}
+                                  </span>
+                                ))}
+                                {issue.pagamentos.length > 4 && <span>+{issue.pagamentos.length - 4} parcela(s)</span>}
+                              </div>
+                            )}
+
+                            {relacionadas.length > 1 && (
+                              <div className="audit-related-sales">
+                                {relacionadas.slice(0, 4).map((vendaRelacionada) => (
+                                  <button
+                                    type="button"
+                                    key={vendaRelacionada.id}
+                                    onClick={() => abrirVendaAuditoria(vendaRelacionada)}
+                                  >
+                                    {getVendaCorretorNome(vendaRelacionada)} / {getVendaClienteNome(vendaRelacionada)}
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                          <div className="auditoria-card-actions">
+                            {venda?.id && (
+                              <button className="btn-primary" onClick={() => abrirVendaAuditoria(venda)}>
+                                Abrir venda
+                                <ArrowRight size={16} />
+                              </button>
+                            )}
+                            <button
+                              className="btn-secondary"
+                              onClick={() => {
+                                setFiltrosPagamentos({
+                                  ...filtrosPagamentos,
+                                  buscaVenda: `${getVendaClienteNome(venda)} ${venda?.unidade || ''}`.trim()
+                                })
+                                navigate('/admin/pagamentos')
+                              }}
+                            >
+                              Ver parcelas
+                            </button>
+                          </div>
+                        </article>
+                      )
+                    })}
+                  </div>
+                )}
+              </div>
+            </section>
           </div>
         )}
 
