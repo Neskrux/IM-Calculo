@@ -5929,40 +5929,40 @@ const AdminDashboard = () => {
                 })}
               </div>
             </section>
-            <section style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12, padding: 16, margin: 16 }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+            <section className="sienge-pilot-card">
+              <div className="sienge-pilot-header">
                 <div>
-                  <strong style={{ fontSize: 14 }}>Sincronizar Sienge (backend - piloto)</strong>
-                  <div style={{ fontSize: 12, color: '#6b7280' }}>
+                  <strong>Sincronizar Sienge (backend - piloto)</strong>
+                  <div>
                     Dispara a Edge Function <code>sienge-sync</code>. Rode (1) primeiro, depois (2).
                   </div>
                 </div>
-                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                <div className="sienge-pilot-actions">
                   <button
                     onClick={() => dispararSiengeSync('sales-contracts')}
                     disabled={!!siengeSyncLoading}
-                    style={{ padding: '8px 14px', border: '1px solid #2563eb', background: '#2563eb', color: '#fff', borderRadius: 8, cursor: siengeSyncLoading ? 'not-allowed' : 'pointer', opacity: siengeSyncLoading ? 0.6 : 1 }}
+                    className="sync-action-btn sales"
                   >
                     {siengeSyncLoading === 'sales-contracts' ? 'Rodando…' : '1) Sales Contracts'}
                   </button>
                   <button
                     onClick={() => dispararSiengeSync('receivable-bills')}
                     disabled={!!siengeSyncLoading}
-                    style={{ padding: '8px 14px', border: '1px solid #059669', background: '#059669', color: '#fff', borderRadius: 8, cursor: siengeSyncLoading ? 'not-allowed' : 'pointer', opacity: siengeSyncLoading ? 0.6 : 1 }}
+                    className="sync-action-btn income"
                   >
                     {siengeSyncLoading === 'receivable-bills' ? 'Rodando…' : '2) Receivable Bills'}
                   </button>
                   <button
                     onClick={dispararProbeBulk}
                     disabled={!!siengeSyncLoading}
-                    style={{ padding: '8px 14px', border: '1px solid #a16207', background: '#a16207', color: '#fff', borderRadius: 8, cursor: siengeSyncLoading ? 'not-allowed' : 'pointer', opacity: siengeSyncLoading ? 0.6 : 1 }}
+                    className="sync-action-btn probe"
                   >
                     {siengeSyncLoading === 'probe' ? 'Sondando…' : '🔍 Probe Bulk Data'}
                   </button>
                 </div>
               </div>
               {siengeSyncProgress && (
-                <div style={{ marginTop: 12, background: '#eff6ff', color: '#1e3a8a', padding: 12, borderRadius: 8, fontSize: 12 }}>
+                <div className="sync-status-box info">
                   <div><strong>{siengeSyncProgress.entity}</strong> — chunk {siengeSyncProgress.chunk} (offset {siengeSyncProgress.offset}, limit {siengeSyncProgress.limit}) — {siengeSyncProgress.status}</div>
                   {siengeSyncProgress.total != null && (
                     <div>processados {Math.min(siengeSyncProgress.offset + (siengeSyncProgress.fetched || 0), siengeSyncProgress.total)}/{siengeSyncProgress.total} · hasMore={String(!!siengeSyncProgress.hasMore)} · budgetExhausted={String(!!siengeSyncProgress.budgetExhausted)} · apiCalls={siengeSyncProgress.apiCalls ?? '-'}</div>
@@ -5973,12 +5973,12 @@ const AdminDashboard = () => {
                 </div>
               )}
               {siengeSyncError && (
-                <pre style={{ marginTop: 12, background: '#fef2f2', color: '#991b1b', padding: 12, borderRadius: 8, fontSize: 12, whiteSpace: 'pre-wrap' }}>
+                <pre className="sync-status-box error">
                   {siengeSyncError}
                 </pre>
               )}
               {siengeSyncResult && (
-                <pre style={{ marginTop: 12, background: '#f9fafb', color: '#111827', padding: 12, borderRadius: 8, fontSize: 12, maxHeight: 320, overflow: 'auto' }}>
+                <pre className="sync-status-box result">
                   {JSON.stringify(siengeSyncResult, null, 2)}
                 </pre>
               )}

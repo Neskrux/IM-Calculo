@@ -6199,9 +6199,16 @@
   .corretor-shell .menu-toggle {
     width: 40px;
     height: 40px;
-    border-radius: 10px;
-    background: rgba(201, 169, 98, 0.08);
-    border-color: var(--broker-border-gold);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.045);
+    border-color: rgba(255, 255, 255, 0.095);
+    color: rgba(245, 245, 245, 0.76);
+  }
+
+  .corretor-shell .menu-toggle:hover {
+    background: rgba(255, 255, 255, 0.07);
+    border-color: rgba(255, 255, 255, 0.16);
+    color: #f5f5f5;
   }
 
   .corretor-shell .main-content .content-section {
@@ -6704,7 +6711,7 @@
   }
 
   .corretor-shell .broker-mobile-search svg:first-child {
-    color: var(--broker-gold);
+    color: rgba(245, 245, 245, 0.82);
   }
 
   .corretor-shell .broker-mobile-search span {
@@ -6739,7 +6746,7 @@
   }
 
   .corretor-shell .broker-mobile-action svg {
-    color: var(--broker-gold);
+    color: rgba(245, 245, 245, 0.82);
   }
 
   .corretor-shell .broker-mobile-action span {
