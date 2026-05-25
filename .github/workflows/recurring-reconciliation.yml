@@ -19,8 +19,8 @@
 #
 # Resiliencia a quota Sienge:
 #   - actions/cache@v4 persiste .sienge-cache/ entre runs.
-#   - SIENGE_CACHE_TTL_MS=7d: o income so e re-baixado ~1x/semana; nos demais
-#     dias o cron le o cache persistido (0 chamadas income).
+#   - SIENGE_CACHE_TTL_MS=1h: o cron tenta buscar income fresco em cada rodada
+#     diaria, mas stale-on-error ainda usa o cache se o Sienge falhar.
 #   - stale-on-error em _sienge-http.mjs: se o Sienge bloquear, serve cache
 #     vencido em vez de quebrar o job.
 #
@@ -65,9 +65,9 @@ jobs:
         run: mkdir -p .sienge-cache
 
       # Persiste o cache /bulk-data/v1/income entre runs do cron.
-      # Combinado com SIENGE_CACHE_TTL_MS=7d e stale-on-error no
-      # _sienge-http.mjs, garante que o job sobrevive a quota diaria
-      # do Sienge: o income so e baixado de verdade ~1x/semana.
+      # Combinado com SIENGE_CACHE_TTL_MS=1h e stale-on-error no
+      # _sienge-http.mjs, busca dados frescos todo dia sem perder
+      # resiliencia quando o Sienge fica indisponivel.
       - name: Restore Sienge cache
         id: sienge-cache
         uses: actions/cache/restore@v4
@@ -113,7 +113,7 @@ jobs:
           SIENGE_MAX_RETRIES: '6'
           SIENGE_5XX_BASE_DELAY_MS: '15000'
           SIENGE_5XX_MAX_DELAY_MS: '90000'
-          SIENGE_CACHE_TTL_MS: '604800000' # 7d — reusa cache persistido; re-baixa income ~1x/semana
+          SIENGE_CACHE_TTL_MS: '3600000' # 1h — tenta income fresco em cada cron; usa stale se Sienge falhar
 
       - name: Aplicar plano
         run: node scripts/aplicar-correcao-data-prevista.mjs --apply
@@ -136,7 +136,7 @@ jobs:
           SIENGE_MAX_RETRIES: '6'
           SIENGE_5XX_BASE_DELAY_MS: '15000'
           SIENGE_5XX_MAX_DELAY_MS: '90000'
-          SIENGE_CACHE_TTL_MS: '604800000' # 7d — reusa cache persistido
+          SIENGE_CACHE_TTL_MS: '3600000' # 1h — tenta income fresco em cada cron; usa stale se Sienge falhar
 
       # Etapa 3 — sincroniza sales-contracts + receivable-bills via edge
       # function (service_role; bypass em auth.ts). Best-effort: roda por
