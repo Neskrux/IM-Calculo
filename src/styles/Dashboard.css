@@ -1744,9 +1744,9 @@
   align-items: center;
   gap: 8px;
   padding: 10px 20px;
-  background: #2563eb;
-  color: #fff;
-  border: none;
+  background: rgba(255, 255, 255, 0.045);
+  color: var(--im-text-primary, #f5f5f5);
+  border: 1px solid rgba(255, 255, 255, 0.095);
   border-radius: 6px;
   font-size: 14px;
   font-weight: 500;
@@ -1755,7 +1755,8 @@
 }
 
 .btn-export-pdf:hover {
-  background: #1d4ed8;
+  background: rgba(255, 255, 255, 0.07);
+  border-color: rgba(255, 255, 255, 0.16);
   transform: translateY(-1px);
 }
 
@@ -1811,7 +1812,7 @@
 .filtros-grid input:focus,
 .filtros-grid select:focus {
   outline: none;
-  border-color: #2563eb;
+  border-color: rgba(201, 169, 98, 0.28);
 }
 
 .btn-limpar-filtros {
@@ -3691,7 +3692,7 @@
 }
 
 .btn-ver-detalhe:hover {
-  background: #2563eb;
+  background: var(--im-accent-dark, #8b7355);
 }
 
 /* Lista de Parcelas/Pagamentos */
@@ -4868,7 +4869,7 @@
 
 .bar {
   width: 100%;
-  background: linear-gradient(180deg, var(--im-accent) 0%, #2563eb 100%);
+  background: linear-gradient(180deg, rgba(201, 169, 98, 0.86) 0%, rgba(92, 82, 67, 0.92) 100%);
   border-radius: 6px 6px 0 0;
   position: relative;
   transition: all 0.3s;
