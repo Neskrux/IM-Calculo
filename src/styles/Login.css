@@ -908,9 +908,9 @@
   /* ============ Bottom Sheet ============ */
   .login-glass-container {
     position: relative;
-    width: 100%;
-    max-width: 100%;
-    margin-top: 34vh;
+    width: min(430px, calc(100vw - 24px));
+    max-width: calc(100vw - 24px);
+    margin: 34vh auto 0;
     min-height: 66vh;
     padding: 32px 22px calc(28px + env(safe-area-inset-bottom, 0px));
     background: rgba(8, 8, 8, 0.94);
@@ -992,6 +992,12 @@
   /* Form mais espaçado pra toque */
   .login-form {
     gap: 18px;
+    min-width: 0;
+  }
+
+  .input-group,
+  .input-wrapper {
+    min-width: 0;
   }
 
   .input-group label {

@@ -6431,3 +6431,237 @@
     right: 8px;
   }
 }
+
+/* =============================================
+   BROKER EXPERIENCE - EXECUTIVE POLISH
+   ============================================= */
+
+.corretor-shell {
+  --broker-surface: rgba(15, 15, 15, 0.94);
+  --broker-surface-strong: rgba(20, 20, 20, 0.96);
+  --broker-border: rgba(255, 255, 255, 0.075);
+  --broker-border-gold: rgba(201, 169, 98, 0.2);
+}
+
+.corretor-shell .welcome-section {
+  background:
+    linear-gradient(135deg, rgba(201, 169, 98, 0.105), rgba(20, 20, 20, 0.94) 54%, rgba(10, 10, 10, 0.96)),
+    var(--broker-surface-strong);
+  border-color: rgba(201, 169, 98, 0.18);
+}
+
+.corretor-shell .welcome-section::before {
+  width: 2px;
+  top: 22px;
+  bottom: 22px;
+  background: var(--broker-gold);
+  opacity: 0.72;
+}
+
+.corretor-shell .welcome-content h1 {
+  font-weight: 650;
+}
+
+.corretor-shell .welcome-content p {
+  color: var(--broker-muted);
+}
+
+.corretor-shell .stats-section {
+  grid-template-columns: repeat(auto-fit, minmax(235px, 1fr));
+}
+
+.corretor-shell .stat-card-corretor {
+  min-width: 0;
+  border-radius: 8px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.024), rgba(255, 255, 255, 0)),
+    var(--broker-surface);
+}
+
+.corretor-shell .stat-card-corretor:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.22);
+}
+
+.corretor-shell .stat-card-corretor.primary {
+  border-color: rgba(201, 169, 98, 0.26);
+}
+
+.corretor-shell .stat-card-decoration {
+  display: none;
+}
+
+.corretor-shell .stat-card-icon {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.075);
+  box-shadow: none;
+}
+
+.corretor-shell .stat-card-corretor.primary .stat-card-icon,
+.corretor-shell .stat-card-corretor.warning .stat-card-icon {
+  background: rgba(201, 169, 98, 0.1);
+  border-color: rgba(201, 169, 98, 0.18);
+}
+
+.corretor-shell .stat-card-label,
+.corretor-shell .resumo-titulo,
+.corretor-shell .filter-label {
+  letter-spacing: 0;
+}
+
+.corretor-shell .chart-card,
+.corretor-shell .venda-card,
+.corretor-shell .pagamento-grupo,
+.corretor-shell .relatorio-gerador,
+.corretor-shell .relatorio-resumo,
+.corretor-shell .relatorios-status,
+.corretor-shell .relatorios-vendas,
+.corretor-shell .perfil-main-card,
+.corretor-shell .perfil-detail-card,
+.corretor-shell .perfil-stat-card {
+  border-radius: 8px;
+  border-color: var(--broker-border);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.024), rgba(255, 255, 255, 0)),
+    var(--broker-surface);
+  box-shadow: none;
+}
+
+.corretor-shell .chart-card:hover,
+.corretor-shell .venda-card:hover,
+.corretor-shell .pagamento-grupo:hover,
+.corretor-shell .perfil-detail-card:hover,
+.corretor-shell .perfil-stat-card:hover {
+  transform: translateY(-1px);
+  border-color: rgba(201, 169, 98, 0.18);
+  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.22);
+}
+
+.corretor-shell .chart-header {
+  border-bottom-color: rgba(255, 255, 255, 0.07);
+}
+
+.corretor-shell .chart-header svg,
+.corretor-shell .section-header-corretor h2 svg {
+  color: var(--broker-gold);
+}
+
+.corretor-shell .recent-sale-item,
+.corretor-shell .corretor-parcela-row {
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.026);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.corretor-shell .recent-sale-item:hover,
+.corretor-shell .corretor-parcela-row:hover {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(201, 169, 98, 0.15);
+}
+
+.corretor-shell .sale-status,
+.corretor-shell .badge-large,
+.corretor-shell .status-badge {
+  border-radius: 999px;
+  letter-spacing: 0;
+  box-shadow: none;
+}
+
+.corretor-shell .sale-status.pago {
+  background: rgba(16, 185, 129, 0.11);
+  border: 1px solid rgba(16, 185, 129, 0.24);
+}
+
+.corretor-shell .sale-status.pendente,
+.corretor-shell .sale-status.parcial {
+  background: rgba(201, 169, 98, 0.11);
+  border: 1px solid rgba(201, 169, 98, 0.24);
+}
+
+.corretor-shell .filters-section,
+.corretor-shell .relatorio-gerador {
+  gap: 16px;
+}
+
+.corretor-shell .filter-select,
+.corretor-shell .search-box,
+.corretor-shell input,
+.corretor-shell select,
+.corretor-shell textarea {
+  border-radius: 7px;
+}
+
+.corretor-shell .mobile-broker-nav {
+  border-radius: 14px;
+}
+
+@media (max-width: 768px) {
+  .corretor-shell .main-header {
+    background: rgba(8, 8, 8, 0.96);
+    backdrop-filter: blur(12px);
+  }
+
+  .corretor-shell .welcome-section {
+    min-height: 116px;
+    align-items: flex-start;
+  }
+
+  .corretor-shell .tipo-badge {
+    align-self: flex-start;
+  }
+
+  .corretor-shell .stats-section .stat-card-corretor.primary {
+    grid-column: 1 / -1;
+    grid-template-columns: auto minmax(0, 1fr);
+    min-height: 118px;
+    align-items: center;
+  }
+
+  .corretor-shell .stats-section .stat-card-corretor.primary .stat-card-icon {
+    width: 44px;
+    height: 44px;
+  }
+
+  .corretor-shell .stats-section .stat-card-corretor.primary .stat-card-value {
+    font-size: 24px;
+  }
+
+  .corretor-shell .chart-card,
+  .corretor-shell .venda-card,
+  .corretor-shell .pagamento-grupo,
+  .corretor-shell .relatorio-gerador,
+  .corretor-shell .relatorio-resumo,
+  .corretor-shell .relatorios-status,
+  .corretor-shell .relatorios-vendas {
+    border-radius: 10px;
+  }
+
+  .corretor-shell .chart-header {
+    align-items: center;
+  }
+
+  .corretor-shell .recent-sale-item {
+    gap: 12px;
+  }
+
+  .corretor-shell .sale-client {
+    min-width: 0;
+  }
+
+  .corretor-shell .mobile-broker-nav {
+    min-height: 62px;
+    background: rgba(9, 9, 9, 0.98);
+    border-color: rgba(255, 255, 255, 0.09);
+    box-shadow: 0 14px 34px rgba(0, 0, 0, 0.52);
+    backdrop-filter: blur(10px);
+  }
+
+  .corretor-shell .mobile-broker-nav-item {
+    border-radius: 10px;
+  }
+
+  .corretor-shell .mobile-broker-nav-item.active {
+    background: linear-gradient(180deg, #cfb06a, #b9964d);
+    color: #080808;
+  }
+}

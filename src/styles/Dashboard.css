@@ -7384,3 +7384,189 @@
   flex-shrink: 0;
   color: var(--im-success);
 }
+
+/* ============================================
+   EXECUTIVE POLISH - GLOBAL DASHBOARD
+   ============================================ */
+
+.dashboard-container {
+  --im-radius-panel: 8px;
+  --im-radius-control: 7px;
+  --im-surface-executive: rgba(16, 16, 16, 0.92);
+  --im-surface-muted: rgba(255, 255, 255, 0.028);
+  --im-border-soft: rgba(255, 255, 255, 0.075);
+  --im-focus-ring: 0 0 0 3px rgba(201, 169, 98, 0.2);
+}
+
+.main-header {
+  background:
+    linear-gradient(180deg, rgba(15, 15, 15, 0.94), rgba(10, 10, 10, 0.82)),
+    var(--im-bg-primary);
+  border-bottom: 1px solid var(--im-border-soft);
+  box-shadow: none;
+}
+
+.main-header h1 {
+  letter-spacing: 0;
+  font-weight: 650;
+}
+
+.stat-card,
+.relatorio-card,
+.resumo-card,
+.resumo-card-item,
+.corretor-card,
+.empreendimento-card,
+.cliente-card,
+.solicitacao-card,
+.venda-pagamento-card,
+.dashboard-chart-card,
+.dashboard-table-card,
+.table-card,
+.chart-card {
+  border-radius: var(--im-radius-panel);
+  border-color: var(--im-border-soft);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.026), rgba(255, 255, 255, 0)),
+    var(--im-surface-executive);
+  box-shadow: none;
+}
+
+.stat-card:hover,
+.relatorio-card:hover,
+.resumo-card:hover,
+.corretor-card:hover,
+.empreendimento-card:hover,
+.cliente-card:hover,
+.solicitacao-card:hover,
+.venda-pagamento-card:hover,
+.dashboard-chart-card:hover,
+.dashboard-table-card:hover,
+.table-card:hover,
+.chart-card:hover {
+  transform: translateY(-1px);
+  border-color: rgba(201, 169, 98, 0.2);
+  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.22);
+}
+
+.filters-section,
+.pagamentos-resumo,
+.relatorio-resumo {
+  border-radius: var(--im-radius-panel);
+  border: 1px solid var(--im-border-soft);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0)),
+    rgba(14, 14, 14, 0.88);
+  box-shadow: none;
+}
+
+.btn-primary,
+.btn-secondary,
+.chart-action-btn,
+.parcela-acao button,
+.btn-add-parcela {
+  border-radius: var(--im-radius-control);
+  letter-spacing: 0;
+  box-shadow: none;
+}
+
+.btn-primary {
+  background: linear-gradient(180deg, #cfb06a 0%, #b9964d 100%);
+  color: #080808;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.btn-primary:hover {
+  box-shadow: 0 10px 24px rgba(201, 169, 98, 0.18);
+}
+
+.btn-secondary,
+.chart-action-btn {
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid var(--im-border-soft);
+  color: var(--im-text-primary);
+}
+
+.btn-secondary:hover,
+.chart-action-btn:hover {
+  background: rgba(201, 169, 98, 0.09);
+  border-color: rgba(201, 169, 98, 0.24);
+}
+
+.search-box,
+.filter-select,
+.form-input,
+.form-select,
+input,
+select,
+textarea {
+  border-radius: var(--im-radius-control);
+}
+
+.search-box,
+.filter-select,
+.form-input,
+.form-select {
+  background: rgba(255, 255, 255, 0.035);
+  border-color: var(--im-border-soft);
+}
+
+.search-box:focus-within,
+.filter-select:focus,
+.form-input:focus,
+.form-select:focus,
+input:focus,
+select:focus,
+textarea:focus {
+  box-shadow: var(--im-focus-ring);
+}
+
+.data-table {
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.data-table th {
+  background: rgba(255, 255, 255, 0.035);
+  color: var(--im-text-secondary);
+  letter-spacing: 0;
+  font-size: 11px;
+}
+
+.data-table tbody tr {
+  background: transparent;
+}
+
+.data-table tbody tr:hover {
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.status-badge,
+.status-pill,
+.badge-tipo,
+.solicitacao-status {
+  border-radius: 999px;
+  letter-spacing: 0;
+  border: 1px solid transparent;
+  box-shadow: none;
+}
+
+.status-badge.pago,
+.status-pill.pago,
+.solicitacao-status.aprovado {
+  background: rgba(16, 185, 129, 0.11);
+  border-color: rgba(16, 185, 129, 0.24);
+}
+
+.status-badge.pendente,
+.status-pill.pendente,
+.solicitacao-status.pendente {
+  background: rgba(201, 169, 98, 0.11);
+  border-color: rgba(201, 169, 98, 0.24);
+}
+
+.status-pill.cancelado,
+.solicitacao-status.reprovado {
+  background: rgba(148, 163, 184, 0.09);
+  border-color: rgba(148, 163, 184, 0.18);
+}
