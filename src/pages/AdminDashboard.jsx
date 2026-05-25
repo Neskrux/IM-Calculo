@@ -6937,6 +6937,7 @@ const AdminDashboard = () => {
                       {vendaExpandida === grupo.venda_id && (
                         <div className="venda-pagamento-body">
                           {sortParcelas(grupo.pagamentos, visaoParcelas)
+                            .filter((pag) => pag.status !== 'cancelado')
                             .map((pag) => (
                             <div key={pag.id} className={`parcela-row ${pag.status === 'pago' ? 'pago' : pag.status === 'cancelado' ? 'cancelado' : ''}`}>
                               <div className="parcela-main">

@@ -894,7 +894,9 @@ const ClienteDashboard = () => {
                                 
                                 {visaoParcelas === 'calendario' ? (
                                   <div className="parcelas-list">
-                                    {sortParcelas(pagamentosCompra, 'calendario').map((pagamento) => (
+                                    {sortParcelas(pagamentosCompra, 'calendario')
+                                      .filter((pagamento) => pagamento.status !== 'cancelado')
+                                      .map((pagamento) => (
                                       <div 
                                         key={pagamento.id} 
                                         className={`cliente-parcela-row ${pagamento.status === 'pago' ? 'pago' : pagamento.status === 'cancelado' ? 'cancelado' : ''}`}
@@ -921,7 +923,8 @@ const ClienteDashboard = () => {
                                   </div>
                                 ) : (
                                   (() => {
-                                    const grupos = agruparPagamentosPorTipo(pagamentosCompra)
+                                    const pagamentosAtivosCompra = pagamentosCompra.filter((pagamento) => pagamento.status !== 'cancelado')
+                                    const grupos = agruparPagamentosPorTipo(pagamentosAtivosCompra)
                                     const tiposOrdem = ['sinal', 'entrada', 'parcela_entrada', 'balao']
                                     return tiposOrdem.map(tipo => {
                                       const pagamentosGrupo = grupos[tipo]

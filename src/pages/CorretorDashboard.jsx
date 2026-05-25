@@ -2140,7 +2140,9 @@ const CorretorDashboard = () => {
                                   
                                   {visaoParcelas === 'calendario' ? (
                                     <div className="parcelas-list">
-                                      {sortParcelas(pagamentosVenda[venda.id], 'calendario').map((pagamento) => {
+                                      {sortParcelas(pagamentosVenda[venda.id], 'calendario')
+                                        .filter((pagamento) => pagamento.status !== 'cancelado')
+                                        .map((pagamento) => {
                                         const comissaoParcela = calcularComissaoPagamento(pagamento)
                                         return (
                                           <div 
@@ -2174,7 +2176,8 @@ const CorretorDashboard = () => {
                                     </div>
                                   ) : (
                                     (() => {
-                                    const grupos = agruparPagamentosPorTipo(pagamentosVenda[venda.id])
+                                    const pagamentosAtivosVenda = (pagamentosVenda[venda.id] || []).filter((pagamento) => pagamento.status !== 'cancelado')
+                                    const grupos = agruparPagamentosPorTipo(pagamentosAtivosVenda)
                                     const tiposOrdem = ['sinal', 'entrada', 'parcela_entrada', 'balao']
                                     
                                     return tiposOrdem.map(tipo => {
@@ -2532,6 +2535,7 @@ const CorretorDashboard = () => {
                             {pagamentoVendaExpandida === grupo.venda_id && (
                               <div className="venda-pagamento-body">
                                 {sortParcelas(grupo.pagamentos, visaoParcelas)
+                                  .filter((pag) => pag.status !== 'cancelado')
                                   .map((pag) => {
                                     const minhaComissao = venda ? calcularComissaoPagamento(pag) : 0
                                     
