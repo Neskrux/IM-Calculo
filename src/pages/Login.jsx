@@ -549,18 +549,6 @@ const Login = () => {
         </div>
       </div>
 
-      {/* Efeitos de Partículas */}
-      <div className="particles">
-        {[...Array(20)].map((_, i) => (
-          <div key={i} className="particle" style={{
-            '--delay': `${Math.random() * 5}s`,
-            '--duration': `${15 + Math.random() * 10}s`,
-            '--x-start': `${Math.random() * 100}%`,
-            '--x-end': `${Math.random() * 100}%`,
-          }}></div>
-        ))}
-      </div>
-
       {/* Botão de Troca de Tema */}
       <button
         className="theme-toggle"

@@ -69,7 +69,7 @@
   overflow: hidden;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   background: var(--premium-black);
-  --intro-duration: 3.25s;
+  --intro-duration: 5s;
   --intro-logo-scale: 1.35;
 }
 
@@ -366,7 +366,7 @@
 }
 
 .premium-login.login-with-intro.intro-ready .login-glass-container {
-  animation: glass-appear-stable 1.05s cubic-bezier(0.22, 1, 0.36, 1) 2.05s forwards;
+  animation: glass-appear-stable 1.2s cubic-bezier(0.22, 1, 0.36, 1) 3.5s forwards;
 }
 
 @keyframes glass-appear {
@@ -474,7 +474,7 @@
 }
 
 .premium-login.login-with-intro.intro-ready .brand-text {
-  animation: brand-emerge 0.72s cubic-bezier(0.22, 1, 0.36, 1) 2.9s forwards;
+  animation: brand-emerge 0.8s cubic-bezier(0.22, 1, 0.36, 1) 4.9s forwards;
 }
 
 @keyframes brand-emerge {
@@ -757,47 +757,6 @@
 }
 
 /* ============================================
-   PARTÍCULAS DECORATIVAS
-   ============================================ */
-
-.particles {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  z-index: 5;
-  overflow: hidden;
-}
-
-.particle {
-  position: absolute;
-  width: 2px;
-  height: 2px;
-  background: var(--accent);
-  border-radius: 50%;
-  opacity: 0;
-  animation: particle-float var(--duration) linear infinite;
-  animation-delay: var(--delay);
-  left: var(--x-start);
-}
-
-@keyframes particle-float {
-  0% {
-    opacity: 0;
-    transform: translateY(100vh) translateX(0);
-  }
-  10% {
-    opacity: 0.6;
-  }
-  90% {
-    opacity: 0.6;
-  }
-  100% {
-    opacity: 0;
-    transform: translateY(-100px) translateX(calc(var(--x-end) - var(--x-start)));
-  }
-}
-
-/* ============================================
    RESPONSIVO
    ============================================ */
 
@@ -980,19 +939,6 @@
       transparent 100%);
   }
 
-  /* Handle decorativo no topo (estilo iOS sheet) */
-  .login-glass-container::after {
-    content: '';
-    position: absolute;
-    top: 10px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 40px;
-    height: 4px;
-    background: rgba(255, 255, 255, 0.18);
-    border-radius: 999px;
-  }
-
   /* Branding compacto */
   .login-branding {
     margin-top: 4px;
@@ -1105,9 +1051,6 @@
     display: none;
   }
 
-  .particles {
-    display: none;
-  }
 }
 
 /* Refinamentos pra telas pequenas */
@@ -1243,8 +1186,7 @@
 
   .login-logo,
   .logo-glow,
-  .brand-divider .diamond,
-  .particle {
+  .brand-divider .diamond {
     animation: none !important;
   }
 
@@ -1422,7 +1364,7 @@
 }
 
 @keyframes intro-bg-dissolve {
-  0%, 58% { opacity: 1; }
+  0%, 66% { opacity: 1; }
   100% {
     opacity: 0;
     visibility: hidden;
@@ -1467,10 +1409,10 @@
     opacity: 0;
     filter: brightness(1.15) drop-shadow(0 0 36px var(--accent-glow));
   }
-  10% {
+  6% {
     opacity: 1;
   }
-  56% {
+  66% {
     transform:
       translate(var(--floating-logo-from-x, 0px), var(--floating-logo-from-y, 0px))
       scale(var(--intro-logo-scale, 1.35));
@@ -1494,8 +1436,8 @@
       opacity: 0;
       filter: brightness(1.15) drop-shadow(0 0 30px var(--accent-glow));
     }
-    10% { opacity: 1; }
-    56% {
+    6% { opacity: 1; }
+    66% {
       transform:
         translate(var(--floating-logo-from-x, 0px), var(--floating-logo-from-y, 0px))
         scale(1.28);
