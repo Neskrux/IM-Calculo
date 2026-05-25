@@ -6413,8 +6413,8 @@
   }
 
   .corretor-shell .mobile-broker-nav-item.active {
-    background: var(--broker-gold-soft);
-    color: var(--broker-gold);
+    background: transparent;
+    color: #f5f5f5;
   }
 }
 

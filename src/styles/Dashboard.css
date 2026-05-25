@@ -3334,7 +3334,7 @@
 
 .progress-bar-fill {
   height: 100%;
-  background: linear-gradient(90deg, var(--im-accent, #c9a962) 0%, #d4b982 100%);
+  background: linear-gradient(90deg, rgba(201, 169, 98, 0.76) 0%, rgba(120, 103, 78, 0.9) 100%);
   border-radius: 4px;
   transition: width 0.2s ease;
 }
@@ -7473,7 +7473,7 @@
 }
 
 .btn-primary {
-  background: linear-gradient(180deg, #cfb06a 0%, #b9964d 100%);
+  background: linear-gradient(180deg, rgba(168, 143, 94, 0.94) 0%, rgba(116, 98, 72, 0.96) 100%);
   color: #080808;
   border: 1px solid rgba(255, 255, 255, 0.08);
 }
