@@ -1473,6 +1473,13 @@ const CorretorDashboard = () => {
     { tab: 'perfil', path: '/corretor/perfil', label: 'Perfil', icon: User },
   ]
 
+  const mobileQuickActions = [
+    { path: '/corretor/vendas', label: 'Vendas', icon: DollarSign },
+    { path: '/corretor/pagamentos', label: 'Receber', icon: CreditCard },
+    { path: '/corretor/clientes', label: 'Clientes', icon: UserPlus },
+    { path: '/corretor/relatorios', label: 'Relatorio', icon: FileText },
+  ]
+
   const relatorioResumo = getRelatorioResumo()
 
   return (
@@ -1625,6 +1632,34 @@ const CorretorDashboard = () => {
           <span className={`badge-large ${userProfile?.tipo_corretor || 'externo'}`}>
                     {userProfile?.tipo_corretor === 'interno' ? 'Interno' : 'Externo'}
           </span>
+        </div>
+      </section>
+
+      <section className="broker-mobile-home-panel" aria-label="Atalhos principais">
+        <button
+          type="button"
+          className="broker-mobile-search"
+          onClick={() => goTo('/corretor/clientes')}
+        >
+          <Search size={18} />
+          <span>Buscar cliente ou venda</span>
+          <ArrowUpRight size={16} />
+        </button>
+        <div className="broker-mobile-actions">
+          {mobileQuickActions.map((item) => {
+            const Icon = item.icon
+            return (
+              <button
+                key={item.path}
+                type="button"
+                onClick={() => goTo(item.path)}
+                className="broker-mobile-action"
+              >
+                <Icon size={20} />
+                <span>{item.label}</span>
+              </button>
+            )
+          })}
         </div>
       </section>
 

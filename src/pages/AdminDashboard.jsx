@@ -5431,6 +5431,35 @@ const AdminDashboard = () => {
       })
   }, [auditoriaIssues, auditoriaRelato, auditoriaTipoFiltro, auditoriaSeveridadeFiltro])
 
+  const solicitacoesPendentesCount = useMemo(
+    () => solicitacoes.filter(s => s.status === 'pendente').length,
+    [solicitacoes]
+  )
+
+  const adminMobileNavItems = [
+    { tab: 'dashboard', path: '/admin/dashboard', label: 'Inicio', icon: LayoutDashboard },
+    { tab: 'vendas', path: '/admin/vendas', label: 'Vendas', icon: DollarSign },
+    { tab: 'pagamentos', path: '/admin/pagamentos', label: 'Pagto', icon: CreditCard },
+    { tab: 'auditoria', path: '/admin/auditoria', label: 'Auditoria', icon: ShieldAlert, badge: auditoriaResumo.alta },
+    { tab: 'solicitacoes', path: '/admin/solicitacoes', label: 'Pedidos', icon: ClipboardList, badge: solicitacoesPendentesCount },
+  ]
+
+  const adminMobileQuickActions = [
+    {
+      label: 'Nova venda',
+      icon: PlusCircle,
+      action: () => {
+        resetVendaForm()
+        setSelectedItem(null)
+        setModalType('venda')
+        setShowModal(true)
+      },
+    },
+    { label: 'Auditoria', icon: ShieldAlert, action: () => navigate('/admin/auditoria'), badge: auditoriaResumo.alta },
+    { label: 'Pagamentos', icon: CreditCard, action: () => navigate('/admin/pagamentos') },
+    { label: 'Relatorio', icon: TrendingUp, action: () => navigate('/admin/relatorios') },
+  ]
+
   // Quando seleciona um corretor na venda, atualiza o tipo automaticamente
   const handleCorretorChange = (corretorId) => {
     const corretor = corretores.find(c => c.id === corretorId)
@@ -5585,7 +5614,7 @@ const AdminDashboard = () => {
   }
 
   return (
-    <div className="dashboard-container">
+    <div className="dashboard-container admin-shell">
       {/* Barra de Carregamento Global */}
       {(loading || authLoading) && (
         <div className="global-loading-overlay">
@@ -5865,6 +5894,41 @@ const AdminDashboard = () => {
         {/* Content */}
         {activeTab === 'dashboard' && (
           <div style={{ padding: '0', flex: 1, overflow: 'auto' }}>
+            <section className="admin-mobile-home-panel" aria-label="Atalhos do administrador">
+              <div className="admin-mobile-identity">
+                <div>
+                  <span>Ola, {userProfile?.nome?.split(' ')?.[0] || 'Admin'}</span>
+                  <strong>Painel IM</strong>
+                </div>
+                <img src={logo} alt="IM Incorporadora" />
+              </div>
+              <button
+                type="button"
+                className="admin-mobile-assistant"
+                onClick={() => navigate('/admin/auditoria')}
+              >
+                <Radar size={18} />
+                <span>Descrever erro ou achar casos parecidos</span>
+                <ArrowRight size={16} />
+              </button>
+              <div className="admin-mobile-actions">
+                {adminMobileQuickActions.map((item) => {
+                  const Icon = item.icon
+                  return (
+                    <button
+                      key={item.label}
+                      type="button"
+                      className="admin-mobile-action"
+                      onClick={item.action}
+                    >
+                      <Icon size={20} />
+                      <span>{item.label}</span>
+                      {item.badge > 0 && <small>{item.badge}</small>}
+                    </button>
+                  )
+                })}
+              </div>
+            </section>
             <section style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12, padding: 16, margin: 16 }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
                 <div>
@@ -8809,6 +8873,26 @@ const AdminDashboard = () => {
           </div>
         )}
       </main>
+
+      <nav className="mobile-app-nav admin-mobile-nav" aria-label="Navegacao principal do administrador">
+        {adminMobileNavItems.map((item) => {
+          const Icon = item.icon
+          return (
+            <button
+              key={item.tab}
+              type="button"
+              className={`mobile-app-nav-item ${activeTab === item.tab ? 'active' : ''}`}
+              onClick={() => navigate(item.path)}
+            >
+              <span className="mobile-app-nav-icon">
+                <Icon size={19} />
+                {item.badge > 0 && <small>{item.badge}</small>}
+              </span>
+              <span>{item.label}</span>
+            </button>
+          )
+        })}
+      </nav>
 
       {/* Modal de Detalhes da Solicitação */}
       {solicitacaoSelecionada && (
