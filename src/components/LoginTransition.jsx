@@ -10,8 +10,8 @@ const LoginTransition = ({ onComplete }) => {
     const timeline = [
       { phase: 'opening', delay: 300 },
       { phase: 'open', delay: 2000 },
-      { phase: 'fadeout', delay: 3500 },
-      { phase: 'complete', delay: 4200 }
+      { phase: 'fadeout', delay: 2500 },
+      { phase: 'complete', delay: 3200 }
     ]
 
     const timeouts = timeline.map(({ phase: p, delay }) => 

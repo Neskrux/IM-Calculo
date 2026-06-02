@@ -5468,6 +5468,51 @@
   color: var(--bg-dark);
   border: 4px solid var(--accent-primary);
   box-shadow: 0 8px 32px rgba(201, 169, 98, 0.3);
+  overflow: hidden;
+  position: relative;
+}
+
+.perfil-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Avatar clicável (abre modal de foto) */
+button.perfil-avatar-clickable {
+  cursor: pointer;
+  padding: 0;
+  font: inherit;
+  outline: none;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+button.perfil-avatar-clickable:hover {
+  transform: scale(1.03);
+  box-shadow: 0 10px 36px rgba(201, 169, 98, 0.45);
+}
+
+button.perfil-avatar-clickable:focus-visible {
+  box-shadow: 0 0 0 3px rgba(201, 169, 98, 0.5);
+}
+
+.perfil-avatar-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  pointer-events: none;
+}
+
+button.perfil-avatar-clickable:hover .perfil-avatar-overlay,
+button.perfil-avatar-clickable:focus-visible .perfil-avatar-overlay {
+  opacity: 1;
 }
 
 .perfil-tipo-badge .badge-large {

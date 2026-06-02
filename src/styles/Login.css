@@ -69,7 +69,7 @@
   overflow: hidden;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   background: var(--premium-black);
-  --intro-duration: 5s;
+  --intro-duration: 3.8s;
   --intro-logo-scale: 1.35;
 }
 

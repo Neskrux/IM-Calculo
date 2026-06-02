@@ -175,7 +175,7 @@ async function loadMaps(): Promise<Maps> {
     empByEnt.set(String(r.sienge_enterprise_id), {
       id: r.id,
       com_ext: Number(r.comissao_total_externo) || 7,
-      com_int: Number(r.comissao_total_interno) || 6,
+      com_int: Number(r.comissao_total_interno) || 6.5,
     })
   }
   const unitBySienge = new Map<string, string>()

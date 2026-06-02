@@ -188,7 +188,7 @@ CREATE TABLE IF NOT EXISTS empreendimentos (
     nome TEXT NOT NULL,
     descricao TEXT,
     comissao_total_externo DECIMAL(5, 2) NOT NULL DEFAULT 7.0,
-    comissao_total_interno DECIMAL(5, 2) NOT NULL DEFAULT 6.0,
+    comissao_total_interno DECIMAL(5, 2) NOT NULL DEFAULT 6.5,
     ativo BOOLEAN DEFAULT true,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()

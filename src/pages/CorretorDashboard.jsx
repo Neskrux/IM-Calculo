@@ -17,6 +17,7 @@ import { jsPDF } from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import logo from '../imgs/logo.png'
 import Ticker from '../components/Ticker'
+import ProfilePhotoModal from '../components/ProfilePhotoModal'
 import '../styles/Dashboard.css'
 import '../styles/CorretorDashboard.css'
 import '../styles/EmpreendimentosPage.css'
@@ -24,7 +25,6 @@ import { sortParcelas } from '../utils/parcelasSort'
 import {
   calcularFatorComissao,
   calcularComissaoPagamentoCompleto,
-  somarComissao,
   isPago,
   isPendente,
   dataEfetiva,
@@ -117,6 +117,11 @@ const CorretorDashboard = () => {
     email: ''
   })
   const [salvandoPerfil, setSalvandoPerfil] = useState(false)
+
+  // Modal de foto de perfil — abre forçado no primeiro acesso (sem foto)
+  // e por demanda quando o usuário clica em "Trocar foto"
+  const [photoModalOpen, setPhotoModalOpen] = useState(false)
+  const [photoModalForced, setPhotoModalForced] = useState(false)
   const [senhaForm, setSenhaForm] = useState({
     senhaAtual: '',
     novaSenha: '',
@@ -388,26 +393,25 @@ const CorretorDashboard = () => {
         return acc
       }, {})
 
-      // Validar e normalizar os dados. Priorizar snapshot (R9): fator_comissao do banco.
+      // Validar e normalizar os dados. fator_comissao da venda/pagamento
+      // guarda o fator total; aqui calculamos a fatia do cargo Corretor.
       const vendasValidadas = (data || []).map(venda => {
         const valorVenda = parseFloat(venda.valor_venda) || 0
         const valorProSoluto = parseFloat(venda.valor_pro_soluto) || 0
         let comissaoCorretor = parseFloat(venda.comissao_corretor) || 0
 
-        // Percentual nominal do corretor (só usado quando não há snapshot)
-        const percentualCorretor = userProfile?.percentual_corretor ||
-          (userProfile?.tipo_corretor === 'interno' ? 2.5 : 4)
+        // Percentual nominal do cargo Corretor, conforme planilha calculo.xlsx.
+        const tipoCorretorVenda = venda.tipo_corretor || userProfile?.tipo_corretor || 'externo'
+        const percentualCorretor = parseFloat(userProfile?.percentual_corretor) ||
+          (tipoCorretorVenda === 'interno' ? 2.5 : 4)
 
-        // Se comissao_corretor for 0, calcular usando a fórmula correta
+        // Se comissao_corretor for 0, calcular usando a formula correta.
         if (!comissaoCorretor || comissaoCorretor === 0) {
           comissaoCorretor = (valorVenda * percentualCorretor) / 100
         }
 
-        // Fator de comissão do corretor: SNAPSHOT primeiro (R9), só recalcula se ausente.
-        const fatorSnapshot = parseFloat(venda.fator_comissao) || 0
-        const fatorComissaoCorretor = fatorSnapshot > 0
-          ? fatorSnapshot
-          : calcularFatorComissao(valorVenda, valorProSoluto, percentualCorretor)
+        // Fator da fatia do corretor, nao o fator total da venda.
+        const fatorComissaoCorretor = calcularFatorComissao(valorVenda, valorProSoluto, percentualCorretor)
 
         return {
           ...venda,
@@ -594,6 +598,18 @@ const CorretorDashboard = () => {
       })
     }
   }, [userProfile, activeTab])
+
+  // Forçar modal de foto no primeiro acesso (sem foto cadastrada)
+  useEffect(() => {
+    if (userProfile && !userProfile.foto_url) {
+      setPhotoModalOpen(true)
+      setPhotoModalForced(true)
+    } else if (userProfile?.foto_url && photoModalForced) {
+      // Foto chegou: pode fechar o modal forçado
+      setPhotoModalOpen(false)
+      setPhotoModalForced(false)
+    }
+  }, [photoModalForced, userProfile])
 
   // Função para salvar alterações do perfil
   const handleSalvarPerfil = async () => {
@@ -1211,19 +1227,48 @@ const CorretorDashboard = () => {
     return filteredVendas.reduce((acc, v) => acc + (parseFloat(v.valor_venda) || 0), 0)
   }
 
-  // Cascata canônica (R1) delegada para comissaoCalculator.js — fonte única.
-  // O percentualFallback do corretor só entra no passo 7, quando nada mais resolve.
+  // Visao do corretor: calcula a fatia do cargo Corretor por pagamento,
+  // usando a formula canonica do fator com pro-soluto.
   const percentualFallback =
     userProfile?.percentual_corretor ||
     (userProfile?.tipo_corretor === 'interno' ? 2.5 : 4)
 
-  const calcularComissaoPagamento = (pagamento) =>
-    calcularComissaoPagamentoCompleto(pagamento, { vendas, percentualFallback })
+  const calcularComissaoPagamento = (pagamento) => {
+    if (!pagamento) return 0
+
+    const valorParcela = parseFloat(pagamento.valor) || 0
+    if (valorParcela <= 0) return 0
+
+    const venda = vendas.find(v => v.id === pagamento.venda_id)
+    const percentualCorretorVenda = parseFloat(venda?.percentual_corretor) || parseFloat(percentualFallback) || 0
+    const valorProSoluto = parseFloat(venda?.valor_pro_soluto) || 0
+
+    if (venda && percentualCorretorVenda > 0 && valorProSoluto > 0) {
+      const fatorCorretor = calcularFatorComissao(venda.valor_venda, valorProSoluto, percentualCorretorVenda)
+      return valorParcela * fatorCorretor
+    }
+
+    const percentualTotalSnapshot = parseFloat(pagamento.percentual_comissao_total) || 0
+    const comissaoTotalSnapshot = parseFloat(pagamento.comissao_gerada) || 0
+    if (comissaoTotalSnapshot > 0 && percentualCorretorVenda > 0 && percentualTotalSnapshot > 0) {
+      return comissaoTotalSnapshot * (percentualCorretorVenda / percentualTotalSnapshot)
+    }
+
+    return calcularComissaoPagamentoCompleto(pagamento, { vendas, percentualFallback })
+  }
+
+  const somarMinhaComissao = (pagamentos, predicate) => {
+    if (!Array.isArray(pagamentos)) return 0
+    const lista = predicate
+      ? pagamentos.filter(predicate)
+      : pagamentos.filter(pag => pag.status !== 'cancelado')
+    return lista.reduce((acc, pag) => acc + calcularComissaoPagamento(pag), 0)
+  }
 
   // R2 — comissão SEMPRE por pagamento. Sem pagamentos → 0 (nunca fallback por v.status).
-  const getTotalComissao = () => somarComissao(meusPagamentos, { vendas, percentualFallback })
-  const getComissaoPendente = () => somarComissao(meusPagamentos, { predicate: isPendente, vendas, percentualFallback })
-  const getComissaoPaga = () => somarComissao(meusPagamentos, { predicate: isPago, vendas, percentualFallback })
+  const getTotalComissao = () => somarMinhaComissao(meusPagamentos)
+  const getComissaoPendente = () => somarMinhaComissao(meusPagamentos, isPendente)
+  const getComissaoPaga = () => somarMinhaComissao(meusPagamentos, isPago)
 
   // Contagem real de vendas (baseado em vendas únicas, não pagamentos)
   const getVendasCount = () => {
@@ -1578,8 +1623,12 @@ const CorretorDashboard = () => {
             {sidebarCollapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
           </button>
           <div className="user-info">
-            <div className="user-avatar">
-              <User size={20} />
+            <div className="user-avatar user-avatar-with-photo">
+              {userProfile?.foto_url ? (
+                <img src={userProfile.foto_url} alt={userProfile.nome || 'Foto'} />
+              ) : (
+                <User size={20} />
+              )}
             </div>
             <div className="user-details">
               <span className="user-name">{capitalizeName(userProfile?.nome || 'Corretor')}</span>
@@ -3269,9 +3318,21 @@ const CorretorDashboard = () => {
               {/* Card Principal do Perfil */}
               <div className="perfil-main-card">
                 <div className="perfil-avatar-section">
-                  <div className="perfil-avatar">
-                    <User size={60} />
-                  </div>
+                  <button
+                    type="button"
+                    className="perfil-avatar perfil-avatar-clickable"
+                    onClick={() => { setPhotoModalOpen(true); setPhotoModalForced(false) }}
+                    title="Clique pra trocar a foto"
+                  >
+                    {userProfile?.foto_url ? (
+                      <img src={userProfile.foto_url} alt={userProfile.nome || 'Foto de perfil'} />
+                    ) : (
+                      <User size={60} />
+                    )}
+                    <div className="perfil-avatar-overlay">
+                      <Camera size={22} />
+                    </div>
+                  </button>
                   <div className="perfil-tipo-badge">
                     <span className={`badge-large ${userProfile?.tipo_corretor || 'externo'}`}>
                       {userProfile?.tipo_corretor === 'interno' ? 'Corretor Interno' : 'Corretor Externo'}
@@ -3985,6 +4046,12 @@ const CorretorDashboard = () => {
           )
         })}
       </nav>
+
+      <ProfilePhotoModal
+        open={photoModalOpen}
+        required={photoModalForced}
+        onClose={() => setPhotoModalOpen(false)}
+      />
     </div>
   )
 }

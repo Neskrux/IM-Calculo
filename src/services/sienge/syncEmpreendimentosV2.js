@@ -243,7 +243,7 @@ export const syncEmpreendimentosFromRaw = async (options = {}) => {
             nome: nome,
             descricao: payload.description || '',
             comissao_total_externo: 7, // Valor padrão
-            comissao_total_interno: 6, // Valor padrão
+            comissao_total_interno: 6.5, // Valor padrão
             cargos: [] // Será configurado manualmente depois
           }
           

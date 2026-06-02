@@ -17,6 +17,7 @@ import NotasAtualizacaoModal from '../components/NotasAtualizacaoModal'
 import AtualizacoesView from '../components/AtualizacoesView'
 import { Sparkles } from 'lucide-react'
 import EmpreendimentoGaleria from '../components/EmpreendimentoGaleria'
+import ProfilePhotoModal from '../components/ProfilePhotoModal'
 // import CadastrarCorretores from '../components/CadastrarCorretores'
 // import ImportarVendas from '../components/ImportarVendas'
 import '../styles/Dashboard.css'
@@ -87,11 +88,11 @@ const COLUNAS_IMUTAVEIS_PAGO = [
 
 const AUDITORIA_TIPOS = {
   duplicidade_parcela: { label: 'Parcela duplicada', tone: 'danger' },
-  duplicidade_cancelada: { label: 'Cancelada + ativa', tone: 'warning' },
-  baixa_futura: { label: 'Baixa futura', tone: 'danger' },
-  baixa_adiantada: { label: 'Baixa adiantada', tone: 'warning' },
-  sequencia_faltando: { label: 'Sequencia faltando', tone: 'danger' },
-  unidade_duplicada: { label: 'Unidade duplicada', tone: 'danger' },
+  duplicidade_cancelada: { label: 'Historico cancelada + ativa', tone: 'warning' },
+  baixa_futura: { label: 'Baixa futura', tone: 'warning' },
+  baixa_adiantada: { label: 'Baixa antecipada sem ancora', tone: 'warning' },
+  sequencia_faltando: { label: 'Sequencia local faltando', tone: 'warning' },
+  unidade_duplicada: { label: 'Unidade duplicada', tone: 'warning' },
   unidade_parecida: { label: 'Unidade parecida', tone: 'warning' },
   corretor_divergente: { label: 'Corretor divergente', tone: 'warning' },
   comissao_divergente: { label: 'Comissao divergente', tone: 'danger' },
@@ -127,8 +128,35 @@ const getVendaUnidadeLabel = (venda) => {
   return `${bloco}Unidade ${venda?.unidade || '-'}`
 }
 
-const getAuditPaymentKey = (pag) =>
-  `${pag?.tipo || 'sem_tipo'}|${pag?.numero_parcela ?? 'sem_numero'}`
+const getAuditPaymentKey = (pag) => {
+  const billId = pag?.sienge_bill_id ? String(pag.sienge_bill_id) : ''
+  const installmentId = pag?.sienge_installment_id ? String(pag.sienge_installment_id) : ''
+  if (billId && installmentId) return `sienge|${billId}|${installmentId}`
+  if (installmentId) return `sienge-installment|${installmentId}`
+
+  const valor = Number.parseFloat(pag?.valor)
+  const valorKey = Number.isFinite(valor) ? valor.toFixed(2) : 'sem_valor'
+  const dataKey = pag?.data_prevista || 'sem_data'
+  const numeroKey = pag?.numero_parcela ?? 'sem_numero'
+  const billKey = billId || 'sem_bill'
+  return `financeiro|${billKey}|${pag?.tipo || 'sem_tipo'}|${numeroKey}|${valorKey}|${dataKey}`
+}
+
+const getAuditPaymentKeyDescription = (group = []) => {
+  if (group.some((pag) => pag?.sienge_installment_id)) {
+    return 'mesma ancora Sienge'
+  }
+  if (group.some((pag) => pag?.numero_parcela !== null && pag?.numero_parcela !== undefined)) {
+    return 'mesmo tipo, numero, valor e vencimento'
+  }
+  return 'mesmo tipo, valor e vencimento'
+}
+
+const hasSiengePaymentAnchor = (pag) =>
+  Boolean(pag?.sienge_installment_id || pag?.sienge_bill_id)
+
+const getAuditUnitSuffix = (unit) =>
+  normalizeAuditText(unit).replace(/\s/g, '').replace(/\d/g, '')
 
 const getAuditMonth = (dateStr) => {
   const data = parseDataLocal(dateStr)
@@ -227,7 +255,8 @@ const buildAuditIssues = ({ vendas = [], pagamentos = [] }) => {
   const today = new Date()
   today.setHours(0, 0, 0, 0)
 
-  const vendaMap = new Map(vendas.map((venda) => [String(venda.id), venda]))
+  const vendasAuditaveis = vendas.filter((venda) => !venda?.excluido)
+  const vendaMap = new Map(vendasAuditaveis.map((venda) => [String(venda.id), venda]))
   const pagamentosPorVenda = new Map()
   const allByVendaKey = new Map()
   const activeByVendaKey = new Map()
@@ -235,6 +264,8 @@ const buildAuditIssues = ({ vendas = [], pagamentos = [] }) => {
   for (const pag of pagamentos) {
     if (!pag?.venda_id) continue
     const vendaId = String(pag.venda_id)
+    const vendaAuditavel = vendaMap.get(vendaId) || pag.venda
+    if (!vendaAuditavel || vendaAuditavel?.excluido) continue
     if (!pagamentosPorVenda.has(vendaId)) pagamentosPorVenda.set(vendaId, [])
     pagamentosPorVenda.get(vendaId).push(pag)
 
@@ -257,8 +288,8 @@ const buildAuditIssues = ({ vendas = [], pagamentos = [] }) => {
       venda,
       pagamentos: group,
       ref: key,
-      title: `${group.length} parcelas ativas com a mesma identidade`,
-      description: `Mesmo tipo e numero de parcela aparecem ativos mais de uma vez em ${getVendaUnidadeLabel(venda)}.`,
+      title: `${group.length} parcelas ativas com ${getAuditPaymentKeyDescription(group)}`,
+      description: `Parcelas ativas com ${getAuditPaymentKeyDescription(group)} aparecem mais de uma vez em ${getVendaUnidadeLabel(venda)}.`,
       tags: ['parcela', 'duplicada', 'ativa'],
       months: group.flatMap((p) => [getAuditMonth(p.data_prevista), getAuditMonth(p.data_pagamento)]).filter(Boolean),
     })
@@ -272,13 +303,13 @@ const buildAuditIssues = ({ vendas = [], pagamentos = [] }) => {
     const venda = vendaMap.get(vendaId) || group[0]?.venda
     addAuditIssue(issues, {
       type: 'duplicidade_cancelada',
-      severity: 'media',
+      severity: 'baixa',
       venda,
       pagamentos: group,
       ref: key,
-      title: 'Parcela cancelada convive com parcela ativa igual',
-      description: `${cancelados.length} cancelada(s) e ${ativos.length} ativa(s) com o mesmo tipo/numero. Pode ser historico correto, mas vale revisar se apareceu na tela.`,
-      tags: ['cancelado', 'duplicidade', 'historico'],
+      title: 'Historico cancelado convive com parcela ativa igual',
+      description: `${cancelados.length} cancelada(s) e ${ativos.length} ativa(s) com ${getAuditPaymentKeyDescription(group)}. Canceladas nao entram nos totais; revise apenas se a parcela aparecer indevidamente na tela.`,
+      tags: ['cancelado', 'duplicidade', 'historico', 'baixa prioridade'],
       months: group.flatMap((p) => [getAuditMonth(p.data_prevista), getAuditMonth(p.data_pagamento)]).filter(Boolean),
     })
   }
@@ -293,60 +324,65 @@ const buildAuditIssues = ({ vendas = [], pagamentos = [] }) => {
       const dataPagamentoDia = new Date(dataPagamento)
       dataPagamentoDia.setHours(0, 0, 0, 0)
       if (dataPagamentoDia > today) {
+        const possuiAncoraSienge = hasSiengePaymentAnchor(pag)
         addAuditIssue(issues, {
           type: 'baixa_futura',
-          severity: 'alta',
+          severity: possuiAncoraSienge ? 'baixa' : 'alta',
           venda,
           pagamentos: [pag],
           ref: pag.id,
-          title: 'Baixa marcada com data futura',
-          description: `Parcela ${pag.numero_parcela || '-'} esta como paga em ${formatDataBR(pag.data_pagamento)}, depois da data de hoje.`,
-          tags: ['baixa', 'futura', 'pago'],
+          title: possuiAncoraSienge ? 'Baixa futura vinda do Sienge' : 'Baixa marcada com data futura',
+          description: possuiAncoraSienge
+            ? `Parcela ${pag.numero_parcela || '-'} esta como paga em ${formatDataBR(pag.data_pagamento)} e possui ancora Sienge. Nao parece erro local de sincronizacao.`
+            : `Parcela ${pag.numero_parcela || '-'} esta como paga em ${formatDataBR(pag.data_pagamento)}, depois da data de hoje, sem ancora Sienge.`,
+          tags: possuiAncoraSienge ? ['baixa', 'futura', 'sienge'] : ['baixa', 'futura', 'pago', 'sem ancora'],
           months: [getAuditMonth(pag.data_pagamento), getAuditMonth(pag.data_prevista)].filter(Boolean),
         })
       }
 
-      if (dataPrevista) {
+      if (dataPrevista && !hasSiengePaymentAnchor(pag)) {
         const diasAntecipados = Math.round((dataPrevista - dataPagamentoDia) / (1000 * 60 * 60 * 24))
         if (diasAntecipados >= 20) {
           addAuditIssue(issues, {
             type: 'baixa_adiantada',
-            severity: 'media',
+            severity: 'baixa',
             venda,
             pagamentos: [pag],
             ref: pag.id,
-            title: 'Baixa muito antes da data prevista',
-            description: `Parcela ${pag.numero_parcela || '-'} foi baixada ${diasAntecipados} dias antes da previsao. Pode ser adiantamento real ou drift de sync.`,
-            tags: ['baixa', 'adiantada', 'sync'],
+            title: 'Baixa antecipada ainda sem ancora Sienge',
+            description: `Parcela ${pag.numero_parcela || '-'} foi baixada ${diasAntecipados} dias antes da previsao e ainda nao tem bill/installment do Sienge gravado.`,
+            tags: ['baixa', 'antecipada', 'sienge', 'sem ancora'],
             months: [getAuditMonth(pag.data_pagamento), getAuditMonth(pag.data_prevista)].filter(Boolean),
           })
         }
       }
     }
 
-    const valor = parseFloat(pag.valor) || 0
-    const fator = parseFloat(pag.fator_comissao_aplicado) || 0
-    const comissao = parseFloat(pag.comissao_gerada) || 0
-    if (valor > 0 && fator > 0 && comissao > 0) {
-      const esperada = valor * fator
-      const diferenca = Math.abs(esperada - comissao)
-      if (diferenca > Math.max(0.1, esperada * 0.01)) {
-        addAuditIssue(issues, {
-          type: 'comissao_divergente',
-          severity: 'alta',
-          venda,
-          pagamentos: [pag],
-          ref: pag.id,
-          title: 'Comissao gravada diverge do fator aplicado',
-          description: `Parcela ${pag.numero_parcela || '-'} tem diferenca de R$ ${diferenca.toFixed(2)} entre fator e comissao gravada.`,
-          tags: ['comissao', 'fator', 'percentual'],
-          months: [getAuditMonth(pag.data_prevista), getAuditMonth(pag.data_pagamento)].filter(Boolean),
-        })
+    if (pag.status !== 'pago') {
+      const valor = parseFloat(pag.valor) || 0
+      const fator = parseFloat(pag.fator_comissao_aplicado) || 0
+      const comissao = parseFloat(pag.comissao_gerada) || 0
+      if (valor > 0 && fator > 0 && comissao > 0) {
+        const esperada = valor * fator
+        const diferenca = Math.abs(esperada - comissao)
+        if (diferenca > Math.max(0.1, esperada * 0.01)) {
+          addAuditIssue(issues, {
+            type: 'comissao_divergente',
+            severity: 'alta',
+            venda,
+            pagamentos: [pag],
+            ref: pag.id,
+            title: 'Comissao pendente diverge do fator aplicado',
+            description: `Parcela ${pag.numero_parcela || '-'} tem diferenca de R$ ${diferenca.toFixed(2)} entre fator e comissao gravada.`,
+            tags: ['comissao', 'fator', 'percentual', 'pendente'],
+            months: [getAuditMonth(pag.data_prevista), getAuditMonth(pag.data_pagamento)].filter(Boolean),
+          })
+        }
       }
     }
   }
 
-  for (const venda of vendas) {
+  for (const venda of vendasAuditaveis) {
     const vendaId = String(venda.id)
     const pagamentosVenda = pagamentosPorVenda.get(vendaId) || []
     const ativos = pagamentosVenda.filter((p) => p.status !== 'cancelado')
@@ -378,6 +414,8 @@ const buildAuditIssues = ({ vendas = [], pagamentos = [] }) => {
       const lista = Array.from(numeros).sort((a, b) => a - b)
       const max = lista[lista.length - 1]
       if (!max || max < 3) continue
+      const pagamentosTipo = ativos.filter((p) => p.tipo === tipo)
+      if (pagamentosTipo.some(hasSiengePaymentAnchor)) continue
       const faltando = []
       for (let n = 1; n <= max; n++) {
         if (!numeros.has(n)) faltando.push(n)
@@ -385,13 +423,13 @@ const buildAuditIssues = ({ vendas = [], pagamentos = [] }) => {
       if (faltando.length) {
         addAuditIssue(issues, {
           type: 'sequencia_faltando',
-          severity: 'alta',
+          severity: 'media',
           venda,
-          pagamentos: ativos.filter((p) => p.tipo === tipo),
+          pagamentos: pagamentosTipo,
           ref: `${venda.id}-${tipo}`,
-          title: `Sequencia de ${tipo.replace('_', ' ')} com lacuna`,
-          description: `Faltam as parcelas ${faltando.slice(0, 8).join(', ')} antes da parcela ${max}.`,
-          tags: ['sequencia', 'faltando', 'parcela'],
+          title: `Sequencia local de ${tipo.replace('_', ' ')} com lacuna`,
+          description: `Faltam as parcelas ${faltando.slice(0, 8).join(', ')} antes da parcela ${max}. Caso Sienge sem ancora, revise a grade local.`,
+          tags: ['sequencia', 'faltando', 'parcela', 'sem ancora'],
           missingNumbers: faltando,
         })
       }
@@ -415,7 +453,7 @@ const buildAuditIssues = ({ vendas = [], pagamentos = [] }) => {
 
   const exactUnitGroups = new Map()
   const digitUnitGroups = new Map()
-  for (const venda of vendas) {
+  for (const venda of vendasAuditaveis) {
     const unidadeRaw = String(venda.unidade || '').trim()
     if (!unidadeRaw) continue
     const empKey = String(venda.empreendimento_id || 'sem-emp')
@@ -436,21 +474,38 @@ const buildAuditIssues = ({ vendas = [], pagamentos = [] }) => {
     if (group.length <= 1) continue
     const corretoresIds = new Set(group.map((v) => v.corretor_id).filter(Boolean))
     const clientesIds = new Set(group.map((v) => v.cliente_id).filter(Boolean))
+    const contratoIds = group.map((v) => v.sienge_contract_id).filter(Boolean).map(String)
+    const contratosUnicos = new Set(contratoIds)
+    const todasComContratoSienge = contratoIds.length === group.length
+    const contratoSiengeRepetido = contratosUnicos.size < contratoIds.length
+    const precisaRevisaoForte = !todasComContratoSienge || contratoSiengeRepetido
     addAuditIssue(issues, {
       type: 'unidade_duplicada',
-      severity: corretoresIds.size > 1 || clientesIds.size > 1 ? 'alta' : 'media',
+      severity: precisaRevisaoForte ? 'alta' : 'baixa',
       venda: group[0],
       vendasRelacionadas: group,
       ref: key,
-      title: `${group.length} vendas para a mesma unidade`,
-      description: `Mesmo empreendimento/bloco/unidade aparece em ${group.length} vendas. Corretores: ${corretoresIds.size || 1}. Clientes: ${clientesIds.size || 1}.`,
-      tags: ['unidade', 'duplicada', 'corretores diferentes'],
+      title: todasComContratoSienge
+        ? `${group.length} contratos Sienge para a mesma unidade`
+        : `${group.length} vendas para a mesma unidade`,
+      description: todasComContratoSienge
+        ? `A mesma unidade aparece em ${group.length} contratos Sienge distintos. Pode ser revenda ou reemissao; revise apenas se os contratos nao deveriam coexistir.`
+        : `Mesmo empreendimento/bloco/unidade aparece em ${group.length} vendas e ao menos uma delas nao tem contrato Sienge ancorado.`,
+      tags: [
+        'unidade',
+        todasComContratoSienge ? 'contratos sienge' : 'duplicada',
+        corretoresIds.size > 1 ? 'corretores diferentes' : 'mesmo corretor',
+        clientesIds.size > 1 ? 'clientes diferentes' : 'mesmo cliente',
+      ],
     })
   }
 
   for (const [key, group] of digitUnitGroups.entries()) {
     const unidades = new Set(group.map((v) => normalizeAuditText(v.unidade).replace(/\s/g, '')))
     if (group.length <= 1 || unidades.size <= 1) continue
+    const suffixes = new Set(group.map((v) => getAuditUnitSuffix(v.unidade)).filter(Boolean))
+    const allHaveSuffix = group.every((v) => getAuditUnitSuffix(v.unidade))
+    if (allHaveSuffix && suffixes.size > 1) continue
     addAuditIssue(issues, {
       type: 'unidade_parecida',
       severity: 'media',
@@ -714,6 +769,21 @@ const AdminDashboard = () => {
     const saved = safeGet('sidebar-collapsed')
     return saved === 'true'
   })
+
+  // Modal de foto de perfil — abre forçado se admin ainda não cadastrou foto
+  const [photoModalOpen, setPhotoModalOpen] = useState(false)
+  const [photoModalForced, setPhotoModalForced] = useState(false)
+
+  useEffect(() => {
+    if (userProfile && !userProfile.foto_url) {
+      setPhotoModalOpen(true)
+      setPhotoModalForced(true)
+    } else if (userProfile?.foto_url && photoModalForced) {
+      setPhotoModalOpen(false)
+      setPhotoModalForced(false)
+    }
+  }, [photoModalForced, userProfile])
+
   const [searchTerm, setSearchTerm] = useState('')
   const [siengeSyncLoading, setSiengeSyncLoading] = useState(null)
   const [siengeSyncResult, setSiengeSyncResult] = useState(null)
@@ -1041,7 +1111,7 @@ const AdminDashboard = () => {
     descricao: '',
     total_unidades: '',
     comissao_total_externo: '7',
-    comissao_total_interno: '6',
+    comissao_total_interno: '6.5',
     cargos_externo: [{ nome_cargo: '', percentual: '' }],
     cargos_interno: [{ nome_cargo: '', percentual: '' }],
     logo_url: '',
@@ -2951,7 +3021,7 @@ const AdminDashboard = () => {
             descricao: empreendimentoForm.descricao,
             total_unidades: empreendimentoForm.total_unidades ? parseInt(empreendimentoForm.total_unidades) : null,
             comissao_total_externo: parseFloat(empreendimentoForm.comissao_total_externo) || 7,
-            comissao_total_interno: parseFloat(empreendimentoForm.comissao_total_interno) || 6,
+            comissao_total_interno: parseFloat(empreendimentoForm.comissao_total_interno) || 6.5,
             logo_url: empreendimentoForm.logo_url || null,
             progresso_obra: parseInt(empreendimentoForm.progresso_obra) || 0
           })
@@ -2979,7 +3049,7 @@ const AdminDashboard = () => {
             descricao: empreendimentoForm.descricao,
             total_unidades: empreendimentoForm.total_unidades ? parseInt(empreendimentoForm.total_unidades) : null,
             comissao_total_externo: parseFloat(empreendimentoForm.comissao_total_externo) || 7,
-            comissao_total_interno: parseFloat(empreendimentoForm.comissao_total_interno) || 6,
+            comissao_total_interno: parseFloat(empreendimentoForm.comissao_total_interno) || 6.5,
             logo_url: empreendimentoForm.logo_url || null,
             progresso_obra: parseInt(empreendimentoForm.progresso_obra) || 0
           }])
@@ -5771,9 +5841,18 @@ const AdminDashboard = () => {
             {sidebarCollapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
           </button>
           <div className="user-info">
-            <div className="user-avatar">
-              <User size={20} />
-            </div>
+            <button
+              type="button"
+              className="user-avatar"
+              onClick={() => { setPhotoModalOpen(true); setPhotoModalForced(false) }}
+              title="Trocar foto de perfil"
+            >
+              {userProfile?.foto_url ? (
+                <img src={userProfile.foto_url} alt={userProfile.nome || 'Foto'} />
+              ) : (
+                <User size={20} />
+              )}
+            </button>
             <div className="user-details">
               <span className="user-name">{userProfile?.nome || 'Admin'}</span>
               <span className="user-role">Administrador</span>
@@ -5859,7 +5938,7 @@ const AdminDashboard = () => {
                     descricao: '',
                     total_unidades: '',
                     comissao_total_externo: '7',
-                    comissao_total_interno: '6',
+                    comissao_total_interno: '6.5',
                     cargos_externo: [{ nome_cargo: '', percentual: '' }],
                     cargos_interno: [{ nome_cargo: '', percentual: '' }],
                     logo_url: '',
@@ -6574,7 +6653,7 @@ const AdminDashboard = () => {
                         descricao: '',
                         total_unidades: '',
                         comissao_total_externo: '7',
-                        comissao_total_interno: '6',
+                        comissao_total_interno: '6.5',
                         cargos_externo: [{ nome_cargo: '', percentual: '' }],
                         cargos_interno: [{ nome_cargo: '', percentual: '' }],
                         logo_url: '',
@@ -6715,7 +6794,7 @@ const AdminDashboard = () => {
                                 descricao: emp.descricao || '',
                                 total_unidades: emp.total_unidades?.toString() || '',
                                 comissao_total_externo: emp.comissao_total_externo?.toString() || '7',
-                                comissao_total_interno: emp.comissao_total_interno?.toString() || '6',
+                                comissao_total_interno: emp.comissao_total_interno?.toString() || '6.5',
                                 cargos_externo: cargosExt.length > 0 
                                   ? cargosExt.map(c => ({ nome_cargo: c.nome_cargo, percentual: c.percentual?.toString() || '' }))
                                   : [{ nome_cargo: '', percentual: '' }],
@@ -6780,7 +6859,7 @@ const AdminDashboard = () => {
                           </span>
                           <span className="emp-list-rate interno">
                             <Percent size={14} />
-                            Interno: {emp.comissao_total_interno || 6}%
+                            Interno: {emp.comissao_total_interno || 6.5}%
                           </span>
                         </div>
                         
@@ -6820,7 +6899,7 @@ const AdminDashboard = () => {
                               descricao: emp.descricao || '',
                               total_unidades: emp.total_unidades?.toString() || '',
                               comissao_total_externo: emp.comissao_total_externo?.toString() || '7',
-                              comissao_total_interno: emp.comissao_total_interno?.toString() || '6',
+                              comissao_total_interno: emp.comissao_total_interno?.toString() || '6.5',
                               cargos_externo: cargosExt.length > 0 
                                 ? cargosExt.map(c => ({ nome_cargo: c.nome_cargo, percentual: c.percentual?.toString() || '' }))
                                 : [{ nome_cargo: '', percentual: '' }],
@@ -6939,7 +7018,7 @@ const AdminDashboard = () => {
                         </div>
                         <div className="emp-view-comissao-box">
                           <span className="label">Corretor Interno</span>
-                          <span className="value green">{empreendimentoVisualizar.comissao_total_interno || 6}%</span>
+                          <span className="value green">{empreendimentoVisualizar.comissao_total_interno || 6.5}%</span>
                         </div>
                       </div>
                     </div>
@@ -7059,7 +7138,7 @@ const AdminDashboard = () => {
                           descricao: emp.descricao || '',
                           total_unidades: emp.total_unidades?.toString() || '',
                           comissao_total_externo: emp.comissao_total_externo?.toString() || '7',
-                          comissao_total_interno: emp.comissao_total_interno?.toString() || '6',
+                          comissao_total_interno: emp.comissao_total_interno?.toString() || '6.5',
                           cargos_externo: cargosExt.length > 0 
                             ? cargosExt.map(c => ({ nome_cargo: c.nome_cargo, percentual: c.percentual?.toString() || '' }))
                             : [{ nome_cargo: '', percentual: '' }],
@@ -8590,7 +8669,7 @@ const AdminDashboard = () => {
                             {empSelecionado?.nome || 'Empreendimento'}
                           </h4>
                           <p style={{ margin: 0, color: 'rgba(255,255,255,0.6)', fontSize: '14px' }}>
-                            Comissão: {empSelecionado?.comissao_total_externo || 7}% (Externo) | {empSelecionado?.comissao_total_interno || 6}% (Interno)
+                            Comissão: {empSelecionado?.comissao_total_externo || 7}% (Externo) | {empSelecionado?.comissao_total_interno || 6.5}% (Interno)
                           </p>
                         </div>
                         
@@ -10891,7 +10970,7 @@ const AdminDashboard = () => {
                         <input
                           type="number"
                           step="0.1"
-                          placeholder="6"
+                          placeholder="6,5"
                           value={empreendimentoForm.comissao_total_interno}
                           onChange={(e) => setEmpreendimentoForm({...empreendimentoForm, comissao_total_interno: e.target.value})}
                         />
@@ -12308,6 +12387,12 @@ const AdminDashboard = () => {
 
       {/* Notas de atualizacao — admin-only por construcao, mostra 1x por versao */}
       <NotasAtualizacaoModal />
+
+      <ProfilePhotoModal
+        open={photoModalOpen}
+        required={photoModalForced}
+        onClose={() => setPhotoModalOpen(false)}
+      />
 
     </div>
   )
