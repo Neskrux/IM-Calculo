@@ -8,7 +8,7 @@ import autoTable from 'jspdf-autotable'
 import { 
   Users, DollarSign, TrendingUp, Plus, Edit2, Trash2, 
   Search, Filter, LogOut, Menu, X, ChevronDown, Save, Eye,
-  Calculator, Calendar, User, Briefcase, CheckCircle, Clock, UserPlus, Mail, Lock, Percent, Building, PlusCircle, CreditCard, Check, Upload, FileText, Trash, UserCircle, Phone, MapPin, Camera, Download, FileDown, LayoutDashboard, ChevronLeft, ChevronRight, PanelLeftClose, PanelLeft, AlertCircle, RefreshCw, ClipboardList, CheckCircle2, XCircle, MessageSquare
+  Calculator, Calendar, User, Briefcase, CheckCircle, Clock, UserPlus, Mail, Lock, Percent, Building, PlusCircle, CreditCard, Check, Upload, FileText, Trash, UserCircle, Phone, MapPin, Camera, Download, FileDown, LayoutDashboard, ChevronLeft, ChevronRight, PanelLeftClose, PanelLeft, AlertCircle, RefreshCw, ClipboardList, CheckCircle2, XCircle, MessageSquare, Undo2
 } from 'lucide-react'
 import logo from '../imgs/logo.png'
 import Ticker from '../components/Ticker'
@@ -3682,8 +3682,15 @@ const AdminDashboard = () => {
 
   // Helper: verificar se totais batem
   const totalDistribuicaoAtual = calcularTotalDistribuicao(renegociacaoForm.distribuicoesNovas)
-  const totalsFechados = Math.abs(totalDistribuicaoAtual - renegociacaoForm.totalSelecionado) <= 0.01
   const diferenca = totalDistribuicaoAtual - renegociacaoForm.totalSelecionado
+  // Nº total de parcelas que serão geradas (soma das qtds). Um residual de
+  // arredondamento é distribuível em ±1 centavo por parcela, então uma diferença
+  // de até (nº parcelas × 1¢) é só ruído de arredondamento — não deve bloquear.
+  const totalParcelasDistribuicao = renegociacaoForm.distribuicoesNovas.reduce((s, d) => s + (parseInt(d.qtd) || 0), 0)
+  const toleranciaArredondamento = Math.max(0.01, totalParcelasDistribuicao * 0.01)
+  const totalsFechados = Math.abs(diferenca) <= toleranciaArredondamento + 1e-6
+  // Há diferença, mas dentro da tolerância → os centavos serão ajustados ao salvar
+  const precisaAjusteCentavos = totalsFechados && Math.abs(diferenca) > 0.005
 
   const abrirModalRenegociacao = () => {
     // Calcular totais consolidados
@@ -3754,7 +3761,11 @@ const AdminDashboard = () => {
       return s + (parseInt(d.qtd) || 1) * (parseFloat(d.valor) || 0)
     }, 0)
 
-    if (Math.abs(totalNovaDistribuicao - renegociacaoForm.totalSelecionado) > 0.01) {
+    // Tolerância = nº de parcelas × 1¢ (residual de arredondamento distribuível ±1¢/parcela).
+    // O ajuste fino de centavos é feito mais abaixo, ao montar as novas parcelas.
+    const totalParcelasNovas = renegociacaoForm.distribuicoesNovas.reduce((s, d) => s + (parseInt(d.qtd) || 0), 0)
+    const toleranciaCentavos = Math.max(0.01, totalParcelasNovas * 0.01)
+    if (Math.abs(totalNovaDistribuicao - renegociacaoForm.totalSelecionado) > toleranciaCentavos + 1e-6) {
       setMessage({
         type: 'error',
         text: `Total da nova distribuição (R$${totalNovaDistribuicao.toFixed(2)}) não corresponde ao total selecionado (R$${renegociacaoForm.totalSelecionado.toFixed(2)})`
@@ -3802,6 +3813,30 @@ const AdminDashboard = () => {
           })
         }
       })
+
+      // ✨ Ajuste de centavos: garante que a soma das novas parcelas bata EXATAMENTE
+      // com o total selecionado. O residual de arredondamento (poucos centavos, ex.:
+      // 25×237,39 = 5.934,75 vs 5.934,78) é distribuído ±1¢ por parcela, começando
+      // pelas primeiras. Nenhum centavo é perdido ou criado.
+      if (novasParcelas.length > 0) {
+        const alvoCents = Math.round(renegociacaoForm.totalSelecionado * 100)
+        const somaCents = novasParcelas.reduce((s, p) => s + Math.round(p.valor * 100), 0)
+        let residualCents = alvoCents - somaCents
+        const passo = residualCents > 0 ? 1 : -1
+        let i = 0
+        let voltas = 0
+        while (residualCents !== 0 && voltas < novasParcelas.length * 2) {
+          const idx = i % novasParcelas.length
+          const novoValorCents = Math.round(novasParcelas[idx].valor * 100) + passo
+          if (novoValorCents > 0) {
+            novasParcelas[idx].valor = novoValorCents / 100
+            novasParcelas[idx].comissao_gerada = calcularComissaoPagamento(novasParcelas[idx].valor, fator)
+            residualCents -= passo
+          }
+          i++
+          if (i % novasParcelas.length === 0) voltas++
+        }
+      }
 
       console.log('💾 Processando renegociação agrupada:', {
         parcelasOriginais: parcelasOriginais.length,
@@ -6907,13 +6942,13 @@ const AdminDashboard = () => {
                                         <Edit2 size={14} />
                                         Editar
                                       </button>
-                                      <button 
-                                        className="btn-small-danger"
+                                      <button
+                                        className="btn-small-reverter"
                                         onClick={(e) => { e.stopPropagation(); excluirBaixa(pag); }}
-                                        title="Reverter baixa"
+                                        title="Reverter baixa — volta a Pendente (não exclui a parcela)"
                                       >
-                                        <Trash2 size={14} />
-                                        Excluir
+                                        <Undo2 size={14} />
+                                        Reverter
                                       </button>
                                     </>
                                   )}
@@ -7176,6 +7211,9 @@ const AdminDashboard = () => {
                         <p>
                           Tem certeza que deseja reverter esta baixa? A parcela voltará ao status <strong>Pendente</strong> e a data de pagamento será removida.
                         </p>
+                        <p className="modal-hint-reverter">
+                          A parcela <strong>não é excluída</strong> — ela apenas deixa de constar como paga e pode ser confirmada novamente depois.
+                        </p>
                         <div className="modal-actions">
                           <button
                             className="btn-secondary"
@@ -7185,7 +7223,7 @@ const AdminDashboard = () => {
                             Cancelar
                           </button>
                           <button
-                            className="btn-danger"
+                            className="btn-reverter"
                             onClick={processarExcluirBaixa}
                             disabled={excluindoBaixa}
                           >
@@ -7195,7 +7233,10 @@ const AdminDashboard = () => {
                                 Revertendo...
                               </>
                             ) : (
-                              'Reverter Baixa'
+                              <>
+                                <Undo2 size={16} />
+                                Reverter para Pendente
+                              </>
                             )}
                           </button>
                         </div>
@@ -11262,7 +11303,16 @@ const AdminDashboard = () => {
                   </div>
                 )}
 
-                {totalsFechados && (
+                {totalsFechados && precisaAjusteCentavos && (
+                  <div className="renego-ajuste-centavos">
+                    <AlertCircle size={16} />
+                    <span>
+                      Diferença de <strong>{formatCurrency(Math.abs(diferenca))}</strong> (arredondamento) — os centavos serão ajustados automaticamente nas parcelas ao salvar.
+                    </span>
+                  </div>
+                )}
+
+                {totalsFechados && !precisaAjusteCentavos && (
                   <div className="renego-confirmacao-total">
                     <Check size={16} />
                     <span>Os totais batem corretamente ✓</span>
