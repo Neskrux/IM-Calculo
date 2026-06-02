@@ -1,0 +1,21 @@
+{
+  "meta": {
+    "geradoEm": "2026-05-14T14:50:03.641Z",
+    "spec_ref": ".claude/rules/sincronizacao-sienge.md",
+    "script": "scripts/excluir-venda-claudio-236.mjs",
+    "modo": "apply",
+    "venda_id": "943b164d-ff42-45ce-90e0-80b481637f82",
+    "autorizacao": "gestora 2026-05-14"
+  },
+  "update": {
+    "excluido": true,
+    "motivo_exclusao": "Venda duplicada: contrato 236 foi reemitido no Sienge como 390 (bill 462, unidade 1008 C). Os pagamentos reais do CLAUDIO MARTIRE estao na venda do contrato 390 (60 parcelas, 12 pagas). Esta venda (236) tem 3 parcelas pagas-fantasma. Exclusao autorizada pela gestora em 2026-05-14.",
+    "excluido_por": "c8cff026-b79f-41e1-a9c1-93547d484758",
+    "excluido_em": "2026-05-14T14:50:03.640Z",
+    "updated_at": "2026-05-14T14:50:03.641Z"
+  },
+  "counts": {
+    "updated": 0,
+    "errors": 0
+  }
+}

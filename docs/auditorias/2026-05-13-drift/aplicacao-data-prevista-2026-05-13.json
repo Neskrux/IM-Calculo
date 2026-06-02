@@ -1,0 +1,45 @@
+{
+  "meta": {
+    "geradoEm": "2026-05-13T23:30:32.895Z",
+    "spec_ref": ".claude/rules/sincronizacao-sienge.md",
+    "script": "scripts/aplicar-correcao-data-prevista.mjs",
+    "modo": "apply",
+    "plano_origem": "docs/plano-correcao-data-prevista-ampla-2026-05-13.json"
+  },
+  "counts": {
+    "matched": 3,
+    "updated": 3,
+    "inserted": 0,
+    "skipped_idempotent": 0,
+    "drift_detected": 3,
+    "drift_corrected": 3,
+    "noMatch": 0,
+    "skipped_humano": 0,
+    "errors": 0
+  },
+  "drift": [
+    {
+      "id": "cbdff008-ea8a-4276-bdda-f09b5798d480",
+      "campo": "data_prevista",
+      "antes": "2026-02-20",
+      "depois": "2026-02-10",
+      "motivo": "Sienge dueDate (billId=194 parc=8); drift original = -10d"
+    },
+    {
+      "id": "09b395b5-a1b1-4437-81f7-7b85799d5c79",
+      "campo": "data_prevista",
+      "antes": "2026-03-20",
+      "depois": "2026-03-10",
+      "motivo": "Sienge dueDate (billId=194 parc=9); drift original = -10d"
+    },
+    {
+      "id": "7b6e2d4c-f70b-4ab3-8d78-a90d7eb03ceb",
+      "campo": "data_prevista",
+      "antes": "2026-01-20",
+      "depois": "2026-01-10",
+      "motivo": "Sienge dueDate (billId=194 parc=7); drift original = -10d"
+    }
+  ],
+  "humano_pendente": [],
+  "errors": []
+}

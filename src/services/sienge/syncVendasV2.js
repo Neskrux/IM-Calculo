@@ -311,7 +311,7 @@ const getPercentualTotalEmpreendimento = async (empreendimentoId, tipoCorretor =
   if (!emp) return 7
 
   return tipoCorretor === 'interno'
-    ? parseFloat(emp.comissao_total_interno) || 6
+    ? parseFloat(emp.comissao_total_interno) || 6.5
     : parseFloat(emp.comissao_total_externo) || 7
 }
 

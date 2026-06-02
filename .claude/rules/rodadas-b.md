@@ -66,7 +66,7 @@ docs/b{N}-execucao.json            # relatório do script de aplicação (schema
 - Cada caso traz dados-chave (cliente, contrato, valor, decisão a tomar).
 - Termina com **"O que fazer agora"** — instrução clara de como responder.
 
-Modelo em [docs/b6-texto-para-usuaria.md](docs/b6-texto-para-usuaria.md).
+Modelo em [docs/rodadas/b6/b6-texto-para-usuaria.md](docs/rodadas/b6/b6-texto-para-usuaria.md).
 
 ---
 

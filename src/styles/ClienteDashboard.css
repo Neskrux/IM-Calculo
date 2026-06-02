@@ -625,6 +625,11 @@
   background: rgba(16, 185, 129, 0.15);
 }
 
+.cliente-parcela-row.cancelado {
+  opacity: 0.45;
+  border-style: dashed;
+}
+
 .cliente-parcela-tipo {
   flex: 0 0 120px;
   font-size: 13px;
@@ -1028,7 +1033,7 @@
   left: 0;
   right: 0;
   height: 3px;
-  background: linear-gradient(90deg, var(--accent-primary, var(--im-accent, #c9a962)) 0%, #6ba8ed 50%, var(--accent-primary, var(--im-accent, #c9a962)) 100%);
+  background: linear-gradient(90deg, transparent 0%, rgba(201, 169, 98, 0.72) 50%, transparent 100%);
 }
 
 .perfil-header-cliente {
@@ -1044,7 +1049,7 @@
   width: 70px;
   height: 70px;
   border-radius: 50%;
-  background: linear-gradient(135deg, var(--accent-primary, var(--im-accent, #c9a962)) 0%, #6ba8ed 100%);
+  background: linear-gradient(135deg, rgba(201, 169, 98, 0.92) 0%, rgba(139, 115, 85, 0.92) 100%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1052,8 +1057,8 @@
   font-weight: 700;
   color: white;
   flex-shrink: 0;
-  box-shadow: 0 4px 16px rgba(201, 169, 98, 0.2);
-  border: 2px solid rgba(201, 169, 98, 0.2);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.24);
+  border: 2px solid rgba(255, 255, 255, 0.08);
 }
 
 .perfil-info-header h3 {

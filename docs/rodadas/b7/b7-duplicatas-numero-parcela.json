@@ -1,0 +1,2174 @@
+{
+  "meta": {
+    "geradoEm": "2026-05-13T22:16:01.450Z",
+    "total": 11,
+    "spec_ref": ".claude/rules/sincronizacao-sienge.md, .claude/rules/rodadas-b.md",
+    "regra": "Vendas com numero_parcela duplicado (par cancelado+ativo dentro da mesma sequencia logica). Sintoma do backfill antigo que fez match por (venda_id, numero_parcela) sem reconciliar com installmentId Sienge. Pre-requisito de aplicacao: migration 023 + re-baixa /bulk-data/v1/income (hoje 2026-05-13 bati quota — retry-after ~8000s)."
+  },
+  "casos": [
+    {
+      "venda_id": "1d7772d4-ee1e-4d72-92ec-3e67460880cc",
+      "sienge_contract_id": "275",
+      "numero_contrato": "183",
+      "unidade": "803 D",
+      "cliente": "SAMUEL MUELLER LEMOS",
+      "cliente_cpf": "11319608906",
+      "cliente_telefone": "(47) 99660-0856",
+      "cliente_suspeito_ser_corretor": false,
+      "corretor": null,
+      "corretor_telefone": null,
+      "valor_venda": 410443.77,
+      "valor_pro_soluto": 150850,
+      "parcelou_entrada": true,
+      "qtd_parcelas_entrada": 56,
+      "valor_parcela_entrada": 1500,
+      "contagem": {
+        "total_pagamentos": 57,
+        "pagos": 8,
+        "pendentes": 33,
+        "cancelados": 16,
+        "pares_duplicados": 16,
+        "total_pago_em_duplicatas": 4
+      },
+      "risco": "alto",
+      "motivo": "Tem par com linha PAGA — qualquer alteracao em pago precisa decisao explicita (spec 017/020).",
+      "acao_sugerida": "aguardar_reconciliacao_sienge_bulkdata",
+      "opcoes": [
+        {
+          "id": "1",
+          "label": "Aguardar re-baixa Sienge",
+          "efeito": "Re-baixa /bulk-data/v1/income, popula sienge_installment_id, re-amarra parcelas, depois cancela duplicatas redundantes"
+        },
+        {
+          "id": "2",
+          "label": "Investigar caso a caso",
+          "efeito": "Olha cada duplicata pago+cancelado e decide individualmente — mais lento"
+        }
+      ],
+      "pares": [
+        {
+          "grupo_key": "parcela_entrada__2",
+          "linhas": [
+            {
+              "id": "aea7b598-0b13-49a4-a4cb-211c6f2bd031",
+              "numero_parcela": 2,
+              "tipo": "parcela_entrada",
+              "valor": 2650,
+              "data_prevista": "2025-11-10",
+              "data_pagamento": null,
+              "status": "cancelado",
+              "comissao_gerada": 504.72
+            },
+            {
+              "id": "9cb89990-01a2-4183-9a54-75b6de80383d",
+              "numero_parcela": 2,
+              "tipo": "parcela_entrada",
+              "valor": 1500,
+              "data_prevista": "2027-06-10",
+              "data_pagamento": "2025-11-10",
+              "status": "pago",
+              "comissao_gerada": 285.69
+            }
+          ],
+          "mesma_data_prevista": false,
+          "tem_pago": true
+        },
+        {
+          "grupo_key": "parcela_entrada__3",
+          "linhas": [
+            {
+              "id": "0441c4ef-389f-4f56-b98d-938e5380af6a",
+              "numero_parcela": 3,
+              "tipo": "parcela_entrada",
+              "valor": 1500,
+              "data_prevista": "2027-07-10",
+              "data_pagamento": "2025-12-10",
+              "status": "pago",
+              "comissao_gerada": 285.69
+            },
+            {
+              "id": "618b3c39-70cb-45f2-92e9-4591f8cd1341",
+              "numero_parcela": 3,
+              "tipo": "parcela_entrada",
+              "valor": 1500,
+              "data_prevista": "2027-07-10",
+              "data_pagamento": null,
+              "status": "cancelado",
+              "comissao_gerada": 285.69
+            }
+          ],
+          "mesma_data_prevista": true,
+          "tem_pago": true
+        },
+        {
+          "grupo_key": "parcela_entrada__6",
+          "linhas": [
+            {
+              "id": "891de658-accc-45a6-9ada-162f13355ab5",
+              "numero_parcela": 6,
+              "tipo": "parcela_entrada",
+              "valor": 1500,
+              "data_prevista": "2027-10-10",
+              "data_pagamento": "2026-03-10",
+              "status": "pago",
+              "comissao_gerada": 285.69
+            },
+            {
+              "id": "e49ff307-2b8c-408a-b363-0efcdf832682",
+              "numero_parcela": 6,
+              "tipo": "parcela_entrada",
+              "valor": 1500,
+              "data_prevista": "2027-10-10",
+              "data_pagamento": null,
+              "status": "cancelado",
+              "comissao_gerada": 285.69
+            }
+          ],
+          "mesma_data_prevista": true,
+          "tem_pago": true
+        },
+        {
+          "grupo_key": "parcela_entrada__7",
+          "linhas": [
+            {
+              "id": "7219de20-b5e3-449a-b3c8-ced28f2e3e74",
+              "numero_parcela": 7,
+              "tipo": "parcela_entrada",
+              "valor": 1500,
+              "data_prevista": "2027-11-10",
+              "data_pagamento": "2026-04-10",
+              "status": "pago",
+              "comissao_gerada": 285.69
+            },
+            {
+              "id": "acda1afe-7ac7-4afc-9003-96f05693d435",
+              "numero_parcela": 7,
+              "tipo": "parcela_entrada",
+              "valor": 1500,
+              "data_prevista": "2027-11-10",
+              "data_pagamento": null,
+              "status": "cancelado",
+              "comissao_gerada": 285.69
+            }
+          ],
+          "mesma_data_prevista": true,
+          "tem_pago": true
+        },
+        {
+          "grupo_key": "parcela_entrada__8",
+          "linhas": [
+            {
+              "id": "f4be1a69-16ed-4ae0-84e3-7951dc63a9b4",
+              "numero_parcela": 8,
+              "tipo": "parcela_entrada",
+              "valor": 1500,
+              "data_prevista": "2027-12-10",
+              "data_pagamento": null,
+              "status": "pendente",
+              "comissao_gerada": 285.69
+            },
+            {
+              "id": "d6bd117a-b92d-4d21-a632-acecda073db1",
+              "numero_parcela": 8,
+              "tipo": "parcela_entrada",
+              "valor": 1500,
+              "data_prevista": "2027-12-10",
+              "data_pagamento": null,
+              "status": "cancelado",
+              "comissao_gerada": 285.69
+            }
+          ],
+          "mesma_data_prevista": true,
+          "tem_pago": false
+        },
+        {
+          "grupo_key": "parcela_entrada__9",
+          "linhas": [
+            {
+              "id": "6b5006ed-4eb7-4bb8-b84c-80949acfaad6",
+              "numero_parcela": 9,
+              "tipo": "parcela_entrada",
+              "valor": 1500,
+              "data_prevista": "2028-01-10",
+              "data_pagamento": null,
+              "status": "pendente",
+              "comissao_gerada": 285.69
+            },
+            {
+              "id": "aecd03ce-5ef8-4a4f-9be6-8714aa1edd51",
+              "numero_parcela": 9,
+              "tipo": "parcela_entrada",
+              "valor": 1500,
+              "data_prevista": "2028-01-10",
+              "data_pagamento": null,
+              "status": "cancelado",
+              "comissao_gerada": 285.69
+            }
+          ],
+          "mesma_data_prevista": true,
+          "tem_pago": false
+        },
+        {
+          "grupo_key": "parcela_entrada__10",
+          "linhas": [
+            {
+              "id": "08e7017d-4b8a-44ba-9fed-a3d663dea341",
+              "numero_parcela": 10,
+              "tipo": "parcela_entrada",
+              "valor": 1500,
+              "data_prevista": "2028-02-10",
+              "data_pagamento": null,
+              "status": "pendente",
+              "comissao_gerada": 285.69
+            },
+            {
+              "id": "02c004d3-e3c6-44b6-9dce-898bc610fec6",
+              "numero_parcela": 10,
+              "tipo": "parcela_entrada",
+              "valor": 1500,
+              "data_prevista": "2028-02-10",
+              "data_pagamento": null,
+              "status": "cancelado",
+              "comissao_gerada": 285.69
+            }
+          ],
+          "mesma_data_prevista": true,
+          "tem_pago": false
+        },
+        {
+          "grupo_key": "parcela_entrada__11",
+          "linhas": [
+            {
+              "id": "f80b7787-4d0e-4cce-8a7b-384c5d4329ce",
+              "numero_parcela": 11,
+              "tipo": "parcela_entrada",
+              "valor": 1500,
+              "data_prevista": "2028-03-10",
+              "data_pagamento": null,
+              "status": "cancelado",
+              "comissao_gerada": 285.69
+            },
+            {
+              "id": "56d03c1f-ec71-49e8-8466-2441cea5bc28",
+              "numero_parcela": 11,
+              "tipo": "parcela_entrada",
+              "valor": 2650,
+              "data_prevista": "2028-03-10",
+              "data_pagamento": null,
+              "status": "pendente",
+              "comissao_gerada": 504.72
+            }
+          ],
+          "mesma_data_prevista": true,
+          "tem_pago": false
+        },
+        {
+          "grupo_key": "parcela_entrada__12",
+          "linhas": [
+            {
+              "id": "6ac3cd7a-ecdc-42b8-b037-ec481ccef6d3",
+              "numero_parcela": 12,
+              "tipo": "parcela_entrada",
+              "valor": 2650,
+              "data_prevista": "2028-04-10",
+              "data_pagamento": null,
+              "status": "cancelado",
+              "comissao_gerada": 504.72
+            },
+            {
+              "id": "cc2976b8-b8d7-4546-837b-f8617c77d3b6",
+              "numero_parcela": 12,
+              "tipo": "parcela_entrada",
+              "valor": 1500,
+              "data_prevista": "2028-04-10",
+              "data_pagamento": null,
+              "status": "pendente",
+              "comissao_gerada": 285.69
+            }
+          ],
+          "mesma_data_prevista": true,
+          "tem_pago": false
+        },
+        {
+          "grupo_key": "parcela_entrada__13",
+          "linhas": [
+            {
+              "id": "73eff0d9-0bba-4b78-a7df-af44dad2806f",
+              "numero_parcela": 13,
+              "tipo": "parcela_entrada",
+              "valor": 1500,
+              "data_prevista": "2028-05-10",
+              "data_pagamento": null,
+              "status": "pendente",
+              "comissao_gerada": 285.69
+            },
+            {
+              "id": "36c358f0-40a3-4c2b-8395-9f91439ade13",
+              "numero_parcela": 13,
+              "tipo": "parcela_entrada",
+              "valor": 2650,
+              "data_prevista": "2028-05-10",
+              "data_pagamento": null,
+              "status": "cancelado",
+              "comissao_gerada": 504.72
+            }
+          ],
+          "mesma_data_prevista": true,
+          "tem_pago": false
+        },
+        {
+          "grupo_key": "parcela_entrada__14",
+          "linhas": [
+            {
+              "id": "daa69664-8240-464e-b4c0-e6e486716e9b",
+              "numero_parcela": 14,
+              "tipo": "parcela_entrada",
+              "valor": 1500,
+              "data_prevista": "2028-06-10",
+              "data_pagamento": null,
+              "status": "cancelado",
+              "comissao_gerada": 285.69
+            },
+            {
+              "id": "f600d32f-551c-440d-94c7-d013ca89d036",
+              "numero_parcela": 14,
+              "tipo": "parcela_entrada",
+              "valor": 2650,
+              "data_prevista": "2028-06-10",
+              "data_pagamento": null,
+              "status": "pendente",
+              "comissao_gerada": 504.72
+            }
+          ],
+          "mesma_data_prevista": true,
+          "tem_pago": false
+        },
+        {
+          "grupo_key": "parcela_entrada__15",
+          "linhas": [
+            {
+              "id": "ce0da6d6-86e3-46a3-bfd6-9c4e7b00c77c",
+              "numero_parcela": 15,
+              "tipo": "parcela_entrada",
+              "valor": 1500,
+              "data_prevista": "2028-07-10",
+              "data_pagamento": null,
+              "status": "pendente",
+              "comissao_gerada": 285.69
+            },
+            {
+              "id": "fb51eb4f-242e-47cf-9422-e8fb1b38aaec",
+              "numero_parcela": 15,
+              "tipo": "parcela_entrada",
+              "valor": 2650,
+              "data_prevista": "2028-07-10",
+              "data_pagamento": null,
+              "status": "cancelado",
+              "comissao_gerada": 504.72
+            }
+          ],
+          "mesma_data_prevista": true,
+          "tem_pago": false
+        },
+        {
+          "grupo_key": "parcela_entrada__16",
+          "linhas": [
+            {
+              "id": "5e5c3524-2359-4de5-8d62-f8df01b6ceb1",
+              "numero_parcela": 16,
+              "tipo": "parcela_entrada",
+              "valor": 1500,
+              "data_prevista": "2028-08-10",
+              "data_pagamento": null,
+              "status": "pendente",
+              "comissao_gerada": 285.69
+            },
+            {
+              "id": "7840a5f5-6d27-4ace-9a0a-48ca4e07b755",
+              "numero_parcela": 16,
+              "tipo": "parcela_entrada",
+              "valor": 1500,
+              "data_prevista": "2028-08-10",
+              "data_pagamento": null,
+              "status": "cancelado",
+              "comissao_gerada": 285.69
+            }
+          ],
+          "mesma_data_prevista": true,
+          "tem_pago": false
+        },
+        {
+          "grupo_key": "parcela_entrada__17",
+          "linhas": [
+            {
+              "id": "e8412c99-bc94-4c39-9361-c551e07a81c9",
+              "numero_parcela": 17,
+              "tipo": "parcela_entrada",
+              "valor": 1500,
+              "data_prevista": "2028-09-10",
+              "data_pagamento": null,
+              "status": "pendente",
+              "comissao_gerada": 285.69
+            },
+            {
+              "id": "5daf22d0-4f44-4347-b740-2cda04d6796c",
+              "numero_parcela": 17,
+              "tipo": "parcela_entrada",
+              "valor": 2650,
+              "data_prevista": "2028-09-10",
+              "data_pagamento": null,
+              "status": "cancelado",
+              "comissao_gerada": 504.72
+            }
+          ],
+          "mesma_data_prevista": true,
+          "tem_pago": false
+        },
+        {
+          "grupo_key": "parcela_entrada__18",
+          "linhas": [
+            {
+              "id": "a179ee30-f5b4-4c8e-bf57-e112a1e8c63b",
+              "numero_parcela": 18,
+              "tipo": "parcela_entrada",
+              "valor": 1500,
+              "data_prevista": "2028-10-10",
+              "data_pagamento": null,
+              "status": "cancelado",
+              "comissao_gerada": 285.69
+            },
+            {
+              "id": "d0878575-1a63-4f48-b2c4-1272a7030b16",
+              "numero_parcela": 18,
+              "tipo": "parcela_entrada",
+              "valor": 2650,
+              "data_prevista": "2028-10-10",
+              "data_pagamento": null,
+              "status": "pendente",
+              "comissao_gerada": 504.72
+            }
+          ],
+          "mesma_data_prevista": true,
+          "tem_pago": false
+        },
+        {
+          "grupo_key": "parcela_entrada__19",
+          "linhas": [
+            {
+              "id": "f7727f3e-4238-4817-80c8-91522168b984",
+              "numero_parcela": 19,
+              "tipo": "parcela_entrada",
+              "valor": 1500,
+              "data_prevista": "2028-11-10",
+              "data_pagamento": null,
+              "status": "cancelado",
+              "comissao_gerada": 285.69
+            },
+            {
+              "id": "4e6d57fc-bc25-4866-ba16-a20ec060c3e1",
+              "numero_parcela": 19,
+              "tipo": "parcela_entrada",
+              "valor": 2650,
+              "data_prevista": "2028-11-10",
+              "data_pagamento": null,
+              "status": "pendente",
+              "comissao_gerada": 504.72
+            }
+          ],
+          "mesma_data_prevista": true,
+          "tem_pago": false
+        }
+      ]
+    },
+    {
+      "venda_id": "e476bbdb-88ce-464d-9238-ebbe6badb81b",
+      "sienge_contract_id": "382",
+      "numero_contrato": "268",
+      "unidade": "1305 A",
+      "cliente": "ALISSON RODRIGUES DO CARMO",
+      "cliente_cpf": null,
+      "cliente_telefone": null,
+      "cliente_suspeito_ser_corretor": false,
+      "corretor": null,
+      "corretor_telefone": null,
+      "valor_venda": 457103.88,
+      "valor_pro_soluto": 93143.41,
+      "parcelou_entrada": true,
+      "qtd_parcelas_entrada": 52,
+      "valor_parcela_entrada": 1723.01,
+      "contagem": {
+        "total_pagamentos": 54,
+        "pagos": 3,
+        "pendentes": 41,
+        "cancelados": 10,
+        "pares_duplicados": 10,
+        "total_pago_em_duplicatas": 1
+      },
+      "risco": "alto",
+      "motivo": "Tem par com linha PAGA — qualquer alteracao em pago precisa decisao explicita (spec 017/020).",
+      "acao_sugerida": "aguardar_reconciliacao_sienge_bulkdata",
+      "opcoes": [
+        {
+          "id": "1",
+          "label": "Aguardar re-baixa Sienge",
+          "efeito": "Re-baixa /bulk-data/v1/income, popula sienge_installment_id, re-amarra parcelas, depois cancela duplicatas redundantes"
+        },
+        {
+          "id": "2",
+          "label": "Investigar caso a caso",
+          "efeito": "Olha cada duplicata pago+cancelado e decide individualmente — mais lento"
+        }
+      ],
+      "pares": [
+        {
+          "grupo_key": "parcela_entrada__2",
+          "linhas": [
+            {
+              "id": "d6bb3750-cf09-49cf-b903-eb7790c95cf0",
+              "numero_parcela": 2,
+              "tipo": "parcela_entrada",
+              "valor": 875,
+              "data_prevista": "2026-03-10",
+              "data_pagamento": null,
+              "status": "cancelado",
+              "comissao_gerada": 300.59
+            },
+            {
+              "id": "5bd3d9dd-5b75-4cea-96e9-07714741dbcd",
+              "numero_parcela": 2,
+              "tipo": "parcela_entrada",
+              "valor": 1723.01,
+              "data_prevista": "2027-02-10",
+              "data_pagamento": "2026-03-06",
+              "status": "pago",
+              "comissao_gerada": 591.9
+            }
+          ],
+          "mesma_data_prevista": false,
+          "tem_pago": true
+        },
+        {
+          "grupo_key": "parcela_entrada__3",
+          "linhas": [
+            {
+              "id": "f7809de1-58bb-49ad-9efa-186bf588e78e",
+              "numero_parcela": 3,
+              "tipo": "parcela_entrada",
+              "valor": 875,
+              "data_prevista": "2027-03-10",
+              "data_pagamento": null,
+              "status": "pendente",
+              "comissao_gerada": 300.59
+            },
+            {
+              "id": "f6876bf1-882f-4ede-8934-0aa4f1b36572",
+              "numero_parcela": 3,
+              "tipo": "parcela_entrada",
+              "valor": 875,
+              "data_prevista": "2027-03-10",
+              "data_pagamento": null,
+              "status": "cancelado",
+              "comissao_gerada": 300.59
+            }
+          ],
+          "mesma_data_prevista": true,
+          "tem_pago": false
+        },
+        {
+          "grupo_key": "parcela_entrada__4",
+          "linhas": [
+            {
+              "id": "1ca44599-95a0-4c15-97ce-accb9565ecbe",
+              "numero_parcela": 4,
+              "tipo": "parcela_entrada",
+              "valor": 1723.01,
+              "data_prevista": "2027-04-10",
+              "data_pagamento": null,
+              "status": "cancelado",
+              "comissao_gerada": 591.9
+            },
+            {
+              "id": "19b9aeee-4e8e-443d-80eb-7fda59779722",
+              "numero_parcela": 4,
+              "tipo": "parcela_entrada",
+              "valor": 875,
+              "data_prevista": "2027-04-10",
+              "data_pagamento": null,
+              "status": "pendente",
+              "comissao_gerada": 300.59
+            }
+          ],
+          "mesma_data_prevista": true,
+          "tem_pago": false
+        },
+        {
+          "grupo_key": "parcela_entrada__5",
+          "linhas": [
+            {
+              "id": "2037e055-59a3-4f75-be5a-c89171f73778",
+              "numero_parcela": 5,
+              "tipo": "parcela_entrada",
+              "valor": 875,
+              "data_prevista": "2027-05-10",
+              "data_pagamento": null,
+              "status": "cancelado",
+              "comissao_gerada": 300.59
+            },
+            {
+              "id": "976cd96a-a769-4bb7-ac14-8eb59d9e067b",
+              "numero_parcela": 5,
+              "tipo": "parcela_entrada",
+              "valor": 1723.01,
+              "data_prevista": "2027-05-10",
+              "data_pagamento": null,
+              "status": "pendente",
+              "comissao_gerada": 591.9
+            }
+          ],
+          "mesma_data_prevista": true,
+          "tem_pago": false
+        },
+        {
+          "grupo_key": "parcela_entrada__6",
+          "linhas": [
+            {
+              "id": "1af56460-38e7-4011-b46f-b4655c9db626",
+              "numero_parcela": 6,
+              "tipo": "parcela_entrada",
+              "valor": 875,
+              "data_prevista": "2027-06-10",
+              "data_pagamento": null,
+              "status": "pendente",
+              "comissao_gerada": 300.59
+            },
+            {
+              "id": "2a315393-e826-407c-a116-d686c2d375c2",
+              "numero_parcela": 6,
+              "tipo": "parcela_entrada",
+              "valor": 1723.01,
+              "data_prevista": "2027-06-10",
+              "data_pagamento": null,
+              "status": "cancelado",
+              "comissao_gerada": 591.9
+            }
+          ],
+          "mesma_data_prevista": true,
+          "tem_pago": false
+        },
+        {
+          "grupo_key": "parcela_entrada__7",
+          "linhas": [
+            {
+              "id": "c94a692d-7fc4-46ca-b693-d226f5f93700",
+              "numero_parcela": 7,
+              "tipo": "parcela_entrada",
+              "valor": 875,
+              "data_prevista": "2027-07-10",
+              "data_pagamento": null,
+              "status": "pendente",
+              "comissao_gerada": 300.59
+            },
+            {
+              "id": "0843237f-25f3-406f-ba4e-0dce47692e2f",
+              "numero_parcela": 7,
+              "tipo": "parcela_entrada",
+              "valor": 1723.01,
+              "data_prevista": "2027-07-10",
+              "data_pagamento": null,
+              "status": "cancelado",
+              "comissao_gerada": 591.9
+            }
+          ],
+          "mesma_data_prevista": true,
+          "tem_pago": false
+        },
+        {
+          "grupo_key": "parcela_entrada__8",
+          "linhas": [
+            {
+              "id": "8c5e1551-4504-476e-a7ab-38f46ba5bfc5",
+              "numero_parcela": 8,
+              "tipo": "parcela_entrada",
+              "valor": 1723.01,
+              "data_prevista": "2027-08-10",
+              "data_pagamento": null,
+              "status": "cancelado",
+              "comissao_gerada": 591.9
+            },
+            {
+              "id": "ac8340ca-747d-478c-b9d0-35a4497f1943",
+              "numero_parcela": 8,
+              "tipo": "parcela_entrada",
+              "valor": 875,
+              "data_prevista": "2027-08-10",
+              "data_pagamento": null,
+              "status": "pendente",
+              "comissao_gerada": 300.59
+            }
+          ],
+          "mesma_data_prevista": true,
+          "tem_pago": false
+        },
+        {
+          "grupo_key": "parcela_entrada__9",
+          "linhas": [
+            {
+              "id": "dd0727f7-c1a2-49b4-9495-e592071afb3a",
+              "numero_parcela": 9,
+              "tipo": "parcela_entrada",
+              "valor": 1723.01,
+              "data_prevista": "2027-09-10",
+              "data_pagamento": null,
+              "status": "cancelado",
+              "comissao_gerada": 591.9
+            },
+            {
+              "id": "6fdcb989-3732-4edf-969b-4258d4badd50",
+              "numero_parcela": 9,
+              "tipo": "parcela_entrada",
+              "valor": 875,
+              "data_prevista": "2027-09-10",
+              "data_pagamento": null,
+              "status": "pendente",
+              "comissao_gerada": 300.59
+            }
+          ],
+          "mesma_data_prevista": true,
+          "tem_pago": false
+        },
+        {
+          "grupo_key": "parcela_entrada__10",
+          "linhas": [
+            {
+              "id": "aeb4a809-4dd8-4f46-980a-9cdff71ac291",
+              "numero_parcela": 10,
+              "tipo": "parcela_entrada",
+              "valor": 875,
+              "data_prevista": "2027-10-10",
+              "data_pagamento": null,
+              "status": "pendente",
+              "comissao_gerada": 300.59
+            },
+            {
+              "id": "5ef4c069-706c-44d9-8dc1-314daef9d3f1",
+              "numero_parcela": 10,
+              "tipo": "parcela_entrada",
+              "valor": 1723.01,
+              "data_prevista": "2027-10-10",
+              "data_pagamento": null,
+              "status": "cancelado",
+              "comissao_gerada": 591.9
+            }
+          ],
+          "mesma_data_prevista": true,
+          "tem_pago": false
+        },
+        {
+          "grupo_key": "parcela_entrada__11",
+          "linhas": [
+            {
+              "id": "56e99b75-9cf2-47f5-83d7-a6ded7fafddf",
+              "numero_parcela": 11,
+              "tipo": "parcela_entrada",
+              "valor": 875,
+              "data_prevista": "2027-11-10",
+              "data_pagamento": null,
+              "status": "pendente",
+              "comissao_gerada": 300.59
+            },
+            {
+              "id": "45ed90e2-ef0d-46c2-957a-4eab78205b25",
+              "numero_parcela": 11,
+              "tipo": "parcela_entrada",
+              "valor": 1723.01,
+              "data_prevista": "2027-11-10",
+              "data_pagamento": null,
+              "status": "cancelado",
+              "comissao_gerada": 591.9
+            }
+          ],
+          "mesma_data_prevista": true,
+          "tem_pago": false
+        }
+      ]
+    },
+    {
+      "venda_id": "84b74c27-fa97-4cb0-9e22-be95f88237d2",
+      "sienge_contract_id": "255",
+      "numero_contrato": "163",
+      "unidade": "1405 C",
+      "cliente": "ANDREY LUIZ MESSIAS SANTOS ",
+      "cliente_cpf": "05319809522",
+      "cliente_telefone": "(47)99282-8064",
+      "cliente_suspeito_ser_corretor": false,
+      "corretor": null,
+      "corretor_telefone": null,
+      "valor_venda": 363369.59,
+      "valor_pro_soluto": 73581.34,
+      "parcelou_entrada": true,
+      "qtd_parcelas_entrada": 60,
+      "valor_parcela_entrada": 1221.23,
+      "contagem": {
+        "total_pagamentos": 65,
+        "pagos": 58,
+        "pendentes": 0,
+        "cancelados": 7,
+        "pares_duplicados": 7,
+        "total_pago_em_duplicatas": 7
+      },
+      "risco": "alto",
+      "motivo": "Tem par com linha PAGA — qualquer alteracao em pago precisa decisao explicita (spec 017/020).",
+      "acao_sugerida": "aguardar_reconciliacao_sienge_bulkdata",
+      "opcoes": [
+        {
+          "id": "1",
+          "label": "Aguardar re-baixa Sienge",
+          "efeito": "Re-baixa /bulk-data/v1/income, popula sienge_installment_id, re-amarra parcelas, depois cancela duplicatas redundantes"
+        },
+        {
+          "id": "2",
+          "label": "Investigar caso a caso",
+          "efeito": "Olha cada duplicata pago+cancelado e decide individualmente — mais lento"
+        }
+      ],
+      "pares": [
+        {
+          "grupo_key": "parcela_entrada__1",
+          "linhas": [
+            {
+              "id": "1c96c993-331c-43f7-a340-6e7e244dbbcf",
+              "numero_parcela": 1,
+              "tipo": "parcela_entrada",
+              "valor": 400,
+              "data_prevista": "2025-06-20",
+              "data_pagamento": "2025-12-29",
+              "status": "pago",
+              "comissao_gerada": 138.27
+            },
+            {
+              "id": "83a2658a-b52e-452b-9fdb-f7ed14e93e98",
+              "numero_parcela": 1,
+              "tipo": "parcela_entrada",
+              "valor": 1221.23,
+              "data_prevista": "2026-01-20",
+              "data_pagamento": null,
+              "status": "cancelado",
+              "comissao_gerada": 422.16
+            }
+          ],
+          "mesma_data_prevista": false,
+          "tem_pago": true
+        },
+        {
+          "grupo_key": "parcela_entrada__2",
+          "linhas": [
+            {
+              "id": "677fcfba-e92e-4c0b-a7c9-94013705b059",
+              "numero_parcela": 2,
+              "tipo": "parcela_entrada",
+              "valor": 400,
+              "data_prevista": "2025-07-20",
+              "data_pagamento": null,
+              "status": "cancelado",
+              "comissao_gerada": 138.27
+            },
+            {
+              "id": "38a31eac-31b6-4983-823d-fc50c6c5d068",
+              "numero_parcela": 2,
+              "tipo": "parcela_entrada",
+              "valor": 400,
+              "data_prevista": "2025-07-20",
+              "data_pagamento": "2025-12-29",
+              "status": "pago",
+              "comissao_gerada": 138.27
+            }
+          ],
+          "mesma_data_prevista": true,
+          "tem_pago": true
+        },
+        {
+          "grupo_key": "parcela_entrada__3",
+          "linhas": [
+            {
+              "id": "50abac0a-83f5-4805-ac59-364f31d4d79a",
+              "numero_parcela": 3,
+              "tipo": "parcela_entrada",
+              "valor": 400,
+              "data_prevista": "2025-08-20",
+              "data_pagamento": "2025-12-29",
+              "status": "pago",
+              "comissao_gerada": 138.27
+            },
+            {
+              "id": "aff25c2b-9bb7-4dc0-954c-91c23561b506",
+              "numero_parcela": 3,
+              "tipo": "parcela_entrada",
+              "valor": 400,
+              "data_prevista": "2025-08-20",
+              "data_pagamento": null,
+              "status": "cancelado",
+              "comissao_gerada": 138.27
+            }
+          ],
+          "mesma_data_prevista": true,
+          "tem_pago": true
+        },
+        {
+          "grupo_key": "parcela_entrada__4",
+          "linhas": [
+            {
+              "id": "366df36b-ab73-472f-9c3d-a56bb1ea6bfb",
+              "numero_parcela": 4,
+              "tipo": "parcela_entrada",
+              "valor": 400,
+              "data_prevista": "2025-09-20",
+              "data_pagamento": "2025-12-29",
+              "status": "pago",
+              "comissao_gerada": 138.27
+            },
+            {
+              "id": "cf0336c4-55c7-4d68-8863-794a285d5f2a",
+              "numero_parcela": 4,
+              "tipo": "parcela_entrada",
+              "valor": 400,
+              "data_prevista": "2025-09-20",
+              "data_pagamento": null,
+              "status": "cancelado",
+              "comissao_gerada": 138.27
+            }
+          ],
+          "mesma_data_prevista": true,
+          "tem_pago": true
+        },
+        {
+          "grupo_key": "parcela_entrada__5",
+          "linhas": [
+            {
+              "id": "bed2b393-a373-4525-9825-f83420a308df",
+              "numero_parcela": 5,
+              "tipo": "parcela_entrada",
+              "valor": 400,
+              "data_prevista": "2025-10-20",
+              "data_pagamento": null,
+              "status": "cancelado",
+              "comissao_gerada": 138.27
+            },
+            {
+              "id": "155df495-07db-4265-b651-a35203de35ff",
+              "numero_parcela": 5,
+              "tipo": "parcela_entrada",
+              "valor": 1221.23,
+              "data_prevista": "2026-05-20",
+              "data_pagamento": "2025-12-29",
+              "status": "pago",
+              "comissao_gerada": 422.16
+            }
+          ],
+          "mesma_data_prevista": false,
+          "tem_pago": true
+        },
+        {
+          "grupo_key": "parcela_entrada__6",
+          "linhas": [
+            {
+              "id": "1f72cf9f-f999-4bf4-8e23-4ce77dfa58d7",
+              "numero_parcela": 6,
+              "tipo": "parcela_entrada",
+              "valor": 400,
+              "data_prevista": "2025-11-20",
+              "data_pagamento": "2025-12-29",
+              "status": "pago",
+              "comissao_gerada": 138.27
+            },
+            {
+              "id": "ea476302-4200-4e8e-86ff-aad25d17d07b",
+              "numero_parcela": 6,
+              "tipo": "parcela_entrada",
+              "valor": 400,
+              "data_prevista": "2025-11-20",
+              "data_pagamento": null,
+              "status": "cancelado",
+              "comissao_gerada": 138.27
+            }
+          ],
+          "mesma_data_prevista": true,
+          "tem_pago": true
+        },
+        {
+          "grupo_key": "parcela_entrada__7",
+          "linhas": [
+            {
+              "id": "c7bdae4a-a7f5-4787-8b03-a93d71c32186",
+              "numero_parcela": 7,
+              "tipo": "parcela_entrada",
+              "valor": 400,
+              "data_prevista": "2025-12-20",
+              "data_pagamento": null,
+              "status": "cancelado",
+              "comissao_gerada": 138.27
+            },
+            {
+              "id": "a2ef8370-ba56-424c-b628-7dcc09cbec3c",
+              "numero_parcela": 7,
+              "tipo": "parcela_entrada",
+              "valor": 400,
+              "data_prevista": "2025-12-20",
+              "data_pagamento": "2025-12-29",
+              "status": "pago",
+              "comissao_gerada": 138.27
+            }
+          ],
+          "mesma_data_prevista": true,
+          "tem_pago": true
+        }
+      ]
+    },
+    {
+      "venda_id": "7c3ca9b3-8251-469b-ae71-5f8a433a6d3e",
+      "sienge_contract_id": "163",
+      "numero_contrato": "73",
+      "unidade": "1603 A",
+      "cliente": "DIOGO DA LUZ DOS SANTOS",
+      "cliente_cpf": "09233207927",
+      "cliente_telefone": "(47)99724-4138",
+      "cliente_suspeito_ser_corretor": false,
+      "corretor": null,
+      "corretor_telefone": null,
+      "valor_venda": 346440.81,
+      "valor_pro_soluto": 69200,
+      "parcelou_entrada": true,
+      "qtd_parcelas_entrada": 60,
+      "valor_parcela_entrada": 1275.07,
+      "contagem": {
+        "total_pagamentos": 61,
+        "pagos": 10,
+        "pendentes": 42,
+        "cancelados": 9,
+        "pares_duplicados": 6,
+        "total_pago_em_duplicatas": 3
+      },
+      "risco": "alto",
+      "motivo": "Tem par com linha PAGA — qualquer alteracao em pago precisa decisao explicita (spec 017/020).",
+      "acao_sugerida": "aguardar_reconciliacao_sienge_bulkdata",
+      "opcoes": [
+        {
+          "id": "1",
+          "label": "Aguardar re-baixa Sienge",
+          "efeito": "Re-baixa /bulk-data/v1/income, popula sienge_installment_id, re-amarra parcelas, depois cancela duplicatas redundantes"
+        },
+        {
+          "id": "2",
+          "label": "Investigar caso a caso",
+          "efeito": "Olha cada duplicata pago+cancelado e decide individualmente — mais lento"
+        }
+      ],
+      "pares": [
+        {
+          "grupo_key": "parcela_entrada__1",
+          "linhas": [
+            {
+              "id": "28995b60-7469-40f6-9531-08e6aeb3473d",
+              "numero_parcela": 1,
+              "tipo": "parcela_entrada",
+              "valor": 1275.07,
+              "data_prevista": "2026-08-20",
+              "data_pagamento": "2025-06-21",
+              "status": "pago",
+              "comissao_gerada": 446.84
+            },
+            {
+              "id": "bdf11d77-22dd-4084-9d0a-ce2234ad5767",
+              "numero_parcela": 1,
+              "tipo": "parcela_entrada",
+              "valor": 1275.07,
+              "data_prevista": "2026-08-20",
+              "data_pagamento": null,
+              "status": "cancelado",
+              "comissao_gerada": 446.84
+            },
+            {
+              "id": "62e3edce-805a-42d8-a8ae-cd7754441cf0",
+              "numero_parcela": 1,
+              "tipo": "parcela_entrada",
+              "valor": 1275.07,
+              "data_prevista": "2026-08-20",
+              "data_pagamento": null,
+              "status": "cancelado",
+              "comissao_gerada": 446.84
+            }
+          ],
+          "mesma_data_prevista": true,
+          "tem_pago": true
+        },
+        {
+          "grupo_key": "parcela_entrada__2",
+          "linhas": [
+            {
+              "id": "d98c8027-8a0e-4d37-80bd-ea75556997b1",
+              "numero_parcela": 2,
+              "tipo": "parcela_entrada",
+              "valor": 500,
+              "data_prevista": "2025-11-20",
+              "data_pagamento": null,
+              "status": "cancelado",
+              "comissao_gerada": 175.22
+            },
+            {
+              "id": "cd119c34-ad7f-4101-bbe1-9c684577876f",
+              "numero_parcela": 2,
+              "tipo": "parcela_entrada",
+              "valor": 1136.66,
+              "data_prevista": "2026-09-20",
+              "data_pagamento": null,
+              "status": "cancelado",
+              "comissao_gerada": 398.34
+            },
+            {
+              "id": "144128fb-352f-4471-9f75-90af259b0942",
+              "numero_parcela": 2,
+              "tipo": "parcela_entrada",
+              "valor": 1275.07,
+              "data_prevista": "2026-09-20",
+              "data_pagamento": "2025-06-21",
+              "status": "pago",
+              "comissao_gerada": 446.84
+            }
+          ],
+          "mesma_data_prevista": false,
+          "tem_pago": true
+        },
+        {
+          "grupo_key": "parcela_entrada__4",
+          "linhas": [
+            {
+              "id": "abc12beb-d4d9-449d-b547-4b52f1290969",
+              "numero_parcela": 4,
+              "tipo": "parcela_entrada",
+              "valor": 1275.07,
+              "data_prevista": "2026-11-20",
+              "data_pagamento": null,
+              "status": "cancelado",
+              "comissao_gerada": 446.84
+            },
+            {
+              "id": "d9e9b9ff-1552-4dc5-a696-0ea1d9d7f717",
+              "numero_parcela": 4,
+              "tipo": "parcela_entrada",
+              "valor": 1136.66,
+              "data_prevista": "2026-11-20",
+              "data_pagamento": null,
+              "status": "cancelado",
+              "comissao_gerada": 398.34
+            },
+            {
+              "id": "14f0a657-dfba-46f2-935f-4e55d3366429",
+              "numero_parcela": 4,
+              "tipo": "parcela_entrada",
+              "valor": 1275.07,
+              "data_prevista": "2026-11-20",
+              "data_pagamento": "2026-01-19",
+              "status": "pago",
+              "comissao_gerada": 446.84
+            }
+          ],
+          "mesma_data_prevista": true,
+          "tem_pago": true
+        },
+        {
+          "grupo_key": "parcela_entrada__8",
+          "linhas": [
+            {
+              "id": "22933353-2cd7-428f-9873-a100499c5da5",
+              "numero_parcela": 8,
+              "tipo": "parcela_entrada",
+              "valor": 1275.07,
+              "data_prevista": "2027-03-20",
+              "data_pagamento": null,
+              "status": "pendente",
+              "comissao_gerada": 446.84
+            },
+            {
+              "id": "1362bc8f-760a-4d70-b4d9-9014e1b15027",
+              "numero_parcela": 8,
+              "tipo": "parcela_entrada",
+              "valor": 500,
+              "data_prevista": "2027-03-20",
+              "data_pagamento": null,
+              "status": "cancelado",
+              "comissao_gerada": 175.22
+            }
+          ],
+          "mesma_data_prevista": true,
+          "tem_pago": false
+        },
+        {
+          "grupo_key": "parcela_entrada__9",
+          "linhas": [
+            {
+              "id": "f9497d85-2a34-4dd5-ba44-eff77697f8c8",
+              "numero_parcela": 9,
+              "tipo": "parcela_entrada",
+              "valor": 500,
+              "data_prevista": "2027-04-20",
+              "data_pagamento": null,
+              "status": "cancelado",
+              "comissao_gerada": 175.22
+            },
+            {
+              "id": "e28b6989-1f4f-4ae0-8260-fe515e8b85ef",
+              "numero_parcela": 9,
+              "tipo": "parcela_entrada",
+              "valor": 500,
+              "data_prevista": "2027-04-20",
+              "data_pagamento": null,
+              "status": "pendente",
+              "comissao_gerada": 175.22
+            }
+          ],
+          "mesma_data_prevista": true,
+          "tem_pago": false
+        },
+        {
+          "grupo_key": "parcela_entrada__10",
+          "linhas": [
+            {
+              "id": "51eee67b-e1d3-40f8-a8ec-cf176a997a88",
+              "numero_parcela": 10,
+              "tipo": "parcela_entrada",
+              "valor": 500,
+              "data_prevista": "2027-05-20",
+              "data_pagamento": null,
+              "status": "cancelado",
+              "comissao_gerada": 175.22
+            },
+            {
+              "id": "309767e6-bd86-4fda-8492-05716e3b9dce",
+              "numero_parcela": 10,
+              "tipo": "parcela_entrada",
+              "valor": 500,
+              "data_prevista": "2027-05-20",
+              "data_pagamento": null,
+              "status": "pendente",
+              "comissao_gerada": 175.22
+            }
+          ],
+          "mesma_data_prevista": true,
+          "tem_pago": false
+        }
+      ]
+    },
+    {
+      "venda_id": "c9e6358d-2aab-4743-8358-e7628f761350",
+      "sienge_contract_id": "87",
+      "numero_contrato": "40",
+      "unidade": "908 A",
+      "cliente": "LEANDRO DE OLIVEIRA VICENTIN ",
+      "cliente_cpf": "18757055890",
+      "cliente_telefone": "(47)98420-3075",
+      "cliente_suspeito_ser_corretor": false,
+      "corretor": null,
+      "corretor_telefone": null,
+      "valor_venda": 418341.97,
+      "valor_pro_soluto": 83668.3,
+      "parcelou_entrada": true,
+      "qtd_parcelas_entrada": 61,
+      "valor_parcela_entrada": 1394.47,
+      "contagem": {
+        "total_pagamentos": 61,
+        "pagos": 8,
+        "pendentes": 49,
+        "cancelados": 4,
+        "pares_duplicados": 4,
+        "total_pago_em_duplicatas": 3
+      },
+      "risco": "alto",
+      "motivo": "Tem par com linha PAGA — qualquer alteracao em pago precisa decisao explicita (spec 017/020).",
+      "acao_sugerida": "aguardar_reconciliacao_sienge_bulkdata",
+      "opcoes": [
+        {
+          "id": "1",
+          "label": "Aguardar re-baixa Sienge",
+          "efeito": "Re-baixa /bulk-data/v1/income, popula sienge_installment_id, re-amarra parcelas, depois cancela duplicatas redundantes"
+        },
+        {
+          "id": "2",
+          "label": "Investigar caso a caso",
+          "efeito": "Olha cada duplicata pago+cancelado e decide individualmente — mais lento"
+        }
+      ],
+      "pares": [
+        {
+          "grupo_key": "parcela_entrada__1",
+          "linhas": [
+            {
+              "id": "62aa05d7-38fe-446a-8c9d-2ab62ef5d311",
+              "numero_parcela": 1,
+              "tipo": "parcela_entrada",
+              "valor": 1394.47,
+              "data_prevista": "2026-02-20",
+              "data_pagamento": "2026-02-03",
+              "status": "pago",
+              "comissao_gerada": 488.07
+            },
+            {
+              "id": "a2a59d27-e6f4-41df-a901-83ee2a1763b5",
+              "numero_parcela": 1,
+              "tipo": "parcela_entrada",
+              "valor": 1000,
+              "data_prevista": "2026-02-20",
+              "data_pagamento": null,
+              "status": "cancelado",
+              "comissao_gerada": 350
+            },
+            {
+              "id": "ae7bccce-f471-4be8-83c2-01aaef9b8de0",
+              "numero_parcela": 1,
+              "tipo": "parcela_entrada",
+              "valor": 2761.39,
+              "data_prevista": "2026-02-20",
+              "data_pagamento": "2026-02-02",
+              "status": "pago",
+              "comissao_gerada": 966.49
+            }
+          ],
+          "mesma_data_prevista": true,
+          "tem_pago": true
+        },
+        {
+          "grupo_key": "parcela_entrada__2",
+          "linhas": [
+            {
+              "id": "ed939b77-73f7-467d-a77f-176a9c35346c",
+              "numero_parcela": 2,
+              "tipo": "parcela_entrada",
+              "valor": 1000,
+              "data_prevista": "2026-03-20",
+              "data_pagamento": null,
+              "status": "cancelado",
+              "comissao_gerada": 350
+            },
+            {
+              "id": "865aa881-a691-41a1-92c6-b6aa3113bc20",
+              "numero_parcela": 2,
+              "tipo": "parcela_entrada",
+              "valor": 1000,
+              "data_prevista": "2026-03-20",
+              "data_pagamento": "2026-03-03",
+              "status": "pago",
+              "comissao_gerada": 350
+            }
+          ],
+          "mesma_data_prevista": true,
+          "tem_pago": true
+        },
+        {
+          "grupo_key": "parcela_entrada__4",
+          "linhas": [
+            {
+              "id": "8dab210f-f848-4048-8fc2-90fd25aac583",
+              "numero_parcela": 4,
+              "tipo": "parcela_entrada",
+              "valor": 1000,
+              "data_prevista": "2025-09-20",
+              "data_pagamento": null,
+              "status": "cancelado",
+              "comissao_gerada": 350
+            },
+            {
+              "id": "5ba910c4-0ecb-478a-8494-2cd444f8ef72",
+              "numero_parcela": 4,
+              "tipo": "parcela_entrada",
+              "valor": 1394.47,
+              "data_prevista": "2026-05-20",
+              "data_pagamento": "2025-05-08",
+              "status": "pago",
+              "comissao_gerada": 488.07
+            }
+          ],
+          "mesma_data_prevista": false,
+          "tem_pago": true
+        },
+        {
+          "grupo_key": "parcela_entrada__6",
+          "linhas": [
+            {
+              "id": "71ead2a4-153a-41f6-aa7e-17477739477f",
+              "numero_parcela": 6,
+              "tipo": "parcela_entrada",
+              "valor": 1000,
+              "data_prevista": "2025-11-20",
+              "data_pagamento": null,
+              "status": "cancelado",
+              "comissao_gerada": 350
+            },
+            {
+              "id": "1c4b2719-056d-47a1-a323-a39b6cca20fd",
+              "numero_parcela": 6,
+              "tipo": "parcela_entrada",
+              "valor": 1394.47,
+              "data_prevista": "2026-07-20",
+              "data_pagamento": null,
+              "status": "pendente",
+              "comissao_gerada": 488.07
+            }
+          ],
+          "mesma_data_prevista": false,
+          "tem_pago": false
+        }
+      ]
+    },
+    {
+      "venda_id": "ac1c4423-44f2-4c1d-b09c-866fcf326fe3",
+      "sienge_contract_id": "246",
+      "numero_contrato": "154",
+      "unidade": "1302 C",
+      "cliente": "MARIA VITORIA DA SILVA FRANCISCO",
+      "cliente_cpf": "11625933932",
+      "cliente_telefone": "(43)99669-8714",
+      "cliente_suspeito_ser_corretor": false,
+      "corretor": null,
+      "corretor_telefone": null,
+      "valor_venda": 427221.03,
+      "valor_pro_soluto": 85444.15,
+      "parcelou_entrada": true,
+      "qtd_parcelas_entrada": 55,
+      "valor_parcela_entrada": 500,
+      "contagem": {
+        "total_pagamentos": 56,
+        "pagos": 53,
+        "pendentes": 0,
+        "cancelados": 3,
+        "pares_duplicados": 3,
+        "total_pago_em_duplicatas": 3
+      },
+      "risco": "alto",
+      "motivo": "Tem par com linha PAGA — qualquer alteracao em pago precisa decisao explicita (spec 017/020).",
+      "acao_sugerida": "aguardar_reconciliacao_sienge_bulkdata",
+      "opcoes": [
+        {
+          "id": "1",
+          "label": "Aguardar re-baixa Sienge",
+          "efeito": "Re-baixa /bulk-data/v1/income, popula sienge_installment_id, re-amarra parcelas, depois cancela duplicatas redundantes"
+        },
+        {
+          "id": "2",
+          "label": "Investigar caso a caso",
+          "efeito": "Olha cada duplicata pago+cancelado e decide individualmente — mais lento"
+        }
+      ],
+      "pares": [
+        {
+          "grupo_key": "parcela_entrada__1",
+          "linhas": [
+            {
+              "id": "a238704a-718b-480a-86d3-fc5c5eb2675e",
+              "numero_parcela": 1,
+              "tipo": "parcela_entrada",
+              "valor": 500,
+              "data_prevista": "2025-10-20",
+              "data_pagamento": null,
+              "status": "cancelado",
+              "comissao_gerada": 175
+            },
+            {
+              "id": "625bc9bb-1c57-4ad0-b5b9-c88a6230806c",
+              "numero_parcela": 1,
+              "tipo": "parcela_entrada",
+              "valor": 1553.53,
+              "data_prevista": "2026-01-20",
+              "data_pagamento": "2026-01-20",
+              "status": "pago",
+              "comissao_gerada": 543.74
+            }
+          ],
+          "mesma_data_prevista": false,
+          "tem_pago": true
+        },
+        {
+          "grupo_key": "parcela_entrada__2",
+          "linhas": [
+            {
+              "id": "0c93c64b-93ae-44d7-a2ad-ac417ec856c8",
+              "numero_parcela": 2,
+              "tipo": "parcela_entrada",
+              "valor": 500,
+              "data_prevista": "2025-11-20",
+              "data_pagamento": null,
+              "status": "cancelado",
+              "comissao_gerada": 175
+            },
+            {
+              "id": "08e5d409-00c6-43f4-b2a3-77aaa902c632",
+              "numero_parcela": 2,
+              "tipo": "parcela_entrada",
+              "valor": 1553.53,
+              "data_prevista": "2026-02-20",
+              "data_pagamento": "2026-02-09",
+              "status": "pago",
+              "comissao_gerada": 543.74
+            }
+          ],
+          "mesma_data_prevista": false,
+          "tem_pago": true
+        },
+        {
+          "grupo_key": "parcela_entrada__3",
+          "linhas": [
+            {
+              "id": "2eec3d3e-d868-4700-8893-8be8ad73f778",
+              "numero_parcela": 3,
+              "tipo": "parcela_entrada",
+              "valor": 500,
+              "data_prevista": "2025-12-20",
+              "data_pagamento": "2026-03-05",
+              "status": "pago",
+              "comissao_gerada": 175
+            },
+            {
+              "id": "ed2779b2-1a25-4693-ac85-021a0cf3c8ab",
+              "numero_parcela": 3,
+              "tipo": "parcela_entrada",
+              "valor": 1553.53,
+              "data_prevista": "2026-03-20",
+              "data_pagamento": null,
+              "status": "cancelado",
+              "comissao_gerada": 543.74
+            }
+          ],
+          "mesma_data_prevista": false,
+          "tem_pago": true
+        }
+      ]
+    },
+    {
+      "venda_id": "3771951d-5221-4a3d-8b2f-6a0c5b076b12",
+      "sienge_contract_id": "269",
+      "numero_contrato": "177",
+      "unidade": "609 D",
+      "cliente": "DIEGO RAMOS",
+      "cliente_cpf": "10099686961",
+      "cliente_telefone": "(47)99629-9164",
+      "cliente_suspeito_ser_corretor": false,
+      "corretor": null,
+      "corretor_telefone": null,
+      "valor_venda": 383188.92,
+      "valor_pro_soluto": 124200,
+      "parcelou_entrada": true,
+      "qtd_parcelas_entrada": 66,
+      "valor_parcela_entrada": 2500,
+      "contagem": {
+        "total_pagamentos": 66,
+        "pagos": 12,
+        "pendentes": 36,
+        "cancelados": 18,
+        "pares_duplicados": 3,
+        "total_pago_em_duplicatas": 3
+      },
+      "risco": "alto",
+      "motivo": "Tem par com linha PAGA — qualquer alteracao em pago precisa decisao explicita (spec 017/020).",
+      "acao_sugerida": "aguardar_reconciliacao_sienge_bulkdata",
+      "opcoes": [
+        {
+          "id": "1",
+          "label": "Aguardar re-baixa Sienge",
+          "efeito": "Re-baixa /bulk-data/v1/income, popula sienge_installment_id, re-amarra parcelas, depois cancela duplicatas redundantes"
+        },
+        {
+          "id": "2",
+          "label": "Investigar caso a caso",
+          "efeito": "Olha cada duplicata pago+cancelado e decide individualmente — mais lento"
+        }
+      ],
+      "pares": [
+        {
+          "grupo_key": "parcela_entrada__1",
+          "linhas": [
+            {
+              "id": "245b4ca9-0e74-4a66-9571-193c2c231264",
+              "numero_parcela": 1,
+              "tipo": "parcela_entrada",
+              "valor": 1300,
+              "data_prevista": "2025-07-10",
+              "data_pagamento": null,
+              "status": "cancelado",
+              "comissao_gerada": 280.76
+            },
+            {
+              "id": "b9f5fe37-e009-43b2-9351-09a81bb3cf08",
+              "numero_parcela": 1,
+              "tipo": "parcela_entrada",
+              "valor": 1600,
+              "data_prevista": "2030-07-10",
+              "data_pagamento": null,
+              "status": "cancelado",
+              "comissao_gerada": 345.55
+            },
+            {
+              "id": "0db8f062-0e24-48f7-88b8-4e4f9e6f7169",
+              "numero_parcela": 1,
+              "tipo": "parcela_entrada",
+              "valor": 2200,
+              "data_prevista": "2030-07-10",
+              "data_pagamento": null,
+              "status": "cancelado",
+              "comissao_gerada": 475.13
+            },
+            {
+              "id": "0b11c5b8-0616-40d5-ab13-e28576bf9f86",
+              "numero_parcela": 1,
+              "tipo": "parcela_entrada",
+              "valor": 1600,
+              "data_prevista": "2030-07-10",
+              "data_pagamento": "2025-07-09",
+              "status": "pago",
+              "comissao_gerada": 345.55
+            },
+            {
+              "id": "ad6c3fa8-52f2-4f77-8f1a-909a6c03881f",
+              "numero_parcela": 1,
+              "tipo": "parcela_entrada",
+              "valor": 2800,
+              "data_prevista": "2030-07-10",
+              "data_pagamento": null,
+              "status": "cancelado",
+              "comissao_gerada": 604.71
+            },
+            {
+              "id": "98d490bf-0ca3-4da9-9b54-4d5b98a9a1f9",
+              "numero_parcela": 1,
+              "tipo": "parcela_entrada",
+              "valor": 1900,
+              "data_prevista": "2030-07-10",
+              "data_pagamento": null,
+              "status": "cancelado",
+              "comissao_gerada": 410.34
+            },
+            {
+              "id": "5c7154e8-679f-4915-b009-9836ac62815a",
+              "numero_parcela": 1,
+              "tipo": "parcela_entrada",
+              "valor": 3200,
+              "data_prevista": "2030-07-10",
+              "data_pagamento": null,
+              "status": "cancelado",
+              "comissao_gerada": 691.1
+            }
+          ],
+          "mesma_data_prevista": false,
+          "tem_pago": true
+        },
+        {
+          "grupo_key": "parcela_entrada__2",
+          "linhas": [
+            {
+              "id": "7eea81e1-041c-4b6a-af7d-36918cab203c",
+              "numero_parcela": 2,
+              "tipo": "parcela_entrada",
+              "valor": 1300,
+              "data_prevista": "2025-08-10",
+              "data_pagamento": null,
+              "status": "cancelado",
+              "comissao_gerada": 280.76
+            },
+            {
+              "id": "e7b03697-0548-42fe-89d2-874a9e4f84c7",
+              "numero_parcela": 2,
+              "tipo": "parcela_entrada",
+              "valor": 2500,
+              "data_prevista": "2030-08-10",
+              "data_pagamento": null,
+              "status": "cancelado",
+              "comissao_gerada": 539.92
+            },
+            {
+              "id": "13122cfb-c6b3-41db-88c6-254fdf08e3ad",
+              "numero_parcela": 2,
+              "tipo": "parcela_entrada",
+              "valor": 2800,
+              "data_prevista": "2030-08-10",
+              "data_pagamento": "2025-08-08",
+              "status": "pago",
+              "comissao_gerada": 604.71
+            },
+            {
+              "id": "cfec2ba5-82b5-4493-a5f6-4f9c4a38cc42",
+              "numero_parcela": 2,
+              "tipo": "parcela_entrada",
+              "valor": 2500,
+              "data_prevista": "2030-08-10",
+              "data_pagamento": null,
+              "status": "cancelado",
+              "comissao_gerada": 539.92
+            },
+            {
+              "id": "ce0088d1-357e-42ff-932d-3a6b3afe41c3",
+              "numero_parcela": 2,
+              "tipo": "parcela_entrada",
+              "valor": 2200,
+              "data_prevista": "2030-08-10",
+              "data_pagamento": null,
+              "status": "cancelado",
+              "comissao_gerada": 475.13
+            },
+            {
+              "id": "ab0f8e86-ba0e-410e-9525-6720a3ba9847",
+              "numero_parcela": 2,
+              "tipo": "parcela_entrada",
+              "valor": 1900,
+              "data_prevista": "2030-08-10",
+              "data_pagamento": null,
+              "status": "cancelado",
+              "comissao_gerada": 410.34
+            },
+            {
+              "id": "59b36115-68ca-4aef-bf75-77a5eaa3c3b6",
+              "numero_parcela": 2,
+              "tipo": "parcela_entrada",
+              "valor": 1600,
+              "data_prevista": "2030-08-10",
+              "data_pagamento": null,
+              "status": "cancelado",
+              "comissao_gerada": 345.55
+            }
+          ],
+          "mesma_data_prevista": false,
+          "tem_pago": true
+        },
+        {
+          "grupo_key": "parcela_entrada__5",
+          "linhas": [
+            {
+              "id": "90ae68cc-ebe2-416a-8cc4-b3af2b2c5839",
+              "numero_parcela": 5,
+              "tipo": "parcela_entrada",
+              "valor": 1300,
+              "data_prevista": "2025-11-10",
+              "data_pagamento": null,
+              "status": "cancelado",
+              "comissao_gerada": 280.76
+            },
+            {
+              "id": "585fe6b8-ed1b-4ed9-b854-4200439dfd79",
+              "numero_parcela": 5,
+              "tipo": "parcela_entrada",
+              "valor": 1900,
+              "data_prevista": "2030-11-10",
+              "data_pagamento": null,
+              "status": "cancelado",
+              "comissao_gerada": 410.34
+            },
+            {
+              "id": "3459ca50-fffd-49e5-b9c8-1ea7625786fa",
+              "numero_parcela": 5,
+              "tipo": "parcela_entrada",
+              "valor": 2500,
+              "data_prevista": "2030-11-10",
+              "data_pagamento": "2025-11-06",
+              "status": "pago",
+              "comissao_gerada": 539.92
+            },
+            {
+              "id": "99413f2e-5557-47d8-923f-593008a1996c",
+              "numero_parcela": 5,
+              "tipo": "parcela_entrada",
+              "valor": 1600,
+              "data_prevista": "2030-11-10",
+              "data_pagamento": null,
+              "status": "cancelado",
+              "comissao_gerada": 345.55
+            },
+            {
+              "id": "d8b4fbe9-6905-4d24-9fff-3040f9e89062",
+              "numero_parcela": 5,
+              "tipo": "parcela_entrada",
+              "valor": 2500,
+              "data_prevista": "2030-11-10",
+              "data_pagamento": null,
+              "status": "cancelado",
+              "comissao_gerada": 539.92
+            },
+            {
+              "id": "6d9069a5-740d-4090-82a1-a3f8fd5b5220",
+              "numero_parcela": 5,
+              "tipo": "parcela_entrada",
+              "valor": 3200,
+              "data_prevista": "2030-11-10",
+              "data_pagamento": null,
+              "status": "cancelado",
+              "comissao_gerada": 691.1
+            },
+            {
+              "id": "e0603d4b-81fa-48d6-ba9a-899b339f8ad8",
+              "numero_parcela": 5,
+              "tipo": "parcela_entrada",
+              "valor": 2800,
+              "data_prevista": "2030-11-10",
+              "data_pagamento": null,
+              "status": "cancelado",
+              "comissao_gerada": 604.71
+            }
+          ],
+          "mesma_data_prevista": false,
+          "tem_pago": true
+        }
+      ]
+    },
+    {
+      "venda_id": "137d0df9-2c8e-49da-b3a3-528129babfd2",
+      "sienge_contract_id": "166",
+      "numero_contrato": "76",
+      "unidade": "1607 A",
+      "cliente": "GHIZIERI JENNINFER FREITAS COSTA BOSZCZOWSKI",
+      "cliente_cpf": "08401031907",
+      "cliente_telefone": "(47)988623130",
+      "cliente_suspeito_ser_corretor": false,
+      "corretor": null,
+      "corretor_telefone": null,
+      "valor_venda": 440166.26,
+      "valor_pro_soluto": 88033.2,
+      "parcelou_entrada": true,
+      "qtd_parcelas_entrada": 58,
+      "valor_parcela_entrada": 1604.4,
+      "contagem": {
+        "total_pagamentos": 58,
+        "pagos": 7,
+        "pendentes": 48,
+        "cancelados": 3,
+        "pares_duplicados": 3,
+        "total_pago_em_duplicatas": 3
+      },
+      "risco": "alto",
+      "motivo": "Tem par com linha PAGA — qualquer alteracao em pago precisa decisao explicita (spec 017/020).",
+      "acao_sugerida": "aguardar_reconciliacao_sienge_bulkdata",
+      "opcoes": [
+        {
+          "id": "1",
+          "label": "Aguardar re-baixa Sienge",
+          "efeito": "Re-baixa /bulk-data/v1/income, popula sienge_installment_id, re-amarra parcelas, depois cancela duplicatas redundantes"
+        },
+        {
+          "id": "2",
+          "label": "Investigar caso a caso",
+          "efeito": "Olha cada duplicata pago+cancelado e decide individualmente — mais lento"
+        }
+      ],
+      "pares": [
+        {
+          "grupo_key": "parcela_entrada__2",
+          "linhas": [
+            {
+              "id": "1f597a7a-529a-4293-96fc-69bcb62e453c",
+              "numero_parcela": 2,
+              "tipo": "parcela_entrada",
+              "valor": 1604.4,
+              "data_prevista": "2026-02-20",
+              "data_pagamento": null,
+              "status": "cancelado",
+              "comissao_gerada": 561.54
+            },
+            {
+              "id": "1e485197-9c74-4d35-8926-6c40507c686c",
+              "numero_parcela": 2,
+              "tipo": "parcela_entrada",
+              "valor": 600,
+              "data_prevista": "2026-02-20",
+              "data_pagamento": "2026-01-21",
+              "status": "pago",
+              "comissao_gerada": 210
+            }
+          ],
+          "mesma_data_prevista": true,
+          "tem_pago": true
+        },
+        {
+          "grupo_key": "parcela_entrada__3",
+          "linhas": [
+            {
+              "id": "dbe916f4-7633-4b01-a879-8d4559f1cc48",
+              "numero_parcela": 3,
+              "tipo": "parcela_entrada",
+              "valor": 1604.4,
+              "data_prevista": "2026-03-20",
+              "data_pagamento": null,
+              "status": "cancelado",
+              "comissao_gerada": 561.54
+            },
+            {
+              "id": "4481a544-c09c-4578-be6e-946e7986dc77",
+              "numero_parcela": 3,
+              "tipo": "parcela_entrada",
+              "valor": 1604.4,
+              "data_prevista": "2026-03-20",
+              "data_pagamento": "2026-03-04",
+              "status": "pago",
+              "comissao_gerada": 561.54
+            }
+          ],
+          "mesma_data_prevista": true,
+          "tem_pago": true
+        },
+        {
+          "grupo_key": "parcela_entrada__4",
+          "linhas": [
+            {
+              "id": "2fb61463-67e3-4abe-9bf5-721abc9ca7da",
+              "numero_parcela": 4,
+              "tipo": "parcela_entrada",
+              "valor": 600,
+              "data_prevista": "2026-04-20",
+              "data_pagamento": "2026-04-07",
+              "status": "pago",
+              "comissao_gerada": 210
+            },
+            {
+              "id": "9e8d4d84-cc4f-4548-a703-edf2a018ef12",
+              "numero_parcela": 4,
+              "tipo": "parcela_entrada",
+              "valor": 1604.4,
+              "data_prevista": "2026-04-20",
+              "data_pagamento": null,
+              "status": "cancelado",
+              "comissao_gerada": 561.54
+            }
+          ],
+          "mesma_data_prevista": true,
+          "tem_pago": true
+        }
+      ]
+    },
+    {
+      "venda_id": "53d0c5f5-aa8e-4804-9c64-fef6ecdf04fc",
+      "sienge_contract_id": "204",
+      "numero_contrato": "112",
+      "unidade": "1204 B",
+      "cliente": "SARA JANE DE OLIVEIRA BARBOSA",
+      "cliente_cpf": "04304256009",
+      "cliente_telefone": "(47)99245-8784",
+      "cliente_suspeito_ser_corretor": false,
+      "corretor": null,
+      "corretor_telefone": null,
+      "valor_venda": 431026.76,
+      "valor_pro_soluto": 86205.49,
+      "parcelou_entrada": true,
+      "qtd_parcelas_entrada": 59,
+      "valor_parcela_entrada": 1461.11,
+      "contagem": {
+        "total_pagamentos": 64,
+        "pagos": 8,
+        "pendentes": 54,
+        "cancelados": 2,
+        "pares_duplicados": 2,
+        "total_pago_em_duplicatas": 2
+      },
+      "risco": "alto",
+      "motivo": "Tem par com linha PAGA — qualquer alteracao em pago precisa decisao explicita (spec 017/020).",
+      "acao_sugerida": "aguardar_reconciliacao_sienge_bulkdata",
+      "opcoes": [
+        {
+          "id": "1",
+          "label": "Aguardar re-baixa Sienge",
+          "efeito": "Re-baixa /bulk-data/v1/income, popula sienge_installment_id, re-amarra parcelas, depois cancela duplicatas redundantes"
+        },
+        {
+          "id": "2",
+          "label": "Investigar caso a caso",
+          "efeito": "Olha cada duplicata pago+cancelado e decide individualmente — mais lento"
+        }
+      ],
+      "pares": [
+        {
+          "grupo_key": "parcela_entrada__1",
+          "linhas": [
+            {
+              "id": "3bbecf37-58e7-485f-a2f1-0e3de4938beb",
+              "numero_parcela": 1,
+              "tipo": "parcela_entrada",
+              "valor": 1000,
+              "data_prevista": "2025-11-20",
+              "data_pagamento": null,
+              "status": "cancelado",
+              "comissao_gerada": 350
+            },
+            {
+              "id": "30d6cafa-c29d-4a48-be9e-167a58d8788d",
+              "numero_parcela": 1,
+              "tipo": "parcela_entrada",
+              "valor": 1461.11,
+              "data_prevista": "2025-11-20",
+              "data_pagamento": "2025-11-24",
+              "status": "pago",
+              "comissao_gerada": 511.39
+            }
+          ],
+          "mesma_data_prevista": true,
+          "tem_pago": true
+        },
+        {
+          "grupo_key": "parcela_entrada__3",
+          "linhas": [
+            {
+              "id": "91186e22-6c3a-404c-915e-b09e94325f85",
+              "numero_parcela": 3,
+              "tipo": "parcela_entrada",
+              "valor": 1461.11,
+              "data_prevista": "2026-01-20",
+              "data_pagamento": null,
+              "status": "cancelado",
+              "comissao_gerada": 511.39
+            },
+            {
+              "id": "19e0fd03-43c2-493d-ab03-cd769261e078",
+              "numero_parcela": 3,
+              "tipo": "parcela_entrada",
+              "valor": 1000,
+              "data_prevista": "2026-01-20",
+              "data_pagamento": "2026-01-21",
+              "status": "pago",
+              "comissao_gerada": 350
+            }
+          ],
+          "mesma_data_prevista": true,
+          "tem_pago": true
+        }
+      ]
+    },
+    {
+      "venda_id": "37357039-b2ed-404a-b8f9-5162019eb51f",
+      "sienge_contract_id": "346",
+      "numero_contrato": "246",
+      "unidade": "508 A",
+      "cliente": "MICHEL CHRISTIAN BORBA",
+      "cliente_cpf": "09786118960",
+      "cliente_telefone": "(47)99713-2318",
+      "cliente_suspeito_ser_corretor": false,
+      "corretor": null,
+      "corretor_telefone": null,
+      "valor_venda": 295289.72,
+      "valor_pro_soluto": 62800,
+      "parcelou_entrada": true,
+      "qtd_parcelas_entrada": 54,
+      "valor_parcela_entrada": 1200,
+      "contagem": {
+        "total_pagamentos": 54,
+        "pagos": 7,
+        "pendentes": 46,
+        "cancelados": 1,
+        "pares_duplicados": 1,
+        "total_pago_em_duplicatas": 1
+      },
+      "risco": "alto",
+      "motivo": "Tem par com linha PAGA — qualquer alteracao em pago precisa decisao explicita (spec 017/020).",
+      "acao_sugerida": "aguardar_reconciliacao_sienge_bulkdata",
+      "opcoes": [
+        {
+          "id": "1",
+          "label": "Aguardar re-baixa Sienge",
+          "efeito": "Re-baixa /bulk-data/v1/income, popula sienge_installment_id, re-amarra parcelas, depois cancela duplicatas redundantes"
+        },
+        {
+          "id": "2",
+          "label": "Investigar caso a caso",
+          "efeito": "Olha cada duplicata pago+cancelado e decide individualmente — mais lento"
+        }
+      ],
+      "pares": [
+        {
+          "grupo_key": "parcela_entrada__4",
+          "linhas": [
+            {
+              "id": "ba8ca065-edf6-4c3a-af6c-5e62315990df",
+              "numero_parcela": 4,
+              "tipo": "parcela_entrada",
+              "valor": 1200,
+              "data_prevista": "2026-07-10",
+              "data_pagamento": null,
+              "status": "cancelado",
+              "comissao_gerada": 394.97
+            },
+            {
+              "id": "412b9708-3223-4ccf-bf86-63520dbda45b",
+              "numero_parcela": 4,
+              "tipo": "parcela_entrada",
+              "valor": 1200,
+              "data_prevista": "2026-07-10",
+              "data_pagamento": "2026-03-05",
+              "status": "pago",
+              "comissao_gerada": 394.97
+            }
+          ],
+          "mesma_data_prevista": true,
+          "tem_pago": true
+        }
+      ]
+    },
+    {
+      "venda_id": "a7fe850b-0b89-44ab-b222-68cf877febfe",
+      "sienge_contract_id": "256",
+      "numero_contrato": "164",
+      "unidade": "1406 C",
+      "cliente": "WANDERLEY ROSA GUIMARÃES JÚNIOR",
+      "cliente_cpf": "05204505903",
+      "cliente_telefone": "(47)99617-9440",
+      "cliente_suspeito_ser_corretor": false,
+      "corretor": null,
+      "corretor_telefone": null,
+      "valor_venda": 431493.25,
+      "valor_pro_soluto": 86298.5,
+      "parcelou_entrada": true,
+      "qtd_parcelas_entrada": 55,
+      "valor_parcela_entrada": 500,
+      "contagem": {
+        "total_pagamentos": 59,
+        "pagos": 8,
+        "pendentes": 50,
+        "cancelados": 1,
+        "pares_duplicados": 1,
+        "total_pago_em_duplicatas": 1
+      },
+      "risco": "alto",
+      "motivo": "Tem par com linha PAGA — qualquer alteracao em pago precisa decisao explicita (spec 017/020).",
+      "acao_sugerida": "aguardar_reconciliacao_sienge_bulkdata",
+      "opcoes": [
+        {
+          "id": "1",
+          "label": "Aguardar re-baixa Sienge",
+          "efeito": "Re-baixa /bulk-data/v1/income, popula sienge_installment_id, re-amarra parcelas, depois cancela duplicatas redundantes"
+        },
+        {
+          "id": "2",
+          "label": "Investigar caso a caso",
+          "efeito": "Olha cada duplicata pago+cancelado e decide individualmente — mais lento"
+        }
+      ],
+      "pares": [
+        {
+          "grupo_key": "parcela_entrada__1",
+          "linhas": [
+            {
+              "id": "cfe2d865-a047-46e5-b2b0-726e660d5c2d",
+              "numero_parcela": 1,
+              "tipo": "parcela_entrada",
+              "valor": 500,
+              "data_prevista": "2026-03-20",
+              "data_pagamento": null,
+              "status": "cancelado",
+              "comissao_gerada": 175
+            },
+            {
+              "id": "46c6b6b3-384b-45f5-9304-7f2e695637cb",
+              "numero_parcela": 1,
+              "tipo": "parcela_entrada",
+              "valor": 500,
+              "data_prevista": "2026-03-20",
+              "data_pagamento": "2026-03-20",
+              "status": "pago",
+              "comissao_gerada": 175
+            }
+          ],
+          "mesma_data_prevista": true,
+          "tem_pago": true
+        }
+      ]
+    }
+  ]
+}

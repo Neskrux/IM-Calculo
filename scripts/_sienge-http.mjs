@@ -1,27 +1,45 @@
 // Helper HTTP compartilhado pelos scripts de discovery/backfill Sienge.
 // ver .claude/rules/sincronizacao-sienge.md
-import { readFileSync } from 'node:fs'
+//
+// Recursos:
+//  - rate limit: 180 RPM (bucket de timestamps).
+//  - retry com backoff em 429/5xx.
+//  - contador global de chamadas REST v1 vs bulk-data, com resumo
+//    impresso ao final do processo.
+//  - cache em disco (.sienge-cache/) com TTL 1h por default.
+//    GET-only, key = hash(URL+query). Desliga via env SIENGE_CACHE_OFF=1
+//    ou parametro siengeGet({..., noCache: true}).
+//  - aviso quando consumo REST v1 passar de 70% da quota diaria (~100).
+import { readFileSync, writeFileSync, existsSync, mkdirSync, readdirSync, statSync } from 'node:fs'
+import { resolve } from 'node:path'
+import { createHash } from 'node:crypto'
 
 function loadEnv() {
-  const raw = readFileSync('.env', 'utf8')
   const env = {}
-  for (const line of raw.split('\n')) {
-    if (!line.includes('=') || line.trim().startsWith('#')) continue
-    const idx = line.indexOf('=')
-    const k = line.slice(0, idx).trim()
-    const v = line.slice(idx + 1).trim().replace(/^["']|["']$/g, '')
-    env[k] = v
+  try {
+    const raw = readFileSync('.env', 'utf8')
+    for (const line of raw.split('\n')) {
+      if (!line.includes('=') || line.trim().startsWith('#')) continue
+      const idx = line.indexOf('=')
+      const k = line.slice(0, idx).trim()
+      const v = line.slice(idx + 1).trim().replace(/^["']|["']$/g, '')
+      env[k] = v
+    }
+  } catch {
+    // .env ausente (CI runner) — usa apenas process.env
   }
   return { ...process.env, ...env }
 }
 
 const env = loadEnv()
 
-const SIENGE_USERNAME = env.SIENGE_USERNAME
-const SIENGE_PASSWORD = env.SIENGE_PASSWORD
-const SIENGE_SUBDOMAIN = env.SIENGE_SUBDOMAIN
+// .trim() defensivo — GitHub Secrets podem vir com whitespace/newline acidental
+// quando colados pela UI; isso faz Basic Auth retornar 401.
+const SIENGE_USERNAME = (env.SIENGE_USERNAME || '').trim()
+const SIENGE_PASSWORD = (env.SIENGE_PASSWORD || '').trim()
+const SIENGE_SUBDOMAIN = (env.SIENGE_SUBDOMAIN || '').trim()
 if (!SIENGE_USERNAME || !SIENGE_PASSWORD || !SIENGE_SUBDOMAIN) {
-  console.error('ERRO: faltando SIENGE_USERNAME / SIENGE_PASSWORD / SIENGE_SUBDOMAIN no .env')
+  console.error('ERRO: faltando SIENGE_USERNAME / SIENGE_PASSWORD / SIENGE_SUBDOMAIN no .env (ou env vars)')
   process.exit(1)
 }
 
@@ -29,10 +47,95 @@ const AUTH = 'Basic ' + Buffer.from(`${SIENGE_USERNAME}:${SIENGE_PASSWORD}`).toS
 const BULK_BASE = `https://api.sienge.com.br/${SIENGE_SUBDOMAIN}/public/api`
 const REST_BASE = `https://api.sienge.com.br/${SIENGE_SUBDOMAIN}/public/api/v1`
 
-const MAX_RPM = 180
+// Limite oficial do Sienge bulk-data: 20 req/min (ver
+// https://api.sienge.com.br/docs/general-bulk.html). Usamos 15 pra ter margem
+// e evitar circuit-breaker — quando excedido repetidamente, o Sienge aplica
+// um bloqueio agressivo com retry-after de ~9h que se auto-renova a cada
+// tentativa (o histórico de runs de 14-15/05 e 19/05 confirma esse padrão).
+// REST v1 nao tem limite por minuto documentado, mas usar mesmo limite por
+// seguranca — a quota diaria de 100 ja eh a restricao dominante la.
+const MAX_RPM = Number(env.SIENGE_MAX_RPM || 15)
 const WINDOW_MS = 60_000
-const REQUEST_TIMEOUT_MS = 60_000
-const MAX_RETRIES = 3
+const REQUEST_TIMEOUT_MS = Number(env.SIENGE_REQUEST_TIMEOUT_MS || 60_000)
+const MAX_RETRIES = Number(env.SIENGE_MAX_RETRIES || (env.GITHUB_ACTIONS ? 6 : 3))
+const RETRY_5XX_BASE_MS = Number(env.SIENGE_5XX_BASE_DELAY_MS || (env.GITHUB_ACTIONS ? 15_000 : 2_000))
+const RETRY_5XX_MAX_MS = Number(env.SIENGE_5XX_MAX_DELAY_MS || (env.GITHUB_ACTIONS ? 90_000 : 10_000))
+const RETRY_NETWORK_BASE_MS = Number(env.SIENGE_NETWORK_BASE_DELAY_MS || (env.GITHUB_ACTIONS ? 10_000 : 2_000))
+const RETRY_NETWORK_MAX_MS = Number(env.SIENGE_NETWORK_MAX_DELAY_MS || (env.GITHUB_ACTIONS ? 60_000 : 10_000))
+
+// Quota diaria REST v1 (referencia .claude/rules/sincronizacao-sienge.md).
+// Bulk-data nao tem quota. Sienge nao expoe contador via API, entao
+// trackeamos localmente — eh estimativa, nao verdade absoluta.
+const REST_V1_DAILY_QUOTA = 100
+const QUOTA_WARN_THRESHOLD = 0.7 // 70%
+
+// Cache em disco
+const CACHE_DIR = resolve(process.cwd(), '.sienge-cache')
+const CACHE_TTL_MS = Number(env.SIENGE_CACHE_TTL_MS || 60 * 60 * 1000) // 1h default
+const CACHE_DISABLED = env.SIENGE_CACHE_OFF === '1'
+
+if (!CACHE_DISABLED) {
+  try { if (!existsSync(CACHE_DIR)) mkdirSync(CACHE_DIR, { recursive: true }) } catch { /* ignora */ }
+}
+
+function cacheKey(url) {
+  return createHash('sha256').update(url).digest('hex').slice(0, 24)
+}
+
+function cacheGet(url) {
+  if (CACHE_DISABLED) return null
+  const f = resolve(CACHE_DIR, `${cacheKey(url)}.json`)
+  try {
+    if (!existsSync(f)) return null
+    const age = Date.now() - statSync(f).mtimeMs
+    if (age > CACHE_TTL_MS) return null
+    return JSON.parse(readFileSync(f, 'utf8'))
+  } catch { return null }
+}
+
+// cacheGetStale: ignora TTL — usado como fallback quando Sienge retorna
+// 429/5xx ou rede falha. Servir dados velhos e' melhor que crashar o job.
+function cacheGetStale(url) {
+  if (CACHE_DISABLED) return null
+  const f = resolve(CACHE_DIR, `${cacheKey(url)}.json`)
+  try {
+    if (!existsSync(f)) return null
+    const ageMin = Math.round((Date.now() - statSync(f).mtimeMs) / 60000)
+    const payload = JSON.parse(readFileSync(f, 'utf8'))
+    return { ...payload, _staleAgeMin: ageMin }
+  } catch { return null }
+}
+
+function cachePut(url, payload) {
+  if (CACHE_DISABLED) return
+  const f = resolve(CACHE_DIR, `${cacheKey(url)}.json`)
+  try { writeFileSync(f, JSON.stringify(payload)) } catch { /* ignora */ }
+}
+
+// Contador global
+const stats = {
+  restV1: { calls: 0, cacheHits: 0 },
+  bulk: { calls: 0, cacheHits: 0 },
+  errors: 0,
+  startedAt: Date.now(),
+}
+
+function imprimirResumo() {
+  if (stats.restV1.calls === 0 && stats.bulk.calls === 0 && stats.restV1.cacheHits === 0 && stats.bulk.cacheHits === 0) return
+  const dur = ((Date.now() - stats.startedAt) / 1000).toFixed(1)
+  const restPct = ((stats.restV1.calls / REST_V1_DAILY_QUOTA) * 100).toFixed(0)
+  console.log('')
+  console.log('--- consumo Sienge ---')
+  console.log(`  REST v1: ${stats.restV1.calls} chamadas (~${restPct}% da quota diaria de ${REST_V1_DAILY_QUOTA}) + ${stats.restV1.cacheHits} cache hits`)
+  console.log(`  bulk-data: ${stats.bulk.calls} chamadas (sem quota) + ${stats.bulk.cacheHits} cache hits`)
+  if (stats.errors > 0) console.log(`  erros: ${stats.errors}`)
+  console.log(`  duracao: ${dur}s`)
+  if (stats.restV1.calls / REST_V1_DAILY_QUOTA >= QUOTA_WARN_THRESHOLD) {
+    console.log(`  ⚠️ consumo REST v1 acima de ${(QUOTA_WARN_THRESHOLD * 100)}% da quota diaria. Considere usar cache (.sienge-cache/) ou esperar.`)
+  }
+}
+
+process.on('beforeExit', imprimirResumo)
 
 const bucket = { timestamps: [] }
 async function acquire() {
@@ -48,7 +151,7 @@ async function acquire() {
   }
 }
 
-export async function siengeGet({ path, query = {} }) {
+export async function siengeGet({ path, query = {}, noCache = false }) {
   const params = new URLSearchParams()
   for (const [k, v] of Object.entries(query)) {
     if (v !== undefined && v !== null && v !== '') params.set(k, String(v))
@@ -56,6 +159,21 @@ export async function siengeGet({ path, query = {} }) {
   const isBulk = path.startsWith('/bulk-data/')
   const base = isBulk ? BULK_BASE : REST_BASE
   const url = `${base}${path}${params.toString() ? '?' + params.toString() : ''}`
+  const cat = isBulk ? stats.bulk : stats.restV1
+
+  // Cache hit: nao consome quota, nao gasta latencia.
+  if (!noCache) {
+    const cached = cacheGet(url)
+    if (cached) {
+      cat.cacheHits++
+      return { status: cached.status, data: cached.data, url, cached: true }
+    }
+  }
+
+  // Aviso preventivo de quota REST v1.
+  if (!isBulk && stats.restV1.calls === Math.floor(REST_V1_DAILY_QUOTA * QUOTA_WARN_THRESHOLD)) {
+    console.warn(`[quota] REST v1 atingiu ${(QUOTA_WARN_THRESHOLD * 100)}% da quota diaria (${stats.restV1.calls}/${REST_V1_DAILY_QUOTA}). Considere parar ou usar cache.`)
+  }
 
   let attempt = 0
   let lastErr = null
@@ -73,10 +191,17 @@ export async function siengeGet({ path, query = {} }) {
       clearTimeout(timer)
       if (res.status === 429) {
         const retryAfter = Number(res.headers.get('Retry-After') ?? '30')
-        const waitMs = Math.min(Math.max(retryAfter, 1), 120) * 1000
         const body = await res.text().catch(() => '')
         console.warn(`[429] ${path} retry-after=${retryAfter}s body=${body.slice(0, 150)}`)
         lastErr = new Error(`Sienge 429 after ${retryAfter}s: ${body.slice(0, 200)}`)
+        // Retry-after > 5min indica bloqueio agressivo (circuit-breaker do
+        // Sienge). Continuar retentando RENOVA o bloqueio. Aborta logo e deixa
+        // stale-on-error servir cache vencido, ou propagar o erro pro caller.
+        if (retryAfter > 300) {
+          console.warn(`[429] retry-after muito alto (${retryAfter}s) — abortando retries pra nao renovar bloqueio`)
+          break
+        }
+        const waitMs = Math.min(Math.max(retryAfter, 1), 120) * 1000
         await new Promise((r) => setTimeout(r, waitMs))
         continue
       }
@@ -84,7 +209,7 @@ export async function siengeGet({ path, query = {} }) {
         const body = await res.text().catch(() => '')
         lastErr = new Error(`Sienge ${res.status}: ${body.slice(0, 300)}`)
         console.warn(`[${res.status}] ${path} attempt=${attempt} body=${body.slice(0, 150)}`)
-        const backoff = Math.min(2000 * attempt, 10_000)
+        const backoff = Math.min(RETRY_5XX_BASE_MS * attempt, RETRY_5XX_MAX_MS)
         await new Promise((r) => setTimeout(r, backoff))
         continue
       }
@@ -93,16 +218,46 @@ export async function siengeGet({ path, query = {} }) {
         throw new Error(`Sienge ${res.status} on ${path}: ${body.slice(0, 500)}`)
       }
       const data = await res.json()
-      return { status: res.status, data, url }
+      cat.calls++
+      const payload = { status: res.status, data, url }
+      if (!noCache) cachePut(url, payload)
+      return payload
     } catch (err) {
       clearTimeout(timer)
       lastErr = err
       console.warn(`[err] ${path} attempt=${attempt} err=${String(err).slice(0, 200)}`)
-      const backoff = Math.min(2000 * attempt, 10_000)
+      const backoff = Math.min(RETRY_NETWORK_BASE_MS * attempt, RETRY_NETWORK_MAX_MS)
       await new Promise((r) => setTimeout(r, backoff))
     }
   }
+  // Stale-on-error: antes de propagar, tenta servir cache vencido. Permite
+  // o cron sobreviver a 429 residual / instabilidade do Sienge sem quebrar
+  // o job — proximo run atualiza naturalmente quando Sienge voltar.
+  // Pra desativar (ex: testes que precisam de erro real): SIENGE_NO_STALE=1.
+  if (!noCache && env.SIENGE_NO_STALE !== '1') {
+    const stale = cacheGetStale(url)
+    if (stale) {
+      cat.cacheHits++
+      console.warn(`[stale] ${path} servindo cache de ${stale._staleAgeMin}min atras (Sienge indisponivel: ${String(lastErr).slice(0, 100)})`)
+      return { status: stale.status, data: stale.data, url, cached: true, stale: true, staleAgeMin: stale._staleAgeMin }
+    }
+  }
+  stats.errors++
   throw new Error(`Sienge GET ${path} falhou após ${MAX_RETRIES} tentativas: ${String(lastErr)}`)
+}
+
+// Util pra scripts de auditoria: limpa cache (use quando dado pode ter mudado
+// no Sienge mas voce ja consultou no mesmo dia).
+export function limparCacheSienge() {
+  if (!existsSync(CACHE_DIR)) return 0
+  let n = 0
+  for (const f of readdirSync(CACHE_DIR)) {
+    if (f.endsWith('.json')) {
+      try { writeFileSync(resolve(CACHE_DIR, f), '') } catch { /* ignora */ }
+      n++
+    }
+  }
+  return n
 }
 
 export function extractRows(data) {

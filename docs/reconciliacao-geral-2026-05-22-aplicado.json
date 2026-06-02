@@ -1,0 +1,4022 @@
+{
+  "meta": {
+    "geradoEm": "2026-05-22T02:08:24.877Z",
+    "modo": "apply",
+    "total_vendas": 298
+  },
+  "processadas": [
+    {
+      "venda_id": "28239a26-a32b-45ef-9307-ed675d58cef3",
+      "unidade": "510 A",
+      "contrato": "13",
+      "bill": 18,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": [
+        {
+          "id": "47f8cd50-9b7f-4b00-87e3-4adb79aa41d5",
+          "tipo": "parcela_entrada",
+          "valor": 1149.67,
+          "data_prevista": "2025-06-10",
+          "status": "pago"
+        }
+      ]
+    },
+    {
+      "venda_id": "6edda208-cfca-4258-93f7-3051bcccb94f",
+      "unidade": "1203 A",
+      "contrato": "376",
+      "bill": 448,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "822c2f3b-5933-485c-8946-195be7daac86",
+      "unidade": "1506 D",
+      "contrato": "377",
+      "bill": 449,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "f79be55a-ed21-49cc-a893-72380178f1c7",
+      "unidade": "1806 D",
+      "contrato": "379",
+      "bill": 451,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "54497681-10e3-4a1a-89d8-b3356fdec09a",
+      "unidade": "507 A",
+      "contrato": "380",
+      "bill": 452,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "bf92e73a-edce-4a19-a32a-02c7ed296f6d",
+      "unidade": "1502 D",
+      "contrato": "381",
+      "bill": 453,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "e476bbdb-88ce-464d-9238-ebbe6badb81b",
+      "unidade": "1305 A",
+      "contrato": "382",
+      "bill": 454,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "d77a7a35-7c36-450a-b4af-9648bc44adc7",
+      "unidade": "604 D",
+      "contrato": "384",
+      "bill": 456,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "6353bb51-3c58-49c9-8e9f-593ad6edc954",
+      "unidade": "906 A",
+      "contrato": "385",
+      "bill": 457,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "fc365e7f-71a1-43cd-8390-240875d6b900",
+      "unidade": "1807 D",
+      "contrato": "389",
+      "bill": 461,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "abd5b02f-8087-4aac-bb65-3c1f282b3e57",
+      "unidade": "1307 D",
+      "contrato": "391",
+      "bill": 463,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "c2c465e1-cec4-42bc-8f40-db0d7d7d3106",
+      "unidade": "1105 A",
+      "contrato": "141",
+      "bill": 256,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": [
+        {
+          "id": "c4069144-0c6c-485e-ae07-4aac96db2aa4",
+          "tipo": "parcela_entrada",
+          "valor": 1422.5,
+          "data_prevista": "2025-07-10",
+          "status": "pago"
+        }
+      ]
+    },
+    {
+      "venda_id": "c9c377ab-05a4-4e3a-bb67-afa69af8ef98",
+      "unidade": "512 A",
+      "contrato": "15",
+      "bill": 367,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "3da27fb0-d811-4506-acee-080927595e3e",
+      "unidade": "1403 A",
+      "contrato": "152",
+      "bill": 184,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "a6b55e8c-c563-4f51-b712-623627880393",
+      "unidade": "1402 A",
+      "contrato": "151",
+      "bill": 318,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "9ca235ab-c4fc-42c8-9ab7-b772dc1c9932",
+      "unidade": "1502 A",
+      "contrato": "157",
+      "bill": 269,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": [
+        {
+          "id": "da01791e-7ca8-4e31-9065-9c6fd17696fb",
+          "tipo": "parcela_entrada",
+          "valor": 1338.92,
+          "data_prevista": "2025-07-20",
+          "status": "pago"
+        }
+      ]
+    },
+    {
+      "venda_id": "1d996b91-6a09-4444-bd24-41844fec8673",
+      "unidade": "410 A",
+      "contrato": "11",
+      "bill": 28,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": [
+        {
+          "id": "defe694d-a1a7-4177-a15b-299568f514f8",
+          "tipo": "sinal",
+          "valor": 1000,
+          "data_prevista": "2025-04-18",
+          "status": "pago"
+        },
+        {
+          "id": "f4747f11-3715-4f5a-83a2-446bde58d631",
+          "tipo": "parcela_entrada",
+          "valor": 1016.67,
+          "data_prevista": "2025-05-20",
+          "status": "pago"
+        }
+      ]
+    },
+    {
+      "venda_id": "47edf23c-182a-49a7-b136-e017e1b9a3f4",
+      "unidade": "1106 A",
+      "contrato": "142",
+      "bill": 183,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": [
+        {
+          "id": "c121b80a-e91b-43d6-9c00-884f5d843738",
+          "tipo": "parcela_entrada",
+          "valor": 2033.33,
+          "data_prevista": "2025-06-20",
+          "status": "pago"
+        }
+      ]
+    },
+    {
+      "venda_id": "cb112568-042f-4e78-b86d-b1a209fa76d4",
+      "unidade": "1507 A",
+      "contrato": "162",
+      "bill": 164,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": [
+        {
+          "id": "3934fe77-0d0c-467b-ae80-441c07b44d91",
+          "tipo": "balao",
+          "valor": 5432,
+          "data_prevista": "2030-07-20",
+          "status": "pendente"
+        }
+      ]
+    },
+    {
+      "venda_id": "f3293e5f-23a6-4b72-b39d-38de8d429190",
+      "unidade": "807 A",
+      "contrato": "407",
+      "bill": 479,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": [
+        {
+          "id": "8f0c3dff-ba39-4360-a5f1-dc246337add4",
+          "tipo": "sinal",
+          "valor": 1158.56,
+          "data_prevista": "2026-02-05",
+          "status": "pendente"
+        }
+      ]
+    },
+    {
+      "venda_id": "d2aa4822-4727-4e63-9824-76f892082852",
+      "unidade": "1701 A",
+      "contrato": "167",
+      "bill": 171,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "64aa2405-0068-4c20-8d15-736e1a1d6b1b",
+      "unidade": "1702 A",
+      "contrato": "168",
+      "bill": 153,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "d3c61971-2f4a-4884-ba49-b8ff70db2097",
+      "unidade": "1403 B",
+      "contrato": "409",
+      "bill": 481,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "24fbcc91-cf7e-4399-9148-4157d6ef9e26",
+      "unidade": "1705 A",
+      "contrato": "171",
+      "bill": 151,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "c2e7970b-5011-4fa2-8cb6-b6a632582a2c",
+      "unidade": "1706 A",
+      "contrato": "172",
+      "bill": 198,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": [
+        {
+          "id": "ccb2f737-b786-47d8-960a-d8f1059ec225",
+          "tipo": "parcela_entrada",
+          "valor": 1532.99,
+          "data_prevista": "2025-08-20",
+          "status": "pago"
+        }
+      ]
+    },
+    {
+      "venda_id": "ef1b6708-e632-457a-94d5-3b424ce42d4e",
+      "unidade": "609 A",
+      "contrato": "410",
+      "bill": 482,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "bd50c322-a9f6-4a65-86ab-76721bfb954b",
+      "unidade": "510 C",
+      "contrato": "412",
+      "bill": 484,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "10e16431-7bcd-435d-9379-102945570482",
+      "unidade": "1602 C",
+      "contrato": "417",
+      "bill": 489,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "c3650d6d-f1e8-4afe-ad0f-f8ee30c19a16",
+      "unidade": "603 B",
+      "contrato": "411",
+      "bill": 483,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "3d611079-5ced-446f-a533-b32f185f1191",
+      "unidade": "1805 A",
+      "contrato": "173",
+      "bill": 293,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": [
+        {
+          "id": "e89d4ef2-dc09-47ee-a5af-e435b2fb815d",
+          "tipo": "balao",
+          "valor": 1260,
+          "data_prevista": "2026-06-20",
+          "status": "pendente"
+        }
+      ]
+    },
+    {
+      "venda_id": "ccfd72af-cd67-40a7-b1a6-e05527ebe793",
+      "unidade": "1704 A",
+      "contrato": "170",
+      "bill": 299,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "2b7cda44-45fe-4e9b-b783-29605b362342",
+      "unidade": "1506 C",
+      "contrato": "419",
+      "bill": 491,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "f3b338a7-2ed6-434b-92ba-c8fd254208b3",
+      "unidade": "1606 C",
+      "contrato": "420",
+      "bill": 492,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "df70d805-c0a7-4157-8e8a-9a3ff9d72c4e",
+      "unidade": "1607 C",
+      "contrato": "421",
+      "bill": 495,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "eb4ac0bc-7de5-49fd-a933-3ab7de549dac",
+      "unidade": "603 B",
+      "contrato": "181",
+      "bill": 309,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "77ebdede-471f-4d4a-b50b-8b9ecb602fdd",
+      "unidade": "1503 A",
+      "contrato": "158",
+      "bill": 174,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "350e54e6-023b-47cb-b4b0-7f82a0db3e07",
+      "unidade": "1702 C",
+      "contrato": "424",
+      "bill": 497,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "c850d6b4-742b-412e-8477-33ec538fcdc4",
+      "unidade": "401 A",
+      "contrato": "427",
+      "bill": 499,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "a1aa2617-0ed2-4eaf-bcad-a1bced7f1d48",
+      "unidade": "609 B",
+      "contrato": "183",
+      "bill": 193,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "9b09a904-a715-43c6-957e-5ed62829343d",
+      "unidade": "901 B",
+      "contrato": "189",
+      "bill": 152,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "85794a4e-df31-4a19-89bd-9743ba2cbb68",
+      "unidade": "901 D",
+      "contrato": "428",
+      "bill": 500,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "42a1c457-d2c3-405c-a2e3-e7b0623a2d12",
+      "unidade": "501 A",
+      "contrato": "19",
+      "bill": 23,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "bd9ce9af-8a59-4b9d-a726-c832fbfe1d80",
+      "unidade": "902 B",
+      "contrato": "190",
+      "bill": 177,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": [
+        {
+          "id": "fd644b70-3ef9-408c-8027-86f65f830586",
+          "tipo": "parcela_entrada",
+          "valor": 1303.31,
+          "data_prevista": "2025-07-20",
+          "status": "pago"
+        }
+      ]
+    },
+    {
+      "venda_id": "d3b2e8a0-7706-4717-81e9-8ae6916a0e7d",
+      "unidade": "803 B",
+      "contrato": "429",
+      "bill": 501,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "8c5e1d12-92dd-4022-a94c-cc215d049bc6",
+      "unidade": "906 B",
+      "contrato": "192",
+      "bill": 303,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": [
+        {
+          "id": "b5096452-4302-4d7b-9019-41c2ff2b5fcb",
+          "tipo": "parcela_entrada",
+          "valor": 1151.65,
+          "data_prevista": "2025-08-20",
+          "status": "pago"
+        }
+      ]
+    },
+    {
+      "venda_id": "e41e24ca-3ceb-4642-86b6-7883249efa79",
+      "unidade": "1507 D",
+      "contrato": "430",
+      "bill": 502,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "00f42011-53b9-4384-92da-558e49e46b18",
+      "unidade": "1102 A",
+      "contrato": "139",
+      "bill": 188,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": [
+        {
+          "id": "30221fa2-4b79-4a21-8a99-c6f54656bfab",
+          "tipo": "parcela_entrada",
+          "valor": 1329.51,
+          "data_prevista": "2025-07-20",
+          "status": "pago"
+        }
+      ]
+    },
+    {
+      "venda_id": "991e6f36-a5a2-45a5-aaf9-13f7ba8e7faf",
+      "unidade": "907 B",
+      "contrato": "194",
+      "bill": 283,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "59ff9a4f-ef24-4e80-acab-502606e79741",
+      "unidade": "908 B",
+      "contrato": "196",
+      "bill": 215,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": [
+        {
+          "id": "17d9c582-5778-41f1-8aa1-62ea2ac8e0bf",
+          "tipo": "parcela_entrada",
+          "valor": 1394.47,
+          "data_prevista": "2025-07-20",
+          "status": "pago"
+        }
+      ]
+    },
+    {
+      "venda_id": "a661779c-d938-4224-bbf4-e6b587cdf2ce",
+      "unidade": "1002 B",
+      "contrato": "197",
+      "bill": 291,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "3fb965d5-e714-4173-8830-a5f50669784e",
+      "unidade": "1003 B",
+      "contrato": "198",
+      "bill": 282,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "41dc416b-0335-4cc2-90d2-0e21a6a50540",
+      "unidade": "403 C",
+      "contrato": "378",
+      "bill": 450,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "cf012b9e-bf28-476f-9846-a798826509e8",
+      "unidade": "409 B",
+      "contrato": "178",
+      "bill": 148,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "49382dec-5f2e-4501-b4e3-030d48222e36",
+      "unidade": "404 B",
+      "contrato": "177",
+      "bill": 135,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": [
+        {
+          "id": "43c35178-1c1f-4d65-8aca-04b1597f7ec6",
+          "tipo": "parcela_entrada",
+          "valor": 1138.29,
+          "data_prevista": "2025-06-20",
+          "status": "pago"
+        }
+      ]
+    },
+    {
+      "venda_id": "b5da7d59-925c-400e-a909-fc125f060b63",
+      "unidade": "1004 B",
+      "contrato": "199",
+      "bill": 248,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "45ea6703-2e75-4c9a-a572-27710936f03b",
+      "unidade": "1101 A",
+      "contrato": "138",
+      "bill": 253,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "44a4152a-a9a7-4da9-a644-eded258546e0",
+      "unidade": "1204 A",
+      "contrato": "146",
+      "bill": 263,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": [
+        {
+          "id": "be72da31-8a1b-494a-a262-4dcfdf53d8b7",
+          "tipo": "parcela_entrada",
+          "valor": 1139.86,
+          "data_prevista": "2025-07-20",
+          "status": "pago"
+        }
+      ]
+    },
+    {
+      "venda_id": "fd1490b1-a2bc-475a-8d4c-5adece565fea",
+      "unidade": "1006 B",
+      "contrato": "201",
+      "bill": 264,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "a8c76ba4-8ed5-4c64-b8a4-0e3171a808d8",
+      "unidade": "1104 B",
+      "contrato": "203",
+      "bill": 304,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "f03dc7d9-21e6-4db8-9ae5-e42b10b0b788",
+      "unidade": "503 A",
+      "contrato": "21",
+      "bill": 368,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "9e784457-c682-4bbb-9fe1-0677c980321a",
+      "unidade": "1603 B",
+      "contrato": "208",
+      "bill": 210,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "66a99d53-bbea-4359-bbce-c88baac7922e",
+      "unidade": "409 C",
+      "contrato": "211",
+      "bill": 294,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "ebc6c002-3cbc-4307-a0ef-b78f02fc22f8",
+      "unidade": "1504 B",
+      "contrato": "207",
+      "bill": 173,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "2d329fbf-b41f-4795-b2cc-f5ebdb19a9c7",
+      "unidade": "410 C",
+      "contrato": "212",
+      "bill": 156,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "de16f7a0-b7df-4d81-a0ac-84f0f2a8097c",
+      "unidade": "609 C",
+      "contrato": "218",
+      "bill": 196,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": [
+        {
+          "id": "9ce488d6-8683-43f4-9211-34e278e688fc",
+          "tipo": "parcela_entrada",
+          "valor": 1277.32,
+          "data_prevista": "2025-07-10",
+          "status": "pago"
+        }
+      ]
+    },
+    {
+      "venda_id": "b1ab6619-9462-4a69-93f6-78fdc26201b1",
+      "unidade": "1103 B",
+      "contrato": "202",
+      "bill": 168,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "2f4a2c67-cb4f-484b-a96c-b559606950fc",
+      "unidade": "404 C",
+      "contrato": "210",
+      "bill": 285,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "2a86cf94-1730-4d50-8e31-1af942fa0205",
+      "unidade": "704 C",
+      "contrato": "219",
+      "bill": 284,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "e1c0ca9b-452f-4955-aeb3-a0e1fc36642c",
+      "unidade": "1304 A",
+      "contrato": "149",
+      "bill": 227,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "5a6c00dd-e281-460a-90f6-816f4ed85002",
+      "unidade": "1407 A",
+      "contrato": "155",
+      "bill": 239,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "13736419-ed8e-44b8-bd34-5b241981bd23",
+      "unidade": "1806 A",
+      "contrato": "174",
+      "bill": 280,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "bba79402-1f6c-445a-8626-a69a7e330cd4",
+      "unidade": "1405 A",
+      "contrato": "154",
+      "bill": 229,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": [
+        {
+          "id": "38f2d1f2-ae6e-4077-ad41-c9173c5663fc",
+          "tipo": "parcela_entrada",
+          "valor": 1490.47,
+          "data_prevista": "2025-07-20",
+          "status": "pago"
+        }
+      ]
+    },
+    {
+      "venda_id": "471bc996-5c8b-46be-b87c-a1cb329a9ff1",
+      "unidade": "604 B",
+      "contrato": "182",
+      "bill": 262,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "5aac2bfc-6f68-45a8-872d-f3b5c3e0cc20",
+      "unidade": "809 C",
+      "contrato": "224",
+      "bill": 307,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "e7ab0229-0311-4ee1-9a84-d863c5b9ef5e",
+      "unidade": "803 C",
+      "contrato": "222",
+      "bill": 139,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": [
+        {
+          "id": "575642e4-9183-4c66-b5dc-104135460c30",
+          "tipo": "parcela_entrada",
+          "valor": 6625.4,
+          "data_prevista": "2025-07-10",
+          "status": "pago"
+        }
+      ]
+    },
+    {
+      "venda_id": "4b50311b-29a2-4300-9432-5169c909e705",
+      "unidade": "804 C",
+      "contrato": "223",
+      "bill": 244,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "9467ac8a-786e-4658-8aac-c714875f8deb",
+      "unidade": "1505 A",
+      "contrato": "160",
+      "bill": 311,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "69cad931-fa31-4d0a-97d1-af3589537619",
+      "unidade": "710 C",
+      "contrato": "221",
+      "bill": 161,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "293a5835-fafb-41ad-9a7f-8abd29dbe207",
+      "unidade": "901 C",
+      "contrato": "226",
+      "bill": 298,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "f2b12a53-2ce2-4744-b14b-775207a25301",
+      "unidade": "902 C",
+      "contrato": "227",
+      "bill": 287,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "58657142-c9b7-4612-aa2e-ae6fa84d876f",
+      "unidade": "904 C",
+      "contrato": "229",
+      "bill": 219,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": [
+        {
+          "id": "11895544-677f-4278-b681-e526dcd51891",
+          "tipo": "parcela_entrada",
+          "valor": 1267.68,
+          "data_prevista": "2025-06-20",
+          "status": "pendente"
+        }
+      ]
+    },
+    {
+      "venda_id": "5c693a17-6a08-4ecd-bb94-6025aad53ff8",
+      "unidade": "907 C",
+      "contrato": "231",
+      "bill": 144,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "332ebe30-b39d-4d35-b3a9-eb7bedd0abc8",
+      "unidade": "1004 C",
+      "contrato": "234",
+      "bill": 259,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": [
+        {
+          "id": "43303f43-ef4b-4ca3-9126-9584006bc3a2",
+          "tipo": "parcela_entrada",
+          "valor": 1280.37,
+          "data_prevista": "2025-05-10",
+          "status": "pago"
+        }
+      ]
+    },
+    {
+      "venda_id": "e9f21d96-203e-44df-bead-9dddd6a2c250",
+      "unidade": "1006 C",
+      "contrato": "235",
+      "bill": 195,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "7137bf0e-9738-4451-8c5f-53fac9593003",
+      "unidade": "1703 A",
+      "contrato": "169",
+      "bill": 142,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "20f053e6-2484-49d1-b290-e9e8fe73b3cf",
+      "unidade": "1105 C",
+      "contrato": "238",
+      "bill": 233,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "729caede-2357-4fd4-8e0a-5fe530b7da28",
+      "unidade": "1103 C",
+      "contrato": "237",
+      "bill": 314,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "982f1c2a-b679-4992-bae6-f6aabac8646c",
+      "unidade": "1408 A",
+      "contrato": "156",
+      "bill": 214,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "e9d137e5-e34d-4514-a15c-06382411dc1d",
+      "unidade": "1106 C",
+      "contrato": "239",
+      "bill": 150,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "36810789-4453-4544-9523-3651bd74d027",
+      "unidade": "1107 C",
+      "contrato": "240",
+      "bill": 200,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "fa72c841-baca-448f-a92b-05fbe85bcb5d",
+      "unidade": "1202 C",
+      "contrato": "241",
+      "bill": 166,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "78c3af47-3351-4249-9616-bc52c6a01d35",
+      "unidade": "1203 C",
+      "contrato": "242",
+      "bill": 222,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "1b8ef317-14ad-408b-9a2d-7c15bfdca9f0",
+      "unidade": "1206 C",
+      "contrato": "243",
+      "bill": 165,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "aff2856b-b787-47a4-84e2-81930c5c9201",
+      "unidade": "1207 C",
+      "contrato": "244",
+      "bill": 223,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": [
+        {
+          "id": "eba81c98-39a1-4f05-889e-5b6edf99e28f",
+          "tipo": "balao",
+          "valor": 5000,
+          "data_prevista": "2029-03-30",
+          "status": "pendente"
+        }
+      ]
+    },
+    {
+      "venda_id": "9ec13f46-ded0-4853-94c0-fd3f8b98fc44",
+      "unidade": "1208 C",
+      "contrato": "245",
+      "bill": 160,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "31c1233c-989a-40c1-a36d-895b699e9d83",
+      "unidade": "1404 A",
+      "contrato": "350",
+      "bill": 414,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "affec3f4-79bd-452d-a556-a699b5ec9bdd",
+      "unidade": "1605 A",
+      "contrato": "164",
+      "bill": 257,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "ed7cebfb-279a-40d5-9fff-43e574c7e936",
+      "unidade": "810 B",
+      "contrato": "187",
+      "bill": 140,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "8d759d05-115a-4690-97b5-6512128a41aa",
+      "unidade": "1404 C",
+      "contrato": "254",
+      "bill": 251,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "ac1c4423-44f2-4c1d-b09c-866fcf326fe3",
+      "unidade": "1302 C",
+      "contrato": "246",
+      "bill": 240,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "11728f4d-67d3-4629-a6b2-d93ec06dbea0",
+      "unidade": "508 A",
+      "contrato": "25",
+      "bill": 10,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": [
+        {
+          "id": "94ee960c-7ca1-4977-a714-1d424b02a576",
+          "tipo": "parcela_entrada",
+          "valor": 758.04,
+          "data_prevista": "2025-05-10",
+          "status": "pago"
+        }
+      ]
+    },
+    {
+      "venda_id": "6004ce3c-6cf0-4341-9851-60570fd0b50b",
+      "unidade": "1307 C",
+      "contrato": "250",
+      "bill": 189,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "e3ca7d66-44d8-407b-a70b-6e8d5bab22c1",
+      "unidade": "1401 C",
+      "contrato": "252",
+      "bill": 289,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "b568c66c-884b-4dd4-9250-09b387687b18",
+      "unidade": "1402 C",
+      "contrato": "253",
+      "bill": 310,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "fbd6741a-394c-49b0-8761-34460ec938dd",
+      "unidade": "603 C",
+      "contrato": "216",
+      "bill": 241,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": [
+        {
+          "id": "fc559c34-4e4e-41d5-98d9-2437cbc86e7b",
+          "tipo": "parcela_entrada",
+          "valor": 1055.61,
+          "data_prevista": "2025-05-20",
+          "status": "pago"
+        }
+      ]
+    },
+    {
+      "venda_id": "1ed61c21-97b9-4409-bf45-403cb41e3889",
+      "unidade": "803 B",
+      "contrato": "186",
+      "bill": 167,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "35b3be9c-d5e7-4a47-9e2e-85bac001dae0",
+      "unidade": "505 D",
+      "contrato": "264",
+      "bill": 301,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "f55c264d-3d37-48b7-be1c-757d985ee025",
+      "unidade": "504 D",
+      "contrato": "263",
+      "bill": 147,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "12df0ff7-62c6-48b7-822c-41bd26443196",
+      "unidade": "1408 C",
+      "contrato": "258",
+      "bill": 255,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "52072fb0-78dc-4374-b0c1-8b4099b6f08d",
+      "unidade": "503 D",
+      "contrato": "262",
+      "bill": 231,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "84b74c27-fa97-4cb0-9e22-be95f88237d2",
+      "unidade": "1405 C",
+      "contrato": "255",
+      "bill": 143,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "a7fe850b-0b89-44ab-b222-68cf877febfe",
+      "unidade": "1406 C",
+      "contrato": "256",
+      "bill": 226,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [
+          {
+            "id": "747e0e83-a241-45d0-9d53-c0ddf119547e",
+            "data_pagamento": "2026-05-18",
+            "instId": "8"
+          }
+        ],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "3f0febb7-1afe-4008-9e70-8c86c28a53c1",
+      "unidade": "1407 C",
+      "contrato": "257",
+      "bill": 163,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "2a4e3f59-bd50-4323-b807-9c26c9a1b196",
+      "unidade": "603 A",
+      "contrato": "26",
+      "bill": 17,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "ec6e2c8d-0988-4b34-94a4-255e3b4d288f",
+      "unidade": "409 D",
+      "contrato": "260",
+      "bill": 278,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "a365d466-0bc4-49ef-a39f-d5fe958ab92a",
+      "unidade": "509 D",
+      "contrato": "265",
+      "bill": 169,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "090eb74d-8ff4-448a-9a52-03d95c9614c5",
+      "unidade": "510 D",
+      "contrato": "266",
+      "bill": 179,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "335e0f43-2a77-4399-ae27-eb4af0a56a68",
+      "unidade": "604 D",
+      "contrato": "268",
+      "bill": 159,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": [
+        {
+          "id": "e52bee7c-0514-4dca-9f7b-a19b56cc6b77",
+          "tipo": "parcela_entrada",
+          "valor": 1298.97,
+          "data_prevista": "2025-07-20",
+          "status": "pago"
+        }
+      ]
+    },
+    {
+      "venda_id": "84079391-b600-4ffe-b4b3-6a1b635b3c37",
+      "unidade": "710 D",
+      "contrato": "274",
+      "bill": 288,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": [
+        {
+          "id": "30a6bc0d-df56-436f-80f1-853c0532ee99",
+          "tipo": "parcela_entrada",
+          "valor": 1066.16,
+          "data_prevista": "2025-05-20",
+          "status": "pago"
+        }
+      ]
+    },
+    {
+      "venda_id": "2e15fd31-4ba4-480a-8668-4d0f9001803c",
+      "unidade": "1707 D",
+      "contrato": "306",
+      "bill": 208,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": [
+        {
+          "id": "0d728ac6-a123-4fcd-9a48-c633a79383ef",
+          "tipo": "parcela_entrada",
+          "valor": 749.68,
+          "data_prevista": "2025-06-20",
+          "status": "pago"
+        }
+      ]
+    },
+    {
+      "venda_id": "8b74adf9-e6dc-404b-8144-d026dbb256ed",
+      "unidade": "403 C",
+      "contrato": "209",
+      "bill": 273,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "65246e6d-9e20-4df6-89d0-2f59c0aa4b5a",
+      "unidade": "604 A",
+      "contrato": "27",
+      "bill": 370,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "472d7dfe-e95a-40d7-8739-328d2b576c44",
+      "unidade": "1103 A",
+      "contrato": "145",
+      "bill": 238,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "b09f3207-6f07-4392-9add-5c6fc9f54c1e",
+      "unidade": "610 D",
+      "contrato": "270",
+      "bill": 270,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "10ddc2e3-64c0-4e11-b7ae-a14862a74c9f",
+      "unidade": "703 D",
+      "contrato": "271",
+      "bill": 212,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": [
+        {
+          "id": "3d4b0dba-1579-4d46-9cc5-f2910102ad1b",
+          "tipo": "parcela_entrada",
+          "valor": 1172.77,
+          "data_prevista": "2025-05-20",
+          "status": "pago"
+        }
+      ]
+    },
+    {
+      "venda_id": "99aab3e8-41e0-46a1-9b8e-b505cafd3479",
+      "unidade": "704 D",
+      "contrato": "272",
+      "bill": 267,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "4ea412d7-c4b8-43e9-a14b-ff7a309e84d0",
+      "unidade": "709 D",
+      "contrato": "273",
+      "bill": 300,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "c1527d19-cb5d-428c-9c35-a8be65e2590d",
+      "unidade": "809 D",
+      "contrato": "276",
+      "bill": 190,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "67240a63-fd0f-4d21-8dd6-5ea34e4c0c76",
+      "unidade": "1008 D",
+      "contrato": "290",
+      "bill": 145,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "840df0d9-7ff7-4429-a84c-d4ee0314d728",
+      "unidade": "1308 C",
+      "contrato": "251",
+      "bill": 274,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "ad501fcd-0355-47c0-adc5-8419b0ae3186",
+      "unidade": "1104 A",
+      "contrato": "140",
+      "bill": 237,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": [
+        {
+          "id": "586f57b8-e560-4548-9f7f-3c0801ac1b9e",
+          "tipo": "parcela_entrada",
+          "valor": 1446.61,
+          "data_prevista": "2025-06-20",
+          "status": "pago"
+        }
+      ]
+    },
+    {
+      "venda_id": "ac19aefe-53c9-4f4c-a519-e603fc6aa05e",
+      "unidade": "901 D",
+      "contrato": "278",
+      "bill": 172,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": [
+        {
+          "id": "a61286fc-1ad9-4a2b-afb1-a555d584fd96",
+          "tipo": "parcela_entrada",
+          "valor": 1152.44,
+          "data_prevista": "2025-05-20",
+          "status": "pago"
+        }
+      ]
+    },
+    {
+      "venda_id": "d645c7c0-6956-410f-ae8d-2ba56db29177",
+      "unidade": "903 D",
+      "contrato": "279",
+      "bill": 296,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "3a3fcbbc-1279-4d73-a177-7cb7927cde35",
+      "unidade": "904 D",
+      "contrato": "280",
+      "bill": 260,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "52a15049-f506-4ae5-93f9-a2fca420b2ae",
+      "unidade": "1506 A",
+      "contrato": "161",
+      "bill": 181,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": [
+        {
+          "id": "50395156-987c-4ef5-b29a-a4188dfd6636",
+          "tipo": "parcela_entrada",
+          "valor": 3504.17,
+          "data_prevista": "2025-07-10",
+          "status": "pago"
+        }
+      ]
+    },
+    {
+      "venda_id": "adca045e-9c14-4451-9ecd-4662f60c20f9",
+      "unidade": "905 D",
+      "contrato": "281",
+      "bill": 242,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": [
+        {
+          "id": "a262ea83-a984-4610-9a21-0596b231bce8",
+          "tipo": "parcela_entrada",
+          "valor": 1394.5,
+          "data_prevista": "2025-07-20",
+          "status": "pago"
+        }
+      ]
+    },
+    {
+      "venda_id": "13429600-ea67-400e-a773-adbdf190547b",
+      "unidade": "906 D",
+      "contrato": "282",
+      "bill": 254,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "8d247a69-9020-4da8-8e55-b06c3a406d29",
+      "unidade": "907 D",
+      "contrato": "283",
+      "bill": 220,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [
+          {
+            "id": "b01c0b61-9b68-4de8-b475-b3be3330e23f",
+            "data_pagamento": "2026-05-19",
+            "instId": "12"
+          }
+        ],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": [
+        {
+          "id": "079940fb-5182-4403-9d84-d7392df5a087",
+          "tipo": "parcela_entrada",
+          "valor": 1303.31,
+          "data_prevista": "2025-06-10",
+          "status": "pago"
+        }
+      ]
+    },
+    {
+      "venda_id": "64ffc2fb-b265-41d3-b7d5-cc101d813220",
+      "unidade": "1001 D",
+      "contrato": "284",
+      "bill": 182,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "07c77c8e-3ed1-48e4-a865-7e6d77aefae0",
+      "unidade": "1002 D",
+      "contrato": "285",
+      "bill": 290,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "4fa28656-f4c5-4e93-862d-256bfe20551a",
+      "unidade": "1003 D",
+      "contrato": "286",
+      "bill": 306,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "63e023d8-2376-498e-9895-b497922f6b24",
+      "unidade": "1004 D",
+      "contrato": "287",
+      "bill": 268,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": [
+        {
+          "id": "4e3fb34c-f55e-4354-9194-9e63cd4a1a59",
+          "tipo": "parcela_entrada",
+          "valor": 800,
+          "data_prevista": "2026-09-20",
+          "status": "pago"
+        },
+        {
+          "id": "7c8440a2-88dc-4f42-b297-c93503fe01d1",
+          "tipo": "parcela_entrada",
+          "valor": 1000,
+          "data_prevista": "2027-06-20",
+          "status": "pago"
+        },
+        {
+          "id": "b8a11dfc-cf1a-4b8a-a428-235d1d9c2ffb",
+          "tipo": "parcela_entrada",
+          "valor": 800,
+          "data_prevista": "2026-10-20",
+          "status": "pago"
+        }
+      ]
+    },
+    {
+      "venda_id": "0b276227-c8e1-42dd-a53a-c078dd2e3c55",
+      "unidade": "1007 D",
+      "contrato": "289",
+      "bill": 170,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "bffdb84f-5e9f-484b-b9bb-581a0c73f4b1",
+      "unidade": "1103 D",
+      "contrato": "291",
+      "bill": 249,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "cae67103-09bb-4e16-afc8-d65af2fbe4c6",
+      "unidade": "1106 D",
+      "contrato": "292",
+      "bill": 277,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "4064d711-da91-48a6-a497-82ef0cc59839",
+      "unidade": "412 A",
+      "contrato": "10",
+      "bill": 371,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "0b70c65e-b201-48f8-b1a5-da454e8c90d1",
+      "unidade": "1602 A",
+      "contrato": "127",
+      "bill": 228,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "7a1c8aef-9e36-4eb7-9c36-4a46521ea514",
+      "unidade": "1202 D",
+      "contrato": "126",
+      "bill": 34,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "e6f3e603-37f8-4381-bb78-e24d7f73e852",
+      "unidade": "1003 A",
+      "contrato": "133",
+      "bill": 384,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "3fd94157-57b7-4981-a1d6-4c7aae0a0998",
+      "unidade": "1008 A",
+      "contrato": "136",
+      "bill": 317,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "4c79df6e-23d6-4d6d-90a4-6d0b53412e5a",
+      "unidade": "1004 A",
+      "contrato": "134",
+      "bill": 221,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "1bbf4022-c043-45bc-98a8-2feb37479d84",
+      "unidade": "1108 A",
+      "contrato": "144",
+      "bill": 158,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": [
+        {
+          "id": "28928acf-6a4e-41e7-9224-e996f3de8656",
+          "tipo": "parcela_entrada",
+          "valor": 1173.33,
+          "data_prevista": "2025-06-20",
+          "status": "pago"
+        }
+      ]
+    },
+    {
+      "venda_id": "6dd6b270-295e-4f0f-adbd-99d8a0f65359",
+      "unidade": "402 A",
+      "contrato": "129",
+      "bill": 252,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "7a5a98ce-bcb2-417c-ae26-be1554a2bcd0",
+      "unidade": "1107 A",
+      "contrato": "143",
+      "bill": 295,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "62d4b34f-232f-4251-8ab1-9be0b87128e2",
+      "unidade": "403 B",
+      "contrato": "176",
+      "bill": 321,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "a0c011bf-7bf2-45cd-8658-3db9d29443b0",
+      "unidade": "504 B",
+      "contrato": "179",
+      "bill": 320,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": [
+        {
+          "id": "751c99d7-466d-4971-9d38-c9a54695ca2b",
+          "tipo": "parcela_entrada",
+          "valor": 1149.67,
+          "data_prevista": "2025-06-20",
+          "status": "pago"
+        }
+      ]
+    },
+    {
+      "venda_id": "69ba4019-3f78-46aa-bec0-0b00032a3dc4",
+      "unidade": "509 B",
+      "contrato": "180",
+      "bill": 157,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "137d0df9-2c8e-49da-b3a3-528129babfd2",
+      "unidade": "1607 A",
+      "contrato": "166",
+      "bill": 276,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "7d936e98-422e-476f-98f7-ec08c7d16532",
+      "unidade": "503 C",
+      "contrato": "213",
+      "bill": 312,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "75d5a345-83d8-4cdf-9134-722b9829c374",
+      "unidade": "1205 B",
+      "contrato": "205",
+      "bill": 230,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": [
+        {
+          "id": "5c4a4763-3ac2-484a-9aa7-7e820835873c",
+          "tipo": "parcela_entrada",
+          "valor": 1436.73,
+          "data_prevista": "2025-07-20",
+          "status": "pago"
+        }
+      ]
+    },
+    {
+      "venda_id": "cab91095-4b55-48a6-ab29-045984076cb4",
+      "unidade": "504 C",
+      "contrato": "214",
+      "bill": 137,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "720346d5-c932-4710-81cd-92f3777c0c9b",
+      "unidade": "1002 C",
+      "contrato": "232",
+      "bill": 186,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "871c99bb-0e79-4bac-8657-6be5b17fb206",
+      "unidade": "703 B",
+      "contrato": "184",
+      "bill": 315,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "8336834f-ae1f-42fc-b680-7286d4bcd4af",
+      "unidade": "1303 C",
+      "contrato": "247",
+      "bill": 138,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "9441cafe-1606-4a62-8d0b-cf1c2be6fedb",
+      "unidade": "1304 C",
+      "contrato": "248",
+      "bill": 266,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "df0feab5-72e8-4e10-96cd-cbeea03cd712",
+      "unidade": "1306 C",
+      "contrato": "249",
+      "bill": 199,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "82c32636-159d-44bc-9f74-b22820fcbb10",
+      "unidade": "509 C",
+      "contrato": "215",
+      "bill": 207,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "e14ded4d-9161-4d65-bf6e-27d6518d199c",
+      "unidade": "403 D",
+      "contrato": "259",
+      "bill": 316,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "275196bc-0223-4386-914f-5871038c50b9",
+      "unidade": "1201 D",
+      "contrato": "294",
+      "bill": 162,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "ec7d146b-c604-4cec-8258-cea314c9e977",
+      "unidade": "1107 D",
+      "contrato": "293",
+      "bill": 385,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": [
+        {
+          "id": "a45c124b-6922-4b70-bdcf-7a474e28155c",
+          "tipo": "parcela_entrada",
+          "valor": 1098.93,
+          "data_prevista": "2025-06-20",
+          "status": "pago"
+        }
+      ]
+    },
+    {
+      "venda_id": "3c30adc1-164f-4e5f-858b-6697c42d6c88",
+      "unidade": "1203 D",
+      "contrato": "295",
+      "bill": 217,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "199caf26-ce36-434e-a514-3d56c4c91b4f",
+      "unidade": "1206 D",
+      "contrato": "296",
+      "bill": 265,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "4247201b-679a-4752-a738-15fc4449e4fd",
+      "unidade": "1206 A",
+      "contrato": "147",
+      "bill": 319,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": [
+        {
+          "id": "20efa7de-d2b7-4c55-bd06-82926c17542b",
+          "tipo": "parcela_entrada",
+          "valor": 1106.67,
+          "data_prevista": "2025-05-20",
+          "status": "pago"
+        }
+      ]
+    },
+    {
+      "venda_id": "d2847ce1-bc8f-4eb6-a95f-3bc1cab122d5",
+      "unidade": "1006D - FG",
+      "contrato": "2",
+      "bill": 1,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "53d0c5f5-aa8e-4804-9c64-fef6ecdf04fc",
+      "unidade": "1204 B",
+      "contrato": "204",
+      "bill": 146,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "8ad0bd1c-2f06-41e6-a9c6-b1794f484bfc",
+      "unidade": "1504 A",
+      "contrato": "159",
+      "bill": 197,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": [
+        {
+          "id": "6dc52014-0b36-4145-acd5-f66c14c6577f",
+          "tipo": "parcela_entrada",
+          "valor": 1480.26,
+          "data_prevista": "2025-06-20",
+          "status": "pago"
+        }
+      ]
+    },
+    {
+      "venda_id": "e6e0081a-69fe-4f9a-9393-cf4925bbde4e",
+      "unidade": "704 B",
+      "contrato": "185",
+      "bill": 203,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": [
+        {
+          "id": "68dbf9f2-6dce-4eff-9693-3c6cd9dfd3a2",
+          "tipo": "parcela_entrada",
+          "valor": 2916.67,
+          "data_prevista": "2025-07-20",
+          "status": "pago"
+        }
+      ]
+    },
+    {
+      "venda_id": "5ca3580f-7ad0-49d2-b682-b0f420bdfae1",
+      "unidade": "1207 D",
+      "contrato": "297",
+      "bill": 302,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "b5ba510b-ada7-40d0-811c-e8bebc9b5034",
+      "unidade": "1303 D",
+      "contrato": "298",
+      "bill": 175,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": [
+        {
+          "id": "bdc947f3-98b4-40ff-b6cb-8a9a2f67d69d",
+          "tipo": "parcela_entrada",
+          "valor": 1120.83,
+          "data_prevista": "2025-05-20",
+          "status": "pago"
+        }
+      ]
+    },
+    {
+      "venda_id": "6f7fec05-5a52-46e1-82f7-1b9a6ee9469c",
+      "unidade": "1203 B",
+      "contrato": "3",
+      "bill": 21,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "f96d8924-a864-423c-a970-441c2e75c767",
+      "unidade": "1306 D",
+      "contrato": "300",
+      "bill": 292,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "c7898645-61b2-49b2-9812-9cd2f28a1638",
+      "unidade": "1402 D",
+      "contrato": "301",
+      "bill": 185,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "29de8242-608a-4bbf-b675-d8f8f86dcfae",
+      "unidade": "1403 D",
+      "contrato": "302",
+      "bill": 213,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "22b12f31-5e08-4296-a327-510709929c96",
+      "unidade": "1405 D",
+      "contrato": "303",
+      "bill": 275,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": [
+        {
+          "id": "38bcf8da-5a4d-4fb0-914e-90bdb6562fa5",
+          "tipo": "parcela_entrada",
+          "valor": 1211.23,
+          "data_prevista": "2025-05-10",
+          "status": "pago"
+        }
+      ]
+    },
+    {
+      "venda_id": "af896f28-a657-4cb9-8a96-00be5e56a2d1",
+      "unidade": "1406 D",
+      "contrato": "304",
+      "bill": 141,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "6065c4ff-1bb2-42ab-85f5-b769f7f97253",
+      "unidade": "1707 A",
+      "contrato": "307",
+      "bill": 271,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": [
+        {
+          "id": "4cfef08f-139f-4bd4-984d-8f2d08f7233e",
+          "tipo": "parcela_entrada",
+          "valor": 1452.7,
+          "data_prevista": "2025-10-20",
+          "status": "pago"
+        }
+      ]
+    },
+    {
+      "venda_id": "e570a347-c613-45de-817c-4844ba204e2c",
+      "unidade": "1002 A",
+      "contrato": "309",
+      "bill": 192,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "865c0d54-f901-4f99-a0b3-add1cfa6ce1b",
+      "unidade": "1001 A",
+      "contrato": "310",
+      "bill": 279,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "16f0a4fd-e669-49be-814d-76789ed6bb4c",
+      "unidade": "803 A",
+      "contrato": "311",
+      "bill": 308,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "89489e2a-e191-4042-8e3d-aab339311fa9",
+      "unidade": "505 A",
+      "contrato": "313",
+      "bill": 250,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "36965dcf-4d05-42f6-b066-ac480bb1a561",
+      "unidade": "406 A",
+      "contrato": "315",
+      "bill": 149,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "ca64e0e4-6e08-45fd-88f3-836892820520",
+      "unidade": "812 D",
+      "contrato": "317",
+      "bill": 297,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "6d729ea0-32e0-4234-814b-0c7cb14d33fd",
+      "unidade": "902 D",
+      "contrato": "316",
+      "bill": 281,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "324ef829-fb78-478d-8c44-9bc297cf4094",
+      "unidade": "1006 A",
+      "contrato": "308",
+      "bill": 201,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "ab3def5e-d139-4f60-9669-d4896c74436d",
+      "unidade": "408 A",
+      "contrato": "314",
+      "bill": 234,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "5c6c8318-2dc3-4fd7-b4e0-756c90308af8",
+      "unidade": "510 B",
+      "contrato": "319",
+      "bill": 224,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": [
+        {
+          "id": "03ec6638-ca54-4da9-9fee-6aa2b61ff8d3",
+          "tipo": "parcela_entrada",
+          "valor": 982.27,
+          "data_prevista": "2026-02-10",
+          "status": "pago"
+        },
+        {
+          "id": "f10b160d-e7b4-4cf5-aa66-850a9b9e46fb",
+          "tipo": "parcela_entrada",
+          "valor": 982.27,
+          "data_prevista": "2025-12-10",
+          "status": "pago"
+        }
+      ]
+    },
+    {
+      "venda_id": "556ddcf8-acd6-4cb3-bbc3-084d90850026",
+      "unidade": "1804 A",
+      "contrato": "320",
+      "bill": 232,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "11fb07a6-f325-49a7-8681-bfa1236a453d",
+      "unidade": "405 A",
+      "contrato": "322",
+      "bill": 373,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "007edb01-92fb-4475-bc4b-60b19b0cadba",
+      "unidade": "1408 D",
+      "contrato": "323",
+      "bill": 374,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "30d07c47-ea9b-42fa-8033-ebfdbcce86e4",
+      "unidade": "1805 D",
+      "contrato": "326",
+      "bill": 375,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "8879bea6-eb3b-4306-a9f1-859855b2e77d",
+      "unidade": "1205 A",
+      "contrato": "327",
+      "bill": 376,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "677f0acb-1cf8-434d-b6bc-44de97936960",
+      "unidade": "1105 B",
+      "contrato": "328",
+      "bill": 382,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "43dfa842-e8ef-4c45-b0cc-432917442555",
+      "unidade": "1302 D",
+      "contrato": "329",
+      "bill": 383,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "03e1bb90-cd70-427e-9576-ced9f0b91b7e",
+      "unidade": "1403 C",
+      "contrato": "330",
+      "bill": 386,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "92142995-ce7f-4cb6-b5eb-d56e7949c72b",
+      "unidade": "1503 B",
+      "contrato": "333",
+      "bill": 398,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "893286ff-b29b-4c0b-bec5-1158a06191e3",
+      "unidade": "1508 A",
+      "contrato": "335",
+      "bill": 400,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "51cd12fa-c0b3-4990-ba3d-56182eb95f61",
+      "unidade": "1108 B",
+      "contrato": "336",
+      "bill": 401,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "4088a91d-401e-46ec-ab17-c044074d30fb",
+      "unidade": "1608 A",
+      "contrato": "337",
+      "bill": 402,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "e3bd5695-27ce-436b-a578-ce1bfac3d7aa",
+      "unidade": "905 B",
+      "contrato": "340",
+      "bill": 410,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "9581a13a-5d34-44a0-b54d-62a841d757a7",
+      "unidade": "503 B",
+      "contrato": "341",
+      "bill": 404,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "14343044-f5cd-49b9-b445-66b78cee27a9",
+      "unidade": "1508 B",
+      "contrato": "343",
+      "bill": 408,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "0468889f-105f-4811-97e0-5fdaa2caf5ca",
+      "unidade": "610 B",
+      "contrato": "349",
+      "bill": 413,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "e221d8fe-ff38-4140-8db9-3438867a346a",
+      "unidade": "905 C",
+      "contrato": "339",
+      "bill": 411,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "8d0f8c63-a7e0-4715-9373-4cb09003e5b9",
+      "unidade": "1102 C",
+      "contrato": "352",
+      "bill": 415,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "e5b4837d-4733-4db6-8959-6cb2aea17d87",
+      "unidade": "1005 C",
+      "contrato": "353",
+      "bill": 416,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "908fbcdb-ac7a-45f0-95c1-5e4f45e67736",
+      "unidade": "510 C",
+      "contrato": "354",
+      "bill": 417,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "83b8f727-e9a9-4a88-846c-272f6970356a",
+      "unidade": "1707 A",
+      "contrato": "355",
+      "bill": 419,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "a2879ab1-2f41-42e5-b054-61c6e92811ad",
+      "unidade": "405 B",
+      "contrato": "357",
+      "bill": 427,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "1e5173b8-7dc4-4711-9cdb-6a12cab7317a",
+      "unidade": "1706 D",
+      "contrato": "358",
+      "bill": 425,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "5f86f822-2681-4d40-a107-940091a30452",
+      "unidade": "404 D",
+      "contrato": "359",
+      "bill": 426,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "0f952496-ec2a-4e8a-bf74-107899a345e7",
+      "unidade": "605 C",
+      "contrato": "360",
+      "bill": 428,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "5cbed8bd-36a1-4ec6-ace1-0aa9da2023b1",
+      "unidade": "906 A",
+      "contrato": "362",
+      "bill": 430,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "1b74c53a-1f21-4c0d-bf6e-7d5dfc461f5c",
+      "unidade": "908 C",
+      "contrato": "374",
+      "bill": 444,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "63e2a133-4299-4429-9962-93e07db09494",
+      "unidade": "1604 A",
+      "contrato": "375",
+      "bill": 445,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "2fc89307-9572-4970-9663-08feac626c94",
+      "unidade": "1008 C",
+      "contrato": "390",
+      "bill": 462,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "572c2c6c-99ca-45ec-b7ec-ce925179fd1c",
+      "unidade": "1001 D",
+      "contrato": "383",
+      "bill": 455,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "71a27446-2dde-4c7e-b366-2083ba84ef81",
+      "unidade": "1008 B",
+      "contrato": "4",
+      "bill": 27,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "e2b0dd05-7326-4963-be70-7e6a55a029be",
+      "unidade": "1103 A",
+      "contrato": "405",
+      "bill": 476,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "5cfdabb1-25aa-4633-a6e0-b3c4651cf052",
+      "unidade": "609 A",
+      "contrato": "42",
+      "bill": 25,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "6861ee55-2dc7-4fbf-ba69-1ec3ee1c81ee",
+      "unidade": "610 A",
+      "contrato": "43",
+      "bill": 19,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": [
+        {
+          "id": "aa972bb5-ed23-46fb-94b3-506e9fc3d2e4",
+          "tipo": "parcela_entrada",
+          "valor": 1161.18,
+          "data_prevista": "2025-06-10",
+          "status": "pago"
+        }
+      ]
+    },
+    {
+      "venda_id": "af3701ba-227a-4b92-8f4e-5df8c7883cae",
+      "unidade": "703 A",
+      "contrato": "45",
+      "bill": 26,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": [
+        {
+          "id": "b9a1b18e-bc29-4341-8d35-9f94413c1e83",
+          "tipo": "parcela_entrada",
+          "valor": 1290.07,
+          "data_prevista": "2025-07-10",
+          "status": "pago"
+        }
+      ]
+    },
+    {
+      "venda_id": "c14f8f16-26e4-42eb-81da-d1de2c4db0c0",
+      "unidade": "704 A",
+      "contrato": "46",
+      "bill": 14,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": [
+        {
+          "id": "a9fded97-b264-47e3-8931-107e2d105453",
+          "tipo": "parcela_entrada",
+          "valor": 1077.11,
+          "data_prevista": "2025-06-20",
+          "status": "pago"
+        }
+      ]
+    },
+    {
+      "venda_id": "69833968-ed1a-4988-9a38-fa28a3c29512",
+      "unidade": "1102 D",
+      "contrato": "5",
+      "bill": 286,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "9e6bbd51-6eee-4372-a51f-4d43f572e97f",
+      "unidade": "804 D",
+      "contrato": "6",
+      "bill": 5,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "1313af95-2b4e-40dd-9dda-92f523ad1c89",
+      "unidade": "806 A",
+      "contrato": "70",
+      "bill": 24,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "ed6fdd5b-9362-4654-8e14-d75d76020806",
+      "unidade": "810 A",
+      "contrato": "73",
+      "bill": 16,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "90d17915-20f1-4a4e-a0d3-aeee053df610",
+      "unidade": "901 A",
+      "contrato": "74",
+      "bill": 29,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": [
+        {
+          "id": "820b8fc1-36ed-4718-855c-92382336da25",
+          "tipo": "parcela_entrada",
+          "valor": 1394.47,
+          "data_prevista": "2025-06-10",
+          "status": "pago"
+        }
+      ]
+    },
+    {
+      "venda_id": "39d7aad3-aa7b-459c-820a-17a00e1aa7f4",
+      "unidade": "904 A",
+      "contrato": "79",
+      "bill": 31,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": [
+        {
+          "id": "ef5c6413-5e67-490b-9f36-afcb4bbb3d7d",
+          "tipo": "parcela_entrada",
+          "valor": 1394.47,
+          "data_prevista": "2025-07-10",
+          "status": "pago"
+        }
+      ]
+    },
+    {
+      "venda_id": "dd6819f1-94a7-4394-822e-f86bcd42e8c2",
+      "unidade": "404 A",
+      "contrato": "8",
+      "bill": 12,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": [
+        {
+          "id": "33324f81-82d9-4eef-9e93-ad1beea957c6",
+          "tipo": "sinal",
+          "valor": 1000,
+          "data_prevista": "2025-04-18",
+          "status": "pago"
+        },
+        {
+          "id": "a996f29d-1e7f-4701-86a9-a5d920385373",
+          "tipo": "parcela_entrada",
+          "valor": 1016.67,
+          "data_prevista": "2025-05-20",
+          "status": "pago"
+        }
+      ]
+    },
+    {
+      "venda_id": "de177f50-a1e8-4650-a759-655d184a1c84",
+      "unidade": "403 A",
+      "contrato": "7",
+      "bill": 377,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "73bdb2c7-b89c-45ef-84ed-156a6c24e4b1",
+      "unidade": "902 A",
+      "contrato": "75",
+      "bill": 11,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": [
+        {
+          "id": "0b31ec07-7615-4324-807e-dee1021d0084",
+          "tipo": "parcela_entrada",
+          "valor": 1303.31,
+          "data_prevista": "2025-06-10",
+          "status": "pago"
+        }
+      ]
+    },
+    {
+      "venda_id": "169d52ea-2062-477f-b2f4-218d32e66593",
+      "unidade": "709 A",
+      "contrato": "47",
+      "bill": 372,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "c5000de1-654b-42c5-9c9c-c0e29e439432",
+      "unidade": "903 A",
+      "contrato": "77",
+      "bill": 15,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": [
+        {
+          "id": "bc1cc21f-c3b7-4e01-81f0-51b3689ea2c0",
+          "tipo": "parcela_entrada",
+          "valor": 2299.77,
+          "data_prevista": "2025-06-10",
+          "status": "pago"
+        }
+      ]
+    },
+    {
+      "venda_id": "8a9bfb6c-c6c1-4e4d-bf60-fa3c477cba4b",
+      "unidade": "612 A",
+      "contrato": "44",
+      "bill": 30,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": [
+        {
+          "id": "f88e4e78-66be-4735-b601-c6183e1fd2cb",
+          "tipo": "parcela_entrada",
+          "valor": 782.46,
+          "data_prevista": "2025-05-10",
+          "status": "pago"
+        }
+      ]
+    },
+    {
+      "venda_id": "6f15deae-c66f-406c-87a1-30bcc4715a15",
+      "unidade": "804 A",
+      "contrato": "66",
+      "bill": 380,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": [
+        {
+          "id": "d3dbaa0c-49f5-4d38-b9c2-e5f65622e937",
+          "tipo": "parcela_entrada",
+          "valor": 1184.5,
+          "data_prevista": "2025-06-20",
+          "status": "pago"
+        }
+      ]
+    },
+    {
+      "venda_id": "bae0add3-beee-45a2-aa70-e16d089232b2",
+      "unidade": "809 A",
+      "contrato": "71",
+      "bill": 7,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    },
+    {
+      "venda_id": "c9e6358d-2aab-4743-8358-e7628f761350",
+      "unidade": "908 A",
+      "contrato": "87",
+      "bill": 381,
+      "acoes": {
+        "popular": [],
+        "marcar_pago": [],
+        "reativar": [],
+        "criar": []
+      },
+      "semMatch": []
+    }
+  ],
+  "revisao_humana": [
+    {
+      "venda_id": "eb70a072-a784-4ef5-9322-1a093f5e4b4a",
+      "unidade": "1703 C",
+      "contrato": "395",
+      "motivo": "bill sem parcelas relevantes no income"
+    },
+    {
+      "venda_id": "803041f5-8778-4b59-ab73-63df35a8ac3e",
+      "unidade": "1303 A",
+      "contrato": "148",
+      "motivo": "banco tem parcelas ATIVAS com mesmo (tipo,valor,data) — ambiguo"
+    },
+    {
+      "venda_id": "7c3ca9b3-8251-469b-ae71-5f8a433a6d3e",
+      "unidade": "1603 A",
+      "contrato": "163",
+      "motivo": "banco tem parcelas ATIVAS com mesmo (tipo,valor,data) — ambiguo"
+    },
+    {
+      "venda_id": "6f3cde65-a816-4562-8739-ba85dbab6fe3",
+      "unidade": "1707 C",
+      "contrato": "396",
+      "motivo": "bill sem parcelas relevantes no income"
+    },
+    {
+      "venda_id": "593aa36f-ba3e-483a-80e7-f2765d39d770",
+      "unidade": "1602 D",
+      "contrato": "397",
+      "motivo": "bill sem parcelas relevantes no income"
+    },
+    {
+      "venda_id": "92af4a70-c01f-42eb-8217-1a532007eb6c",
+      "unidade": "1607 D",
+      "contrato": "398",
+      "motivo": "bill sem parcelas relevantes no income"
+    },
+    {
+      "venda_id": "731a137f-8e49-40d6-905b-5d615c41499f",
+      "unidade": "1603 D",
+      "contrato": "399",
+      "motivo": "bill sem parcelas relevantes no income"
+    },
+    {
+      "venda_id": "197353d2-55c8-48d6-92cf-4080e7554644",
+      "unidade": "1606 D",
+      "contrato": "400",
+      "motivo": "bill sem parcelas relevantes no income"
+    },
+    {
+      "venda_id": "fbaad3e1-ab0f-451a-a90e-b015d6845368",
+      "unidade": "1005 A",
+      "contrato": "135",
+      "motivo": "6 parcelas ativas no banco sem match no Sienge"
+    },
+    {
+      "venda_id": "30d53f3b-3306-41b4-a817-70de77ac3aff",
+      "unidade": "903 B",
+      "contrato": "191",
+      "motivo": "soma income (175000.00) != pro_soluto (300000)"
+    },
+    {
+      "venda_id": "8d10b601-d088-4023-81bf-e136195fa8a9",
+      "unidade": "1306 A",
+      "contrato": "150",
+      "motivo": "soma income (72809.29) != pro_soluto (68249.97)"
+    },
+    {
+      "venda_id": "1dfd5558-328f-483b-b19c-39ab45b43ed1",
+      "unidade": "401 B",
+      "contrato": "431",
+      "motivo": "banco tem parcelas ATIVAS com mesmo (tipo,valor,data) — ambiguo"
+    },
+    {
+      "venda_id": "d6cf726c-95eb-42f0-8397-b28d753d56ca",
+      "unidade": "904 B",
+      "contrato": "195",
+      "motivo": "soma income (89368.48) != pro_soluto (87853.76)"
+    },
+    {
+      "venda_id": "c8b843f9-7133-4720-8b3e-89517bb83ad2",
+      "unidade": "908 D",
+      "contrato": "434",
+      "motivo": "bill sem parcelas relevantes no income"
+    },
+    {
+      "venda_id": "22d30cd4-bbca-47d5-9d73-7008d1b36db9",
+      "unidade": "1208 A",
+      "contrato": "435",
+      "motivo": "bill sem parcelas relevantes no income"
+    },
+    {
+      "venda_id": "fc6ffa37-4354-4f2b-842f-19f4779986d3",
+      "unidade": "1005 B",
+      "contrato": "200",
+      "motivo": "soma income (69800.00) != pro_soluto (70946.67)"
+    },
+    {
+      "venda_id": "f62fedaa-c66a-4abf-b36e-ce12c46334d8",
+      "unidade": "1303 B",
+      "contrato": "206",
+      "motivo": "soma income (80444.35) != pro_soluto (85444.35)"
+    },
+    {
+      "venda_id": "183085e7-9972-4a7f-bbc8-70a4b59ae1ef",
+      "unidade": "504 A",
+      "contrato": "22",
+      "motivo": "soma income (62709.20) != pro_soluto (63737.69)"
+    },
+    {
+      "venda_id": "61c1cbb3-7f05-437a-8fd2-1a1f63b3d8f9",
+      "unidade": "604 C",
+      "contrato": "217",
+      "motivo": "soma income (64200.00) != pro_soluto (65253.33)"
+    },
+    {
+      "venda_id": "dc949f39-926a-44bd-ae6f-d39499474ee6",
+      "unidade": "709 C",
+      "contrato": "220",
+      "motivo": "soma income (63800.00) != pro_soluto (64863.33)"
+    },
+    {
+      "venda_id": "5de60ed3-9151-4b09-9b5c-6125f04cd889",
+      "unidade": "903 C",
+      "contrato": "228",
+      "motivo": "soma income (91268.48) != pro_soluto (82712.06)"
+    },
+    {
+      "venda_id": "c6100456-03b1-44a9-8f1b-c47dd16997ad",
+      "unidade": "906 C",
+      "contrato": "230",
+      "motivo": "soma income (80741.01) != pro_soluto (78199.66)"
+    },
+    {
+      "venda_id": "92b9178d-4ea7-4a3e-9549-c9ac882248b0",
+      "unidade": "1702 D",
+      "contrato": "393",
+      "motivo": "bill sem parcelas relevantes no income"
+    },
+    {
+      "venda_id": "9760cf8a-5826-4b18-b233-780551ec5586",
+      "unidade": "1603 C",
+      "contrato": "422",
+      "motivo": "soma income (87403.23) != pro_soluto (93403.23)"
+    },
+    {
+      "venda_id": "880bf6f0-b260-41cc-abc7-b4ffcf2340ff",
+      "unidade": "810 C",
+      "contrato": "225",
+      "motivo": "Sienge tem parcelas com mesmo (tipo,valor,data) — ambiguo"
+    },
+    {
+      "venda_id": "3491a87f-a63d-42e6-8150-7fbac9ef3f11",
+      "unidade": "410 D",
+      "contrato": "261",
+      "motivo": "soma income (62000.00) != pro_soluto (63033.33)"
+    },
+    {
+      "venda_id": "7295782a-b03d-409b-b21d-3a257ec8b61f",
+      "unidade": "509 A",
+      "contrato": "12",
+      "motivo": "soma income (69006.00) != pro_soluto (62735)"
+    },
+    {
+      "venda_id": "b42ba471-b3e3-46e0-a344-dba77fb9020a",
+      "unidade": "603 D",
+      "contrato": "267",
+      "motivo": "soma income (59336.40) != pro_soluto (61336.4)"
+    },
+    {
+      "venda_id": "c5e10e5d-cbf4-45df-913e-4eee519ecad7",
+      "unidade": "810 D",
+      "contrato": "277",
+      "motivo": "soma income (75298.56) != pro_soluto (70592.4)"
+    },
+    {
+      "venda_id": "a5636b9e-0d94-441d-8883-f5db0092eeb5",
+      "unidade": "1003 C",
+      "contrato": "233",
+      "motivo": "Sienge tem parcelas com mesmo (tipo,valor,data) — ambiguo"
+    },
+    {
+      "venda_id": "3771951d-5221-4a3d-8b2f-6a0c5b076b12",
+      "unidade": "609 D",
+      "contrato": "269",
+      "motivo": "banco tem parcelas ATIVAS com mesmo (tipo,valor,data) — ambiguo"
+    },
+    {
+      "venda_id": "1d7772d4-ee1e-4d72-92ec-3e67460880cc",
+      "unidade": "803 D",
+      "contrato": "275",
+      "motivo": "4 parcelas ativas no banco sem match no Sienge"
+    },
+    {
+      "venda_id": "c5812545-2a1f-4640-b76f-dd00f555930d",
+      "unidade": "1005 D",
+      "contrato": "288",
+      "motivo": "5 parcelas ativas no banco sem match no Sienge"
+    },
+    {
+      "venda_id": "39b748cc-65fd-4504-aad8-14443d07a08a",
+      "unidade": "1807 A",
+      "contrato": "175",
+      "motivo": "soma income (70680.86) != pro_soluto (71858.87)"
+    },
+    {
+      "venda_id": "7978c149-88eb-4568-b57a-3785c93cc953",
+      "unidade": "1606 A",
+      "contrato": "165",
+      "motivo": "soma income (89429.12) != pro_soluto (83839.8)"
+    },
+    {
+      "venda_id": "6a33ac0b-00af-4fc3-8539-7529998a94b2",
+      "unidade": "1305 D",
+      "contrato": "299",
+      "motivo": "soma income (93820.75) != pro_soluto (91420.75)"
+    },
+    {
+      "venda_id": "11c895c4-a75a-46dd-8b14-aed3c21ad5bf",
+      "unidade": "1407 D",
+      "contrato": "305",
+      "motivo": "soma income (81507.60) != pro_soluto (67923)"
+    },
+    {
+      "venda_id": "b7a817c5-aa5e-4461-b04f-0638a24c36e9",
+      "unidade": "712 A",
+      "contrato": "312",
+      "motivo": "soma income (55383.04) != pro_soluto (47396.8)"
+    },
+    {
+      "venda_id": "b517bfcf-2c3a-4b71-a4a7-dae26216d596",
+      "unidade": "1302 A",
+      "contrato": "318",
+      "motivo": "Sienge tem parcelas com mesmo (tipo,valor,data) — ambiguo"
+    },
+    {
+      "venda_id": "6aa7d912-025b-476f-9179-bf516a2e5a0e",
+      "unidade": "1206 B",
+      "contrato": "332",
+      "motivo": "soma income (58695.43) != pro_soluto (67695.43)"
+    },
+    {
+      "venda_id": "a2501437-3de4-4b97-b2cc-93474077de6b",
+      "unidade": "1702 A",
+      "contrato": "334",
+      "motivo": "soma income (92187.68) != pro_soluto (88913.12)"
+    },
+    {
+      "venda_id": "37357039-b2ed-404a-b8f9-5162019eb51f",
+      "unidade": "508 A",
+      "contrato": "346",
+      "motivo": "banco tem parcelas ATIVAS com mesmo (tipo,valor,data) — ambiguo"
+    },
+    {
+      "venda_id": "cffb2c73-edb7-4127-8f74-18f382efbe78",
+      "unidade": "506 A",
+      "contrato": "351",
+      "motivo": "soma income (50076.84) != pro_soluto (46482.63)"
+    },
+    {
+      "venda_id": "7787a154-ec62-469f-b330-d9b3b6142dd2",
+      "unidade": "1707 A",
+      "contrato": "361",
+      "motivo": "banco tem parcelas ATIVAS com mesmo (tipo,valor,data) — ambiguo"
+    },
+    {
+      "venda_id": "4ddf58a4-be14-46df-8be4-ea5fd59cd10b",
+      "unidade": "1706 C",
+      "contrato": "394",
+      "motivo": "bill sem parcelas relevantes no income"
+    },
+    {
+      "venda_id": "99b07752-8baf-406f-96a8-4932f2010e99",
+      "unidade": "802 A",
+      "contrato": "64",
+      "motivo": "soma income (47889.00) != pro_soluto (48670.48)"
+    },
+    {
+      "venda_id": "85f070c7-e436-482c-ac8a-2242602aa984",
+      "unidade": "805 A",
+      "contrato": "69",
+      "motivo": "soma income (47800.00) != pro_soluto (48096.67)"
+    },
+    {
+      "venda_id": "ddfe2380-a927-4ad5-b37f-ed7d0913c333",
+      "unidade": "710 A",
+      "contrato": "63",
+      "motivo": "soma income (72711.54) != pro_soluto (70366)"
+    },
+    {
+      "venda_id": "8daa3121-fcfa-42fa-8318-8e39fdac8800",
+      "unidade": "905 A",
+      "contrato": "80",
+      "motivo": "soma income (69147.00) != pro_soluto (345733.7)"
+    },
+    {
+      "venda_id": "63229ab7-b4e1-4484-9c9a-ab08cd3832a0",
+      "unidade": "1008 D",
+      "contrato": "433",
+      "motivo": "bill sem parcelas relevantes no income"
+    },
+    {
+      "venda_id": "a4b242b6-d5cb-41fe-a501-70d91e50c3bf",
+      "unidade": "409 A",
+      "contrato": "9",
+      "motivo": "soma income (62000.00) != pro_soluto (63016.67)"
+    }
+  ],
+  "totais": {
+    "popular": 0,
+    "marcar_pago": 2,
+    "reativar": 0,
+    "criar": 0,
+    "sem_match_banco": 59
+  },
+  "aplicacao": {
+    "okPop": 0,
+    "okMarc": 2,
+    "okReat": 0,
+    "okCriar": 0,
+    "err": 0,
+    "errosDetalhe": []
+  }
+}

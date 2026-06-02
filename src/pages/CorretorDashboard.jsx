@@ -17,6 +17,7 @@ import { jsPDF } from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import logo from '../imgs/logo.png'
 import Ticker from '../components/Ticker'
+import ProfilePhotoModal from '../components/ProfilePhotoModal'
 import '../styles/Dashboard.css'
 import '../styles/CorretorDashboard.css'
 import '../styles/EmpreendimentosPage.css'
@@ -24,7 +25,6 @@ import { sortParcelas } from '../utils/parcelasSort'
 import {
   calcularFatorComissao,
   calcularComissaoPagamentoCompleto,
-  somarComissao,
   isPago,
   isPendente,
   dataEfetiva,
@@ -117,6 +117,11 @@ const CorretorDashboard = () => {
     email: ''
   })
   const [salvandoPerfil, setSalvandoPerfil] = useState(false)
+
+  // Modal de foto de perfil — abre forçado no primeiro acesso (sem foto)
+  // e por demanda quando o usuário clica em "Trocar foto"
+  const [photoModalOpen, setPhotoModalOpen] = useState(false)
+  const [photoModalForced, setPhotoModalForced] = useState(false)
   const [senhaForm, setSenhaForm] = useState({
     senhaAtual: '',
     novaSenha: '',
@@ -388,26 +393,25 @@ const CorretorDashboard = () => {
         return acc
       }, {})
 
-      // Validar e normalizar os dados. Priorizar snapshot (R9): fator_comissao do banco.
+      // Validar e normalizar os dados. fator_comissao da venda/pagamento
+      // guarda o fator total; aqui calculamos a fatia do cargo Corretor.
       const vendasValidadas = (data || []).map(venda => {
         const valorVenda = parseFloat(venda.valor_venda) || 0
         const valorProSoluto = parseFloat(venda.valor_pro_soluto) || 0
         let comissaoCorretor = parseFloat(venda.comissao_corretor) || 0
 
-        // Percentual nominal do corretor (só usado quando não há snapshot)
-        const percentualCorretor = userProfile?.percentual_corretor ||
-          (userProfile?.tipo_corretor === 'interno' ? 2.5 : 4)
+        // Percentual nominal do cargo Corretor, conforme planilha calculo.xlsx.
+        const tipoCorretorVenda = venda.tipo_corretor || userProfile?.tipo_corretor || 'externo'
+        const percentualCorretor = parseFloat(userProfile?.percentual_corretor) ||
+          (tipoCorretorVenda === 'interno' ? 2.5 : 4)
 
-        // Se comissao_corretor for 0, calcular usando a fórmula correta
+        // Se comissao_corretor for 0, calcular usando a formula correta.
         if (!comissaoCorretor || comissaoCorretor === 0) {
           comissaoCorretor = (valorVenda * percentualCorretor) / 100
         }
 
-        // Fator de comissão do corretor: SNAPSHOT primeiro (R9), só recalcula se ausente.
-        const fatorSnapshot = parseFloat(venda.fator_comissao) || 0
-        const fatorComissaoCorretor = fatorSnapshot > 0
-          ? fatorSnapshot
-          : calcularFatorComissao(valorVenda, valorProSoluto, percentualCorretor)
+        // Fator da fatia do corretor, nao o fator total da venda.
+        const fatorComissaoCorretor = calcularFatorComissao(valorVenda, valorProSoluto, percentualCorretor)
 
         return {
           ...venda,
@@ -594,6 +598,18 @@ const CorretorDashboard = () => {
       })
     }
   }, [userProfile, activeTab])
+
+  // Forçar modal de foto no primeiro acesso (sem foto cadastrada)
+  useEffect(() => {
+    if (userProfile && !userProfile.foto_url) {
+      setPhotoModalOpen(true)
+      setPhotoModalForced(true)
+    } else if (userProfile?.foto_url && photoModalForced) {
+      // Foto chegou: pode fechar o modal forçado
+      setPhotoModalOpen(false)
+      setPhotoModalForced(false)
+    }
+  }, [photoModalForced, userProfile])
 
   // Função para salvar alterações do perfil
   const handleSalvarPerfil = async () => {
@@ -980,41 +996,84 @@ const CorretorDashboard = () => {
   }
 
   // Gerar relatório PDF do corretor
+  const getRelatorioVendasBase = () => {
+    const dataInicio = parseDataLocal(relatorioFiltros.dataInicio)
+    const dataFim = parseDataLocal(relatorioFiltros.dataFim)
+
+    return vendas.filter((venda) => {
+      if (relatorioFiltros.empreendimento && venda.empreendimento_nome !== relatorioFiltros.empreendimento) {
+        return false
+      }
+
+      const dataVenda = parseDataLocal(venda.data_venda)
+      if (dataInicio && (!dataVenda || dataVenda < dataInicio)) return false
+      if (dataFim && (!dataVenda || dataVenda > dataFim)) return false
+
+      return true
+    })
+  }
+
+  const getRelatorioDados = () => {
+    const vendasBase = getRelatorioVendasBase()
+    const vendaIds = new Set(vendasBase.map((venda) => venda.id))
+
+    const pagamentosFiltrados = meusPagamentos.filter((pagamento) => {
+      if (!vendaIds.has(pagamento.venda_id)) return false
+      if (pagamento.status === 'cancelado') return false
+      if (relatorioFiltros.status !== 'todos' && pagamento.status !== relatorioFiltros.status) return false
+      return true
+    })
+
+    const vendasComPagamentoFiltrado = new Set(pagamentosFiltrados.map((pagamento) => pagamento.venda_id))
+    const vendasFiltradas = relatorioFiltros.status === 'todos'
+      ? vendasBase
+      : vendasBase.filter((venda) => vendasComPagamentoFiltrado.has(venda.id))
+
+    return { vendasFiltradas, pagamentosFiltrados }
+  }
+
+  const getRelatorioResumo = () => {
+    const { vendasFiltradas, pagamentosFiltrados } = getRelatorioDados()
+    const valorTotalVendas = vendasFiltradas.reduce((acc, v) => acc + (parseFloat(v.valor_venda) || 0), 0)
+    const comissaoTotal = pagamentosFiltrados.reduce((acc, pag) => acc + calcularComissaoPagamento(pag), 0)
+    const comissaoPaga = pagamentosFiltrados
+      .filter(pag => pag.status === 'pago')
+      .reduce((acc, pag) => acc + calcularComissaoPagamento(pag), 0)
+    const comissaoPendente = pagamentosFiltrados
+      .filter(pag => pag.status === 'pendente')
+      .reduce((acc, pag) => acc + calcularComissaoPagamento(pag), 0)
+
+    return {
+      vendasFiltradas,
+      pagamentosFiltrados,
+      totalVendas: vendasFiltradas.length,
+      valorTotalVendas,
+      comissaoTotal,
+      comissaoPaga,
+      comissaoPendente,
+    }
+  }
+
   const gerarMeuRelatorioPDF = async () => {
     setGerandoPdf(true)
     try {
-      // Filtrar vendas baseado nos filtros do relatório
-      let vendasFiltradas = [...vendas]
-      
-      if (relatorioFiltros.empreendimento) {
-        vendasFiltradas = vendasFiltradas.filter(v => v.empreendimento_nome === relatorioFiltros.empreendimento)
-      }
-      // Filtro por status: sempre via pagamentos (R2) — inclui vendas parcialmente pagas.
-      if (relatorioFiltros.status !== 'todos') {
-        vendasFiltradas = vendasFiltradas.filter(v =>
-          meusPagamentos.some(p => p.venda_id === v.id && p.status === relatorioFiltros.status)
-        )
-      }
-      if (relatorioFiltros.dataInicio) {
-        vendasFiltradas = vendasFiltradas.filter(v => parseDataLocal(v.data_venda) >= parseDataLocal(relatorioFiltros.dataInicio))
-      }
-      if (relatorioFiltros.dataFim) {
-        vendasFiltradas = vendasFiltradas.filter(v => parseDataLocal(v.data_venda) <= parseDataLocal(relatorioFiltros.dataFim))
-      }
+      const { vendasFiltradas, pagamentosFiltrados } = getRelatorioDados()
 
-      // Calcular totais usando PAGAMENTOS (regra correta)
+      // Calcular totais usando PAGAMENTOS ativos (regra correta)
       const totalVendas = vendasFiltradas.length
       const valorTotalVendas = vendasFiltradas.reduce((acc, v) => acc + (parseFloat(v.valor_venda) || 0), 0)
-      
-      // Filtrar pagamentos das vendas filtradas
-      const vendaIdsFiltradas = vendasFiltradas.map(v => v.id)
-      const pagamentosFiltrados = meusPagamentos.filter(p => vendaIdsFiltradas.includes(p.venda_id))
-      
       const comissaoTotal = pagamentosFiltrados.reduce((acc, pag) => acc + calcularComissaoPagamento(pag), 0)
       const comissaoPaga = pagamentosFiltrados
         .filter(p => p.status === 'pago')
         .reduce((acc, pag) => acc + calcularComissaoPagamento(pag), 0)
-      const comissaoPendente = comissaoTotal - comissaoPaga
+      const comissaoPendente = pagamentosFiltrados
+        .filter(p => p.status === 'pendente')
+        .reduce((acc, pag) => acc + calcularComissaoPagamento(pag), 0)
+      const statusFiltroTexto = relatorioFiltros.status === 'pago'
+        ? 'Pagos'
+        : relatorioFiltros.status === 'pendente'
+          ? 'Pendentes'
+          : 'Todos'
 
       // Criar PDF
       const doc = new jsPDF()
@@ -1049,11 +1108,14 @@ const CorretorDashboard = () => {
       doc.setTextColor(...cores.dourado)
       doc.setFontSize(10)
       doc.text(`Gerado em: ${new Date().toLocaleDateString('pt-BR')} as ${new Date().toLocaleTimeString('pt-BR')}`, 105, 45, { align: 'center' })
+      doc.setTextColor(...cores.preto)
+      doc.setFontSize(9)
+      doc.text(`Status: ${statusFiltroTexto}`, 14, 53)
 
       // Resumo
-      let yPos = 60
+      let yPos = 64
       doc.setFillColor(...cores.preto)
-      doc.roundedRect(14, yPos - 5, 182, 35, 3, 3, 'F')
+      doc.roundedRect(14, yPos - 5, 182, 43, 3, 3, 'F')
       
       doc.setTextColor(...cores.branco)
       doc.setFontSize(10)
@@ -1070,9 +1132,12 @@ const CorretorDashboard = () => {
       doc.text(formatCurrency(comissaoTotal), 115, yPos + 18)
       doc.setTextColor(...cores.verde)
       doc.text(formatCurrency(comissaoPaga), 160, yPos + 18)
+      doc.setTextColor(...cores.amarelo)
+      doc.setFontSize(9)
+      doc.text(`Pendente: ${formatCurrency(comissaoPendente)}`, 160, yPos + 30)
 
       // Tabela de vendas
-      yPos = 105
+      yPos = 116
       doc.setTextColor(...cores.preto)
       doc.setFontSize(14)
       doc.setFont('helvetica', 'bold')
@@ -1162,19 +1227,48 @@ const CorretorDashboard = () => {
     return filteredVendas.reduce((acc, v) => acc + (parseFloat(v.valor_venda) || 0), 0)
   }
 
-  // Cascata canônica (R1) delegada para comissaoCalculator.js — fonte única.
-  // O percentualFallback do corretor só entra no passo 7, quando nada mais resolve.
+  // Visao do corretor: calcula a fatia do cargo Corretor por pagamento,
+  // usando a formula canonica do fator com pro-soluto.
   const percentualFallback =
     userProfile?.percentual_corretor ||
     (userProfile?.tipo_corretor === 'interno' ? 2.5 : 4)
 
-  const calcularComissaoPagamento = (pagamento) =>
-    calcularComissaoPagamentoCompleto(pagamento, { vendas, percentualFallback })
+  const calcularComissaoPagamento = (pagamento) => {
+    if (!pagamento) return 0
+
+    const valorParcela = parseFloat(pagamento.valor) || 0
+    if (valorParcela <= 0) return 0
+
+    const venda = vendas.find(v => v.id === pagamento.venda_id)
+    const percentualCorretorVenda = parseFloat(venda?.percentual_corretor) || parseFloat(percentualFallback) || 0
+    const valorProSoluto = parseFloat(venda?.valor_pro_soluto) || 0
+
+    if (venda && percentualCorretorVenda > 0 && valorProSoluto > 0) {
+      const fatorCorretor = calcularFatorComissao(venda.valor_venda, valorProSoluto, percentualCorretorVenda)
+      return valorParcela * fatorCorretor
+    }
+
+    const percentualTotalSnapshot = parseFloat(pagamento.percentual_comissao_total) || 0
+    const comissaoTotalSnapshot = parseFloat(pagamento.comissao_gerada) || 0
+    if (comissaoTotalSnapshot > 0 && percentualCorretorVenda > 0 && percentualTotalSnapshot > 0) {
+      return comissaoTotalSnapshot * (percentualCorretorVenda / percentualTotalSnapshot)
+    }
+
+    return calcularComissaoPagamentoCompleto(pagamento, { vendas, percentualFallback })
+  }
+
+  const somarMinhaComissao = (pagamentos, predicate) => {
+    if (!Array.isArray(pagamentos)) return 0
+    const lista = predicate
+      ? pagamentos.filter(predicate)
+      : pagamentos.filter(pag => pag.status !== 'cancelado')
+    return lista.reduce((acc, pag) => acc + calcularComissaoPagamento(pag), 0)
+  }
 
   // R2 — comissão SEMPRE por pagamento. Sem pagamentos → 0 (nunca fallback por v.status).
-  const getTotalComissao = () => somarComissao(meusPagamentos, { vendas, percentualFallback })
-  const getComissaoPendente = () => somarComissao(meusPagamentos, { predicate: isPendente, vendas, percentualFallback })
-  const getComissaoPaga = () => somarComissao(meusPagamentos, { predicate: isPago, vendas, percentualFallback })
+  const getTotalComissao = () => somarMinhaComissao(meusPagamentos)
+  const getComissaoPendente = () => somarMinhaComissao(meusPagamentos, isPendente)
+  const getComissaoPaga = () => somarMinhaComissao(meusPagamentos, isPago)
 
   // Contagem real de vendas (baseado em vendas únicas, não pagamentos)
   const getVendasCount = () => {
@@ -1409,8 +1503,32 @@ const CorretorDashboard = () => {
     }
   }, [tab, navigate, location.pathname])
 
+  const goTo = (path) => {
+    navigate(path)
+    if (typeof window !== 'undefined' && window.innerWidth <= 1024) {
+      setMenuOpen(false)
+    }
+  }
+
+  const mobileNavItems = [
+    { tab: 'dashboard', path: '/corretor/dashboard', label: 'Início', icon: LayoutDashboard },
+    { tab: 'vendas', path: '/corretor/vendas', label: 'Vendas', icon: DollarSign },
+    { tab: 'pagamentos', path: '/corretor/pagamentos', label: 'Receber', icon: CreditCard },
+    { tab: 'clientes', path: '/corretor/clientes', label: 'Clientes', icon: Users },
+    { tab: 'perfil', path: '/corretor/perfil', label: 'Perfil', icon: User },
+  ]
+
+  const mobileQuickActions = [
+    { path: '/corretor/vendas', label: 'Vendas', icon: DollarSign },
+    { path: '/corretor/pagamentos', label: 'Receber', icon: CreditCard },
+    { path: '/corretor/clientes', label: 'Clientes', icon: UserPlus },
+    { path: '/corretor/relatorios', label: 'Relatorio', icon: FileText },
+  ]
+
+  const relatorioResumo = getRelatorioResumo()
+
   return (
-    <div className="dashboard-container">
+    <div className={`dashboard-container corretor-shell corretor-tab-${activeTab}`}>
       {/* Sidebar Overlay for Mobile */}
       <div 
         className={`sidebar-overlay ${menuOpen ? 'active' : ''}`}
@@ -1432,7 +1550,7 @@ const CorretorDashboard = () => {
         <nav className="sidebar-nav">
           <button 
             className={`nav-item ${activeTab === 'dashboard' ? 'active' : ''}`}
-            onClick={() => navigate('/corretor/dashboard')}
+            onClick={() => goTo('/corretor/dashboard')}
             title="Dashboard"
           >
             <LayoutDashboard size={20} />
@@ -1440,7 +1558,7 @@ const CorretorDashboard = () => {
           </button>
           <button 
             className={`nav-item ${activeTab === 'vendas' ? 'active' : ''}`}
-            onClick={() => navigate('/corretor/vendas')}
+            onClick={() => goTo('/corretor/vendas')}
             title="Minhas Vendas"
           >
             <DollarSign size={20} />
@@ -1448,7 +1566,7 @@ const CorretorDashboard = () => {
           </button>
           <button 
             className={`nav-item ${activeTab === 'pagamentos' ? 'active' : ''}`}
-            onClick={() => navigate('/corretor/pagamentos')}
+            onClick={() => goTo('/corretor/pagamentos')}
             title="Meus Pagamentos"
           >
             <CreditCard size={20} />
@@ -1456,7 +1574,7 @@ const CorretorDashboard = () => {
           </button>
           <button 
             className={`nav-item ${activeTab === 'clientes' ? 'active' : ''}`}
-            onClick={() => navigate('/corretor/clientes')}
+            onClick={() => goTo('/corretor/clientes')}
             title="Meus Clientes"
           >
             <Users size={20} />
@@ -1464,7 +1582,7 @@ const CorretorDashboard = () => {
           </button>
           <button 
             className={`nav-item ${activeTab === 'empreendimentos' ? 'active' : ''}`}
-            onClick={() => navigate('/corretor/empreendimentos')}
+            onClick={() => goTo('/corretor/empreendimentos')}
             title="Empreendimentos"
           >
             <Building size={20} />
@@ -1472,7 +1590,7 @@ const CorretorDashboard = () => {
           </button>
           <button 
             className={`nav-item ${activeTab === 'relatorios' ? 'active' : ''}`}
-            onClick={() => navigate('/corretor/relatorios')}
+            onClick={() => goTo('/corretor/relatorios')}
             title="Relatórios"
           >
             <FileText size={20} />
@@ -1480,7 +1598,7 @@ const CorretorDashboard = () => {
           </button>
           <button 
             className={`nav-item ${activeTab === 'solicitacoes' ? 'active' : ''}`}
-            onClick={() => navigate('/corretor/solicitacoes')}
+            onClick={() => goTo('/corretor/solicitacoes')}
             title="Solicitações"
           >
             <ClipboardList size={20} />
@@ -1488,7 +1606,7 @@ const CorretorDashboard = () => {
           </button>
           <button 
             className={`nav-item ${activeTab === 'perfil' ? 'active' : ''}`}
-            onClick={() => navigate('/corretor/perfil')}
+            onClick={() => goTo('/corretor/perfil')}
             title="Meu Perfil"
           >
             <User size={20} />
@@ -1505,8 +1623,12 @@ const CorretorDashboard = () => {
             {sidebarCollapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
           </button>
           <div className="user-info">
-            <div className="user-avatar">
-              <User size={20} />
+            <div className="user-avatar user-avatar-with-photo">
+              {userProfile?.foto_url ? (
+                <img src={userProfile.foto_url} alt={userProfile.nome || 'Foto'} />
+              ) : (
+                <User size={20} />
+              )}
             </div>
             <div className="user-details">
               <span className="user-name">{capitalizeName(userProfile?.nome || 'Corretor')}</span>
@@ -1559,6 +1681,34 @@ const CorretorDashboard = () => {
           <span className={`badge-large ${userProfile?.tipo_corretor || 'externo'}`}>
                     {userProfile?.tipo_corretor === 'interno' ? 'Interno' : 'Externo'}
           </span>
+        </div>
+      </section>
+
+      <section className="broker-mobile-home-panel" aria-label="Atalhos principais">
+        <button
+          type="button"
+          className="broker-mobile-search"
+          onClick={() => goTo('/corretor/clientes')}
+        >
+          <Search size={18} />
+          <span>Buscar cliente ou venda</span>
+          <ArrowUpRight size={16} />
+        </button>
+        <div className="broker-mobile-actions">
+          {mobileQuickActions.map((item) => {
+            const Icon = item.icon
+            return (
+              <button
+                key={item.path}
+                type="button"
+                onClick={() => goTo(item.path)}
+                className="broker-mobile-action"
+              >
+                <Icon size={20} />
+                <span>{item.label}</span>
+              </button>
+            )
+          })}
         </div>
       </section>
 
@@ -1726,7 +1876,7 @@ const CorretorDashboard = () => {
             <h3>Últimas Vendas</h3>
             <button 
               className="chart-action-btn"
-              onClick={() => navigate('/corretor/vendas')}
+              onClick={() => goTo('/corretor/vendas')}
             >
               Ver todas
             </button>
@@ -2074,12 +2224,14 @@ const CorretorDashboard = () => {
                                   
                                   {visaoParcelas === 'calendario' ? (
                                     <div className="parcelas-list">
-                                      {sortParcelas(pagamentosVenda[venda.id], 'calendario').map((pagamento) => {
+                                      {sortParcelas(pagamentosVenda[venda.id], 'calendario')
+                                        .filter((pagamento) => pagamento.status !== 'cancelado')
+                                        .map((pagamento) => {
                                         const comissaoParcela = calcularComissaoPagamento(pagamento)
                                         return (
                                           <div 
                                             key={pagamento.id} 
-                                            className={`corretor-parcela-row ${pagamento.status === 'pago' ? 'pago' : ''}`}
+                                            className={`corretor-parcela-row ${pagamento.status === 'pago' ? 'pago' : pagamento.status === 'cancelado' ? 'cancelado' : ''}`}
                                           >
                                             <div className="corretor-parcela-tipo">
                                               {pagamento.tipo === 'sinal' && 'Sinal'}
@@ -2099,7 +2251,7 @@ const CorretorDashboard = () => {
                                             </div>
                                             <div className="corretor-parcela-status">
                                               <span className={`status-pill ${pagamento.status}`}>
-                                                {pagamento.status === 'pago' ? 'Pago' : 'Pendente'}
+                                                {pagamento.status === 'pago' ? 'Pago' : pagamento.status === 'cancelado' ? 'Cancelado' : 'Pendente'}
                                               </span>
                                             </div>
                                           </div>
@@ -2108,7 +2260,8 @@ const CorretorDashboard = () => {
                                     </div>
                                   ) : (
                                     (() => {
-                                    const grupos = agruparPagamentosPorTipo(pagamentosVenda[venda.id])
+                                    const pagamentosAtivosVenda = (pagamentosVenda[venda.id] || []).filter((pagamento) => pagamento.status !== 'cancelado')
+                                    const grupos = agruparPagamentosPorTipo(pagamentosAtivosVenda)
                                     const tiposOrdem = ['sinal', 'entrada', 'parcela_entrada', 'balao']
                                     
                                     return tiposOrdem.map(tipo => {
@@ -2145,7 +2298,7 @@ const CorretorDashboard = () => {
                                               return (
                                                 <div 
                                                   key={pagamento.id} 
-                                                  className={`corretor-parcela-row ${pagamento.status === 'pago' ? 'pago' : ''}`}
+                                                  className={`corretor-parcela-row ${pagamento.status === 'pago' ? 'pago' : pagamento.status === 'cancelado' ? 'cancelado' : ''}`}
                                                 >
                                                   <div className="corretor-parcela-tipo">
                                                     {pagamento.tipo === 'sinal' && 'Sinal'}
@@ -2165,7 +2318,7 @@ const CorretorDashboard = () => {
                                                   </div>
                                                   <div className="corretor-parcela-status">
                                                     <span className={`status-pill ${pagamento.status}`}>
-                                                      {pagamento.status === 'pago' ? 'Pago' : 'Pendente'}
+                                                      {pagamento.status === 'pago' ? 'Pago' : pagamento.status === 'cancelado' ? 'Cancelado' : 'Pendente'}
                                                     </span>
                                                   </div>
                                                 </div>
@@ -2466,11 +2619,12 @@ const CorretorDashboard = () => {
                             {pagamentoVendaExpandida === grupo.venda_id && (
                               <div className="venda-pagamento-body">
                                 {sortParcelas(grupo.pagamentos, visaoParcelas)
+                                  .filter((pag) => pag.status !== 'cancelado')
                                   .map((pag) => {
                                     const minhaComissao = venda ? calcularComissaoPagamento(pag) : 0
                                     
                                     return (
-                                      <div key={pag.id} className={`parcela-row ${pag.status === 'pago' ? 'pago' : ''}`}>
+                                      <div key={pag.id} className={`parcela-row ${pag.status === 'pago' ? 'pago' : pag.status === 'cancelado' ? 'cancelado' : ''}`}>
                                         <div className="parcela-main">
                                           <div className="parcela-tipo">
                                             {pag.tipo === 'sinal' && 'Sinal'}
@@ -2487,7 +2641,7 @@ const CorretorDashboard = () => {
                                           </div>
                                           <div className="parcela-status">
                                             <span className={`status-pill ${pag.status}`}>
-                                              {pag.status === 'pago' ? 'Pago' : 'Pendente'}
+                                              {pag.status === 'pago' ? 'Pago' : pag.status === 'cancelado' ? 'Cancelado' : 'Pendente'}
                                             </span>
                                           </div>
                                         </div>
@@ -2965,19 +3119,19 @@ const CorretorDashboard = () => {
                 <div className="resumo-cards">
                   <div className="resumo-card-item">
                     <span className="resumo-titulo">Total de Vendas</span>
-                    <span className="resumo-numero">{vendas.length}</span>
+                    <span className="resumo-numero">{relatorioResumo.totalVendas}</span>
                   </div>
                   <div className="resumo-card-item">
                     <span className="resumo-titulo">Comissão Total</span>
-                    <span className="resumo-numero verde">{formatCurrency(getTotalComissao())}</span>
+                    <span className="resumo-numero verde">{formatCurrency(relatorioResumo.comissaoTotal)}</span>
                   </div>
                   <div className="resumo-card-item">
                     <span className="resumo-titulo">Comissão Recebida</span>
-                    <span className="resumo-numero azul">{formatCurrency(getComissaoPaga())}</span>
+                    <span className="resumo-numero azul">{formatCurrency(relatorioResumo.comissaoPaga)}</span>
                   </div>
                   <div className="resumo-card-item">
                     <span className="resumo-titulo">Comissão Pendente</span>
-                    <span className="resumo-numero amarelo">{formatCurrency(getComissaoPendente())}</span>
+                    <span className="resumo-numero amarelo">{formatCurrency(relatorioResumo.comissaoPendente)}</span>
                   </div>
                 </div>
               </div>
@@ -2999,9 +3153,16 @@ const CorretorDashboard = () => {
                       </tr>
                     </thead>
                     <tbody>
-                      {vendas.slice(0, 10).map(venda => {
+                      {relatorioResumo.vendasFiltradas.length === 0 ? (
+                        <tr>
+                          <td colSpan="7" className="empty-table-cell">
+                            Nenhuma venda encontrada para os filtros selecionados
+                          </td>
+                        </tr>
+                      ) : (
+                        relatorioResumo.vendasFiltradas.slice(0, 10).map(venda => {
                         // Calcular comissão baseado em PAGAMENTOS
-                        const pagamentosVenda = meusPagamentos.filter(p => p.venda_id === venda.id)
+                        const pagamentosVenda = relatorioResumo.pagamentosFiltrados.filter(p => p.venda_id === venda.id)
                         const comissaoVenda = pagamentosVenda.reduce((acc, pag) => acc + calcularComissaoPagamento(pag), 0)
                         const comissaoPagaVenda = pagamentosVenda
                           .filter(p => p.status === 'pago')
@@ -3036,7 +3197,8 @@ const CorretorDashboard = () => {
                             </td>
                           </tr>
                         )
-                      })}
+                        })
+                      )}
                     </tbody>
                   </table>
                 </div>
@@ -3156,9 +3318,21 @@ const CorretorDashboard = () => {
               {/* Card Principal do Perfil */}
               <div className="perfil-main-card">
                 <div className="perfil-avatar-section">
-                  <div className="perfil-avatar">
-                    <User size={60} />
-                  </div>
+                  <button
+                    type="button"
+                    className="perfil-avatar perfil-avatar-clickable"
+                    onClick={() => { setPhotoModalOpen(true); setPhotoModalForced(false) }}
+                    title="Clique pra trocar a foto"
+                  >
+                    {userProfile?.foto_url ? (
+                      <img src={userProfile.foto_url} alt={userProfile.nome || 'Foto de perfil'} />
+                    ) : (
+                      <User size={60} />
+                    )}
+                    <div className="perfil-avatar-overlay">
+                      <Camera size={22} />
+                    </div>
+                  </button>
                   <div className="perfil-tipo-badge">
                     <span className={`badge-large ${userProfile?.tipo_corretor || 'externo'}`}>
                       {userProfile?.tipo_corretor === 'interno' ? 'Corretor Interno' : 'Corretor Externo'}
@@ -3383,7 +3557,7 @@ const CorretorDashboard = () => {
                   
                   <button 
                     className="action-card"
-                    onClick={() => navigate('/corretor/relatorios')}
+                    onClick={() => goTo('/corretor/relatorios')}
                   >
                     <FileText size={24} />
                     <div>
@@ -3394,7 +3568,7 @@ const CorretorDashboard = () => {
                   
                   <button 
                     className="action-card"
-                    onClick={() => navigate('/corretor/pagamentos')}
+                    onClick={() => goTo('/corretor/pagamentos')}
                   >
                     <Wallet size={24} />
                     <div>
@@ -3855,6 +4029,29 @@ const CorretorDashboard = () => {
           )
         })()}
       </main>
+
+      <nav className="mobile-broker-nav" aria-label="Navegação principal do corretor">
+        {mobileNavItems.map((item) => {
+          const Icon = item.icon
+          return (
+            <button
+              key={item.tab}
+              type="button"
+              className={`mobile-broker-nav-item ${activeTab === item.tab ? 'active' : ''}`}
+              onClick={() => goTo(item.path)}
+            >
+              <Icon size={18} />
+              <span>{item.label}</span>
+            </button>
+          )
+        })}
+      </nav>
+
+      <ProfilePhotoModal
+        open={photoModalOpen}
+        required={photoModalForced}
+        onClose={() => setPhotoModalOpen(false)}
+      />
     </div>
   )
 }

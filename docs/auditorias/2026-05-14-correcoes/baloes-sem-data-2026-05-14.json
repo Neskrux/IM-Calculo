@@ -1,0 +1,367 @@
+{
+  "meta": {
+    "geradoEm": "2026-05-14T14:51:58.027Z",
+    "total_baloes": 26,
+    "total_vendas": 7,
+    "regra": "Baloes (tipo=balao) sem data_prevista — nao aparecem posicionados no calendario nem em filtros de periodo."
+  },
+  "casos": [
+    {
+      "venda_id": "22833c5c-759c-483e-b266-d680f2f8416d",
+      "sienge_contract_id": null,
+      "numero_contrato": null,
+      "unidade": "401",
+      "cliente": "RAYLTON GOMES DA COSTA  ",
+      "cliente_cpf": "113.127.329-03",
+      "excluido": false,
+      "qtd_baloes_sem_data": 5,
+      "baloes": [
+        {
+          "numero_parcela": 1,
+          "valor": 4000,
+          "status": "pendente",
+          "data_pagamento": null
+        },
+        {
+          "numero_parcela": 2,
+          "valor": 4000,
+          "status": "pendente",
+          "data_pagamento": null
+        },
+        {
+          "numero_parcela": 3,
+          "valor": 4000,
+          "status": "pendente",
+          "data_pagamento": null
+        },
+        {
+          "numero_parcela": 4,
+          "valor": 4000,
+          "status": "pendente",
+          "data_pagamento": null
+        },
+        {
+          "numero_parcela": 5,
+          "valor": 4000,
+          "status": "pendente",
+          "data_pagamento": null
+        }
+      ],
+      "venda_balao_info": {
+        "teve_balao": "sim",
+        "qtd_balao": null,
+        "valor_balao": null,
+        "valor_balao_unitario": null,
+        "vencimento_balao": null,
+        "periodicidade_balao": 6
+      },
+      "baloes_no_sienge": [],
+      "fonte_possivel": "revisao_humana"
+    },
+    {
+      "venda_id": "2026ca9d-1c30-49da-bfe6-b4024462477c",
+      "sienge_contract_id": null,
+      "numero_contrato": null,
+      "unidade": "002",
+      "cliente": "jonas cliente",
+      "cliente_cpf": "196.849.841-98",
+      "excluido": false,
+      "qtd_baloes_sem_data": 5,
+      "baloes": [
+        {
+          "numero_parcela": 1,
+          "valor": 300,
+          "status": "pendente",
+          "data_pagamento": null
+        },
+        {
+          "numero_parcela": 2,
+          "valor": 300,
+          "status": "pendente",
+          "data_pagamento": null
+        },
+        {
+          "numero_parcela": 3,
+          "valor": 300,
+          "status": "pendente",
+          "data_pagamento": null
+        },
+        {
+          "numero_parcela": 4,
+          "valor": 300,
+          "status": "pendente",
+          "data_pagamento": null
+        },
+        {
+          "numero_parcela": 5,
+          "valor": 300,
+          "status": "pendente",
+          "data_pagamento": null
+        }
+      ],
+      "venda_balao_info": {
+        "teve_balao": "sim",
+        "qtd_balao": null,
+        "valor_balao": null,
+        "valor_balao_unitario": null,
+        "vencimento_balao": null,
+        "periodicidade_balao": 6
+      },
+      "baloes_no_sienge": [],
+      "fonte_possivel": "revisao_humana"
+    },
+    {
+      "venda_id": "6a33ac0b-00af-4fc3-8539-7529998a94b2",
+      "sienge_contract_id": "299",
+      "numero_contrato": "207",
+      "unidade": "1305 D",
+      "cliente": "LURDES COLMAN LOPES",
+      "cliente_cpf": "51348039191",
+      "excluido": false,
+      "qtd_baloes_sem_data": 4,
+      "baloes": [
+        {
+          "numero_parcela": 2,
+          "valor": 4364.15,
+          "status": "pendente",
+          "data_pagamento": null
+        },
+        {
+          "numero_parcela": 3,
+          "valor": 4364.15,
+          "status": "pendente",
+          "data_pagamento": null
+        },
+        {
+          "numero_parcela": 4,
+          "valor": 4364.15,
+          "status": "pendente",
+          "data_pagamento": null
+        },
+        {
+          "numero_parcela": 5,
+          "valor": 4364.15,
+          "status": "pendente",
+          "data_pagamento": null
+        }
+      ],
+      "venda_balao_info": {
+        "teve_balao": "sim",
+        "qtd_balao": 5,
+        "valor_balao": 4364.15,
+        "valor_balao_unitario": null,
+        "vencimento_balao": null,
+        "periodicidade_balao": 6
+      },
+      "baloes_no_sienge": [
+        {
+          "inst": "1/1",
+          "due": "2026-03-20",
+          "termo": "B1"
+        },
+        {
+          "inst": "1/1",
+          "due": "2027-03-20",
+          "termo": "B2"
+        },
+        {
+          "inst": "1/1",
+          "due": "2028-03-20",
+          "termo": "B3"
+        },
+        {
+          "inst": "1/1",
+          "due": "2029-03-20",
+          "termo": "B4"
+        },
+        {
+          "inst": "1/1",
+          "due": "2030-03-20",
+          "termo": "B5"
+        }
+      ],
+      "fonte_possivel": "sienge_income (bill tem baloes com dueDate)"
+    },
+    {
+      "venda_id": "ad2d2d32-096b-4680-9863-464cb33d4a12",
+      "sienge_contract_id": null,
+      "numero_contrato": null,
+      "unidade": "603",
+      "cliente": "CAYO KAMENAC RAMOS DA SILVA",
+      "cliente_cpf": "138.953.824-93",
+      "excluido": false,
+      "qtd_baloes_sem_data": 4,
+      "baloes": [
+        {
+          "numero_parcela": 1,
+          "valor": 10000,
+          "status": "pendente",
+          "data_pagamento": null
+        },
+        {
+          "numero_parcela": 2,
+          "valor": 10000,
+          "status": "pendente",
+          "data_pagamento": null
+        },
+        {
+          "numero_parcela": 3,
+          "valor": 10000,
+          "status": "pendente",
+          "data_pagamento": null
+        },
+        {
+          "numero_parcela": 4,
+          "valor": 10000,
+          "status": "pendente",
+          "data_pagamento": null
+        }
+      ],
+      "venda_balao_info": {
+        "teve_balao": "sim",
+        "qtd_balao": null,
+        "valor_balao": null,
+        "valor_balao_unitario": null,
+        "vencimento_balao": null,
+        "periodicidade_balao": 6
+      },
+      "baloes_no_sienge": [],
+      "fonte_possivel": "revisao_humana"
+    },
+    {
+      "venda_id": "bd0483d9-e3a2-4c30-a010-d4eb93769972",
+      "sienge_contract_id": null,
+      "numero_contrato": null,
+      "unidade": "1307",
+      "cliente": "Felix Roman Munieweg",
+      "cliente_cpf": "030.678.040-23",
+      "excluido": false,
+      "qtd_baloes_sem_data": 4,
+      "baloes": [
+        {
+          "numero_parcela": 1,
+          "valor": 5000,
+          "status": "pendente",
+          "data_pagamento": null
+        },
+        {
+          "numero_parcela": 2,
+          "valor": 5000,
+          "status": "pendente",
+          "data_pagamento": null
+        },
+        {
+          "numero_parcela": 3,
+          "valor": 5000,
+          "status": "pendente",
+          "data_pagamento": null
+        },
+        {
+          "numero_parcela": 4,
+          "valor": 5000,
+          "status": "pendente",
+          "data_pagamento": null
+        }
+      ],
+      "venda_balao_info": {
+        "teve_balao": "sim",
+        "qtd_balao": null,
+        "valor_balao": null,
+        "valor_balao_unitario": null,
+        "vencimento_balao": null,
+        "periodicidade_balao": 6
+      },
+      "baloes_no_sienge": [],
+      "fonte_possivel": "revisao_humana"
+    },
+    {
+      "venda_id": "e3bd5695-27ce-436b-a578-ce1bfac3d7aa",
+      "sienge_contract_id": "340",
+      "numero_contrato": "243",
+      "unidade": "905 B",
+      "cliente": "CAROLINE SARAIVA DA SILVEIRA RODRIGUES ",
+      "cliente_cpf": "06023755925",
+      "excluido": false,
+      "qtd_baloes_sem_data": 3,
+      "baloes": [
+        {
+          "numero_parcela": 2,
+          "valor": 3624,
+          "status": "pendente",
+          "data_pagamento": null
+        },
+        {
+          "numero_parcela": 3,
+          "valor": 3624,
+          "status": "pendente",
+          "data_pagamento": null
+        },
+        {
+          "numero_parcela": 4,
+          "valor": 3624,
+          "status": "pendente",
+          "data_pagamento": null
+        }
+      ],
+      "venda_balao_info": {
+        "teve_balao": "sim",
+        "qtd_balao": 4,
+        "valor_balao": 3624,
+        "valor_balao_unitario": null,
+        "vencimento_balao": null,
+        "periodicidade_balao": 6
+      },
+      "baloes_no_sienge": [
+        {
+          "inst": "1/1",
+          "due": "2026-12-20",
+          "termo": "B1"
+        },
+        {
+          "inst": "1/1",
+          "due": "2027-12-20",
+          "termo": "B2"
+        },
+        {
+          "inst": "1/1",
+          "due": "2028-12-20",
+          "termo": "B3"
+        },
+        {
+          "inst": "1/1",
+          "due": "2029-12-20",
+          "termo": "B4"
+        }
+      ],
+      "fonte_possivel": "sienge_income (bill tem baloes com dueDate)"
+    },
+    {
+      "venda_id": "e1220449-7207-4d62-b558-57004ae9cee6",
+      "sienge_contract_id": null,
+      "numero_contrato": null,
+      "unidade": "1305",
+      "cliente": "ALISSON RODRIGUES DO CARMO",
+      "cliente_cpf": "039.401.881-82",
+      "excluido": false,
+      "qtd_baloes_sem_data": 1,
+      "baloes": [
+        {
+          "numero_parcela": 1,
+          "valor": 11375,
+          "status": "pendente",
+          "data_pagamento": null
+        }
+      ],
+      "venda_balao_info": {
+        "teve_balao": "sim",
+        "qtd_balao": null,
+        "valor_balao": null,
+        "valor_balao_unitario": null,
+        "vencimento_balao": null,
+        "periodicidade_balao": 6
+      },
+      "baloes_no_sienge": [],
+      "fonte_possivel": "revisao_humana"
+    }
+  ]
+}

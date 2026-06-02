@@ -175,7 +175,7 @@ async function loadMaps(): Promise<Maps> {
     empByEnt.set(String(r.sienge_enterprise_id), {
       id: r.id,
       com_ext: Number(r.comissao_total_externo) || 7,
-      com_int: Number(r.comissao_total_interno) || 6,
+      com_int: Number(r.comissao_total_interno) || 6.5,
     })
   }
   const unitBySienge = new Map<string, string>()
@@ -250,26 +250,58 @@ function montarPagamentos(vendaId: string, p: PaymentData, valorVenda: number, p
  *
  * Chave de match: (venda_id, tipo, numero_parcela)
  * - pago  → NÃO altera valor/tipo/data_pagamento/comissao_gerada
- * - pendente existente → update valor, data_prevista, snapshots, comissao_gerada
+ * - pendente existente -> update valor/snapshots/comissao_gerada; preserva data_prevista existente
  * - novo → insert
  * ---------------------------------------------------------------- */
+
+interface PagamentoExistente {
+  id: string
+  tipo: string
+  numero_parcela: number | null
+  status: string | null
+  valor: number | null
+  data_prevista: string | null
+  comissao_gerada: number | null
+  fator_comissao_aplicado: number | null
+  percentual_comissao_total: number | null
+}
+
+function moneyChanged(a: unknown, b: unknown): boolean {
+  return Math.abs((Number(a) || 0) - (Number(b) || 0)) > 0.005
+}
+
+function numberChanged(a: unknown, b: unknown): boolean {
+  return Math.abs((Number(a) || 0) - (Number(b) || 0)) > 0.000001
+}
 
 async function mergePagamentos(vendaId: string, desejados: PagamentoRow[]): Promise<{ ins: number; upd: number; skip: number }> {
   const supa = publicClient()
   const { data: existentes, error } = await supa
     .from("pagamentos_prosoluto")
-    .select("id, tipo, numero_parcela, status")
+    .select("id, tipo, numero_parcela, status, valor, data_prevista, comissao_gerada, fator_comissao_aplicado, percentual_comissao_total")
     .eq("venda_id", vendaId)
   if (error) throw new Error(`pagamentos.select: ${error.message}`)
 
+  const activeKeys = new Map<string, number>()
+  for (const r of existentes ?? []) {
+    if (r.status === "cancelado") continue
+    const k = `${r.tipo}|${Number(r.valor || 0).toFixed(2)}|${r.data_prevista || ""}`
+    activeKeys.set(k, (activeKeys.get(k) || 0) + 1)
+  }
+  if ([...activeKeys.values()].some((n) => n > 1)) {
+    log("warn", "pagamentos_merge_skip_ambiguous", { vendaId, reason: "duplicidade ativa em pagamentos_prosoluto" })
+    return { ins: 0, upd: 0, skip: existentes?.length ?? 0 }
+  }
+
   const key = (tipo: string, np: number | null) => `${tipo}|${np ?? "null"}`
-  const mapEx = new Map<string, { id: string; status: string | null }>()
-  for (const r of existentes ?? []) mapEx.set(key(r.tipo, r.numero_parcela), { id: r.id, status: r.status })
+  const mapEx = new Map<string, PagamentoExistente>()
+  for (const r of existentes ?? []) mapEx.set(key(r.tipo, r.numero_parcela), r as PagamentoExistente)
 
   const now = new Date().toISOString()
   const toInsert: Record<string, unknown>[] = []
   const updatesPendente: Array<{ id: string; body: Record<string, unknown> }> = []
   const updatesPago: Array<{ id: string; body: Record<string, unknown> }> = []
+  let ins = 0, upd = 0, skip = 0
 
   for (const d of desejados) {
     const k = key(d.tipo, d.numero_parcela)
@@ -279,30 +311,22 @@ async function mergePagamentos(vendaId: string, desejados: PagamentoRow[]): Prom
     } else if (ex.status === "pago") {
       // Migration 017: não tocar em valor/tipo/data_pagamento/comissao_gerada.
       // Snapshots de fator/percentual são editáveis (migration 018).
-      updatesPago.push({
-        id: ex.id,
-        body: {
-          fator_comissao_aplicado: d.fator_comissao_aplicado,
-          percentual_comissao_total: d.percentual_comissao_total,
-          updated_at: now,
-        },
-      })
+      const body: Record<string, unknown> = {}
+      if (numberChanged(ex.fator_comissao_aplicado, d.fator_comissao_aplicado)) body.fator_comissao_aplicado = d.fator_comissao_aplicado
+      if (numberChanged(ex.percentual_comissao_total, d.percentual_comissao_total)) body.percentual_comissao_total = d.percentual_comissao_total
+      if (Object.keys(body).length > 0) updatesPago.push({ id: ex.id, body: { ...body, updated_at: now } })
+      else skip++
     } else {
-      updatesPendente.push({
-        id: ex.id,
-        body: {
-          valor: d.valor,
-          data_prevista: d.data_prevista,
-          comissao_gerada: d.comissao_gerada,
-          fator_comissao_aplicado: d.fator_comissao_aplicado,
-          percentual_comissao_total: d.percentual_comissao_total,
-          updated_at: now,
-        },
-      })
+      const body: Record<string, unknown> = {}
+      if (moneyChanged(ex.valor, d.valor)) body.valor = d.valor
+      if (!ex.data_prevista && d.data_prevista) body.data_prevista = d.data_prevista
+      if (moneyChanged(ex.comissao_gerada, d.comissao_gerada)) body.comissao_gerada = d.comissao_gerada
+      if (numberChanged(ex.fator_comissao_aplicado, d.fator_comissao_aplicado)) body.fator_comissao_aplicado = d.fator_comissao_aplicado
+      if (numberChanged(ex.percentual_comissao_total, d.percentual_comissao_total)) body.percentual_comissao_total = d.percentual_comissao_total
+      if (Object.keys(body).length > 0) updatesPendente.push({ id: ex.id, body: { ...body, updated_at: now } })
+      else skip++
     }
   }
-
-  let ins = 0, upd = 0, skip = 0
 
   if (toInsert.length > 0) {
     const { error: e } = await supa.from("pagamentos_prosoluto").insert(toInsert)
@@ -340,7 +364,7 @@ async function mergePagamentos(vendaId: string, desejados: PagamentoRow[]): Prom
 async function upsertVenda(
   contract: SalesContractPayload,
   maps: Maps,
-): Promise<{ vendaId: string | null; p: PaymentData; percentualTotal: number }> {
+): Promise<{ vendaId: string | null; p: PaymentData; percentualTotal: number; valorVenda: number }> {
   const supa = publicClient()
   const cliP = contract.salesContractCustomers?.find((c) => c.main) ?? contract.salesContractCustomers?.[0]
   const uniP = contract.salesContractUnits?.find((u) => u.main) ?? contract.salesContractUnits?.[0]
@@ -351,11 +375,23 @@ async function upsertVenda(
   const clienteId = cliP?.id != null ? maps.cliBySienge.get(String(cliP.id)) ?? null : null
   const corretor = corP?.id != null ? maps.corBySienge.get(String(corP.id)) ?? null : null
 
-  const tipoCorretor = corretor?.tipo ?? "externo"
-  const percentualTotal = empInfo ? (tipoCorretor === "interno" ? empInfo.com_int : empInfo.com_ext) : 7
+  // Observabilidade: broker do Sienge sem cadastro local vira corretor_id=null silenciosamente,
+  // o que ja causou vendas orfas (ver docs/revisao-geral-2026-05-13.md). Logar pra runs.metrics.warnings
+  // ajuda a pegar antes de virar queixa do corretor.
+  if (corP?.id != null && !corretor) {
+    console.warn(JSON.stringify({
+      warning: 'broker_sienge_sem_cadastro_local',
+      sienge_contract_id: String(contract.id),
+      broker_sienge_id: String(corP.id),
+      broker_name: corP.name ?? null,
+    }))
+  }
+
+  const tipoCorretorSync = corretor?.tipo ?? "externo"
+  const percentualTotalSync = empInfo ? (tipoCorretorSync === "interno" ? empInfo.com_int : empInfo.com_ext) : 7
   const paymentData = mapearPaymentConditions(contract.paymentConditions)
   const valorVenda = Number(contract.value) || 0
-  const fatorComissao = calcularFator(valorVenda, paymentData.valor_pro_soluto, percentualTotal)
+  const fatorComissao = calcularFator(valorVenda, paymentData.valor_pro_soluto, percentualTotalSync)
   const situacao = normalizarSituacao(contract.situation)
 
   const row = {
@@ -365,7 +401,7 @@ async function upsertVenda(
     cliente_id: clienteId,
     empreendimento_id: empInfo?.id ?? null,
     unidade_id: unidadeId,
-    tipo_corretor: tipoCorretor,
+    tipo_corretor: tipoCorretorSync,
     valor_venda: valorVenda,
     valor_venda_total: Number(contract.totalSellingValue ?? contract.value ?? 0) || 0,
     data_venda: contract.contractDate || null,
@@ -395,16 +431,61 @@ async function upsertVenda(
     sienge_updated_at: contract.lastUpdateDate ? new Date(contract.lastUpdateDate).toISOString() : new Date().toISOString(),
   }
 
+  // Preserva correcoes manuais (migration 021 + .claude/rules/sincronizacao-sienge.md):
+  // se a venda existente foi corrigida por humano (corretor_id_origem='manual' ou
+  // 'api_commissions') ou cliente_id_origem='manual', mantem os ids atuais e a flag
+  // de origem. Sem isso, todo sync sobrescreve a correcao — a flag virava decorativa.
+  const { data: existente } = await supa
+    .from("vendas")
+    .select("corretor_id, corretor_id_origem, cliente_id, cliente_id_origem, tipo_corretor, valor_venda, valor_venda_total, fator_comissao")
+    .eq("sienge_contract_id", String(contract.id))
+    .maybeSingle()
+
+  const rowProtegido = { ...row } as Record<string, unknown>
+  const origemCorretorProtegida =
+    existente?.corretor_id_origem === "manual" || existente?.corretor_id_origem === "api_commissions"
+  if (origemCorretorProtegida) {
+    rowProtegido.corretor_id = existente.corretor_id
+    // tipo_corretor anda junto: se corretor manual aponta pra interno, manter interno;
+    // senao o sync recalcularia percentualTotal com base no tipo errado.
+    if (existente.tipo_corretor) rowProtegido.tipo_corretor = existente.tipo_corretor
+    rowProtegido.corretor_id_origem = existente.corretor_id_origem
+  }
+  if (existente?.cliente_id_origem === "manual") {
+    rowProtegido.cliente_id = existente.cliente_id
+    rowProtegido.cliente_id_origem = existente.cliente_id_origem
+  }
+
+  const tipoCorretorFinal = String(rowProtegido.tipo_corretor ?? tipoCorretorSync)
+  const percentualTotalFinal = empInfo ? (tipoCorretorFinal === "interno" ? empInfo.com_int : empInfo.com_ext) : 7
+
+  // Correcoes manuais podem proteger tambem um valor/fator ja ajustado pela controladoria.
+  // Sem isso, a etapa final do cron recriaria parcelas pendentes com o fator bruto do Sienge.
+  const fatorSyncComTipoFinal = calcularFator(Number(rowProtegido.valor_venda) || 0, paymentData.valor_pro_soluto, percentualTotalFinal)
+  const fatorExistente = Number(existente?.fator_comissao)
+  if (
+    origemCorretorProtegida &&
+    Number.isFinite(fatorExistente) &&
+    fatorExistente > 0 &&
+    Math.abs(fatorExistente - fatorSyncComTipoFinal) > 0.0001
+  ) {
+    rowProtegido.valor_venda = Number(existente?.valor_venda) || rowProtegido.valor_venda
+    rowProtegido.valor_venda_total = Number(existente?.valor_venda_total ?? existente?.valor_venda) || rowProtegido.valor_venda_total
+  }
+
+  const valorVendaFinal = Number(rowProtegido.valor_venda) || 0
+  rowProtegido.fator_comissao = calcularFator(valorVendaFinal, paymentData.valor_pro_soluto, percentualTotalFinal)
+
   const now = new Date().toISOString()
   // Idempotente: upsert por sienge_contract_id evita race em múltiplos runs simultâneos
   // (dois workers chegando no mesmo contrato não explodem com UNIQUE violation — o 2º vira UPDATE)
   const { data, error } = await supa
     .from("vendas")
-    .upsert({ ...row, created_at: now, updated_at: now }, { onConflict: "sienge_contract_id" })
+    .upsert({ ...rowProtegido, created_at: now, updated_at: now }, { onConflict: "sienge_contract_id" })
     .select("id")
     .single()
   if (error) throw new Error(`vendas.upsert: ${error.message}`)
-  return { vendaId: (data as { id: string }).id, p: paymentData, percentualTotal }
+  return { vendaId: (data as { id: string }).id, p: paymentData, percentualTotal: percentualTotalFinal, valorVenda: valorVendaFinal }
 }
 
 /* ------------------------------------------------------------------
@@ -462,9 +543,8 @@ export async function normalizeSalesContracts(
     const results = await Promise.all(batch.map(async (r) => {
       try {
         const existedBefore = existingVendas.has(String(r.payload.id))
-        const { vendaId, p, percentualTotal } = await upsertVenda(r.payload, maps)
+        const { vendaId, p, percentualTotal, valorVenda } = await upsertVenda(r.payload, maps)
         if (!vendaId) return { ok: false as const }
-        const valorVenda = Number(r.payload.value) || 0
         const desejados = montarPagamentos(vendaId, p, valorVenda, percentualTotal, r.payload.contractDate ?? null)
         const merge = await mergePagamentos(vendaId, desejados)
         return { ok: true as const, existedBefore, merge }

@@ -18,8 +18,20 @@ export async function requireAdmin(req: Request): Promise<AuthedUser> {
   const jwt = auth.slice("Bearer ".length).trim()
 
   const { url, anonKey, serviceRoleKey } = loadSupabaseEnv()
-  const anon = createClient(url, anonKey)
 
+  // Bypass: chamada server-to-server com service_role (cron, automacoes).
+  // service_role ja tem acesso total ao DB — aceitar como auth da edge function
+  // e coerente. Comparacao em tempo constante pra evitar timing attack.
+  if (serviceRoleKey && jwt.length === serviceRoleKey.length) {
+    let diff = 0
+    for (let i = 0; i < jwt.length; i++) diff |= jwt.charCodeAt(i) ^ serviceRoleKey.charCodeAt(i)
+    if (diff === 0) {
+      log("info", "auth_service_role", {})
+      return { id: "00000000-0000-0000-0000-000000000000", email: "service-role@system", tipo: "admin" }
+    }
+  }
+
+  const anon = createClient(url, anonKey)
   const { data: userData, error: userErr } = await anon.auth.getUser(jwt)
   if (userErr || !userData.user) {
     log("warn", "auth_failed", { err: userErr?.message })

@@ -1,0 +1,23 @@
+{
+  "meta": {
+    "geradoEm": "2026-05-13T23:06:55.046Z",
+    "spec_ref": ".claude/rules/sincronizacao-sienge.md",
+    "script": "scripts/aplicar-correcao-data-prevista.mjs",
+    "modo": "dry-run",
+    "plano_origem": "docs/plano-correcao-data-prevista-2026-05-13.json"
+  },
+  "counts": {
+    "matched": 132,
+    "updated": 0,
+    "inserted": 0,
+    "skipped_idempotent": 0,
+    "drift_detected": 132,
+    "drift_corrected": 0,
+    "noMatch": 0,
+    "skipped_humano": 0,
+    "errors": 0
+  },
+  "drift": [],
+  "humano_pendente": [],
+  "errors": []
+}

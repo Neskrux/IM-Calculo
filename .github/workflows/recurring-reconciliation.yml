@@ -1,0 +1,210 @@
+# Reconciliacao diaria de pagamentos_prosoluto contra Sienge income.
+#
+# Roda 00:30 UTC (21:30 BRT) — logo apos o reset da quota diaria do Sienge.
+# Pode ser disparado manualmente.
+#
+# O que faz (em ordem):
+#   1. Corrige drift de data_prevista (gerar-plano + aplicar-correcao).
+#   2. Reconciliacao GERAL contra Sienge (reconciliar-todas-vendas.mjs --apply):
+#      - popula sienge_installment_id (ancoragem 1:1)
+#      - marca pago / reativa canceladas validas / cria parcelas faltantes
+#      Com 5 salvaguardas: pula venda se houver qualquer ambiguidade.
+#   3. Sincroniza sales-contracts + receivable-bills (vendas novas) via edge
+#      function. Roda POR ULTIMO e e best-effort (continue-on-error): consome
+#      ~10 chamadas bulk-data e a quota diaria do Sienge e pequena, entao
+#      gerar-plano/reconciliar furam a fila primeiro. Vendas novas entram na
+#      reconciliacao do dia seguinte (lag de 1 dia e aceitavel).
+#   4. Salva reports em artifact.
+#   5. Falha o job se a reconciliacao reportar erros (dispara email).
+#
+# Resiliencia a quota Sienge:
+#   - actions/cache@v4 persiste .sienge-cache/ entre runs.
+#   - SIENGE_CACHE_TTL_MS=1h: o cron tenta buscar income fresco em cada rodada
+#     diaria, mas stale-on-error ainda usa o cache se o Sienge falhar.
+#   - stale-on-error em _sienge-http.mjs: se o Sienge bloquear, serve cache
+#     vencido em vez de quebrar o job.
+#
+# Idempotente: rodar 2x no mesmo dia = 0 updates no segundo run.
+#
+# Pre-requisitos (Secrets do repo):
+#   VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY
+#   SIENGE_USERNAME, SIENGE_PASSWORD, SIENGE_SUBDOMAIN
+
+name: Reconciliacao Pagamentos
+
+on:
+  # 00:30 UTC = 21:30 BRT: a quota bulk-data do Sienge reseta a 00h UTC,
+  # entao rodar logo depois pega a quota cheia e o app ao vivo ocioso.
+  # GitHub so dispara schedule a partir do branch default (main).
+  schedule:
+    - cron: '30 0 * * *' # 21:30 BRT
+  workflow_dispatch: # disparo manual via aba Actions
+
+concurrency:
+  group: reconciliacao-pagamentos-prod
+  cancel-in-progress: false
+
+jobs:
+  reconciliar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install deps
+        run: npm ci
+
+      - name: Ensure Sienge cache dir
+        run: mkdir -p .sienge-cache
+
+      # Persiste o cache /bulk-data/v1/income entre runs do cron.
+      # Combinado com SIENGE_CACHE_TTL_MS=1h e stale-on-error no
+      # _sienge-http.mjs, busca dados frescos todo dia sem perder
+      # resiliencia quando o Sienge fica indisponivel.
+      - name: Restore Sienge cache
+        id: sienge-cache
+        uses: actions/cache/restore@v4
+        with:
+          path: .sienge-cache
+          key: sienge-cache-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: |
+            sienge-cache-
+
+      # Seed inicial — pula se cache nao-vazio OU se secret SIENGE_CACHE_SEED_URL
+      # ausente. URL deve apontar pra um zip do .sienge-cache/ (Supabase Storage
+      # privado, GitHub Release asset privado, etc). Procedimento documentado em
+      # docs/specs/sienge-cache-seed.md.
+      - name: Seed cache (so se vazio e secret presente)
+        env:
+          SIENGE_CACHE_SEED_URL: ${{ secrets.SIENGE_CACHE_SEED_URL }}
+        run: |
+          if [ -z "$SIENGE_CACHE_SEED_URL" ]; then
+            echo "SIENGE_CACHE_SEED_URL ausente, pulando seed. Se o cache restaurado estiver vazio e o Sienge falhar, o job vai falhar com erro claro."
+            exit 0
+          fi
+          if [ -d .sienge-cache ] && [ -n "$(ls -A .sienge-cache 2>/dev/null)" ]; then
+            echo "Cache nao-vazio, pulando seed ($(ls .sienge-cache | wc -l) arquivos)"
+            exit 0
+          fi
+          echo "Cache vazio, baixando seed..."
+          mkdir -p .sienge-cache
+          curl -fsSL "$SIENGE_CACHE_SEED_URL" -o /tmp/seed.zip
+          unzip -q /tmp/seed.zip -d .sienge-cache
+          echo "Seed restaurado: $(ls .sienge-cache | wc -l) arquivos"
+
+      # Etapa 1 — corrige drift de data_prevista. Roda PRIMEIRO pra a chamada
+      # de income (1 call bulk-data) pegar a quota Sienge cheia. Em dias sem
+      # refresh de cache, le do cache persistido (0 chamadas).
+      - name: Gerar plano de correcao
+        run: node scripts/gerar-plano-correcao-data-prevista.mjs
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          SIENGE_USERNAME: ${{ secrets.SIENGE_USERNAME }}
+          SIENGE_PASSWORD: ${{ secrets.SIENGE_PASSWORD }}
+          SIENGE_SUBDOMAIN: ${{ secrets.SIENGE_SUBDOMAIN }}
+          SIENGE_MAX_RETRIES: '6'
+          SIENGE_5XX_BASE_DELAY_MS: '15000'
+          SIENGE_5XX_MAX_DELAY_MS: '90000'
+          SIENGE_CACHE_TTL_MS: '3600000' # 1h — tenta income fresco em cada cron; usa stale se Sienge falhar
+
+      - name: Aplicar plano
+        run: node scripts/aplicar-correcao-data-prevista.mjs --apply
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+
+      # Etapa 2 — reconciliacao geral. Le o income do cache populado pela
+      # etapa 1 (mesma URL/range => cache hit, 0 chamadas Sienge).
+      - name: Reconciliar todas as vendas
+        run: node scripts/reconciliar-todas-vendas.mjs --apply
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          SIENGE_USERNAME: ${{ secrets.SIENGE_USERNAME }}
+          SIENGE_PASSWORD: ${{ secrets.SIENGE_PASSWORD }}
+          SIENGE_SUBDOMAIN: ${{ secrets.SIENGE_SUBDOMAIN }}
+          SIENGE_MAX_RETRIES: '6'
+          SIENGE_5XX_BASE_DELAY_MS: '15000'
+          SIENGE_5XX_MAX_DELAY_MS: '90000'
+          SIENGE_CACHE_TTL_MS: '3600000' # 1h — tenta income fresco em cada cron; usa stale se Sienge falhar
+
+      # Etapa 3 — sincroniza sales-contracts + receivable-bills via edge
+      # function (service_role; bypass em auth.ts). Best-effort: roda por
+      # ultimo e nao derruba o job se a quota Sienge acabar aqui — o nucleo
+      # (reconciliacao) ja rodou. Vendas novas entram no run seguinte.
+      - name: Sincronizar vendas Sienge
+        continue-on-error: true
+        run: node scripts/sincronizar-vendas-sienge.mjs
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+
+      - name: Upload report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: reconciliation-report-${{ github.run_id }}
+          path: |
+            docs/plano-correcao-data-prevista-*.json
+            docs/aplicacao-data-prevista-*.json
+            docs/reconciliacao-geral-*.json
+            docs/sincronizacao-vendas-sienge-*.json
+          retention-days: 30
+
+      - name: Check Sienge cache contents
+        id: sienge-cache-state
+        if: always()
+        run: |
+          if find .sienge-cache -type f -name '*.json' | grep -q .; then
+            echo "has-files=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has-files=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Save Sienge cache
+        if: always() && steps.sienge-cache-state.outputs.has-files == 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: .sienge-cache
+          key: sienge-cache-${{ github.run_id }}-${{ github.run_attempt }}
+
+      # Falha ruidosa: se houver erros em qualquer report, marca o job como
+      # failed pra disparar email do GitHub Actions.
+      - name: Verificar erros
+        run: |
+          set -e
+          fail=0
+          # data_prevista
+          R=$(ls -t docs/aplicacao-data-prevista-*.json 2>/dev/null | head -1)
+          if [ -n "$R" ]; then
+            E=$(jq '.counts.errors' "$R"); U=$(jq '.counts.updated' "$R")
+            echo "data_prevista: updated=$U errors=$E ($R)"
+            [ "$E" -gt 0 ] && fail=1
+          fi
+          # reconciliacao geral
+          R=$(ls -t docs/reconciliacao-geral-*-aplicado.json 2>/dev/null | head -1)
+          if [ -n "$R" ]; then
+            E=$(jq '.aplicacao.err // 0' "$R")
+            P=$(jq '.aplicacao.okPop // 0' "$R")
+            M=$(jq '.aplicacao.okMarc // 0' "$R")
+            Rt=$(jq '.aplicacao.okReat // 0' "$R")
+            C=$(jq '.aplicacao.okCriar // 0' "$R")
+            RH=$(jq '.revisao_humana | length' "$R")
+            echo "reconciliacao geral: populados=$P marcados=$M reativados=$Rt criados=$C revisao_humana=$RH errors=$E"
+            [ "$E" -gt 0 ] && fail=1
+          fi
+          if [ "$fail" -ne 0 ]; then
+            echo "::error::Reconciliacao reportou erros — veja o artifact"
+            exit 1
+          fi

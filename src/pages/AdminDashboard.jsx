@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { supabase } from '../lib/supabase'
@@ -8,12 +8,16 @@ import autoTable from 'jspdf-autotable'
 import { 
   Users, DollarSign, TrendingUp, Plus, Edit2, Trash2, 
   Search, Filter, LogOut, Menu, X, ChevronDown, Save, Eye,
-  Calculator, Calendar, User, Briefcase, CheckCircle, Clock, UserPlus, Mail, Lock, Percent, Building, PlusCircle, CreditCard, Check, Upload, FileText, Trash, UserCircle, Phone, MapPin, Camera, Download, FileDown, LayoutDashboard, ChevronLeft, ChevronRight, PanelLeftClose, PanelLeft, AlertCircle, RefreshCw, ClipboardList, CheckCircle2, XCircle, MessageSquare, Undo2
+  Calculator, Calendar, User, Briefcase, CheckCircle, Clock, UserPlus, Mail, Lock, Percent, Building, PlusCircle, CreditCard, Check, Upload, FileText, Trash, UserCircle, Phone, MapPin, Camera, Download, FileDown, LayoutDashboard, ChevronLeft, ChevronRight, PanelLeftClose, PanelLeft, AlertCircle, RefreshCw, ClipboardList, CheckCircle2, XCircle, MessageSquare, Undo2, ShieldAlert, Radar, ArrowRight, ListChecks
 } from 'lucide-react'
 import logo from '../imgs/logo.png'
 import Ticker from '../components/Ticker'
 import HomeDashboard from './HomeDashboard'
+import NotasAtualizacaoModal from '../components/NotasAtualizacaoModal'
+import AtualizacoesView from '../components/AtualizacoesView'
+import { Sparkles } from 'lucide-react'
 import EmpreendimentoGaleria from '../components/EmpreendimentoGaleria'
+import ProfilePhotoModal from '../components/ProfilePhotoModal'
 // import CadastrarCorretores from '../components/CadastrarCorretores'
 // import ImportarVendas from '../components/ImportarVendas'
 import '../styles/Dashboard.css'
@@ -81,6 +85,468 @@ const COLUNAS_IMUTAVEIS_PAGO = [
   'tipo', 'status', 'comissao_gerada',
   'created_at', 'valor', 'data_pagamento',
 ]
+
+const AUDITORIA_TIPOS = {
+  duplicidade_parcela: { label: 'Parcela duplicada', tone: 'danger' },
+  duplicidade_cancelada: { label: 'Historico cancelada + ativa', tone: 'warning' },
+  baixa_futura: { label: 'Baixa futura', tone: 'warning' },
+  baixa_adiantada: { label: 'Baixa antecipada sem ancora', tone: 'warning' },
+  sequencia_faltando: { label: 'Sequencia local faltando', tone: 'warning' },
+  unidade_duplicada: { label: 'Unidade duplicada', tone: 'warning' },
+  unidade_parecida: { label: 'Unidade parecida', tone: 'warning' },
+  corretor_divergente: { label: 'Corretor divergente', tone: 'warning' },
+  comissao_divergente: { label: 'Comissao divergente', tone: 'danger' },
+  venda_sem_pagamento: { label: 'Venda sem parcelas', tone: 'warning' },
+}
+
+const AUDITORIA_SEVERIDADE = {
+  alta: { label: 'Alta', priority: 3 },
+  media: { label: 'Media', priority: 2 },
+  baixa: { label: 'Baixa', priority: 1 },
+}
+
+const normalizeAuditText = (value = '') =>
+  String(value)
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+
+const getVendaClienteNome = (venda) =>
+  venda?.cliente?.nome || venda?.cliente_nome || venda?.nome_cliente || 'Cliente nao informado'
+
+const getVendaCorretorNome = (venda) =>
+  venda?.corretor?.nome || venda?.corretor_nome || 'Corretor nao informado'
+
+const getVendaEmpreendimentoNome = (venda) =>
+  venda?.empreendimento?.nome || venda?.empreendimento_nome || 'Empreendimento nao informado'
+
+const getVendaUnidadeLabel = (venda) => {
+  const bloco = venda?.bloco ? `Bloco ${venda.bloco} - ` : ''
+  return `${bloco}Unidade ${venda?.unidade || '-'}`
+}
+
+const getAuditPaymentKey = (pag) => {
+  const billId = pag?.sienge_bill_id ? String(pag.sienge_bill_id) : ''
+  const installmentId = pag?.sienge_installment_id ? String(pag.sienge_installment_id) : ''
+  if (billId && installmentId) return `sienge|${billId}|${installmentId}`
+  if (installmentId) return `sienge-installment|${installmentId}`
+
+  const valor = Number.parseFloat(pag?.valor)
+  const valorKey = Number.isFinite(valor) ? valor.toFixed(2) : 'sem_valor'
+  const dataKey = pag?.data_prevista || 'sem_data'
+  const numeroKey = pag?.numero_parcela ?? 'sem_numero'
+  const billKey = billId || 'sem_bill'
+  return `financeiro|${billKey}|${pag?.tipo || 'sem_tipo'}|${numeroKey}|${valorKey}|${dataKey}`
+}
+
+const getAuditPaymentKeyDescription = (group = []) => {
+  if (group.some((pag) => pag?.sienge_installment_id)) {
+    return 'mesma ancora Sienge'
+  }
+  if (group.some((pag) => pag?.numero_parcela !== null && pag?.numero_parcela !== undefined)) {
+    return 'mesmo tipo, numero, valor e vencimento'
+  }
+  return 'mesmo tipo, valor e vencimento'
+}
+
+const hasSiengePaymentAnchor = (pag) =>
+  Boolean(pag?.sienge_installment_id || pag?.sienge_bill_id)
+
+const getAuditUnitSuffix = (unit) =>
+  normalizeAuditText(unit).replace(/\s/g, '').replace(/\d/g, '')
+
+const getAuditMonth = (dateStr) => {
+  const data = parseDataLocal(dateStr)
+  return data ? data.getMonth() + 1 : null
+}
+
+const extractAuditMonths = (text) => {
+  const normalized = normalizeAuditText(text)
+  const months = new Set()
+  const monthNames = {
+    janeiro: 1, jan: 1,
+    fevereiro: 2, fev: 2,
+    marco: 3, mar: 3,
+    abril: 4, abr: 4,
+    maio: 5, mai: 5,
+    junho: 6, jun: 6,
+    julho: 7, jul: 7,
+    agosto: 8, ago: 8,
+    setembro: 9, set: 9,
+    outubro: 10, out: 10,
+    novembro: 11, nov: 11,
+    dezembro: 12, dez: 12,
+  }
+
+  for (const [name, month] of Object.entries(monthNames)) {
+    if (normalized.includes(name)) months.add(month)
+  }
+
+  const monthPattern = /\bmes\s*(\d{1,2})\b|\bm\s*(\d{1,2})\b/g
+  let match
+  while ((match = monthPattern.exec(normalized)) !== null) {
+    const month = Number(match[1] || match[2])
+    if (month >= 1 && month <= 12) months.add(month)
+  }
+
+  return Array.from(months)
+}
+
+const detectAuditIntentTypes = (text) => {
+  const normalized = normalizeAuditText(text)
+  const types = new Set()
+  if (!normalized) return []
+
+  if (/(duplic|igual|repetid|mesma unidade|unidade iguais|corretores diferentes)/.test(normalized)) {
+    types.add('duplicidade_parcela')
+    types.add('unidade_duplicada')
+    types.add('unidade_parecida')
+  }
+  if (/(baixa|baixad|pago|pagou|pagamento)/.test(normalized) && /(futur|mes 6|mes 7|junho|julho|adiant)/.test(normalized)) {
+    types.add('baixa_futura')
+    types.add('baixa_adiantada')
+  }
+  if (/(falt|nao tem|sem parcela|sumiu|ausente|mes 5|maio)/.test(normalized)) {
+    types.add('sequencia_faltando')
+    types.add('venda_sem_pagamento')
+  }
+  if (/(interno|externo|corretor|percent|porcent|20|22|20 08)/.test(normalized)) {
+    types.add('corretor_divergente')
+    types.add('comissao_divergente')
+  }
+  if (/(cancelad|cancelado)/.test(normalized)) {
+    types.add('duplicidade_cancelada')
+  }
+
+  return Array.from(types)
+}
+
+const createAuditIssue = (issue) => {
+  const venda = issue.venda
+  const textParts = [
+    issue.type,
+    AUDITORIA_TIPOS[issue.type]?.label,
+    issue.title,
+    issue.description,
+    issue.severity,
+    getVendaEmpreendimentoNome(venda),
+    getVendaCorretorNome(venda),
+    getVendaClienteNome(venda),
+    getVendaUnidadeLabel(venda),
+    ...(issue.tags || []),
+  ]
+
+  return {
+    ...issue,
+    id: issue.id || `${issue.type}-${issue.venda?.id || 'sem-venda'}-${issue.ref || Math.random().toString(36).slice(2)}`,
+    searchableText: normalizeAuditText(textParts.join(' ')),
+  }
+}
+
+const addAuditIssue = (issues, issue) => {
+  issues.push(createAuditIssue(issue))
+}
+
+const buildAuditIssues = ({ vendas = [], pagamentos = [] }) => {
+  const issues = []
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+
+  const vendasAuditaveis = vendas.filter((venda) => !venda?.excluido)
+  const vendaMap = new Map(vendasAuditaveis.map((venda) => [String(venda.id), venda]))
+  const pagamentosPorVenda = new Map()
+  const allByVendaKey = new Map()
+  const activeByVendaKey = new Map()
+
+  for (const pag of pagamentos) {
+    if (!pag?.venda_id) continue
+    const vendaId = String(pag.venda_id)
+    const vendaAuditavel = vendaMap.get(vendaId) || pag.venda
+    if (!vendaAuditavel || vendaAuditavel?.excluido) continue
+    if (!pagamentosPorVenda.has(vendaId)) pagamentosPorVenda.set(vendaId, [])
+    pagamentosPorVenda.get(vendaId).push(pag)
+
+    const key = `${vendaId}|${getAuditPaymentKey(pag)}`
+    if (!allByVendaKey.has(key)) allByVendaKey.set(key, [])
+    allByVendaKey.get(key).push(pag)
+    if (pag.status !== 'cancelado') {
+      if (!activeByVendaKey.has(key)) activeByVendaKey.set(key, [])
+      activeByVendaKey.get(key).push(pag)
+    }
+  }
+
+  for (const [key, group] of activeByVendaKey.entries()) {
+    if (group.length <= 1) continue
+    const [vendaId] = key.split('|')
+    const venda = vendaMap.get(vendaId) || group[0]?.venda
+    addAuditIssue(issues, {
+      type: 'duplicidade_parcela',
+      severity: 'alta',
+      venda,
+      pagamentos: group,
+      ref: key,
+      title: `${group.length} parcelas ativas com ${getAuditPaymentKeyDescription(group)}`,
+      description: `Parcelas ativas com ${getAuditPaymentKeyDescription(group)} aparecem mais de uma vez em ${getVendaUnidadeLabel(venda)}.`,
+      tags: ['parcela', 'duplicada', 'ativa'],
+      months: group.flatMap((p) => [getAuditMonth(p.data_prevista), getAuditMonth(p.data_pagamento)]).filter(Boolean),
+    })
+  }
+
+  for (const [key, group] of allByVendaKey.entries()) {
+    const ativos = group.filter((p) => p.status !== 'cancelado')
+    const cancelados = group.filter((p) => p.status === 'cancelado')
+    if (!ativos.length || !cancelados.length) continue
+    const [vendaId] = key.split('|')
+    const venda = vendaMap.get(vendaId) || group[0]?.venda
+    addAuditIssue(issues, {
+      type: 'duplicidade_cancelada',
+      severity: 'baixa',
+      venda,
+      pagamentos: group,
+      ref: key,
+      title: 'Historico cancelado convive com parcela ativa igual',
+      description: `${cancelados.length} cancelada(s) e ${ativos.length} ativa(s) com ${getAuditPaymentKeyDescription(group)}. Canceladas nao entram nos totais; revise apenas se a parcela aparecer indevidamente na tela.`,
+      tags: ['cancelado', 'duplicidade', 'historico', 'baixa prioridade'],
+      months: group.flatMap((p) => [getAuditMonth(p.data_prevista), getAuditMonth(p.data_pagamento)]).filter(Boolean),
+    })
+  }
+
+  for (const pag of pagamentos) {
+    if (pag.status === 'cancelado') continue
+    const venda = vendaMap.get(String(pag.venda_id)) || pag.venda
+    const dataPagamento = parseDataLocal(pag.data_pagamento)
+    const dataPrevista = parseDataLocal(pag.data_prevista)
+
+    if (pag.status === 'pago' && dataPagamento) {
+      const dataPagamentoDia = new Date(dataPagamento)
+      dataPagamentoDia.setHours(0, 0, 0, 0)
+      if (dataPagamentoDia > today) {
+        const possuiAncoraSienge = hasSiengePaymentAnchor(pag)
+        addAuditIssue(issues, {
+          type: 'baixa_futura',
+          severity: possuiAncoraSienge ? 'baixa' : 'alta',
+          venda,
+          pagamentos: [pag],
+          ref: pag.id,
+          title: possuiAncoraSienge ? 'Baixa futura vinda do Sienge' : 'Baixa marcada com data futura',
+          description: possuiAncoraSienge
+            ? `Parcela ${pag.numero_parcela || '-'} esta como paga em ${formatDataBR(pag.data_pagamento)} e possui ancora Sienge. Nao parece erro local de sincronizacao.`
+            : `Parcela ${pag.numero_parcela || '-'} esta como paga em ${formatDataBR(pag.data_pagamento)}, depois da data de hoje, sem ancora Sienge.`,
+          tags: possuiAncoraSienge ? ['baixa', 'futura', 'sienge'] : ['baixa', 'futura', 'pago', 'sem ancora'],
+          months: [getAuditMonth(pag.data_pagamento), getAuditMonth(pag.data_prevista)].filter(Boolean),
+        })
+      }
+
+      if (dataPrevista && !hasSiengePaymentAnchor(pag)) {
+        const diasAntecipados = Math.round((dataPrevista - dataPagamentoDia) / (1000 * 60 * 60 * 24))
+        if (diasAntecipados >= 20) {
+          addAuditIssue(issues, {
+            type: 'baixa_adiantada',
+            severity: 'baixa',
+            venda,
+            pagamentos: [pag],
+            ref: pag.id,
+            title: 'Baixa antecipada ainda sem ancora Sienge',
+            description: `Parcela ${pag.numero_parcela || '-'} foi baixada ${diasAntecipados} dias antes da previsao e ainda nao tem bill/installment do Sienge gravado.`,
+            tags: ['baixa', 'antecipada', 'sienge', 'sem ancora'],
+            months: [getAuditMonth(pag.data_pagamento), getAuditMonth(pag.data_prevista)].filter(Boolean),
+          })
+        }
+      }
+    }
+
+    if (pag.status !== 'pago') {
+      const valor = parseFloat(pag.valor) || 0
+      const fator = parseFloat(pag.fator_comissao_aplicado) || 0
+      const comissao = parseFloat(pag.comissao_gerada) || 0
+      if (valor > 0 && fator > 0 && comissao > 0) {
+        const esperada = valor * fator
+        const diferenca = Math.abs(esperada - comissao)
+        if (diferenca > Math.max(0.1, esperada * 0.01)) {
+          addAuditIssue(issues, {
+            type: 'comissao_divergente',
+            severity: 'alta',
+            venda,
+            pagamentos: [pag],
+            ref: pag.id,
+            title: 'Comissao pendente diverge do fator aplicado',
+            description: `Parcela ${pag.numero_parcela || '-'} tem diferenca de R$ ${diferenca.toFixed(2)} entre fator e comissao gravada.`,
+            tags: ['comissao', 'fator', 'percentual', 'pendente'],
+            months: [getAuditMonth(pag.data_prevista), getAuditMonth(pag.data_pagamento)].filter(Boolean),
+          })
+        }
+      }
+    }
+  }
+
+  for (const venda of vendasAuditaveis) {
+    const vendaId = String(venda.id)
+    const pagamentosVenda = pagamentosPorVenda.get(vendaId) || []
+    const ativos = pagamentosVenda.filter((p) => p.status !== 'cancelado')
+    const valorProSoluto = parseFloat(venda.valor_pro_soluto) || 0
+    if (valorProSoluto > 0 && ativos.length === 0) {
+      addAuditIssue(issues, {
+        type: 'venda_sem_pagamento',
+        severity: 'media',
+        venda,
+        pagamentos: [],
+        ref: venda.id,
+        title: 'Venda com pro-soluto sem parcelas ativas',
+        description: `Venda possui pro-soluto de R$ ${valorProSoluto.toFixed(2)}, mas nao tem pagamentos ativos vinculados.`,
+        tags: ['sem parcelas', 'pro soluto', 'pagamentos'],
+      })
+    }
+
+    const porTipo = new Map()
+    for (const pag of ativos) {
+      if (!['parcela', 'parcela_entrada', 'balao'].includes(pag.tipo)) continue
+      const numero = Number(pag.numero_parcela)
+      if (!numero || numero < 1) continue
+      const key = pag.tipo
+      if (!porTipo.has(key)) porTipo.set(key, new Set())
+      porTipo.get(key).add(numero)
+    }
+
+    for (const [tipo, numeros] of porTipo.entries()) {
+      const lista = Array.from(numeros).sort((a, b) => a - b)
+      const max = lista[lista.length - 1]
+      if (!max || max < 3) continue
+      const pagamentosTipo = ativos.filter((p) => p.tipo === tipo)
+      if (pagamentosTipo.some(hasSiengePaymentAnchor)) continue
+      const faltando = []
+      for (let n = 1; n <= max; n++) {
+        if (!numeros.has(n)) faltando.push(n)
+      }
+      if (faltando.length) {
+        addAuditIssue(issues, {
+          type: 'sequencia_faltando',
+          severity: 'media',
+          venda,
+          pagamentos: pagamentosTipo,
+          ref: `${venda.id}-${tipo}`,
+          title: `Sequencia local de ${tipo.replace('_', ' ')} com lacuna`,
+          description: `Faltam as parcelas ${faltando.slice(0, 8).join(', ')} antes da parcela ${max}. Caso Sienge sem ancora, revise a grade local.`,
+          tags: ['sequencia', 'faltando', 'parcela', 'sem ancora'],
+          missingNumbers: faltando,
+        })
+      }
+    }
+
+    const tipoVenda = normalizeAuditText(venda.tipo_corretor)
+    const tipoCorretor = normalizeAuditText(venda.corretor?.tipo_corretor)
+    if (tipoVenda && tipoCorretor && tipoVenda !== tipoCorretor) {
+      addAuditIssue(issues, {
+        type: 'corretor_divergente',
+        severity: 'media',
+        venda,
+        pagamentos: ativos,
+        ref: venda.id,
+        title: 'Tipo do corretor diverge da venda',
+        description: `Venda esta como ${venda.tipo_corretor}, mas cadastro do corretor esta como ${venda.corretor?.tipo_corretor}.`,
+        tags: ['corretor', 'interno', 'externo', 'tipo'],
+      })
+    }
+  }
+
+  const exactUnitGroups = new Map()
+  const digitUnitGroups = new Map()
+  for (const venda of vendasAuditaveis) {
+    const unidadeRaw = String(venda.unidade || '').trim()
+    if (!unidadeRaw) continue
+    const empKey = String(venda.empreendimento_id || 'sem-emp')
+    const blocoKey = normalizeAuditText(venda.bloco || 'sem-bloco')
+    const unitKey = normalizeAuditText(unidadeRaw).replace(/\s/g, '')
+    const digitsKey = unidadeRaw.replace(/\D/g, '')
+    const exactKey = `${empKey}|${blocoKey}|${unitKey}`
+    if (!exactUnitGroups.has(exactKey)) exactUnitGroups.set(exactKey, [])
+    exactUnitGroups.get(exactKey).push(venda)
+    if (digitsKey) {
+      const digitKey = `${empKey}|${blocoKey}|${digitsKey}`
+      if (!digitUnitGroups.has(digitKey)) digitUnitGroups.set(digitKey, [])
+      digitUnitGroups.get(digitKey).push(venda)
+    }
+  }
+
+  for (const [key, group] of exactUnitGroups.entries()) {
+    if (group.length <= 1) continue
+    const corretoresIds = new Set(group.map((v) => v.corretor_id).filter(Boolean))
+    const clientesIds = new Set(group.map((v) => v.cliente_id).filter(Boolean))
+    const contratoIds = group.map((v) => v.sienge_contract_id).filter(Boolean).map(String)
+    const contratosUnicos = new Set(contratoIds)
+    const todasComContratoSienge = contratoIds.length === group.length
+    const contratoSiengeRepetido = contratosUnicos.size < contratoIds.length
+    const precisaRevisaoForte = !todasComContratoSienge || contratoSiengeRepetido
+    addAuditIssue(issues, {
+      type: 'unidade_duplicada',
+      severity: precisaRevisaoForte ? 'alta' : 'baixa',
+      venda: group[0],
+      vendasRelacionadas: group,
+      ref: key,
+      title: todasComContratoSienge
+        ? `${group.length} contratos Sienge para a mesma unidade`
+        : `${group.length} vendas para a mesma unidade`,
+      description: todasComContratoSienge
+        ? `A mesma unidade aparece em ${group.length} contratos Sienge distintos. Pode ser revenda ou reemissao; revise apenas se os contratos nao deveriam coexistir.`
+        : `Mesmo empreendimento/bloco/unidade aparece em ${group.length} vendas e ao menos uma delas nao tem contrato Sienge ancorado.`,
+      tags: [
+        'unidade',
+        todasComContratoSienge ? 'contratos sienge' : 'duplicada',
+        corretoresIds.size > 1 ? 'corretores diferentes' : 'mesmo corretor',
+        clientesIds.size > 1 ? 'clientes diferentes' : 'mesmo cliente',
+      ],
+    })
+  }
+
+  for (const [key, group] of digitUnitGroups.entries()) {
+    const unidades = new Set(group.map((v) => normalizeAuditText(v.unidade).replace(/\s/g, '')))
+    if (group.length <= 1 || unidades.size <= 1) continue
+    const suffixes = new Set(group.map((v) => getAuditUnitSuffix(v.unidade)).filter(Boolean))
+    const allHaveSuffix = group.every((v) => getAuditUnitSuffix(v.unidade))
+    if (allHaveSuffix && suffixes.size > 1) continue
+    addAuditIssue(issues, {
+      type: 'unidade_parecida',
+      severity: 'media',
+      venda: group[0],
+      vendasRelacionadas: group,
+      ref: key,
+      title: 'Unidades parecidas pelo numero',
+      description: `Unidades com o mesmo numero podem estar faltando letra ou sufixo: ${Array.from(unidades).slice(0, 6).join(', ')}.`,
+      tags: ['unidade', 'letra', 'parecida'],
+    })
+  }
+
+  return issues.sort((a, b) => {
+    const sev = (AUDITORIA_SEVERIDADE[b.severity]?.priority || 0) - (AUDITORIA_SEVERIDADE[a.severity]?.priority || 0)
+    if (sev !== 0) return sev
+    return (b.pagamentos?.length || b.vendasRelacionadas?.length || 0) - (a.pagamentos?.length || a.vendasRelacionadas?.length || 0)
+  })
+}
+
+const scoreAuditIssue = (issue, reportText) => {
+  const query = normalizeAuditText(reportText)
+  if (!query) return 1
+
+  const intentTypes = detectAuditIntentTypes(query)
+  const queryMonths = extractAuditMonths(query)
+  let score = 0
+
+  if (intentTypes.includes(issue.type)) score += 8
+  if (issue.searchableText.includes(query)) score += 6
+
+  const words = query.split(' ').filter((word) => word.length >= 3)
+  for (const word of words) {
+    if (issue.searchableText.includes(word)) score += 1
+  }
+
+  if (queryMonths.length && issue.months?.some((month) => queryMonths.includes(month))) {
+    score += 4
+  }
+
+  return score
+}
 
 /**
  * Verifica se uma venda possui ao menos uma parcela auditada (status='pago').
@@ -166,6 +632,15 @@ function detectarMudancaEstrutural(pagamentosExistentes, vendaForm) {
  * Propaga mudanças de cronograma (data_entrada, periodicidade, overrides)
  * para pagamentos existentes, atualizando APENAS data_prevista das linhas pago
  * e substituindo linhas pendente. RF-3 / §E da SPEC.
+ *
+ * Particiona em 3 grupos por status:
+ *   - pagos: imutáveis (só data_prevista pode mudar — migration 020)
+ *   - pendentes: editáveis (UPDATE/INSERT/DELETE conforme grade nova)
+ *   - cancelados: IGNORADOS. Permanecem no banco pra auditoria mas não participam
+ *     de match nem de delete. Antes (pré-2026-05-13) o filter `!== 'pago'` agregava
+ *     cancelados como pendentes — gerando duplicatas de numero_parcela quando o
+ *     gerador re-inseria a chave colidida (ver varredura 2026-05-13: 11 vendas
+ *     com par cancelado+ativo). Spec: .claude/rules/sincronizacao-sienge.md.
  */
 async function propagarCronogramaCirurgico({
   supabaseClient,
@@ -176,7 +651,8 @@ async function propagarCronogramaCirurgico({
   const chaveDe = (p) => `${p.tipo}__${p.numero_parcela ?? ''}`
 
   const pagos = pagamentosExistentes.filter(p => p.status === 'pago')
-  const pendentes = pagamentosExistentes.filter(p => p.status !== 'pago')
+  const pendentes = pagamentosExistentes.filter(p => p.status === 'pendente')
+  // cancelados: nao tocar — sao apenas registros historicos
 
   // 1) Linhas PAGAS: só atualizar data_prevista (demais campos bloqueados pelo trigger 018)
   for (const pago of pagos) {
@@ -225,7 +701,9 @@ async function propagarCronogramaCirurgico({
     }
   }
 
-  // DELETE pendentes antigos sem correspondente no novo cronograma
+  // DELETE pendentes antigos sem correspondente no novo cronograma.
+  // .eq('status', 'pendente') eh defesa em profundidade — trigger 017 ja bloqueia
+  // delete de pago no DB, e cancelados nao devem ser tocados por esta funcao.
   const idsParaRemover = pendentes
     .filter(p => !chavesNovasAplicaveis.has(chaveDe(p)))
     .map(p => p.id)
@@ -234,6 +712,7 @@ async function propagarCronogramaCirurgico({
       .from('pagamentos_prosoluto')
       .delete()
       .in('id', idsParaRemover)
+      .eq('status', 'pendente')
     if (error) throw error
   }
 
@@ -290,6 +769,21 @@ const AdminDashboard = () => {
     const saved = safeGet('sidebar-collapsed')
     return saved === 'true'
   })
+
+  // Modal de foto de perfil — abre forçado se admin ainda não cadastrou foto
+  const [photoModalOpen, setPhotoModalOpen] = useState(false)
+  const [photoModalForced, setPhotoModalForced] = useState(false)
+
+  useEffect(() => {
+    if (userProfile && !userProfile.foto_url) {
+      setPhotoModalOpen(true)
+      setPhotoModalForced(true)
+    } else if (userProfile?.foto_url && photoModalForced) {
+      setPhotoModalOpen(false)
+      setPhotoModalForced(false)
+    }
+  }, [photoModalForced, userProfile])
+
   const [searchTerm, setSearchTerm] = useState('')
   const [siengeSyncLoading, setSiengeSyncLoading] = useState(null)
   const [siengeSyncResult, setSiengeSyncResult] = useState(null)
@@ -427,6 +921,10 @@ const AdminDashboard = () => {
     dataFim: '',
     buscaVenda: ''
   })
+
+  const [auditoriaRelato, setAuditoriaRelato] = useState('')
+  const [auditoriaTipoFiltro, setAuditoriaTipoFiltro] = useState('todos')
+  const [auditoriaSeveridadeFiltro, setAuditoriaSeveridadeFiltro] = useState('todos')
   
   // Filtros para Corretores
   const [filtrosCorretores, setFiltrosCorretores] = useState({
@@ -463,11 +961,14 @@ const AdminDashboard = () => {
   const [excluindoBaixa, setExcluindoBaixa] = useState(false)
   const [pagamentoParaConfirmar, setPagamentoParaConfirmar] = useState(null)
 
-  // Estados para modal de Exclusão/Distrato de Venda
+  // Estados para modal de Exclusão/Distrato de Venda.
+  // step: 1 = escolha (excluir vs distrato), 2 = data do distrato, 3 = motivo da exclusao.
+  // Motivo (>= 10 chars) eh obrigatorio pra excluido=true (migration 022 enforce via CHECK).
   const [showModalExcluirVenda, setShowModalExcluirVenda] = useState(false)
   const [vendaParaExcluir, setVendaParaExcluir] = useState(null)
-  const [modalExcluirVendaStep, setModalExcluirVendaStep] = useState(1) // 1: escolha, 2: data distrato
+  const [modalExcluirVendaStep, setModalExcluirVendaStep] = useState(1)
   const [dataDistrato, setDataDistrato] = useState('')
+  const [motivoExclusao, setMotivoExclusao] = useState('')
   const [processandoExclusaoVenda, setProcessandoExclusaoVenda] = useState(false)
   const [formConfirmarPagamento, setFormConfirmarPagamento] = useState({
     valorPersonalizado: '',
@@ -541,43 +1042,55 @@ const AdminDashboard = () => {
     }, ms)
   }
 
-  // Agrupar pagamentos por venda
-  const pagamentosAgrupados = pagamentos.reduce((acc, pag) => {
-    const vendaId = pag.venda_id
-    if (!vendaId) return acc // Ignorar pagamentos sem venda_id
-    
-    // Comparação segura de IDs
-    const vendaIdStr = String(vendaId)
-    
-    if (!acc[vendaIdStr]) {
-      // Buscar venda completa se não estiver no pag.venda
-      const vendaCompleta = pag.venda || vendas.find(v => String(v.id) === vendaIdStr)
-      
-      if (!vendaCompleta) {
-        console.warn('⚠️ Venda não encontrada para pagamento:', vendaId)
-        return acc
+  // Agrupar pagamentos por venda.
+  // useMemo: roda só quando pagamentos/vendas mudam. Antes era recalculado a
+  // cada render (incluindo todos os re-renders do AuthContext durante o login),
+  // o que disparava console.warn em loop pros pagamentos órfãos.
+  const pagamentosAgrupados = useMemo(() => {
+    const acc = {}
+    const vendaIdsOrfaos = new Set()
+    for (const pag of pagamentos) {
+      const vendaId = pag.venda_id
+      if (!vendaId) continue
+      const vendaIdStr = String(vendaId)
+      if (!acc[vendaIdStr]) {
+        const vendaCompleta = pag.venda || vendas.find(v => String(v.id) === vendaIdStr)
+        if (!vendaCompleta) {
+          vendaIdsOrfaos.add(vendaIdStr)
+          continue
+        }
+        acc[vendaIdStr] = {
+          venda_id: vendaId,
+          venda: vendaCompleta,
+          pagamentos: [],
+          totalValor: 0,
+          totalComissao: 0,
+          totalPago: 0,
+          totalPendente: 0
+        }
       }
-      
-      acc[vendaIdStr] = {
-        venda_id: vendaId,
-        venda: vendaCompleta,
-        pagamentos: [],
-        totalValor: 0,
-        totalComissao: 0,
-        totalPago: 0,
-        totalPendente: 0
+      acc[vendaIdStr].pagamentos.push(pag)
+      // Linhas com status='cancelado' permanecem na lista pra auditoria mas
+      // nao entram em nenhum total. Ver .claude/rules/visualizacao-totais.md +
+      // varredura 2026-05-13: 11 vendas tem duplicatas (cancelado+ativo) que
+      // antes inflavam totalPendente.
+      if (pag.status === 'cancelado') continue
+      acc[vendaIdStr].totalValor += parseFloat(pag.valor) || 0
+      acc[vendaIdStr].totalComissao += parseFloat(pag.comissao_gerada) || 0
+      if (pag.status === 'pago') {
+        acc[vendaIdStr].totalPago += parseFloat(pag.comissao_gerada) || 0
+      } else {
+        acc[vendaIdStr].totalPendente += parseFloat(pag.comissao_gerada) || 0
       }
     }
-    acc[vendaIdStr].pagamentos.push(pag)
-    acc[vendaIdStr].totalValor += parseFloat(pag.valor) || 0
-    acc[vendaIdStr].totalComissao += parseFloat(pag.comissao_gerada) || 0
-    if (pag.status === 'pago') {
-      acc[vendaIdStr].totalPago += parseFloat(pag.comissao_gerada) || 0
-    } else {
-      acc[vendaIdStr].totalPendente += parseFloat(pag.comissao_gerada) || 0
+    if (vendaIdsOrfaos.size > 0) {
+      console.warn(
+        `⚠️ ${vendaIdsOrfaos.size} venda(s) órfã(s) — pagamentos cujo venda_id não bate com nenhuma venda carregada (provavelmente vendas com excluido=true).`,
+        Array.from(vendaIdsOrfaos).slice(0, 3)
+      )
     }
     return acc
-  }, {})
+  }, [pagamentos, vendas])
 
   const listaVendasComPagamentos = Object.values(pagamentosAgrupados)
   
@@ -598,7 +1111,7 @@ const AdminDashboard = () => {
     descricao: '',
     total_unidades: '',
     comissao_total_externo: '7',
-    comissao_total_interno: '6',
+    comissao_total_interno: '6.5',
     cargos_externo: [{ nome_cargo: '', percentual: '' }],
     cargos_interno: [{ nome_cargo: '', percentual: '' }],
     logo_url: '',
@@ -2332,21 +2845,34 @@ const AdminDashboard = () => {
     const hoje = new Date().toISOString().split('T')[0]
     setVendaParaExcluir(venda)
     setDataDistrato(hoje)
+    setMotivoExclusao('')
     setModalExcluirVendaStep(1)
     setShowModalExcluirVenda(true)
   }
 
   const processarExclusaoVenda = async () => {
     if (!vendaParaExcluir) return
+    const motivoTrim = (motivoExclusao || '').trim()
+    if (motivoTrim.length < 10) {
+      setMessage({ type: 'error', text: 'Motivo da exclusão é obrigatório (mín. 10 caracteres).' })
+      clearMessageAfter(4000)
+      return
+    }
     setProcessandoExclusaoVenda(true)
     try {
       const { error } = await supabase
         .from('vendas')
-        .update({ excluido: true })
+        .update({
+          excluido: true,
+          motivo_exclusao: motivoTrim,
+          excluido_por: userProfile?.id ?? null,
+          excluido_em: new Date().toISOString(),
+        })
         .eq('id', vendaParaExcluir.id)
       if (error) throw error
       setShowModalExcluirVenda(false)
       setVendaParaExcluir(null)
+      setMotivoExclusao('')
       fetchData()
       setMessage({ type: 'success', text: 'Venda excluída do sistema com sucesso!' })
       clearMessageAfter(3000)
@@ -2495,7 +3021,7 @@ const AdminDashboard = () => {
             descricao: empreendimentoForm.descricao,
             total_unidades: empreendimentoForm.total_unidades ? parseInt(empreendimentoForm.total_unidades) : null,
             comissao_total_externo: parseFloat(empreendimentoForm.comissao_total_externo) || 7,
-            comissao_total_interno: parseFloat(empreendimentoForm.comissao_total_interno) || 6,
+            comissao_total_interno: parseFloat(empreendimentoForm.comissao_total_interno) || 6.5,
             logo_url: empreendimentoForm.logo_url || null,
             progresso_obra: parseInt(empreendimentoForm.progresso_obra) || 0
           })
@@ -2523,7 +3049,7 @@ const AdminDashboard = () => {
             descricao: empreendimentoForm.descricao,
             total_unidades: empreendimentoForm.total_unidades ? parseInt(empreendimentoForm.total_unidades) : null,
             comissao_total_externo: parseFloat(empreendimentoForm.comissao_total_externo) || 7,
-            comissao_total_interno: parseFloat(empreendimentoForm.comissao_total_interno) || 6,
+            comissao_total_interno: parseFloat(empreendimentoForm.comissao_total_interno) || 6.5,
             logo_url: empreendimentoForm.logo_url || null,
             progresso_obra: parseInt(empreendimentoForm.progresso_obra) || 0
           }])
@@ -4149,8 +4675,11 @@ const AdminDashboard = () => {
         }, new Map())
         dadosFiltrados = vendas.map(venda => {
           const pags = pagsPorVenda.get(venda.id) || []
-          const totalComissao = pags.reduce((acc, p) => acc + (parseFloat(p.comissao_gerada) || 0), 0)
-          const totalPago = pags.filter(p => p.status === 'pago').reduce((acc, p) => acc + (parseFloat(p.comissao_gerada) || 0), 0)
+          // Canceladas ficam no array (auditoria) mas fora dos totais — mesmo
+          // criterio do useMemo pagamentosAgrupados (linha ~582).
+          const pagsAtivos = pags.filter(p => p.status !== 'cancelado')
+          const totalComissao = pagsAtivos.reduce((acc, p) => acc + (parseFloat(p.comissao_gerada) || 0), 0)
+          const totalPago = pagsAtivos.filter(p => p.status === 'pago').reduce((acc, p) => acc + (parseFloat(p.comissao_gerada) || 0), 0)
           return {
             venda_id: venda.id,
             venda: venda,
@@ -4260,6 +4789,7 @@ const AdminDashboard = () => {
       if (relatorioFiltros.cargoId && !isTotalCargo) {
         dadosFiltrados.forEach(grupo => {
           grupo.pagamentos.forEach(pag => {
+            if (pag.status === 'cancelado') return
             const comissoesCargo = calcularComissaoPorCargoPagamento(pag)
             const cargoEncontrado = comissoesCargo.find(c => c.nome_cargo === relatorioFiltros.cargoId)
             if (cargoEncontrado) {
@@ -4271,16 +4801,23 @@ const AdminDashboard = () => {
       } else if ((isTotalCargo || isTodosCargos)) {
         dadosFiltrados.forEach(grupo => {
           grupo.pagamentos.forEach(pag => {
+            if (pag.status === 'cancelado') return
             const comissao = parseFloat(pag.comissao_gerada) || 0
             totalComissao += comissao
             if (pag.status === 'pago') totalPago += comissao
           })
         })
       } else if (percentualCorretorTotais !== null) {
+        // Filtrou por corretor sem cargo especifico — usa a comissao do cargo "Corretor"
+        // calculada via fator (calcularComissaoPorCargoPagamento respeita
+        // .claude/rules/fator-comissao.md). Antes aplicava percentual direto na parcela,
+        // o que subestima — ignora a relacao valor_venda/pro_soluto que o fator captura.
         dadosFiltrados.forEach(grupo => {
           grupo.pagamentos.forEach(pag => {
-            const valorParcela = parseFloat(pag.valor) || 0
-            const comissao = valorParcela * percentualCorretorTotais
+            if (pag.status === 'cancelado') return
+            const cargos = calcularComissaoPorCargoPagamento(pag)
+            const cargoCorretor = cargos.find(c => c.nome_cargo === 'Corretor' || c.nome_cargo?.toLowerCase().includes('corretor'))
+            const comissao = cargoCorretor?.valor ?? 0
             totalComissao += comissao
             if (pag.status === 'pago') totalPago += comissao
           })
@@ -4288,6 +4825,7 @@ const AdminDashboard = () => {
       } else {
         dadosFiltrados.forEach(grupo => {
           grupo.pagamentos.forEach(pag => {
+            if (pag.status === 'cancelado') return
             const comissao = parseFloat(pag.comissao_gerada) || 0
             totalComissao += comissao
             if (pag.status === 'pago') totalPago += comissao
@@ -4410,12 +4948,16 @@ const AdminDashboard = () => {
         // Calcular comissão da venda
         let comissaoVenda = 0
         if (percentualCorretorTotais !== null) {
+          // Soma viva da comissao do cargo "Corretor" via fator (ver .claude/rules/fator-comissao.md).
           comissaoVenda = grupo.pagamentos.reduce((acc, p) => {
-            const valorParcela = parseFloat(p.valor) || 0
-            return acc + (valorParcela * percentualCorretorTotais)
+            const cargos = calcularComissaoPorCargoPagamento(p)
+            const cargoCorretor = cargos.find(c => c.nome_cargo === 'Corretor' || c.nome_cargo?.toLowerCase().includes('corretor'))
+            return acc + (cargoCorretor?.valor ?? 0)
           }, 0)
         } else {
-          comissaoVenda = parseFloat(venda?.comissao_total) || grupo.totalComissao || grupo.pagamentos.reduce((acc, p) => acc + (parseFloat(p.comissao_gerada) || 0), 0)
+          // soma viva dos pagamentos — nao usar venda.comissao_total (snapshot stale
+          // em 89.7% das vendas, ver .claude/rules/visualizacao-totais.md)
+          comissaoVenda = grupo.totalComissao || grupo.pagamentos.reduce((acc, p) => acc + (parseFloat(p.comissao_gerada) || 0), 0)
         }
         
         // ========================================
@@ -4487,7 +5029,11 @@ const AdminDashboard = () => {
         let pctColIdx
         let comissaoColIdx
         
+        // Parcelas canceladas (duplicatas do gerador antigo) ficam de fora
+        // do relatorio financeiro — auditoria visual sobre essas linhas e' no
+        // dashboard admin.
         const pagamentosOrdenados = sortParcelas(grupo.pagamentos, 'calendario')
+          .filter(p => p.status !== 'cancelado')
 
         if (mostrarTodosCargos) {
           parcelas = []
@@ -4497,7 +5043,7 @@ const AdminDashboard = () => {
             const tipoFormatado = formatTipo(pag)
             const dataStr = formatDataBR(pag.data_prevista)
             const valorStr = formatCurrency(pag.valor)
-            const statusStr = pag.status === 'pago' ? 'PAGO' : 'PENDENTE'
+            const statusStr = pag.status === 'pago' ? 'PAGO' : pag.status === 'cancelado' ? 'CANCELADO' : 'PENDENTE'
             cargos.forEach(c => {
               const pct = valorParcela > 0 ? ((c.valor / valorParcela) * 100).toFixed(2) : '0,00'
               parcelas.push([tipoFormatado, dataStr, valorStr, statusStr, c.nome_cargo, `${pct.replace('.', ',')}%`, formatCurrency(c.valor)])
@@ -4535,7 +5081,7 @@ const AdminDashboard = () => {
               tipoFormatado,
               formatDataBR(pag.data_prevista),
               formatCurrency(pag.valor),
-              pag.status === 'pago' ? 'PAGO' : 'PENDENTE',
+              pag.status === 'pago' ? 'PAGO' : pag.status === 'cancelado' ? 'CANCELADO' : 'PENDENTE',
               `${percentualUsado.toFixed(2).replace('.', ',')}%`,
               formatCurrency(comissaoExibir)
             ]
@@ -4967,6 +5513,58 @@ const AdminDashboard = () => {
     return matchBusca && matchFgts && matchComplemento
   })
 
+  const auditoriaIssues = useMemo(() => buildAuditIssues({ vendas, pagamentos }), [vendas, pagamentos])
+
+  const auditoriaResumo = useMemo(() => {
+    return auditoriaIssues.reduce((acc, issue) => {
+      acc.total += 1
+      acc[issue.severity] = (acc[issue.severity] || 0) + 1
+      acc.porTipo[issue.type] = (acc.porTipo[issue.type] || 0) + 1
+      return acc
+    }, { total: 0, alta: 0, media: 0, baixa: 0, porTipo: {} })
+  }, [auditoriaIssues])
+
+  const auditoriaResultados = useMemo(() => {
+    return auditoriaIssues
+      .map(issue => ({ ...issue, matchScore: scoreAuditIssue(issue, auditoriaRelato) }))
+      .filter(issue => auditoriaTipoFiltro === 'todos' || issue.type === auditoriaTipoFiltro)
+      .filter(issue => auditoriaSeveridadeFiltro === 'todos' || issue.severity === auditoriaSeveridadeFiltro)
+      .filter(issue => !normalizeAuditText(auditoriaRelato) || issue.matchScore > 0)
+      .sort((a, b) => {
+        if (b.matchScore !== a.matchScore) return b.matchScore - a.matchScore
+        return (AUDITORIA_SEVERIDADE[b.severity]?.priority || 0) - (AUDITORIA_SEVERIDADE[a.severity]?.priority || 0)
+      })
+  }, [auditoriaIssues, auditoriaRelato, auditoriaTipoFiltro, auditoriaSeveridadeFiltro])
+
+  const solicitacoesPendentesCount = useMemo(
+    () => solicitacoes.filter(s => s.status === 'pendente').length,
+    [solicitacoes]
+  )
+
+  const adminMobileNavItems = [
+    { tab: 'dashboard', path: '/admin/dashboard', label: 'Inicio', icon: LayoutDashboard },
+    { tab: 'vendas', path: '/admin/vendas', label: 'Vendas', icon: DollarSign },
+    { tab: 'pagamentos', path: '/admin/pagamentos', label: 'Pagto', icon: CreditCard },
+    { tab: 'auditoria', path: '/admin/auditoria', label: 'Auditoria', icon: ShieldAlert, badge: auditoriaResumo.alta },
+    { tab: 'solicitacoes', path: '/admin/solicitacoes', label: 'Pedidos', icon: ClipboardList, badge: solicitacoesPendentesCount },
+  ]
+
+  const adminMobileQuickActions = [
+    {
+      label: 'Nova venda',
+      icon: PlusCircle,
+      action: () => {
+        resetVendaForm()
+        setSelectedItem(null)
+        setModalType('venda')
+        setShowModal(true)
+      },
+    },
+    { label: 'Auditoria', icon: ShieldAlert, action: () => navigate('/admin/auditoria'), badge: auditoriaResumo.alta },
+    { label: 'Pagamentos', icon: CreditCard, action: () => navigate('/admin/pagamentos') },
+    { label: 'Relatorio', icon: TrendingUp, action: () => navigate('/admin/relatorios') },
+  ]
+
   // Quando seleciona um corretor na venda, atualiza o tipo automaticamente
   const handleCorretorChange = (corretorId) => {
     const corretor = corretores.find(c => c.id === corretorId)
@@ -4988,6 +5586,16 @@ const AdminDashboard = () => {
       tipo_corretor: tipo,
       percentual_corretor: defaultPercentual
     })
+  }
+
+  const abrirVendaAuditoria = (venda) => {
+    if (!venda?.id) return
+    const vendaCompleta = vendas.find(v => String(v.id) === String(venda.id)) || venda
+    setSelectedItem(vendaCompleta)
+    setModalType('visualizar-venda')
+    setAbaVisualizarVenda('detalhes')
+    setShowModal(true)
+    fetchPagamentosVisualizacao(vendaCompleta.id)
   }
 
 
@@ -5111,7 +5719,7 @@ const AdminDashboard = () => {
   }
 
   return (
-    <div className="dashboard-container">
+    <div className="dashboard-container admin-shell">
       {/* Barra de Carregamento Global */}
       {(loading || authLoading) && (
         <div className="global-loading-overlay">
@@ -5192,6 +5800,17 @@ const AdminDashboard = () => {
             <CreditCard size={20} />
             <span>Pagamentos</span>
           </button>
+          <button
+            className={`nav-item ${activeTab === 'auditoria' ? 'active' : ''}`}
+            onClick={() => navigate('/admin/auditoria')}
+            title="Auditoria"
+          >
+            <ShieldAlert size={20} />
+            <span>Auditoria</span>
+            {auditoriaResumo.alta > 0 && (
+              <span className="nav-badge">{auditoriaResumo.alta}</span>
+            )}
+          </button>
           <button 
             className={`nav-item ${activeTab === 'clientes' ? 'active' : ''}`}
             onClick={() => navigate('/admin/clientes')}
@@ -5216,7 +5835,7 @@ const AdminDashboard = () => {
             <Eye size={20} />
             <span>Ver PDF</span>
           </button>
-          <button 
+          <button
             className={`nav-item ${activeTab === 'solicitacoes' ? 'active' : ''}`}
             onClick={() => navigate('/admin/solicitacoes')}
             title="Solicitações"
@@ -5226,6 +5845,14 @@ const AdminDashboard = () => {
             {solicitacoes.filter(s => s.status === 'pendente').length > 0 && (
               <span className="nav-badge">{solicitacoes.filter(s => s.status === 'pendente').length}</span>
             )}
+          </button>
+          <button
+            className={`nav-item ${activeTab === 'atualizacoes' ? 'active' : ''}`}
+            onClick={() => navigate('/admin/atualizacoes')}
+            title="Atualizações"
+          >
+            <Sparkles size={20} />
+            <span>Atualizações</span>
           </button>
           {/* Sincronizar Sienge - Oculto em produção */}
           {false && (
@@ -5249,9 +5876,18 @@ const AdminDashboard = () => {
             {sidebarCollapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
           </button>
           <div className="user-info">
-            <div className="user-avatar">
-              <User size={20} />
-            </div>
+            <button
+              type="button"
+              className="user-avatar"
+              onClick={() => { setPhotoModalOpen(true); setPhotoModalForced(false) }}
+              title="Trocar foto de perfil"
+            >
+              {userProfile?.foto_url ? (
+                <img src={userProfile.foto_url} alt={userProfile.nome || 'Foto'} />
+              ) : (
+                <User size={20} />
+              )}
+            </button>
             <div className="user-details">
               <span className="user-name">{userProfile?.nome || 'Admin'}</span>
               <span className="user-role">Administrador</span>
@@ -5291,10 +5927,12 @@ const AdminDashboard = () => {
             {activeTab === 'corretores' && 'Corretores'}
             {activeTab === 'empreendimentos' && 'Empreendimentos'}
             {activeTab === 'pagamentos' && 'Acompanhamento de Pagamentos'}
+            {activeTab === 'auditoria' && 'Central de Auditoria'}
             {activeTab === 'clientes' && 'Cadastro de Clientes'}
             {activeTab === 'relatorios' && 'Relatórios'}
             {activeTab === 'preview-pdf' && 'Ver PDF'}
             {activeTab === 'solicitacoes' && 'Solicitações'}
+            {activeTab === 'atualizacoes' && 'Atualizações'}
             {false && activeTab === 'sienge' && 'Sincronização Sienge'}
           </h1>
           <div className="header-actions">
@@ -5335,7 +5973,7 @@ const AdminDashboard = () => {
                     descricao: '',
                     total_unidades: '',
                     comissao_total_externo: '7',
-                    comissao_total_interno: '6',
+                    comissao_total_interno: '6.5',
                     cargos_externo: [{ nome_cargo: '', percentual: '' }],
                     cargos_interno: [{ nome_cargo: '', percentual: '' }],
                     logo_url: '',
@@ -5370,40 +6008,75 @@ const AdminDashboard = () => {
         {/* Content */}
         {activeTab === 'dashboard' && (
           <div style={{ padding: '0', flex: 1, overflow: 'auto' }}>
-            <section style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12, padding: 16, margin: 16 }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+            <section className="admin-mobile-home-panel" aria-label="Atalhos do administrador">
+              <div className="admin-mobile-identity">
                 <div>
-                  <strong style={{ fontSize: 14 }}>Sincronizar Sienge (backend - piloto)</strong>
-                  <div style={{ fontSize: 12, color: '#6b7280' }}>
+                  <span>Ola, {userProfile?.nome?.split(' ')?.[0] || 'Admin'}</span>
+                  <strong>Painel IM</strong>
+                </div>
+                <img src={logo} alt="IM Incorporadora" />
+              </div>
+              <button
+                type="button"
+                className="admin-mobile-assistant"
+                onClick={() => navigate('/admin/auditoria')}
+              >
+                <Radar size={18} />
+                <span>Descrever erro ou achar casos parecidos</span>
+                <ArrowRight size={16} />
+              </button>
+              <div className="admin-mobile-actions">
+                {adminMobileQuickActions.map((item) => {
+                  const Icon = item.icon
+                  return (
+                    <button
+                      key={item.label}
+                      type="button"
+                      className="admin-mobile-action"
+                      onClick={item.action}
+                    >
+                      <Icon size={20} />
+                      <span>{item.label}</span>
+                      {item.badge > 0 && <small>{item.badge}</small>}
+                    </button>
+                  )
+                })}
+              </div>
+            </section>
+            <section className="sienge-pilot-card">
+              <div className="sienge-pilot-header">
+                <div>
+                  <strong>Sincronizar Sienge (backend - piloto)</strong>
+                  <div>
                     Dispara a Edge Function <code>sienge-sync</code>. Rode (1) primeiro, depois (2).
                   </div>
                 </div>
-                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                <div className="sienge-pilot-actions">
                   <button
                     onClick={() => dispararSiengeSync('sales-contracts')}
                     disabled={!!siengeSyncLoading}
-                    style={{ padding: '8px 14px', border: '1px solid #2563eb', background: '#2563eb', color: '#fff', borderRadius: 8, cursor: siengeSyncLoading ? 'not-allowed' : 'pointer', opacity: siengeSyncLoading ? 0.6 : 1 }}
+                    className="sync-action-btn sales"
                   >
                     {siengeSyncLoading === 'sales-contracts' ? 'Rodando…' : '1) Sales Contracts'}
                   </button>
                   <button
                     onClick={() => dispararSiengeSync('receivable-bills')}
                     disabled={!!siengeSyncLoading}
-                    style={{ padding: '8px 14px', border: '1px solid #059669', background: '#059669', color: '#fff', borderRadius: 8, cursor: siengeSyncLoading ? 'not-allowed' : 'pointer', opacity: siengeSyncLoading ? 0.6 : 1 }}
+                    className="sync-action-btn income"
                   >
                     {siengeSyncLoading === 'receivable-bills' ? 'Rodando…' : '2) Receivable Bills'}
                   </button>
                   <button
                     onClick={dispararProbeBulk}
                     disabled={!!siengeSyncLoading}
-                    style={{ padding: '8px 14px', border: '1px solid #a16207', background: '#a16207', color: '#fff', borderRadius: 8, cursor: siengeSyncLoading ? 'not-allowed' : 'pointer', opacity: siengeSyncLoading ? 0.6 : 1 }}
+                    className="sync-action-btn probe"
                   >
                     {siengeSyncLoading === 'probe' ? 'Sondando…' : '🔍 Probe Bulk Data'}
                   </button>
                 </div>
               </div>
               {siengeSyncProgress && (
-                <div style={{ marginTop: 12, background: '#eff6ff', color: '#1e3a8a', padding: 12, borderRadius: 8, fontSize: 12 }}>
+                <div className="sync-status-box info">
                   <div><strong>{siengeSyncProgress.entity}</strong> — chunk {siengeSyncProgress.chunk} (offset {siengeSyncProgress.offset}, limit {siengeSyncProgress.limit}) — {siengeSyncProgress.status}</div>
                   {siengeSyncProgress.total != null && (
                     <div>processados {Math.min(siengeSyncProgress.offset + (siengeSyncProgress.fetched || 0), siengeSyncProgress.total)}/{siengeSyncProgress.total} · hasMore={String(!!siengeSyncProgress.hasMore)} · budgetExhausted={String(!!siengeSyncProgress.budgetExhausted)} · apiCalls={siengeSyncProgress.apiCalls ?? '-'}</div>
@@ -5414,12 +6087,12 @@ const AdminDashboard = () => {
                 </div>
               )}
               {siengeSyncError && (
-                <pre style={{ marginTop: 12, background: '#fef2f2', color: '#991b1b', padding: 12, borderRadius: 8, fontSize: 12, whiteSpace: 'pre-wrap' }}>
+                <pre className="sync-status-box error">
                   {siengeSyncError}
                 </pre>
               )}
               {siengeSyncResult && (
-                <pre style={{ marginTop: 12, background: '#f9fafb', color: '#111827', padding: 12, borderRadius: 8, fontSize: 12, maxHeight: 320, overflow: 'auto' }}>
+                <pre className="sync-status-box result">
                   {JSON.stringify(siengeSyncResult, null, 2)}
                 </pre>
               )}
@@ -6015,7 +6688,7 @@ const AdminDashboard = () => {
                         descricao: '',
                         total_unidades: '',
                         comissao_total_externo: '7',
-                        comissao_total_interno: '6',
+                        comissao_total_interno: '6.5',
                         cargos_externo: [{ nome_cargo: '', percentual: '' }],
                         cargos_interno: [{ nome_cargo: '', percentual: '' }],
                         logo_url: '',
@@ -6156,7 +6829,7 @@ const AdminDashboard = () => {
                                 descricao: emp.descricao || '',
                                 total_unidades: emp.total_unidades?.toString() || '',
                                 comissao_total_externo: emp.comissao_total_externo?.toString() || '7',
-                                comissao_total_interno: emp.comissao_total_interno?.toString() || '6',
+                                comissao_total_interno: emp.comissao_total_interno?.toString() || '6.5',
                                 cargos_externo: cargosExt.length > 0 
                                   ? cargosExt.map(c => ({ nome_cargo: c.nome_cargo, percentual: c.percentual?.toString() || '' }))
                                   : [{ nome_cargo: '', percentual: '' }],
@@ -6221,7 +6894,7 @@ const AdminDashboard = () => {
                           </span>
                           <span className="emp-list-rate interno">
                             <Percent size={14} />
-                            Interno: {emp.comissao_total_interno || 6}%
+                            Interno: {emp.comissao_total_interno || 6.5}%
                           </span>
                         </div>
                         
@@ -6261,7 +6934,7 @@ const AdminDashboard = () => {
                               descricao: emp.descricao || '',
                               total_unidades: emp.total_unidades?.toString() || '',
                               comissao_total_externo: emp.comissao_total_externo?.toString() || '7',
-                              comissao_total_interno: emp.comissao_total_interno?.toString() || '6',
+                              comissao_total_interno: emp.comissao_total_interno?.toString() || '6.5',
                               cargos_externo: cargosExt.length > 0 
                                 ? cargosExt.map(c => ({ nome_cargo: c.nome_cargo, percentual: c.percentual?.toString() || '' }))
                                 : [{ nome_cargo: '', percentual: '' }],
@@ -6380,7 +7053,7 @@ const AdminDashboard = () => {
                         </div>
                         <div className="emp-view-comissao-box">
                           <span className="label">Corretor Interno</span>
-                          <span className="value green">{empreendimentoVisualizar.comissao_total_interno || 6}%</span>
+                          <span className="value green">{empreendimentoVisualizar.comissao_total_interno || 6.5}%</span>
                         </div>
                       </div>
                     </div>
@@ -6500,7 +7173,7 @@ const AdminDashboard = () => {
                           descricao: emp.descricao || '',
                           total_unidades: emp.total_unidades?.toString() || '',
                           comissao_total_externo: emp.comissao_total_externo?.toString() || '7',
-                          comissao_total_interno: emp.comissao_total_interno?.toString() || '6',
+                          comissao_total_interno: emp.comissao_total_interno?.toString() || '6.5',
                           cargos_externo: cargosExt.length > 0 
                             ? cargosExt.map(c => ({ nome_cargo: c.nome_cargo, percentual: c.percentual?.toString() || '' }))
                             : [{ nome_cargo: '', percentual: '' }],
@@ -6899,8 +7572,9 @@ const AdminDashboard = () => {
                       {vendaExpandida === grupo.venda_id && (
                         <div className="venda-pagamento-body">
                           {sortParcelas(grupo.pagamentos, visaoParcelas)
+                            .filter((pag) => pag.status !== 'cancelado')
                             .map((pag) => (
-                            <div key={pag.id} className={`parcela-row ${pag.status === 'pago' ? 'pago' : ''}`}>
+                            <div key={pag.id} className={`parcela-row ${pag.status === 'pago' ? 'pago' : pag.status === 'cancelado' ? 'cancelado' : ''}`}>
                               <div className="parcela-main">
                                 <div className="parcela-tipo">
                                   {pag.tipo === 'sinal' && 'Sinal'}
@@ -6913,11 +7587,11 @@ const AdminDashboard = () => {
                                 <div className="parcela-valor">{formatCurrency(pag.valor)}</div>
                                 <div className="parcela-status">
                                   <span className={`status-pill ${pag.status}`}>
-                                    {pag.status === 'pago' ? 'Pago' : 'Pendente'}
+                                    {pag.status === 'pago' ? 'Pago' : pag.status === 'cancelado' ? 'Cancelado' : 'Pendente'}
                                   </span>
                                 </div>
                                 <div className="parcela-acao">
-                                  <button 
+                                  <button
                                     className="btn-ver-detalhe"
                                     onClick={(e) => { e.stopPropagation(); setPagamentoDetalhe(pag); }}
                                     title="Ver detalhes"
@@ -6925,16 +7599,17 @@ const AdminDashboard = () => {
                                     <Eye size={14} />
                                     Ver
                                   </button>
-                                  {pag.status !== 'pago' ? (
-                                    <button 
+                                  {pag.status === 'pendente' && (
+                                    <button
                                       className="btn-small-confirm"
                                       onClick={(e) => { e.stopPropagation(); confirmarPagamento(pag); }}
                                     >
                                       Confirmar
                                     </button>
-                                  ) : (
+                                  )}
+                                  {pag.status === 'pago' && (
                                     <>
-                                      <button 
+                                      <button
                                         className="btn-ver-detalhe"
                                         onClick={(e) => { e.stopPropagation(); editarBaixa(pag); }}
                                         title="Editar baixa"
@@ -7246,6 +7921,234 @@ const AdminDashboard = () => {
                 )}
               </>
             )}
+          </div>
+        )}
+
+        {activeTab === 'auditoria' && (
+          <div className="auditoria-page">
+            <section className="auditoria-hero">
+              <div>
+                <div className="auditoria-eyebrow">
+                  <Radar size={16} />
+                  Similaridade de erros
+                </div>
+                <h2>Reporte um erro e encontre casos parecidos</h2>
+                <p>
+                  Descreva o que a ADM viu. O sistema cruza o relato com vendas,
+                  parcelas, baixas, unidades e snapshots de comissao para apontar
+                  ocorrencias semelhantes.
+                </p>
+              </div>
+              <div className="auditoria-health-card">
+                <span className="health-label">Saude atual</span>
+                <strong>{auditoriaResumo.total === 0 ? 'Sem alertas' : `${auditoriaResumo.total} alertas`}</strong>
+                <small>{auditoriaResumo.alta} alta / {auditoriaResumo.media} media / {auditoriaResumo.baixa} baixa</small>
+              </div>
+            </section>
+
+            <section className="auditoria-report-card">
+              <div className="auditoria-report-header">
+                <div>
+                  <h3>Relato do erro</h3>
+                  <p>Use a linguagem natural da mensagem recebida. Ex.: "tem baixa do mes 6 e nao tem parcela do mes 5".</p>
+                </div>
+                <button
+                  className="btn-secondary"
+                  onClick={() => {
+                    setAuditoriaRelato('')
+                    setAuditoriaTipoFiltro('todos')
+                    setAuditoriaSeveridadeFiltro('todos')
+                  }}
+                >
+                  Limpar
+                </button>
+              </div>
+              <textarea
+                className="auditoria-textarea"
+                value={auditoriaRelato}
+                onChange={(e) => setAuditoriaRelato(e.target.value)}
+                placeholder="Cole aqui o relato da ADM ou descreva o problema..."
+                rows={4}
+              />
+              <div className="auditoria-sugestoes">
+                {[
+                  'unidade duplicada com corretores diferentes',
+                  'baixa futura no mes 6 sem cliente pagar adiantado',
+                  'nao tem parcela do mes 5',
+                  'corretor interno continua calculando como externo',
+                  'percentual ou comissao do corretor esta errado',
+                ].map((sugestao) => (
+                  <button
+                    key={sugestao}
+                    type="button"
+                    onClick={() => setAuditoriaRelato(sugestao)}
+                  >
+                    {sugestao}
+                  </button>
+                ))}
+              </div>
+            </section>
+
+            <section className="auditoria-metrics">
+              <div className="auditoria-metric danger">
+                <ShieldAlert size={22} />
+                <span>Alta prioridade</span>
+                <strong>{auditoriaResumo.alta}</strong>
+              </div>
+              <div className="auditoria-metric warning">
+                <AlertCircle size={22} />
+                <span>Revisar</span>
+                <strong>{auditoriaResumo.media}</strong>
+              </div>
+              <div className="auditoria-metric">
+                <ListChecks size={22} />
+                <span>Resultados parecidos</span>
+                <strong>{auditoriaResultados.length}</strong>
+              </div>
+              <div className="auditoria-metric">
+                <Building size={22} />
+                <span>Vendas analisadas</span>
+                <strong>{vendas.length}</strong>
+              </div>
+            </section>
+
+            <section className="auditoria-workspace">
+              <aside className="auditoria-sidebar">
+                <div className="auditoria-filter-block">
+                  <label>Tipo de alerta</label>
+                  <select
+                    value={auditoriaTipoFiltro}
+                    onChange={(e) => setAuditoriaTipoFiltro(e.target.value)}
+                  >
+                    <option value="todos">Todos os tipos</option>
+                    {Object.entries(AUDITORIA_TIPOS).map(([type, meta]) => (
+                      <option key={type} value={type}>
+                        {meta.label} ({auditoriaResumo.porTipo[type] || 0})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="auditoria-filter-block">
+                  <label>Severidade</label>
+                  <select
+                    value={auditoriaSeveridadeFiltro}
+                    onChange={(e) => setAuditoriaSeveridadeFiltro(e.target.value)}
+                  >
+                    <option value="todos">Todas</option>
+                    <option value="alta">Alta</option>
+                    <option value="media">Media</option>
+                    <option value="baixa">Baixa</option>
+                  </select>
+                </div>
+                <div className="auditoria-insight">
+                  <strong>Como usar</strong>
+                  <p>Quando um erro aparecer no WhatsApp, cole o texto acima. Os cards mais parecidos sobem automaticamente.</p>
+                </div>
+              </aside>
+
+              <div className="auditoria-results">
+                <div className="auditoria-results-header">
+                  <div>
+                    <h3>Casos encontrados</h3>
+                    <p>
+                      {normalizeAuditText(auditoriaRelato)
+                        ? `${auditoriaResultados.length} caso(s) parecidos com o relato`
+                        : `${auditoriaResultados.length} alerta(s) automaticos`}
+                    </p>
+                  </div>
+                  <button className="btn-secondary" onClick={fetchData}>
+                    <RefreshCw size={16} />
+                    Atualizar dados
+                  </button>
+                </div>
+
+                {auditoriaResultados.length === 0 ? (
+                  <div className="auditoria-empty">
+                    <CheckCircle2 size={42} />
+                    <h3>Nenhum caso parecido encontrado</h3>
+                    <p>Tente descrever com cliente, unidade, mes, corretor ou palavra-chave do erro.</p>
+                  </div>
+                ) : (
+                  <div className="auditoria-list">
+                    {auditoriaResultados.slice(0, 80).map((issue) => {
+                      const meta = AUDITORIA_TIPOS[issue.type] || {}
+                      const venda = issue.venda
+                      const relacionadas = issue.vendasRelacionadas || []
+                      return (
+                        <article key={issue.id} className={`auditoria-card severity-${issue.severity}`}>
+                          <div className="auditoria-card-main">
+                            <div className="auditoria-card-top">
+                              <span className={`audit-type ${meta.tone || 'neutral'}`}>{meta.label || issue.type}</span>
+                              <span className={`audit-severity ${issue.severity}`}>{AUDITORIA_SEVERIDADE[issue.severity]?.label || issue.severity}</span>
+                              {normalizeAuditText(auditoriaRelato) && (
+                                <span className="audit-match">match {issue.matchScore}</span>
+                              )}
+                            </div>
+                            <h4>{issue.title}</h4>
+                            <p>{issue.description}</p>
+                            <div className="audit-context">
+                              <span><Building size={14} /> {getVendaEmpreendimentoNome(venda)}</span>
+                              <span><User size={14} /> {getVendaCorretorNome(venda)}</span>
+                              <span><Users size={14} /> {getVendaClienteNome(venda)}</span>
+                              <span><MapPin size={14} /> {getVendaUnidadeLabel(venda)}</span>
+                            </div>
+
+                            {issue.pagamentos?.length > 0 && (
+                              <div className="audit-payment-strip">
+                                {issue.pagamentos.slice(0, 4).map((pag) => (
+                                  <span key={pag.id || `${pag.tipo}-${pag.numero_parcela}`}>
+                                    {pag.tipo || 'parcela'} {pag.numero_parcela || ''}
+                                    {' - '}
+                                    {pag.status || 'sem status'}
+                                    {pag.data_pagamento ? ` - baixa ${formatDataBR(pag.data_pagamento)}` : ''}
+                                    {pag.data_prevista ? ` - prev. ${formatDataBR(pag.data_prevista)}` : ''}
+                                  </span>
+                                ))}
+                                {issue.pagamentos.length > 4 && <span>+{issue.pagamentos.length - 4} parcela(s)</span>}
+                              </div>
+                            )}
+
+                            {relacionadas.length > 1 && (
+                              <div className="audit-related-sales">
+                                {relacionadas.slice(0, 4).map((vendaRelacionada) => (
+                                  <button
+                                    type="button"
+                                    key={vendaRelacionada.id}
+                                    onClick={() => abrirVendaAuditoria(vendaRelacionada)}
+                                  >
+                                    {getVendaCorretorNome(vendaRelacionada)} / {getVendaClienteNome(vendaRelacionada)}
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                          <div className="auditoria-card-actions">
+                            {venda?.id && (
+                              <button className="btn-primary" onClick={() => abrirVendaAuditoria(venda)}>
+                                Abrir venda
+                                <ArrowRight size={16} />
+                              </button>
+                            )}
+                            <button
+                              className="btn-secondary"
+                              onClick={() => {
+                                setFiltrosPagamentos({
+                                  ...filtrosPagamentos,
+                                  buscaVenda: `${getVendaClienteNome(venda)} ${venda?.unidade || ''}`.trim()
+                                })
+                                navigate('/admin/pagamentos')
+                              }}
+                            >
+                              Ver parcelas
+                            </button>
+                          </div>
+                        </article>
+                      )
+                    })}
+                  </div>
+                )}
+              </div>
+            </section>
           </div>
         )}
 
@@ -7807,7 +8710,7 @@ const AdminDashboard = () => {
                             {empSelecionado?.nome || 'Empreendimento'}
                           </h4>
                           <p style={{ margin: 0, color: 'rgba(255,255,255,0.6)', fontSize: '14px' }}>
-                            Comissão: {empSelecionado?.comissao_total_externo || 7}% (Externo) | {empSelecionado?.comissao_total_interno || 6}% (Interno)
+                            Comissão: {empSelecionado?.comissao_total_externo || 7}% (Externo) | {empSelecionado?.comissao_total_interno || 6.5}% (Interno)
                           </p>
                         </div>
                         
@@ -8090,6 +8993,26 @@ const AdminDashboard = () => {
           </div>
         )}
       </main>
+
+      <nav className="mobile-app-nav admin-mobile-nav" aria-label="Navegacao principal do administrador">
+        {adminMobileNavItems.map((item) => {
+          const Icon = item.icon
+          return (
+            <button
+              key={item.tab}
+              type="button"
+              className={`mobile-app-nav-item ${activeTab === item.tab ? 'active' : ''}`}
+              onClick={() => navigate(item.path)}
+            >
+              <span className="mobile-app-nav-icon">
+                <Icon size={19} />
+                {item.badge > 0 && <small>{item.badge}</small>}
+              </span>
+              <span>{item.label}</span>
+            </button>
+          )
+        })}
+      </nav>
 
       {/* Modal de Detalhes da Solicitação */}
       {solicitacaoSelecionada && (
@@ -10088,7 +11011,7 @@ const AdminDashboard = () => {
                         <input
                           type="number"
                           step="0.1"
-                          placeholder="6"
+                          placeholder="6,5"
                           value={empreendimentoForm.comissao_total_interno}
                           onChange={(e) => setEmpreendimentoForm({...empreendimentoForm, comissao_total_interno: e.target.value})}
                         />
@@ -11362,12 +12285,21 @@ const AdminDashboard = () => {
         </div>
       )}
 
+      {/* ================================================
+          ABA DE ATUALIZAÇÕES (histórico das notas)
+          ================================================ */}
+      {activeTab === 'atualizacoes' && <AtualizacoesView />}
+
       {/* Modal de Exclusão / Distrato de Venda */}
       {showModalExcluirVenda && vendaParaExcluir && (
         <div className="modal-overlay" onClick={() => !processandoExclusaoVenda && setShowModalExcluirVenda(false)}>
           <div className="modal modal-excluir-venda" onClick={e => e.stopPropagation()}>
             <div className="modal-header">
-              <h2>{modalExcluirVendaStep === 1 ? 'Excluir / Distrato de Venda' : 'Distrato do Contrato'}</h2>
+              <h2>{
+                modalExcluirVendaStep === 1 ? 'Excluir / Distrato de Venda'
+                : modalExcluirVendaStep === 2 ? 'Distrato do Contrato'
+                : 'Motivo da Exclusão'
+              }</h2>
               <button className="close-btn" onClick={() => !processandoExclusaoVenda && setShowModalExcluirVenda(false)}>
                 <X size={24} />
               </button>
@@ -11382,17 +12314,14 @@ const AdminDashboard = () => {
                   <div className="modal-excluir-opcoes">
                     <button
                       className="btn-opcao-modal danger"
-                      onClick={processarExclusaoVenda}
+                      onClick={() => setModalExcluirVendaStep(3)}
                       disabled={processandoExclusaoVenda}
                     >
                       <span className="btn-opcao-modal-title">
-                        {processandoExclusaoVenda
-                          ? <><span className="btn-spinner" />Excluindo...</>
-                          : <><Trash2 size={18} />Exclusão do Sistema</>
-                        }
+                        <Trash2 size={18} />Exclusão do Sistema
                       </span>
                       <span className="btn-opcao-modal-desc">
-                        Arquiva a venda permanentemente. Some completamente da listagem.
+                        Arquiva a venda permanentemente. Some completamente da listagem. Exige motivo registrado.
                       </span>
                     </button>
                     <button
@@ -11457,10 +12386,63 @@ const AdminDashboard = () => {
                   </div>
                 </>
               )}
+              {modalExcluirVendaStep === 3 && (
+                <>
+                  <p className="modal-excluir-descricao">
+                    Descreva o motivo da exclusão de{' '}
+                    <strong>{vendaParaExcluir.nome_cliente || vendaParaExcluir.cliente?.nome || 'esta venda'}</strong>.
+                    O motivo fica registrado junto com seu usuário e a data.
+                  </p>
+                  <div className="form-section">
+                    <label>
+                      <span>Motivo (mín. 10 caracteres)</span>
+                      <textarea
+                        value={motivoExclusao}
+                        onChange={e => setMotivoExclusao(e.target.value)}
+                        placeholder="Ex.: duplicata da venda XYZ; cliente cancelou antes do contrato; erro de cadastro na unidade..."
+                        rows={4}
+                        style={{ width: '100%', resize: 'vertical', padding: '10px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.2)', background: 'rgba(0,0,0,0.3)', color: '#fff', fontSize: '14px', fontFamily: 'inherit' }}
+                        autoFocus
+                      />
+                    </label>
+                    <p style={{ fontSize: '12px', color: motivoExclusao.trim().length >= 10 ? 'rgba(80,200,120,0.9)' : 'rgba(255,255,255,0.5)', marginTop: '6px' }}>
+                      {motivoExclusao.trim().length}/10 caracteres mínimos
+                    </p>
+                  </div>
+                  <div className="modal-actions">
+                    <button
+                      className="btn-secondary"
+                      onClick={() => setModalExcluirVendaStep(1)}
+                      disabled={processandoExclusaoVenda}
+                    >
+                      Voltar
+                    </button>
+                    <button
+                      className="btn-opcao-modal danger"
+                      onClick={processarExclusaoVenda}
+                      disabled={processandoExclusaoVenda || motivoExclusao.trim().length < 10}
+                    >
+                      {processandoExclusaoVenda
+                        ? <><span className="btn-spinner" />Excluindo...</>
+                        : <><Trash2 size={16} />Confirmar Exclusão</>
+                      }
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </div>
       )}
+
+      {/* Notas de atualizacao — admin-only por construcao, mostra 1x por versao */}
+      <NotasAtualizacaoModal />
+
+      <ProfilePhotoModal
+        open={photoModalOpen}
+        required={photoModalForced}
+        onClose={() => setPhotoModalOpen(false)}
+      />
 
     </div>
   )

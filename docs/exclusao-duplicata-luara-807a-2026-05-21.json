@@ -1,0 +1,553 @@
+{
+  "meta": {
+    "geradoEm": "2026-05-21T17:36:19.280Z",
+    "script": "scripts/excluir-duplicata-luara-807a-2026-05-21.mjs",
+    "modo": "apply",
+    "spec_ref": ".claude/rules/sincronizacao-sienge.md",
+    "autorizacao": "administracao: \"consta 2 e e so a primeira\" em 2026-05-21"
+  },
+  "correta": {
+    "id": "f3293e5f-23a6-4b72-b39d-38de8d429190",
+    "sienge_contract_id": "407",
+    "sienge_receivable_bill_id": 479,
+    "unidade": "807 A",
+    "bloco": null,
+    "cliente_id": "52c6bc07-af38-4bff-983b-6eaf34f1570c",
+    "corretor_id": "874adca1-47e9-4c19-b8ee-d5c36f03b294",
+    "valor_pro_soluto": 60245.12,
+    "excluido": false
+  },
+  "duplicata": {
+    "id": "008553b3-8c88-420f-9c79-c665051a497a",
+    "sienge_contract_id": null,
+    "sienge_receivable_bill_id": null,
+    "unidade": "807",
+    "bloco": "A",
+    "cliente_id": "18e78f6c-a9b2-4a70-b261-6f79de94b0e6",
+    "corretor_id": "874adca1-47e9-4c19-b8ee-d5c36f03b294",
+    "valor_pro_soluto": 59086.56,
+    "comissao_total": 21085.95,
+    "status": "pendente",
+    "excluido": false
+  },
+  "pagamentos_pos_correcao": [
+    {
+      "id": "59ca45fb-a061-460d-b68d-40cfb0d7719c",
+      "status": "cancelado",
+      "tipo": "parcela_entrada",
+      "numero_parcela": 1,
+      "valor": 1158.56,
+      "comissao_gerada": 413.45,
+      "data_prevista": "2026-02-20",
+      "data_pagamento": null
+    },
+    {
+      "id": "f65b0a29-20f2-419e-a117-84c4c26b9cc8",
+      "status": "cancelado",
+      "tipo": "parcela_entrada",
+      "numero_parcela": 2,
+      "valor": 1158.56,
+      "comissao_gerada": 413.45,
+      "data_prevista": "2026-03-20",
+      "data_pagamento": null
+    },
+    {
+      "id": "e103a373-7da6-4b53-832b-654f03c21888",
+      "status": "cancelado",
+      "tipo": "parcela_entrada",
+      "numero_parcela": 3,
+      "valor": 1158.56,
+      "comissao_gerada": 413.45,
+      "data_prevista": "2026-04-20",
+      "data_pagamento": null
+    },
+    {
+      "id": "42549f93-7823-4d93-9fd9-4978fef0b768",
+      "status": "cancelado",
+      "tipo": "parcela_entrada",
+      "numero_parcela": 4,
+      "valor": 1158.56,
+      "comissao_gerada": 413.45,
+      "data_prevista": "2026-05-20",
+      "data_pagamento": null
+    },
+    {
+      "id": "258bd3d9-318c-42c0-a639-fff11caf8901",
+      "status": "cancelado",
+      "tipo": "parcela_entrada",
+      "numero_parcela": 5,
+      "valor": 1158.56,
+      "comissao_gerada": 413.45,
+      "data_prevista": "2026-06-20",
+      "data_pagamento": null
+    },
+    {
+      "id": "cb0529a9-5201-4a27-abac-0559f7ba1ba7",
+      "status": "cancelado",
+      "tipo": "parcela_entrada",
+      "numero_parcela": 6,
+      "valor": 1158.56,
+      "comissao_gerada": 413.45,
+      "data_prevista": "2026-07-20",
+      "data_pagamento": null
+    },
+    {
+      "id": "8e1b401c-5289-48e3-8fff-036e73316715",
+      "status": "cancelado",
+      "tipo": "parcela_entrada",
+      "numero_parcela": 7,
+      "valor": 1158.56,
+      "comissao_gerada": 413.45,
+      "data_prevista": "2026-08-20",
+      "data_pagamento": null
+    },
+    {
+      "id": "646a1d28-6e9b-465e-9e7d-abe731719192",
+      "status": "cancelado",
+      "tipo": "parcela_entrada",
+      "numero_parcela": 8,
+      "valor": 1158.56,
+      "comissao_gerada": 413.45,
+      "data_prevista": "2026-09-20",
+      "data_pagamento": null
+    },
+    {
+      "id": "3fa29bc9-23aa-4b39-921a-db998de12540",
+      "status": "cancelado",
+      "tipo": "parcela_entrada",
+      "numero_parcela": 9,
+      "valor": 1158.56,
+      "comissao_gerada": 413.45,
+      "data_prevista": "2026-10-20",
+      "data_pagamento": null
+    },
+    {
+      "id": "66f4079d-e240-4aff-a5fe-40591b44c608",
+      "status": "cancelado",
+      "tipo": "parcela_entrada",
+      "numero_parcela": 10,
+      "valor": 1158.56,
+      "comissao_gerada": 413.45,
+      "data_prevista": "2026-11-20",
+      "data_pagamento": null
+    },
+    {
+      "id": "404c6d45-3adb-4d53-9f85-364c677b1226",
+      "status": "cancelado",
+      "tipo": "parcela_entrada",
+      "numero_parcela": 11,
+      "valor": 1158.56,
+      "comissao_gerada": 413.45,
+      "data_prevista": "2026-12-20",
+      "data_pagamento": null
+    },
+    {
+      "id": "e5fa4da4-4c7b-4d01-8c0b-452f231122d3",
+      "status": "cancelado",
+      "tipo": "parcela_entrada",
+      "numero_parcela": 12,
+      "valor": 1158.56,
+      "comissao_gerada": 413.45,
+      "data_prevista": "2027-01-20",
+      "data_pagamento": null
+    },
+    {
+      "id": "925fc919-5d8d-4df2-8a2e-26ee292a8109",
+      "status": "cancelado",
+      "tipo": "parcela_entrada",
+      "numero_parcela": 13,
+      "valor": 1158.56,
+      "comissao_gerada": 413.45,
+      "data_prevista": "2027-02-20",
+      "data_pagamento": null
+    },
+    {
+      "id": "a3d3100f-f8ee-4016-ae7e-b3cc83dbce2c",
+      "status": "cancelado",
+      "tipo": "parcela_entrada",
+      "numero_parcela": 14,
+      "valor": 1158.56,
+      "comissao_gerada": 413.45,
+      "data_prevista": "2027-03-20",
+      "data_pagamento": null
+    },
+    {
+      "id": "8309fed5-ab9e-4d77-8af8-6f7d0d08c666",
+      "status": "cancelado",
+      "tipo": "parcela_entrada",
+      "numero_parcela": 15,
+      "valor": 1158.56,
+      "comissao_gerada": 413.45,
+      "data_prevista": "2027-04-20",
+      "data_pagamento": null
+    },
+    {
+      "id": "908d6538-620c-4e32-9167-fc83a7fc7571",
+      "status": "cancelado",
+      "tipo": "parcela_entrada",
+      "numero_parcela": 16,
+      "valor": 1158.56,
+      "comissao_gerada": 413.45,
+      "data_prevista": "2027-05-20",
+      "data_pagamento": null
+    },
+    {
+      "id": "c8cd083c-0eaa-47ef-ad3e-5d8b30a8dc7a",
+      "status": "cancelado",
+      "tipo": "parcela_entrada",
+      "numero_parcela": 17,
+      "valor": 1158.56,
+      "comissao_gerada": 413.45,
+      "data_prevista": "2027-06-20",
+      "data_pagamento": null
+    },
+    {
+      "id": "091ddb9e-d2f4-4fa5-878d-ede1b1be8f9c",
+      "status": "cancelado",
+      "tipo": "parcela_entrada",
+      "numero_parcela": 18,
+      "valor": 1158.56,
+      "comissao_gerada": 413.45,
+      "data_prevista": "2027-07-20",
+      "data_pagamento": null
+    },
+    {
+      "id": "7c514a39-68ec-4bc0-b6bc-16acb7bb6e44",
+      "status": "cancelado",
+      "tipo": "parcela_entrada",
+      "numero_parcela": 19,
+      "valor": 1158.56,
+      "comissao_gerada": 413.45,
+      "data_prevista": "2027-08-20",
+      "data_pagamento": null
+    },
+    {
+      "id": "4f06f709-7c93-479a-8ce4-136914dda693",
+      "status": "cancelado",
+      "tipo": "parcela_entrada",
+      "numero_parcela": 20,
+      "valor": 1158.56,
+      "comissao_gerada": 413.45,
+      "data_prevista": "2027-09-20",
+      "data_pagamento": null
+    },
+    {
+      "id": "136ff6be-3f82-469d-a221-0c53e7a746b2",
+      "status": "cancelado",
+      "tipo": "parcela_entrada",
+      "numero_parcela": 21,
+      "valor": 1158.56,
+      "comissao_gerada": 413.45,
+      "data_prevista": "2027-10-20",
+      "data_pagamento": null
+    },
+    {
+      "id": "82f5533e-7c07-4ab6-869c-2ab111d5c1a0",
+      "status": "cancelado",
+      "tipo": "parcela_entrada",
+      "numero_parcela": 22,
+      "valor": 1158.56,
+      "comissao_gerada": 413.45,
+      "data_prevista": "2027-11-20",
+      "data_pagamento": null
+    },
+    {
+      "id": "21cf1b01-d7ac-4eeb-81a4-d3f526242509",
+      "status": "cancelado",
+      "tipo": "parcela_entrada",
+      "numero_parcela": 23,
+      "valor": 1158.56,
+      "comissao_gerada": 413.45,
+      "data_prevista": "2027-12-20",
+      "data_pagamento": null
+    },
+    {
+      "id": "02c1325b-ea60-4789-a8ba-74c5ea11d939",
+      "status": "cancelado",
+      "tipo": "parcela_entrada",
+      "numero_parcela": 24,
+      "valor": 1158.56,
+      "comissao_gerada": 413.45,
+      "data_prevista": "2028-01-20",
+      "data_pagamento": null
+    },
+    {
+      "id": "d536f312-243f-4997-9041-c1e181e67a9e",
+      "status": "cancelado",
+      "tipo": "parcela_entrada",
+      "numero_parcela": 25,
+      "valor": 1158.56,
+      "comissao_gerada": 413.45,
+      "data_prevista": "2028-02-20",
+      "data_pagamento": null
+    },
+    {
+      "id": "59e96d1c-fd64-4c92-b34b-fbc8853744e8",
+      "status": "cancelado",
+      "tipo": "parcela_entrada",
+      "numero_parcela": 26,
+      "valor": 1158.56,
+      "comissao_gerada": 413.45,
+      "data_prevista": "2028-03-20",
+      "data_pagamento": null
+    },
+    {
+      "id": "c4fcc060-0c86-48ae-842d-0a7c6e429af1",
+      "status": "cancelado",
+      "tipo": "parcela_entrada",
+      "numero_parcela": 27,
+      "valor": 1158.56,
+      "comissao_gerada": 413.45,
+      "data_prevista": "2028-04-20",
+      "data_pagamento": null
+    },
+    {
+      "id": "9677ea4b-b00f-4a3c-a55d-0ea70e72a6df",
+      "status": "cancelado",
+      "tipo": "parcela_entrada",
+      "numero_parcela": 28,
+      "valor": 1158.56,
+      "comissao_gerada": 413.45,
+      "data_prevista": "2028-05-20",
+      "data_pagamento": null
+    },
+    {
+      "id": "50820cde-edc6-4131-8449-0900f9306c4f",
+      "status": "cancelado",
+      "tipo": "parcela_entrada",
+      "numero_parcela": 29,
+      "valor": 1158.56,
+      "comissao_gerada": 413.45,
+      "data_prevista": "2028-06-20",
+      "data_pagamento": null
+    },
+    {
+      "id": "383dffc2-c65b-47a2-bde8-cff0d09f2335",
+      "status": "cancelado",
+      "tipo": "parcela_entrada",
+      "numero_parcela": 30,
+      "valor": 1158.56,
+      "comissao_gerada": 413.45,
+      "data_prevista": "2028-07-20",
+      "data_pagamento": null
+    },
+    {
+      "id": "879ac301-b1e7-40aa-8ab7-ced2d63752f8",
+      "status": "cancelado",
+      "tipo": "parcela_entrada",
+      "numero_parcela": 31,
+      "valor": 1158.56,
+      "comissao_gerada": 413.45,
+      "data_prevista": "2028-08-20",
+      "data_pagamento": null
+    },
+    {
+      "id": "8df47672-f696-4f52-9c3e-a4f83cbcf07f",
+      "status": "cancelado",
+      "tipo": "parcela_entrada",
+      "numero_parcela": 32,
+      "valor": 1158.56,
+      "comissao_gerada": 413.45,
+      "data_prevista": "2028-09-20",
+      "data_pagamento": null
+    },
+    {
+      "id": "de8cf2a8-f85e-4bb7-ba93-66c4c88c8b26",
+      "status": "cancelado",
+      "tipo": "parcela_entrada",
+      "numero_parcela": 33,
+      "valor": 1158.56,
+      "comissao_gerada": 413.45,
+      "data_prevista": "2028-10-20",
+      "data_pagamento": null
+    },
+    {
+      "id": "93045151-0bfb-4724-b009-ab7a929d324a",
+      "status": "cancelado",
+      "tipo": "parcela_entrada",
+      "numero_parcela": 34,
+      "valor": 1158.56,
+      "comissao_gerada": 413.45,
+      "data_prevista": "2028-11-20",
+      "data_pagamento": null
+    },
+    {
+      "id": "959ea572-9e82-4123-8be5-10c2c49de938",
+      "status": "cancelado",
+      "tipo": "parcela_entrada",
+      "numero_parcela": 35,
+      "valor": 1158.56,
+      "comissao_gerada": 413.45,
+      "data_prevista": "2028-12-20",
+      "data_pagamento": null
+    },
+    {
+      "id": "2e6c05f6-1f0c-42c7-b962-bfc79a16d1e0",
+      "status": "cancelado",
+      "tipo": "parcela_entrada",
+      "numero_parcela": 36,
+      "valor": 1158.56,
+      "comissao_gerada": 413.45,
+      "data_prevista": "2029-01-20",
+      "data_pagamento": null
+    },
+    {
+      "id": "631fdd4d-bacd-4e3b-a914-c4a79291c9bb",
+      "status": "cancelado",
+      "tipo": "parcela_entrada",
+      "numero_parcela": 37,
+      "valor": 1158.56,
+      "comissao_gerada": 413.45,
+      "data_prevista": "2029-02-20",
+      "data_pagamento": null
+    },
+    {
+      "id": "0fc52f07-c0b1-4234-bb23-d9984169820f",
+      "status": "cancelado",
+      "tipo": "parcela_entrada",
+      "numero_parcela": 38,
+      "valor": 1158.56,
+      "comissao_gerada": 413.45,
+      "data_prevista": "2029-03-20",
+      "data_pagamento": null
+    },
+    {
+      "id": "aa3e444f-0169-4bdc-9686-eded350a6bf9",
+      "status": "cancelado",
+      "tipo": "parcela_entrada",
+      "numero_parcela": 39,
+      "valor": 1158.56,
+      "comissao_gerada": 413.45,
+      "data_prevista": "2029-04-20",
+      "data_pagamento": null
+    },
+    {
+      "id": "42acead1-bf73-49b6-a62d-84f96f52579f",
+      "status": "cancelado",
+      "tipo": "parcela_entrada",
+      "numero_parcela": 40,
+      "valor": 1158.56,
+      "comissao_gerada": 413.45,
+      "data_prevista": "2029-05-20",
+      "data_pagamento": null
+    },
+    {
+      "id": "057ef7a3-a440-46db-a36e-0a562539891f",
+      "status": "cancelado",
+      "tipo": "parcela_entrada",
+      "numero_parcela": 41,
+      "valor": 1158.56,
+      "comissao_gerada": 413.45,
+      "data_prevista": "2029-06-20",
+      "data_pagamento": null
+    },
+    {
+      "id": "b4e5ece6-63db-475a-b7ad-07b3106c75f8",
+      "status": "cancelado",
+      "tipo": "parcela_entrada",
+      "numero_parcela": 42,
+      "valor": 1158.56,
+      "comissao_gerada": 413.45,
+      "data_prevista": "2029-07-20",
+      "data_pagamento": null
+    },
+    {
+      "id": "b37013c5-f61d-41cd-847d-8d6b4dd68b4a",
+      "status": "cancelado",
+      "tipo": "parcela_entrada",
+      "numero_parcela": 43,
+      "valor": 1158.56,
+      "comissao_gerada": 413.45,
+      "data_prevista": "2029-08-20",
+      "data_pagamento": null
+    },
+    {
+      "id": "ea41b883-06d3-40d1-a7fd-6404bcb06d1a",
+      "status": "cancelado",
+      "tipo": "parcela_entrada",
+      "numero_parcela": 44,
+      "valor": 1158.56,
+      "comissao_gerada": 413.45,
+      "data_prevista": "2029-09-20",
+      "data_pagamento": null
+    },
+    {
+      "id": "a17bd360-0dc9-4fb3-90aa-54488e8b7bfa",
+      "status": "cancelado",
+      "tipo": "parcela_entrada",
+      "numero_parcela": 45,
+      "valor": 1158.56,
+      "comissao_gerada": 413.45,
+      "data_prevista": "2029-10-20",
+      "data_pagamento": null
+    },
+    {
+      "id": "4245c231-400f-42f9-8bfa-eb7fa84f4d10",
+      "status": "cancelado",
+      "tipo": "parcela_entrada",
+      "numero_parcela": 46,
+      "valor": 1158.56,
+      "comissao_gerada": 413.45,
+      "data_prevista": "2029-11-20",
+      "data_pagamento": null
+    },
+    {
+      "id": "2418168b-fa4b-4f74-b8ed-f12681fbaadc",
+      "status": "cancelado",
+      "tipo": "parcela_entrada",
+      "numero_parcela": 47,
+      "valor": 1158.56,
+      "comissao_gerada": 413.45,
+      "data_prevista": "2029-12-20",
+      "data_pagamento": null
+    },
+    {
+      "id": "a40f11cf-861e-4a6e-aa79-7e9d688a8a11",
+      "status": "cancelado",
+      "tipo": "parcela_entrada",
+      "numero_parcela": 48,
+      "valor": 1158.56,
+      "comissao_gerada": 413.45,
+      "data_prevista": "2030-01-20",
+      "data_pagamento": null
+    },
+    {
+      "id": "009743e6-6a59-4198-b2d7-e33cd66c81e3",
+      "status": "cancelado",
+      "tipo": "parcela_entrada",
+      "numero_parcela": 49,
+      "valor": 1158.56,
+      "comissao_gerada": 413.45,
+      "data_prevista": "2030-02-20",
+      "data_pagamento": null
+    },
+    {
+      "id": "09de83f8-5c7b-4d0b-bc47-330b9c27d5a8",
+      "status": "cancelado",
+      "tipo": "parcela_entrada",
+      "numero_parcela": 50,
+      "valor": 1158.56,
+      "comissao_gerada": 413.45,
+      "data_prevista": "2030-03-20",
+      "data_pagamento": null
+    },
+    {
+      "id": "0f8614e4-5c60-4b25-bae9-f36eb3d0976b",
+      "status": "cancelado",
+      "tipo": "parcela_entrada",
+      "numero_parcela": 51,
+      "valor": 1158.56,
+      "comissao_gerada": 413.45,
+      "data_prevista": "2030-04-20",
+      "data_pagamento": null
+    }
+  ],
+  "counts": {
+    "pagos_revertidos": 2,
+    "pagamentos_cancelados": 51,
+    "venda_excluida": 1,
+    "skipped_idempotent": 0,
+    "errors": 0
+  },
+  "errors": []
+}

@@ -1,0 +1,17 @@
+{
+  "meta": {
+    "geradoEm": "2026-05-13T23:20:09.299Z",
+    "spec_ref": ".claude/rules/sincronizacao-sienge.md, .claude/rules/rodadas-b.md",
+    "script": "scripts/aplicar-b6-grupo1.mjs",
+    "modo": "dry-run",
+    "origem": "docs/b6-texto-para-usuaria.md Grupo 1 (parcelas extras sem par no Sienge)"
+  },
+  "counts": {
+    "matched": 19,
+    "updated": 0,
+    "skipped_idempotent": 0,
+    "errors": 0
+  },
+  "drift": [],
+  "errors": []
+}

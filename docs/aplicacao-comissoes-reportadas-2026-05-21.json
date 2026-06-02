@@ -1,0 +1,3032 @@
+{
+  "meta": {
+    "geradoEm": "2026-05-21T14:58:00.824Z",
+    "modo": "apply",
+    "script": "scripts/corrigir-comissoes-reportadas-2026-05-21.mjs",
+    "spec_ref": ".claude/rules/fator-comissao.md + .claude/rules/sincronizacao-sienge.md"
+  },
+  "counts": {
+    "vendas_matched": 3,
+    "vendas_updated": 3,
+    "pagamentos_pendentes_matched": 146,
+    "pagamentos_pendentes_updated": 146,
+    "skipped_idempotent": 0,
+    "pagos_preservados": 34,
+    "errors": 0
+  },
+  "drift": [
+    {
+      "venda_id": "2fc89307-9572-4970-9663-08feac626c94",
+      "contrato": "390",
+      "campo": "vendas",
+      "antes": {
+        "tipo_corretor": "externo",
+        "valor_venda": 384110.14,
+        "valor_venda_total": 384110.14,
+        "fator_comissao": 0.385,
+        "corretor_id_origem": "sync"
+      },
+      "depois": {
+        "tipo_corretor": "interno",
+        "valor_venda": 384110.14,
+        "valor_venda_total": 384110.14,
+        "fator_comissao": 0.3575,
+        "updated_at": "2026-05-21T14:58:01.948Z",
+        "corretor_id_origem": "manual"
+      },
+      "motivo": "ERICA FAERBER: corretora reclassificada como interna; venda ainda estava externa"
+    },
+    {
+      "id": "ccd092cf-f5dc-4875-86f9-7e81a0f17b39",
+      "venda_id": "2fc89307-9572-4970-9663-08feac626c94",
+      "contrato": "390",
+      "parcela": 33,
+      "status": "pendente",
+      "campo": "pagamentos_prosoluto",
+      "antes": {
+        "comissao_gerada": 448.13,
+        "fator_comissao_aplicado": 0.385,
+        "percentual_comissao_total": 7
+      },
+      "depois": {
+        "comissao_gerada": 416.12,
+        "fator_comissao_aplicado": 0.3575,
+        "percentual_comissao_total": 6.5,
+        "updated_at": "2026-05-21T14:58:02.095Z"
+      },
+      "motivo": "ERICA FAERBER: corretora reclassificada como interna; venda ainda estava externa; parcela pendente recalculada pela formula canonica"
+    },
+    {
+      "id": "12016d85-ea5c-4352-ae33-99c8f82b50bf",
+      "venda_id": "2fc89307-9572-4970-9663-08feac626c94",
+      "contrato": "390",
+      "parcela": 48,
+      "status": "pendente",
+      "campo": "pagamentos_prosoluto",
+      "antes": {
+        "comissao_gerada": 448.13,
+        "fator_comissao_aplicado": 0.385,
+        "percentual_comissao_total": 7
+      },
+      "depois": {
+        "comissao_gerada": 416.12,
+        "fator_comissao_aplicado": 0.3575,
+        "percentual_comissao_total": 6.5,
+        "updated_at": "2026-05-21T14:58:02.267Z"
+      },
+      "motivo": "ERICA FAERBER: corretora reclassificada como interna; venda ainda estava externa; parcela pendente recalculada pela formula canonica"
+    },
+    {
+      "id": "9883e2e9-ca8a-45a5-8bf3-9a33ceca706c",
+      "venda_id": "2fc89307-9572-4970-9663-08feac626c94",
+      "contrato": "390",
+      "parcela": 20,
+      "status": "pendente",
+      "campo": "pagamentos_prosoluto",
+      "antes": {
+        "comissao_gerada": 448.13,
+        "fator_comissao_aplicado": 0.385,
+        "percentual_comissao_total": 7
+      },
+      "depois": {
+        "comissao_gerada": 416.12,
+        "fator_comissao_aplicado": 0.3575,
+        "percentual_comissao_total": 6.5,
+        "updated_at": "2026-05-21T14:58:02.718Z"
+      },
+      "motivo": "ERICA FAERBER: corretora reclassificada como interna; venda ainda estava externa; parcela pendente recalculada pela formula canonica"
+    },
+    {
+      "id": "a82e8285-9227-4f33-b7ef-ef8277f868ec",
+      "venda_id": "2fc89307-9572-4970-9663-08feac626c94",
+      "contrato": "390",
+      "parcela": 18,
+      "status": "pendente",
+      "campo": "pagamentos_prosoluto",
+      "antes": {
+        "comissao_gerada": 448.13,
+        "fator_comissao_aplicado": 0.385,
+        "percentual_comissao_total": 7
+      },
+      "depois": {
+        "comissao_gerada": 416.12,
+        "fator_comissao_aplicado": 0.3575,
+        "percentual_comissao_total": 6.5,
+        "updated_at": "2026-05-21T14:58:02.888Z"
+      },
+      "motivo": "ERICA FAERBER: corretora reclassificada como interna; venda ainda estava externa; parcela pendente recalculada pela formula canonica"
+    },
+    {
+      "id": "c3684f78-2454-454a-9e90-aa31f9b80c8e",
+      "venda_id": "2fc89307-9572-4970-9663-08feac626c94",
+      "contrato": "390",
+      "parcela": 22,
+      "status": "pendente",
+      "campo": "pagamentos_prosoluto",
+      "antes": {
+        "comissao_gerada": 448.13,
+        "fator_comissao_aplicado": 0.385,
+        "percentual_comissao_total": 7
+      },
+      "depois": {
+        "comissao_gerada": 416.12,
+        "fator_comissao_aplicado": 0.3575,
+        "percentual_comissao_total": 6.5,
+        "updated_at": "2026-05-21T14:58:03.037Z"
+      },
+      "motivo": "ERICA FAERBER: corretora reclassificada como interna; venda ainda estava externa; parcela pendente recalculada pela formula canonica"
+    },
+    {
+      "id": "67f9b209-8f8e-4d6e-b170-53e8fba23483",
+      "venda_id": "2fc89307-9572-4970-9663-08feac626c94",
+      "contrato": "390",
+      "parcela": 24,
+      "status": "pendente",
+      "campo": "pagamentos_prosoluto",
+      "antes": {
+        "comissao_gerada": 448.13,
+        "fator_comissao_aplicado": 0.385,
+        "percentual_comissao_total": 7
+      },
+      "depois": {
+        "comissao_gerada": 416.12,
+        "fator_comissao_aplicado": 0.3575,
+        "percentual_comissao_total": 6.5,
+        "updated_at": "2026-05-21T14:58:03.202Z"
+      },
+      "motivo": "ERICA FAERBER: corretora reclassificada como interna; venda ainda estava externa; parcela pendente recalculada pela formula canonica"
+    },
+    {
+      "id": "662a606d-ec0e-44ec-93a6-6e72a2f8e809",
+      "venda_id": "2fc89307-9572-4970-9663-08feac626c94",
+      "contrato": "390",
+      "parcela": 14,
+      "status": "pendente",
+      "campo": "pagamentos_prosoluto",
+      "antes": {
+        "comissao_gerada": 448.13,
+        "fator_comissao_aplicado": 0.385,
+        "percentual_comissao_total": 7
+      },
+      "depois": {
+        "comissao_gerada": 416.12,
+        "fator_comissao_aplicado": 0.3575,
+        "percentual_comissao_total": 6.5,
+        "updated_at": "2026-05-21T14:58:03.594Z"
+      },
+      "motivo": "ERICA FAERBER: corretora reclassificada como interna; venda ainda estava externa; parcela pendente recalculada pela formula canonica"
+    },
+    {
+      "id": "66ec27d2-6997-4122-b562-47857a4966a6",
+      "venda_id": "2fc89307-9572-4970-9663-08feac626c94",
+      "contrato": "390",
+      "parcela": 29,
+      "status": "pendente",
+      "campo": "pagamentos_prosoluto",
+      "antes": {
+        "comissao_gerada": 448.13,
+        "fator_comissao_aplicado": 0.385,
+        "percentual_comissao_total": 7
+      },
+      "depois": {
+        "comissao_gerada": 416.12,
+        "fator_comissao_aplicado": 0.3575,
+        "percentual_comissao_total": 6.5,
+        "updated_at": "2026-05-21T14:58:03.757Z"
+      },
+      "motivo": "ERICA FAERBER: corretora reclassificada como interna; venda ainda estava externa; parcela pendente recalculada pela formula canonica"
+    },
+    {
+      "id": "9492cf76-0a5e-40b4-a386-6d04a090bb1a",
+      "venda_id": "2fc89307-9572-4970-9663-08feac626c94",
+      "contrato": "390",
+      "parcela": 34,
+      "status": "pendente",
+      "campo": "pagamentos_prosoluto",
+      "antes": {
+        "comissao_gerada": 448.13,
+        "fator_comissao_aplicado": 0.385,
+        "percentual_comissao_total": 7
+      },
+      "depois": {
+        "comissao_gerada": 416.12,
+        "fator_comissao_aplicado": 0.3575,
+        "percentual_comissao_total": 6.5,
+        "updated_at": "2026-05-21T14:58:03.907Z"
+      },
+      "motivo": "ERICA FAERBER: corretora reclassificada como interna; venda ainda estava externa; parcela pendente recalculada pela formula canonica"
+    },
+    {
+      "id": "51546e99-f4a1-4c77-8da9-36bd8b161534",
+      "venda_id": "2fc89307-9572-4970-9663-08feac626c94",
+      "contrato": "390",
+      "parcela": 39,
+      "status": "pendente",
+      "campo": "pagamentos_prosoluto",
+      "antes": {
+        "comissao_gerada": 448.13,
+        "fator_comissao_aplicado": 0.385,
+        "percentual_comissao_total": 7
+      },
+      "depois": {
+        "comissao_gerada": 416.12,
+        "fator_comissao_aplicado": 0.3575,
+        "percentual_comissao_total": 6.5,
+        "updated_at": "2026-05-21T14:58:04.073Z"
+      },
+      "motivo": "ERICA FAERBER: corretora reclassificada como interna; venda ainda estava externa; parcela pendente recalculada pela formula canonica"
+    },
+    {
+      "id": "572dce16-9e93-4ad8-a925-6e445405c50e",
+      "venda_id": "2fc89307-9572-4970-9663-08feac626c94",
+      "contrato": "390",
+      "parcela": 49,
+      "status": "pendente",
+      "campo": "pagamentos_prosoluto",
+      "antes": {
+        "comissao_gerada": 448.13,
+        "fator_comissao_aplicado": 0.385,
+        "percentual_comissao_total": 7
+      },
+      "depois": {
+        "comissao_gerada": 416.12,
+        "fator_comissao_aplicado": 0.3575,
+        "percentual_comissao_total": 6.5,
+        "updated_at": "2026-05-21T14:58:04.217Z"
+      },
+      "motivo": "ERICA FAERBER: corretora reclassificada como interna; venda ainda estava externa; parcela pendente recalculada pela formula canonica"
+    },
+    {
+      "id": "8c92bfdc-956b-43e1-b9b9-70c0a9fd457b",
+      "venda_id": "2fc89307-9572-4970-9663-08feac626c94",
+      "contrato": "390",
+      "parcela": 54,
+      "status": "pendente",
+      "campo": "pagamentos_prosoluto",
+      "antes": {
+        "comissao_gerada": 448.13,
+        "fator_comissao_aplicado": 0.385,
+        "percentual_comissao_total": 7
+      },
+      "depois": {
+        "comissao_gerada": 416.12,
+        "fator_comissao_aplicado": 0.3575,
+        "percentual_comissao_total": 6.5,
+        "updated_at": "2026-05-21T14:58:04.382Z"
+      },
+      "motivo": "ERICA FAERBER: corretora reclassificada como interna; venda ainda estava externa; parcela pendente recalculada pela formula canonica"
+    },
+    {
+      "id": "245b68e8-c52d-4476-a28c-d7d29fc3f43c",
+      "venda_id": "2fc89307-9572-4970-9663-08feac626c94",
+      "contrato": "390",
+      "parcela": 59,
+      "status": "pendente",
+      "campo": "pagamentos_prosoluto",
+      "antes": {
+        "comissao_gerada": 448.13,
+        "fator_comissao_aplicado": 0.385,
+        "percentual_comissao_total": 7
+      },
+      "depois": {
+        "comissao_gerada": 416.12,
+        "fator_comissao_aplicado": 0.3575,
+        "percentual_comissao_total": 6.5,
+        "updated_at": "2026-05-21T14:58:04.533Z"
+      },
+      "motivo": "ERICA FAERBER: corretora reclassificada como interna; venda ainda estava externa; parcela pendente recalculada pela formula canonica"
+    },
+    {
+      "id": "7dcb3b8e-63f5-4f88-a473-f370fef50c1f",
+      "venda_id": "2fc89307-9572-4970-9663-08feac626c94",
+      "contrato": "390",
+      "parcela": 13,
+      "status": "pendente",
+      "campo": "pagamentos_prosoluto",
+      "antes": {
+        "comissao_gerada": 448.13,
+        "fator_comissao_aplicado": 0.385,
+        "percentual_comissao_total": 7
+      },
+      "depois": {
+        "comissao_gerada": 416.12,
+        "fator_comissao_aplicado": 0.3575,
+        "percentual_comissao_total": 6.5,
+        "updated_at": "2026-05-21T14:58:04.697Z"
+      },
+      "motivo": "ERICA FAERBER: corretora reclassificada como interna; venda ainda estava externa; parcela pendente recalculada pela formula canonica"
+    },
+    {
+      "id": "a63c43e5-2323-426b-915d-b04f83b0762c",
+      "venda_id": "2fc89307-9572-4970-9663-08feac626c94",
+      "contrato": "390",
+      "parcela": 23,
+      "status": "pendente",
+      "campo": "pagamentos_prosoluto",
+      "antes": {
+        "comissao_gerada": 448.13,
+        "fator_comissao_aplicado": 0.385,
+        "percentual_comissao_total": 7
+      },
+      "depois": {
+        "comissao_gerada": 416.12,
+        "fator_comissao_aplicado": 0.3575,
+        "percentual_comissao_total": 6.5,
+        "updated_at": "2026-05-21T14:58:04.850Z"
+      },
+      "motivo": "ERICA FAERBER: corretora reclassificada como interna; venda ainda estava externa; parcela pendente recalculada pela formula canonica"
+    },
+    {
+      "id": "479fc198-9747-4ef7-b5fd-ccd11b231fed",
+      "venda_id": "2fc89307-9572-4970-9663-08feac626c94",
+      "contrato": "390",
+      "parcela": 28,
+      "status": "pendente",
+      "campo": "pagamentos_prosoluto",
+      "antes": {
+        "comissao_gerada": 448.13,
+        "fator_comissao_aplicado": 0.385,
+        "percentual_comissao_total": 7
+      },
+      "depois": {
+        "comissao_gerada": 416.12,
+        "fator_comissao_aplicado": 0.3575,
+        "percentual_comissao_total": 6.5,
+        "updated_at": "2026-05-21T14:58:05.097Z"
+      },
+      "motivo": "ERICA FAERBER: corretora reclassificada como interna; venda ainda estava externa; parcela pendente recalculada pela formula canonica"
+    },
+    {
+      "id": "da7e41ea-d6cb-4382-8f07-a12e8ccc6259",
+      "venda_id": "2fc89307-9572-4970-9663-08feac626c94",
+      "contrato": "390",
+      "parcela": 38,
+      "status": "pendente",
+      "campo": "pagamentos_prosoluto",
+      "antes": {
+        "comissao_gerada": 448.13,
+        "fator_comissao_aplicado": 0.385,
+        "percentual_comissao_total": 7
+      },
+      "depois": {
+        "comissao_gerada": 416.12,
+        "fator_comissao_aplicado": 0.3575,
+        "percentual_comissao_total": 6.5,
+        "updated_at": "2026-05-21T14:58:05.302Z"
+      },
+      "motivo": "ERICA FAERBER: corretora reclassificada como interna; venda ainda estava externa; parcela pendente recalculada pela formula canonica"
+    },
+    {
+      "id": "2d4736be-eb27-4ed9-b15d-d138e0d4e332",
+      "venda_id": "2fc89307-9572-4970-9663-08feac626c94",
+      "contrato": "390",
+      "parcela": 43,
+      "status": "pendente",
+      "campo": "pagamentos_prosoluto",
+      "antes": {
+        "comissao_gerada": 448.13,
+        "fator_comissao_aplicado": 0.385,
+        "percentual_comissao_total": 7
+      },
+      "depois": {
+        "comissao_gerada": 416.12,
+        "fator_comissao_aplicado": 0.3575,
+        "percentual_comissao_total": 6.5,
+        "updated_at": "2026-05-21T14:58:05.470Z"
+      },
+      "motivo": "ERICA FAERBER: corretora reclassificada como interna; venda ainda estava externa; parcela pendente recalculada pela formula canonica"
+    },
+    {
+      "id": "50216897-1dc6-42e8-b845-b985fc4a37b5",
+      "venda_id": "2fc89307-9572-4970-9663-08feac626c94",
+      "contrato": "390",
+      "parcela": 53,
+      "status": "pendente",
+      "campo": "pagamentos_prosoluto",
+      "antes": {
+        "comissao_gerada": 448.13,
+        "fator_comissao_aplicado": 0.385,
+        "percentual_comissao_total": 7
+      },
+      "depois": {
+        "comissao_gerada": 416.12,
+        "fator_comissao_aplicado": 0.3575,
+        "percentual_comissao_total": 6.5,
+        "updated_at": "2026-05-21T14:58:05.691Z"
+      },
+      "motivo": "ERICA FAERBER: corretora reclassificada como interna; venda ainda estava externa; parcela pendente recalculada pela formula canonica"
+    },
+    {
+      "id": "54d48a52-8972-4f8f-b4bf-bf82b03e264d",
+      "venda_id": "2fc89307-9572-4970-9663-08feac626c94",
+      "contrato": "390",
+      "parcela": 58,
+      "status": "pendente",
+      "campo": "pagamentos_prosoluto",
+      "antes": {
+        "comissao_gerada": 448.13,
+        "fator_comissao_aplicado": 0.385,
+        "percentual_comissao_total": 7
+      },
+      "depois": {
+        "comissao_gerada": 416.12,
+        "fator_comissao_aplicado": 0.3575,
+        "percentual_comissao_total": 6.5,
+        "updated_at": "2026-05-21T14:58:05.866Z"
+      },
+      "motivo": "ERICA FAERBER: corretora reclassificada como interna; venda ainda estava externa; parcela pendente recalculada pela formula canonica"
+    },
+    {
+      "id": "90e10206-43af-4440-8dc6-e65452f419b9",
+      "venda_id": "2fc89307-9572-4970-9663-08feac626c94",
+      "contrato": "390",
+      "parcela": 27,
+      "status": "pendente",
+      "campo": "pagamentos_prosoluto",
+      "antes": {
+        "comissao_gerada": 448.13,
+        "fator_comissao_aplicado": 0.385,
+        "percentual_comissao_total": 7
+      },
+      "depois": {
+        "comissao_gerada": 416.12,
+        "fator_comissao_aplicado": 0.3575,
+        "percentual_comissao_total": 6.5,
+        "updated_at": "2026-05-21T14:58:06.016Z"
+      },
+      "motivo": "ERICA FAERBER: corretora reclassificada como interna; venda ainda estava externa; parcela pendente recalculada pela formula canonica"
+    },
+    {
+      "id": "d5689c50-c4b2-4823-b9f2-0f2fd443fd4a",
+      "venda_id": "2fc89307-9572-4970-9663-08feac626c94",
+      "contrato": "390",
+      "parcela": 42,
+      "status": "pendente",
+      "campo": "pagamentos_prosoluto",
+      "antes": {
+        "comissao_gerada": 448.13,
+        "fator_comissao_aplicado": 0.385,
+        "percentual_comissao_total": 7
+      },
+      "depois": {
+        "comissao_gerada": 416.12,
+        "fator_comissao_aplicado": 0.3575,
+        "percentual_comissao_total": 6.5,
+        "updated_at": "2026-05-21T14:58:06.231Z"
+      },
+      "motivo": "ERICA FAERBER: corretora reclassificada como interna; venda ainda estava externa; parcela pendente recalculada pela formula canonica"
+    },
+    {
+      "id": "28bf5388-adfd-4410-97dd-bbec5914451e",
+      "venda_id": "2fc89307-9572-4970-9663-08feac626c94",
+      "contrato": "390",
+      "parcela": 47,
+      "status": "pendente",
+      "campo": "pagamentos_prosoluto",
+      "antes": {
+        "comissao_gerada": 448.13,
+        "fator_comissao_aplicado": 0.385,
+        "percentual_comissao_total": 7
+      },
+      "depois": {
+        "comissao_gerada": 416.12,
+        "fator_comissao_aplicado": 0.3575,
+        "percentual_comissao_total": 6.5,
+        "updated_at": "2026-05-21T14:58:06.429Z"
+      },
+      "motivo": "ERICA FAERBER: corretora reclassificada como interna; venda ainda estava externa; parcela pendente recalculada pela formula canonica"
+    },
+    {
+      "id": "c7488e41-2dab-423e-b399-e2289610802a",
+      "venda_id": "2fc89307-9572-4970-9663-08feac626c94",
+      "contrato": "390",
+      "parcela": 52,
+      "status": "pendente",
+      "campo": "pagamentos_prosoluto",
+      "antes": {
+        "comissao_gerada": 448.13,
+        "fator_comissao_aplicado": 0.385,
+        "percentual_comissao_total": 7
+      },
+      "depois": {
+        "comissao_gerada": 416.12,
+        "fator_comissao_aplicado": 0.3575,
+        "percentual_comissao_total": 6.5,
+        "updated_at": "2026-05-21T14:58:06.634Z"
+      },
+      "motivo": "ERICA FAERBER: corretora reclassificada como interna; venda ainda estava externa; parcela pendente recalculada pela formula canonica"
+    },
+    {
+      "id": "4ad2775f-12c9-470d-b060-dc46648d0f8e",
+      "venda_id": "2fc89307-9572-4970-9663-08feac626c94",
+      "contrato": "390",
+      "parcela": 57,
+      "status": "pendente",
+      "campo": "pagamentos_prosoluto",
+      "antes": {
+        "comissao_gerada": 448.13,
+        "fator_comissao_aplicado": 0.385,
+        "percentual_comissao_total": 7
+      },
+      "depois": {
+        "comissao_gerada": 416.12,
+        "fator_comissao_aplicado": 0.3575,
+        "percentual_comissao_total": 6.5,
+        "updated_at": "2026-05-21T14:58:06.838Z"
+      },
+      "motivo": "ERICA FAERBER: corretora reclassificada como interna; venda ainda estava externa; parcela pendente recalculada pela formula canonica"
+    },
+    {
+      "id": "d78c0475-039e-47b2-942f-cba958438008",
+      "venda_id": "2fc89307-9572-4970-9663-08feac626c94",
+      "contrato": "390",
+      "parcela": 25,
+      "status": "pendente",
+      "campo": "pagamentos_prosoluto",
+      "antes": {
+        "comissao_gerada": 448.13,
+        "fator_comissao_aplicado": 0.385,
+        "percentual_comissao_total": 7
+      },
+      "depois": {
+        "comissao_gerada": 416.12,
+        "fator_comissao_aplicado": 0.3575,
+        "percentual_comissao_total": 6.5,
+        "updated_at": "2026-05-21T14:58:07.056Z"
+      },
+      "motivo": "ERICA FAERBER: corretora reclassificada como interna; venda ainda estava externa; parcela pendente recalculada pela formula canonica"
+    },
+    {
+      "id": "febb237e-b211-44e3-adcd-fb00a23d52a4",
+      "venda_id": "2fc89307-9572-4970-9663-08feac626c94",
+      "contrato": "390",
+      "parcela": 30,
+      "status": "pendente",
+      "campo": "pagamentos_prosoluto",
+      "antes": {
+        "comissao_gerada": 448.13,
+        "fator_comissao_aplicado": 0.385,
+        "percentual_comissao_total": 7
+      },
+      "depois": {
+        "comissao_gerada": 416.12,
+        "fator_comissao_aplicado": 0.3575,
+        "percentual_comissao_total": 6.5,
+        "updated_at": "2026-05-21T14:58:07.339Z"
+      },
+      "motivo": "ERICA FAERBER: corretora reclassificada como interna; venda ainda estava externa; parcela pendente recalculada pela formula canonica"
+    },
+    {
+      "id": "6ac385aa-c402-4828-8915-cb7184e8db63",
+      "venda_id": "2fc89307-9572-4970-9663-08feac626c94",
+      "contrato": "390",
+      "parcela": 45,
+      "status": "pendente",
+      "campo": "pagamentos_prosoluto",
+      "antes": {
+        "comissao_gerada": 448.13,
+        "fator_comissao_aplicado": 0.385,
+        "percentual_comissao_total": 7
+      },
+      "depois": {
+        "comissao_gerada": 416.12,
+        "fator_comissao_aplicado": 0.3575,
+        "percentual_comissao_total": 6.5,
+        "updated_at": "2026-05-21T14:58:07.501Z"
+      },
+      "motivo": "ERICA FAERBER: corretora reclassificada como interna; venda ainda estava externa; parcela pendente recalculada pela formula canonica"
+    },
+    {
+      "id": "31aaea11-8d61-4249-8671-caa05a1191b1",
+      "venda_id": "2fc89307-9572-4970-9663-08feac626c94",
+      "contrato": "390",
+      "parcela": 50,
+      "status": "pendente",
+      "campo": "pagamentos_prosoluto",
+      "antes": {
+        "comissao_gerada": 448.13,
+        "fator_comissao_aplicado": 0.385,
+        "percentual_comissao_total": 7
+      },
+      "depois": {
+        "comissao_gerada": 416.12,
+        "fator_comissao_aplicado": 0.3575,
+        "percentual_comissao_total": 6.5,
+        "updated_at": "2026-05-21T14:58:07.665Z"
+      },
+      "motivo": "ERICA FAERBER: corretora reclassificada como interna; venda ainda estava externa; parcela pendente recalculada pela formula canonica"
+    },
+    {
+      "id": "e1fb8a94-5257-4602-9359-433a07f70326",
+      "venda_id": "2fc89307-9572-4970-9663-08feac626c94",
+      "contrato": "390",
+      "parcela": 55,
+      "status": "pendente",
+      "campo": "pagamentos_prosoluto",
+      "antes": {
+        "comissao_gerada": 448.13,
+        "fator_comissao_aplicado": 0.385,
+        "percentual_comissao_total": 7
+      },
+      "depois": {
+        "comissao_gerada": 416.12,
+        "fator_comissao_aplicado": 0.3575,
+        "percentual_comissao_total": 6.5,
+        "updated_at": "2026-05-21T14:58:07.822Z"
+      },
+      "motivo": "ERICA FAERBER: corretora reclassificada como interna; venda ainda estava externa; parcela pendente recalculada pela formula canonica"
+    },
+    {
+      "id": "b6ebc654-8f98-4121-89a2-a767941a4ab4",
+      "venda_id": "2fc89307-9572-4970-9663-08feac626c94",
+      "contrato": "390",
+      "parcela": 60,
+      "status": "pendente",
+      "campo": "pagamentos_prosoluto",
+      "antes": {
+        "comissao_gerada": 448.13,
+        "fator_comissao_aplicado": 0.385,
+        "percentual_comissao_total": 7
+      },
+      "depois": {
+        "comissao_gerada": 416.12,
+        "fator_comissao_aplicado": 0.3575,
+        "percentual_comissao_total": 6.5,
+        "updated_at": "2026-05-21T14:58:07.967Z"
+      },
+      "motivo": "ERICA FAERBER: corretora reclassificada como interna; venda ainda estava externa; parcela pendente recalculada pela formula canonica"
+    },
+    {
+      "id": "cbba336c-3ff5-452b-bb52-dd186c2cc372",
+      "venda_id": "2fc89307-9572-4970-9663-08feac626c94",
+      "contrato": "390",
+      "parcela": 46,
+      "status": "pendente",
+      "campo": "pagamentos_prosoluto",
+      "antes": {
+        "comissao_gerada": 448.13,
+        "fator_comissao_aplicado": 0.385,
+        "percentual_comissao_total": 7
+      },
+      "depois": {
+        "comissao_gerada": 416.12,
+        "fator_comissao_aplicado": 0.3575,
+        "percentual_comissao_total": 6.5,
+        "updated_at": "2026-05-21T14:58:08.127Z"
+      },
+      "motivo": "ERICA FAERBER: corretora reclassificada como interna; venda ainda estava externa; parcela pendente recalculada pela formula canonica"
+    },
+    {
+      "id": "481b7342-7bbd-468b-ac34-36867686c353",
+      "venda_id": "2fc89307-9572-4970-9663-08feac626c94",
+      "contrato": "390",
+      "parcela": 26,
+      "status": "pendente",
+      "campo": "pagamentos_prosoluto",
+      "antes": {
+        "comissao_gerada": 448.13,
+        "fator_comissao_aplicado": 0.385,
+        "percentual_comissao_total": 7
+      },
+      "depois": {
+        "comissao_gerada": 416.12,
+        "fator_comissao_aplicado": 0.3575,
+        "percentual_comissao_total": 6.5,
+        "updated_at": "2026-05-21T14:58:08.534Z"
+      },
+      "motivo": "ERICA FAERBER: corretora reclassificada como interna; venda ainda estava externa; parcela pendente recalculada pela formula canonica"
+    },
+    {
+      "id": "75287993-df51-4762-a455-0354c9e8be99",
+      "venda_id": "2fc89307-9572-4970-9663-08feac626c94",
+      "contrato": "390",
+      "parcela": 51,
+      "status": "pendente",
+      "campo": "pagamentos_prosoluto",
+      "antes": {
+        "comissao_gerada": 448.13,
+        "fator_comissao_aplicado": 0.385,
+        "percentual_comissao_total": 7
+      },
+      "depois": {
+        "comissao_gerada": 416.12,
+        "fator_comissao_aplicado": 0.3575,
+        "percentual_comissao_total": 6.5,
+        "updated_at": "2026-05-21T14:58:08.693Z"
+      },
+      "motivo": "ERICA FAERBER: corretora reclassificada como interna; venda ainda estava externa; parcela pendente recalculada pela formula canonica"
+    },
+    {
+      "id": "1f2024fe-636b-4ad4-b9eb-073365325a58",
+      "venda_id": "2fc89307-9572-4970-9663-08feac626c94",
+      "contrato": "390",
+      "parcela": 56,
+      "status": "pendente",
+      "campo": "pagamentos_prosoluto",
+      "antes": {
+        "comissao_gerada": 448.13,
+        "fator_comissao_aplicado": 0.385,
+        "percentual_comissao_total": 7
+      },
+      "depois": {
+        "comissao_gerada": 416.12,
+        "fator_comissao_aplicado": 0.3575,
+        "percentual_comissao_total": 6.5,
+        "updated_at": "2026-05-21T14:58:08.840Z"
+      },
+      "motivo": "ERICA FAERBER: corretora reclassificada como interna; venda ainda estava externa; parcela pendente recalculada pela formula canonica"
+    },
+    {
+      "id": "f717d95e-2d50-4e9b-8d54-76b8e89eea77",
+      "venda_id": "2fc89307-9572-4970-9663-08feac626c94",
+      "contrato": "390",
+      "parcela": 16,
+      "status": "pendente",
+      "campo": "pagamentos_prosoluto",
+      "antes": {
+        "comissao_gerada": 448.13,
+        "fator_comissao_aplicado": 0.385,
+        "percentual_comissao_total": 7
+      },
+      "depois": {
+        "comissao_gerada": 416.12,
+        "fator_comissao_aplicado": 0.3575,
+        "percentual_comissao_total": 6.5,
+        "updated_at": "2026-05-21T14:58:09.014Z"
+      },
+      "motivo": "ERICA FAERBER: corretora reclassificada como interna; venda ainda estava externa; parcela pendente recalculada pela formula canonica"
+    },
+    {
+      "id": "0dbaa3d5-0b02-4970-88ae-025bd267cec0",
+      "venda_id": "2fc89307-9572-4970-9663-08feac626c94",
+      "contrato": "390",
+      "parcela": 17,
+      "status": "pendente",
+      "campo": "pagamentos_prosoluto",
+      "antes": {
+        "comissao_gerada": 448.13,
+        "fator_comissao_aplicado": 0.385,
+        "percentual_comissao_total": 7
+      },
+      "depois": {
+        "comissao_gerada": 416.12,
+        "fator_comissao_aplicado": 0.3575,
+        "percentual_comissao_total": 6.5,
+        "updated_at": "2026-05-21T14:58:09.168Z"
+      },
+      "motivo": "ERICA FAERBER: corretora reclassificada como interna; venda ainda estava externa; parcela pendente recalculada pela formula canonica"
+    },
+    {
+      "id": "990a8456-900f-4448-8b3a-5e4e94cedf1e",
+      "venda_id": "2fc89307-9572-4970-9663-08feac626c94",
+      "contrato": "390",
+      "parcela": 37,
+      "status": "pendente",
+      "campo": "pagamentos_prosoluto",
+      "antes": {
+        "comissao_gerada": 448.13,
+        "fator_comissao_aplicado": 0.385,
+        "percentual_comissao_total": 7
+      },
+      "depois": {
+        "comissao_gerada": 416.12,
+        "fator_comissao_aplicado": 0.3575,
+        "percentual_comissao_total": 6.5,
+        "updated_at": "2026-05-21T14:58:09.396Z"
+      },
+      "motivo": "ERICA FAERBER: corretora reclassificada como interna; venda ainda estava externa; parcela pendente recalculada pela formula canonica"
+    },
+    {
+      "id": "5fa9d04c-1edf-4310-9309-1dfd158f6149",
+      "venda_id": "2fc89307-9572-4970-9663-08feac626c94",
+      "contrato": "390",
+      "parcela": 15,
+      "status": "pendente",
+      "campo": "pagamentos_prosoluto",
+      "antes": {
+        "comissao_gerada": 448.13,
+        "fator_comissao_aplicado": 0.385,
+        "percentual_comissao_total": 7
+      },
+      "depois": {
+        "comissao_gerada": 416.12,
+        "fator_comissao_aplicado": 0.3575,
+        "percentual_comissao_total": 6.5,
+        "updated_at": "2026-05-21T14:58:09.701Z"
+      },
+      "motivo": "ERICA FAERBER: corretora reclassificada como interna; venda ainda estava externa; parcela pendente recalculada pela formula canonica"
+    },
+    {
+      "id": "3052fbe0-bfc9-47d0-8106-698eae02b0bc",
+      "venda_id": "2fc89307-9572-4970-9663-08feac626c94",
+      "contrato": "390",
+      "parcela": 19,
+      "status": "pendente",
+      "campo": "pagamentos_prosoluto",
+      "antes": {
+        "comissao_gerada": 448.13,
+        "fator_comissao_aplicado": 0.385,
+        "percentual_comissao_total": 7
+      },
+      "depois": {
+        "comissao_gerada": 416.12,
+        "fator_comissao_aplicado": 0.3575,
+        "percentual_comissao_total": 6.5,
+        "updated_at": "2026-05-21T14:58:09.905Z"
+      },
+      "motivo": "ERICA FAERBER: corretora reclassificada como interna; venda ainda estava externa; parcela pendente recalculada pela formula canonica"
+    },
+    {
+      "id": "e557339c-df77-4352-88e1-a8e588b21ee5",
+      "venda_id": "2fc89307-9572-4970-9663-08feac626c94",
+      "contrato": "390",
+      "parcela": 32,
+      "status": "pendente",
+      "campo": "pagamentos_prosoluto",
+      "antes": {
+        "comissao_gerada": 448.13,
+        "fator_comissao_aplicado": 0.385,
+        "percentual_comissao_total": 7
+      },
+      "depois": {
+        "comissao_gerada": 416.12,
+        "fator_comissao_aplicado": 0.3575,
+        "percentual_comissao_total": 6.5,
+        "updated_at": "2026-05-21T14:58:10.113Z"
+      },
+      "motivo": "ERICA FAERBER: corretora reclassificada como interna; venda ainda estava externa; parcela pendente recalculada pela formula canonica"
+    },
+    {
+      "id": "a2a5c779-b4da-43a1-8bc8-a9d46fb2ab05",
+      "venda_id": "2fc89307-9572-4970-9663-08feac626c94",
+      "contrato": "390",
+      "parcela": 21,
+      "status": "pendente",
+      "campo": "pagamentos_prosoluto",
+      "antes": {
+        "comissao_gerada": 448.13,
+        "fator_comissao_aplicado": 0.385,
+        "percentual_comissao_total": 7
+      },
+      "depois": {
+        "comissao_gerada": 416.12,
+        "fator_comissao_aplicado": 0.3575,
+        "percentual_comissao_total": 6.5,
+        "updated_at": "2026-05-21T14:58:10.315Z"
+      },
+      "motivo": "ERICA FAERBER: corretora reclassificada como interna; venda ainda estava externa; parcela pendente recalculada pela formula canonica"
+    },
+    {
+      "id": "a0ee2ea5-13f7-49bb-b129-f837b6441d97",
+      "venda_id": "2fc89307-9572-4970-9663-08feac626c94",
+      "contrato": "390",
+      "parcela": 35,
+      "status": "pendente",
+      "campo": "pagamentos_prosoluto",
+      "antes": {
+        "comissao_gerada": 448.13,
+        "fator_comissao_aplicado": 0.385,
+        "percentual_comissao_total": 7
+      },
+      "depois": {
+        "comissao_gerada": 416.12,
+        "fator_comissao_aplicado": 0.3575,
+        "percentual_comissao_total": 6.5,
+        "updated_at": "2026-05-21T14:58:10.523Z"
+      },
+      "motivo": "ERICA FAERBER: corretora reclassificada como interna; venda ainda estava externa; parcela pendente recalculada pela formula canonica"
+    },
+    {
+      "id": "4f6ea01c-957d-4312-99b3-dfdd026fc643",
+      "venda_id": "2fc89307-9572-4970-9663-08feac626c94",
+      "contrato": "390",
+      "parcela": 41,
+      "status": "pendente",
+      "campo": "pagamentos_prosoluto",
+      "antes": {
+        "comissao_gerada": 448.13,
+        "fator_comissao_aplicado": 0.385,
+        "percentual_comissao_total": 7
+      },
+      "depois": {
+        "comissao_gerada": 416.12,
+        "fator_comissao_aplicado": 0.3575,
+        "percentual_comissao_total": 6.5,
+        "updated_at": "2026-05-21T14:58:10.724Z"
+      },
+      "motivo": "ERICA FAERBER: corretora reclassificada como interna; venda ainda estava externa; parcela pendente recalculada pela formula canonica"
+    },
+    {
+      "id": "3d2ef819-d5d4-4d7a-b964-2fc6ac87b3f0",
+      "venda_id": "2fc89307-9572-4970-9663-08feac626c94",
+      "contrato": "390",
+      "parcela": 31,
+      "status": "pendente",
+      "campo": "pagamentos_prosoluto",
+      "antes": {
+        "comissao_gerada": 448.13,
+        "fator_comissao_aplicado": 0.385,
+        "percentual_comissao_total": 7
+      },
+      "depois": {
+        "comissao_gerada": 416.12,
+        "fator_comissao_aplicado": 0.3575,
+        "percentual_comissao_total": 6.5,
+        "updated_at": "2026-05-21T14:58:10.875Z"
+      },
+      "motivo": "ERICA FAERBER: corretora reclassificada como interna; venda ainda estava externa; parcela pendente recalculada pela formula canonica"
+    },
+    {
+      "id": "f0adcc2a-f425-481c-b6a6-e512a0e8f661",
+      "venda_id": "2fc89307-9572-4970-9663-08feac626c94",
+      "contrato": "390",
+      "parcela": 36,
+      "status": "pendente",
+      "campo": "pagamentos_prosoluto",
+      "antes": {
+        "comissao_gerada": 448.13,
+        "fator_comissao_aplicado": 0.385,
+        "percentual_comissao_total": 7
+      },
+      "depois": {
+        "comissao_gerada": 416.12,
+        "fator_comissao_aplicado": 0.3575,
+        "percentual_comissao_total": 6.5,
+        "updated_at": "2026-05-21T14:58:11.075Z"
+      },
+      "motivo": "ERICA FAERBER: corretora reclassificada como interna; venda ainda estava externa; parcela pendente recalculada pela formula canonica"
+    },
+    {
+      "id": "0ee7c4d5-4fc2-4515-b195-3320031c26c0",
+      "venda_id": "2fc89307-9572-4970-9663-08feac626c94",
+      "contrato": "390",
+      "parcela": 44,
+      "status": "pendente",
+      "campo": "pagamentos_prosoluto",
+      "antes": {
+        "comissao_gerada": 448.13,
+        "fator_comissao_aplicado": 0.385,
+        "percentual_comissao_total": 7
+      },
+      "depois": {
+        "comissao_gerada": 416.12,
+        "fator_comissao_aplicado": 0.3575,
+        "percentual_comissao_total": 6.5,
+        "updated_at": "2026-05-21T14:58:11.237Z"
+      },
+      "motivo": "ERICA FAERBER: corretora reclassificada como interna; venda ainda estava externa; parcela pendente recalculada pela formula canonica"
+    },
+    {
+      "id": "2cb6a586-0491-4078-8966-7347147ef77a",
+      "venda_id": "2fc89307-9572-4970-9663-08feac626c94",
+      "contrato": "390",
+      "parcela": 40,
+      "status": "pendente",
+      "campo": "pagamentos_prosoluto",
+      "antes": {
+        "comissao_gerada": 448.13,
+        "fator_comissao_aplicado": 0.385,
+        "percentual_comissao_total": 7
+      },
+      "depois": {
+        "comissao_gerada": 416.12,
+        "fator_comissao_aplicado": 0.3575,
+        "percentual_comissao_total": 6.5,
+        "updated_at": "2026-05-21T14:58:11.442Z"
+      },
+      "motivo": "ERICA FAERBER: corretora reclassificada como interna; venda ainda estava externa; parcela pendente recalculada pela formula canonica"
+    },
+    {
+      "venda_id": "ab3def5e-d139-4f60-9669-d4896c74436d",
+      "contrato": "314",
+      "campo": "vendas",
+      "antes": {
+        "tipo_corretor": "externo",
+        "valor_venda": 230112,
+        "valor_venda_total": 230112,
+        "fator_comissao": 0.35,
+        "corretor_id_origem": "sync"
+      },
+      "depois": {
+        "tipo_corretor": "externo",
+        "valor_venda": 231032.45,
+        "valor_venda_total": 231032.45,
+        "fator_comissao": 0.3514,
+        "updated_at": "2026-05-21T14:58:12.491Z",
+        "corretor_id_origem": "manual"
+      },
+      "motivo": "FRANCISCO ASSIS / MATHEUS 408 A: fator do corretor deve ser 20.08%"
+    },
+    {
+      "id": "e860ccbb-149a-4dfe-848f-d58632578821",
+      "venda_id": "ab3def5e-d139-4f60-9669-d4896c74436d",
+      "contrato": "314",
+      "parcela": 33,
+      "status": "pendente",
+      "campo": "pagamentos_prosoluto",
+      "antes": {
+        "comissao_gerada": 268.46,
+        "fator_comissao_aplicado": 0.35,
+        "percentual_comissao_total": 7
+      },
+      "depois": {
+        "comissao_gerada": 269.54,
+        "fator_comissao_aplicado": 0.3514,
+        "percentual_comissao_total": 7,
+        "updated_at": "2026-05-21T14:58:12.671Z"
+      },
+      "motivo": "FRANCISCO ASSIS / MATHEUS 408 A: fator do corretor deve ser 20.08%; parcela pendente recalculada pela formula canonica"
+    },
+    {
+      "id": "657719ed-6104-44ab-bb33-485179571bb7",
+      "venda_id": "ab3def5e-d139-4f60-9669-d4896c74436d",
+      "contrato": "314",
+      "parcela": 32,
+      "status": "pendente",
+      "campo": "pagamentos_prosoluto",
+      "antes": {
+        "comissao_gerada": 268.46,
+        "fator_comissao_aplicado": 0.35,
+        "percentual_comissao_total": 7
+      },
+      "depois": {
+        "comissao_gerada": 269.54,
+        "fator_comissao_aplicado": 0.3514,
+        "percentual_comissao_total": 7,
+        "updated_at": "2026-05-21T14:58:12.874Z"
+      },
+      "motivo": "FRANCISCO ASSIS / MATHEUS 408 A: fator do corretor deve ser 20.08%; parcela pendente recalculada pela formula canonica"
+    },
+    {
+      "id": "0e8cbc6c-a537-4d46-be6a-ecf399c3e00c",
+      "venda_id": "ab3def5e-d139-4f60-9669-d4896c74436d",
+      "contrato": "314",
+      "parcela": 37,
+      "status": "pendente",
+      "campo": "pagamentos_prosoluto",
+      "antes": {
+        "comissao_gerada": 268.46,
+        "fator_comissao_aplicado": 0.35,
+        "percentual_comissao_total": 7
+      },
+      "depois": {
+        "comissao_gerada": 269.54,
+        "fator_comissao_aplicado": 0.3514,
+        "percentual_comissao_total": 7,
+        "updated_at": "2026-05-21T14:58:13.082Z"
+      },
+      "motivo": "FRANCISCO ASSIS / MATHEUS 408 A: fator do corretor deve ser 20.08%; parcela pendente recalculada pela formula canonica"
+    },
+    {
+      "id": "3d0f9b73-7c50-45e3-bb78-44fdcbfc44eb",
+      "venda_id": "ab3def5e-d139-4f60-9669-d4896c74436d",
+      "contrato": "314",
+      "parcela": 30,
+      "status": "pendente",
+      "campo": "pagamentos_prosoluto",
+      "antes": {
+        "comissao_gerada": 268.46,
+        "fator_comissao_aplicado": 0.35,
+        "percentual_comissao_total": 7
+      },
+      "depois": {
+        "comissao_gerada": 269.54,
+        "fator_comissao_aplicado": 0.3514,
+        "percentual_comissao_total": 7,
+        "updated_at": "2026-05-21T14:58:13.270Z"
+      },
+      "motivo": "FRANCISCO ASSIS / MATHEUS 408 A: fator do corretor deve ser 20.08%; parcela pendente recalculada pela formula canonica"
+    },
+    {
+      "id": "9dd72f1b-4116-4010-b287-868352bb547b",
+      "venda_id": "ab3def5e-d139-4f60-9669-d4896c74436d",
+      "contrato": "314",
+      "parcela": 41,
+      "status": "pendente",
+      "campo": "pagamentos_prosoluto",
+      "antes": {
+        "comissao_gerada": 268.46,
+        "fator_comissao_aplicado": 0.35,
+        "percentual_comissao_total": 7
+      },
+      "depois": {
+        "comissao_gerada": 269.54,
+        "fator_comissao_aplicado": 0.3514,
+        "percentual_comissao_total": 7,
+        "updated_at": "2026-05-21T14:58:13.412Z"
+      },
+      "motivo": "FRANCISCO ASSIS / MATHEUS 408 A: fator do corretor deve ser 20.08%; parcela pendente recalculada pela formula canonica"
+    },
+    {
+      "id": "f2fef256-46f5-4bc6-ae44-5a27840508e2",
+      "venda_id": "ab3def5e-d139-4f60-9669-d4896c74436d",
+      "contrato": "314",
+      "parcela": 22,
+      "status": "pendente",
+      "campo": "pagamentos_prosoluto",
+      "antes": {
+        "comissao_gerada": 268.46,
+        "fator_comissao_aplicado": 0.35,
+        "percentual_comissao_total": 7
+      },
+      "depois": {
+        "comissao_gerada": 269.54,
+        "fator_comissao_aplicado": 0.3514,
+        "percentual_comissao_total": 7,
+        "updated_at": "2026-05-21T14:58:13.572Z"
+      },
+      "motivo": "FRANCISCO ASSIS / MATHEUS 408 A: fator do corretor deve ser 20.08%; parcela pendente recalculada pela formula canonica"
+    },
+    {
+      "id": "5132e5e5-e4ea-492f-87a1-7bc8ca3ad9f0",
+      "venda_id": "ab3def5e-d139-4f60-9669-d4896c74436d",
+      "contrato": "314",
+      "parcela": 44,
+      "status": "pendente",
+      "campo": "pagamentos_prosoluto",
+      "antes": {
+        "comissao_gerada": 268.46,
+        "fator_comissao_aplicado": 0.35,
+        "percentual_comissao_total": 7
+      },
+      "depois": {
+        "comissao_gerada": 269.54,
+        "fator_comissao_aplicado": 0.3514,
+        "percentual_comissao_total": 7,
+        "updated_at": "2026-05-21T14:58:13.718Z"
+      },
+      "motivo": "FRANCISCO ASSIS / MATHEUS 408 A: fator do corretor deve ser 20.08%; parcela pendente recalculada pela formula canonica"
+    },
+    {
+      "id": "52895b07-2706-412d-bdff-b42e16dff5e5",
+      "venda_id": "ab3def5e-d139-4f60-9669-d4896c74436d",
+      "contrato": "314",
+      "parcela": 29,
+      "status": "pendente",
+      "campo": "pagamentos_prosoluto",
+      "antes": {
+        "comissao_gerada": 268.46,
+        "fator_comissao_aplicado": 0.35,
+        "percentual_comissao_total": 7
+      },
+      "depois": {
+        "comissao_gerada": 269.54,
+        "fator_comissao_aplicado": 0.3514,
+        "percentual_comissao_total": 7,
+        "updated_at": "2026-05-21T14:58:13.879Z"
+      },
+      "motivo": "FRANCISCO ASSIS / MATHEUS 408 A: fator do corretor deve ser 20.08%; parcela pendente recalculada pela formula canonica"
+    },
+    {
+      "id": "efdda4bd-5a87-4047-a082-e002f975a60b",
+      "venda_id": "ab3def5e-d139-4f60-9669-d4896c74436d",
+      "contrato": "314",
+      "parcela": 34,
+      "status": "pendente",
+      "campo": "pagamentos_prosoluto",
+      "antes": {
+        "comissao_gerada": 268.46,
+        "fator_comissao_aplicado": 0.35,
+        "percentual_comissao_total": 7
+      },
+      "depois": {
+        "comissao_gerada": 269.54,
+        "fator_comissao_aplicado": 0.3514,
+        "percentual_comissao_total": 7,
+        "updated_at": "2026-05-21T14:58:14.040Z"
+      },
+      "motivo": "FRANCISCO ASSIS / MATHEUS 408 A: fator do corretor deve ser 20.08%; parcela pendente recalculada pela formula canonica"
+    },
+    {
+      "id": "85ce75d2-ea5e-4217-8a46-0badee18598c",
+      "venda_id": "ab3def5e-d139-4f60-9669-d4896c74436d",
+      "contrato": "314",
+      "parcela": 17,
+      "status": "pendente",
+      "campo": "pagamentos_prosoluto",
+      "antes": {
+        "comissao_gerada": 268.46,
+        "fator_comissao_aplicado": 0.35,
+        "percentual_comissao_total": 7
+      },
+      "depois": {
+        "comissao_gerada": 269.54,
+        "fator_comissao_aplicado": 0.3514,
+        "percentual_comissao_total": 7,
+        "updated_at": "2026-05-21T14:58:14.196Z"
+      },
+      "motivo": "FRANCISCO ASSIS / MATHEUS 408 A: fator do corretor deve ser 20.08%; parcela pendente recalculada pela formula canonica"
+    },
+    {
+      "id": "dad03879-5bab-4df1-a94d-98ae4aa67238",
+      "venda_id": "ab3def5e-d139-4f60-9669-d4896c74436d",
+      "contrato": "314",
+      "parcela": 31,
+      "status": "pendente",
+      "campo": "pagamentos_prosoluto",
+      "antes": {
+        "comissao_gerada": 268.46,
+        "fator_comissao_aplicado": 0.35,
+        "percentual_comissao_total": 7
+      },
+      "depois": {
+        "comissao_gerada": 269.54,
+        "fator_comissao_aplicado": 0.3514,
+        "percentual_comissao_total": 7,
+        "updated_at": "2026-05-21T14:58:14.339Z"
+      },
+      "motivo": "FRANCISCO ASSIS / MATHEUS 408 A: fator do corretor deve ser 20.08%; parcela pendente recalculada pela formula canonica"
+    },
+    {
+      "id": "27cd1ffc-6df4-4bfd-a8aa-8421637c4722",
+      "venda_id": "ab3def5e-d139-4f60-9669-d4896c74436d",
+      "contrato": "314",
+      "parcela": 59,
+      "status": "pendente",
+      "campo": "pagamentos_prosoluto",
+      "antes": {
+        "comissao_gerada": 268.46,
+        "fator_comissao_aplicado": 0.35,
+        "percentual_comissao_total": 7
+      },
+      "depois": {
+        "comissao_gerada": 269.54,
+        "fator_comissao_aplicado": 0.3514,
+        "percentual_comissao_total": 7,
+        "updated_at": "2026-05-21T14:58:14.512Z"
+      },
+      "motivo": "FRANCISCO ASSIS / MATHEUS 408 A: fator do corretor deve ser 20.08%; parcela pendente recalculada pela formula canonica"
+    },
+    {
+      "id": "2a39613b-7af2-4cf9-a43d-c30a55190690",
+      "venda_id": "ab3def5e-d139-4f60-9669-d4896c74436d",
+      "contrato": "314",
+      "parcela": 18,
+      "status": "pendente",
+      "campo": "pagamentos_prosoluto",
+      "antes": {
+        "comissao_gerada": 268.46,
+        "fator_comissao_aplicado": 0.35,
+        "percentual_comissao_total": 7
+      },
+      "depois": {
+        "comissao_gerada": 269.54,
+        "fator_comissao_aplicado": 0.3514,
+        "percentual_comissao_total": 7,
+        "updated_at": "2026-05-21T14:58:14.658Z"
+      },
+      "motivo": "FRANCISCO ASSIS / MATHEUS 408 A: fator do corretor deve ser 20.08%; parcela pendente recalculada pela formula canonica"
+    },
+    {
+      "id": "e7bd2bbc-2a36-4c54-90f5-eaf3d769f0d8",
+      "venda_id": "ab3def5e-d139-4f60-9669-d4896c74436d",
+      "contrato": "314",
+      "parcela": 60,
+      "status": "pendente",
+      "campo": "pagamentos_prosoluto",
+      "antes": {
+        "comissao_gerada": 268.46,
+        "fator_comissao_aplicado": 0.35,
+        "percentual_comissao_total": 7
+      },
+      "depois": {
+        "comissao_gerada": 269.54,
+        "fator_comissao_aplicado": 0.3514,
+        "percentual_comissao_total": 7,
+        "updated_at": "2026-05-21T14:58:14.817Z"
+      },
+      "motivo": "FRANCISCO ASSIS / MATHEUS 408 A: fator do corretor deve ser 20.08%; parcela pendente recalculada pela formula canonica"
+    },
+    {
+      "id": "3609e86e-a6a4-4f22-b98c-0d3839d7e935",
+      "venda_id": "ab3def5e-d139-4f60-9669-d4896c74436d",
+      "contrato": "314",
+      "parcela": 58,
+      "status": "pendente",
+      "campo": "pagamentos_prosoluto",
+      "antes": {
+        "comissao_gerada": 268.46,
+        "fator_comissao_aplicado": 0.35,
+        "percentual_comissao_total": 7
+      },
+      "depois": {
+        "comissao_gerada": 269.54,
+        "fator_comissao_aplicado": 0.3514,
+        "percentual_comissao_total": 7,
+        "updated_at": "2026-05-21T14:58:14.962Z"
+      },
+      "motivo": "FRANCISCO ASSIS / MATHEUS 408 A: fator do corretor deve ser 20.08%; parcela pendente recalculada pela formula canonica"
+    },
+    {
+      "id": "43abd6ee-20d1-477d-8149-f0785f2417ac",
+      "venda_id": "ab3def5e-d139-4f60-9669-d4896c74436d",
+      "contrato": "314",
+      "parcela": 15,
+      "status": "pendente",
+      "campo": "pagamentos_prosoluto",
+      "antes": {
+        "comissao_gerada": 268.46,
+        "fator_comissao_aplicado": 0.35,
+        "percentual_comissao_total": 7
+      },
+      "depois": {
+        "comissao_gerada": 269.54,
+        "fator_comissao_aplicado": 0.3514,
+        "percentual_comissao_total": 7,
+        "updated_at": "2026-05-21T14:58:15.117Z"
+      },
+      "motivo": "FRANCISCO ASSIS / MATHEUS 408 A: fator do corretor deve ser 20.08%; parcela pendente recalculada pela formula canonica"
+    },
+    {
+      "id": "0f8aaa25-ccc4-4590-bcc3-e07d0f18476f",
+      "venda_id": "ab3def5e-d139-4f60-9669-d4896c74436d",
+      "contrato": "314",
+      "parcela": 36,
+      "status": "pendente",
+      "campo": "pagamentos_prosoluto",
+      "antes": {
+        "comissao_gerada": 268.46,
+        "fator_comissao_aplicado": 0.35,
+        "percentual_comissao_total": 7
+      },
+      "depois": {
+        "comissao_gerada": 269.54,
+        "fator_comissao_aplicado": 0.3514,
+        "percentual_comissao_total": 7,
+        "updated_at": "2026-05-21T14:58:15.264Z"
+      },
+      "motivo": "FRANCISCO ASSIS / MATHEUS 408 A: fator do corretor deve ser 20.08%; parcela pendente recalculada pela formula canonica"
+    },
+    {
+      "id": "00ba27cd-693c-42cc-8b08-ecf0558ddf05",
+      "venda_id": "ab3def5e-d139-4f60-9669-d4896c74436d",
+      "contrato": "314",
+      "parcela": 25,
+      "status": "pendente",
+      "campo": "pagamentos_prosoluto",
+      "antes": {
+        "comissao_gerada": 268.46,
+        "fator_comissao_aplicado": 0.35,
+        "percentual_comissao_total": 7
+      },
+      "depois": {
+        "comissao_gerada": 269.54,
+        "fator_comissao_aplicado": 0.3514,
+        "percentual_comissao_total": 7,
+        "updated_at": "2026-05-21T14:58:15.426Z"
+      },
+      "motivo": "FRANCISCO ASSIS / MATHEUS 408 A: fator do corretor deve ser 20.08%; parcela pendente recalculada pela formula canonica"
+    },
+    {
+      "id": "baf244d8-b9a1-4371-9ced-a87f89d00c22",
+      "venda_id": "ab3def5e-d139-4f60-9669-d4896c74436d",
+      "contrato": "314",
+      "parcela": 27,
+      "status": "pendente",
+      "campo": "pagamentos_prosoluto",
+      "antes": {
+        "comissao_gerada": 268.46,
+        "fator_comissao_aplicado": 0.35,
+        "percentual_comissao_total": 7
+      },
+      "depois": {
+        "comissao_gerada": 269.54,
+        "fator_comissao_aplicado": 0.3514,
+        "percentual_comissao_total": 7,
+        "updated_at": "2026-05-21T14:58:15.571Z"
+      },
+      "motivo": "FRANCISCO ASSIS / MATHEUS 408 A: fator do corretor deve ser 20.08%; parcela pendente recalculada pela formula canonica"
+    },
+    {
+      "id": "93e21457-90d1-4c8a-8cd8-1936e9f3f671",
+      "venda_id": "ab3def5e-d139-4f60-9669-d4896c74436d",
+      "contrato": "314",
+      "parcela": 51,
+      "status": "pendente",
+      "campo": "pagamentos_prosoluto",
+      "antes": {
+        "comissao_gerada": 268.46,
+        "fator_comissao_aplicado": 0.35,
+        "percentual_comissao_total": 7
+      },
+      "depois": {
+        "comissao_gerada": 269.54,
+        "fator_comissao_aplicado": 0.3514,
+        "percentual_comissao_total": 7,
+        "updated_at": "2026-05-21T14:58:15.732Z"
+      },
+      "motivo": "FRANCISCO ASSIS / MATHEUS 408 A: fator do corretor deve ser 20.08%; parcela pendente recalculada pela formula canonica"
+    },
+    {
+      "id": "adcbf5c6-81b4-469e-ac76-f8daed54c76a",
+      "venda_id": "ab3def5e-d139-4f60-9669-d4896c74436d",
+      "contrato": "314",
+      "parcela": 14,
+      "status": "pendente",
+      "campo": "pagamentos_prosoluto",
+      "antes": {
+        "comissao_gerada": 268.46,
+        "fator_comissao_aplicado": 0.35,
+        "percentual_comissao_total": 7
+      },
+      "depois": {
+        "comissao_gerada": 269.54,
+        "fator_comissao_aplicado": 0.3514,
+        "percentual_comissao_total": 7,
+        "updated_at": "2026-05-21T14:58:15.872Z"
+      },
+      "motivo": "FRANCISCO ASSIS / MATHEUS 408 A: fator do corretor deve ser 20.08%; parcela pendente recalculada pela formula canonica"
+    },
+    {
+      "id": "56150f3c-74e8-4e07-9fc9-b85a7ab42379",
+      "venda_id": "ab3def5e-d139-4f60-9669-d4896c74436d",
+      "contrato": "314",
+      "parcela": 39,
+      "status": "pendente",
+      "campo": "pagamentos_prosoluto",
+      "antes": {
+        "comissao_gerada": 268.46,
+        "fator_comissao_aplicado": 0.35,
+        "percentual_comissao_total": 7
+      },
+      "depois": {
+        "comissao_gerada": 269.54,
+        "fator_comissao_aplicado": 0.3514,
+        "percentual_comissao_total": 7,
+        "updated_at": "2026-05-21T14:58:16.027Z"
+      },
+      "motivo": "FRANCISCO ASSIS / MATHEUS 408 A: fator do corretor deve ser 20.08%; parcela pendente recalculada pela formula canonica"
+    },
+    {
+      "id": "bb763a8d-2509-42ab-817e-e3f673a328d9",
+      "venda_id": "ab3def5e-d139-4f60-9669-d4896c74436d",
+      "contrato": "314",
+      "parcela": 16,
+      "status": "pendente",
+      "campo": "pagamentos_prosoluto",
+      "antes": {
+        "comissao_gerada": 268.46,
+        "fator_comissao_aplicado": 0.35,
+        "percentual_comissao_total": 7
+      },
+      "depois": {
+        "comissao_gerada": 269.54,
+        "fator_comissao_aplicado": 0.3514,
+        "percentual_comissao_total": 7,
+        "updated_at": "2026-05-21T14:58:16.170Z"
+      },
+      "motivo": "FRANCISCO ASSIS / MATHEUS 408 A: fator do corretor deve ser 20.08%; parcela pendente recalculada pela formula canonica"
+    },
+    {
+      "id": "8f0cd8ff-0a61-4224-badf-41c3db6c3c79",
+      "venda_id": "ab3def5e-d139-4f60-9669-d4896c74436d",
+      "contrato": "314",
+      "parcela": 19,
+      "status": "pendente",
+      "campo": "pagamentos_prosoluto",
+      "antes": {
+        "comissao_gerada": 268.46,
+        "fator_comissao_aplicado": 0.35,
+        "percentual_comissao_total": 7
+      },
+      "depois": {
+        "comissao_gerada": 269.54,
+        "fator_comissao_aplicado": 0.3514,
+        "percentual_comissao_total": 7,
+        "updated_at": "2026-05-21T14:58:16.333Z"
+      },
+      "motivo": "FRANCISCO ASSIS / MATHEUS 408 A: fator do corretor deve ser 20.08%; parcela pendente recalculada pela formula canonica"
+    },
+    {
+      "id": "3d4bca12-3502-4c89-ba90-5418df0de4ff",
+      "venda_id": "ab3def5e-d139-4f60-9669-d4896c74436d",
+      "contrato": "314",
+      "parcela": 20,
+      "status": "pendente",
+      "campo": "pagamentos_prosoluto",
+      "antes": {
+        "comissao_gerada": 268.46,
+        "fator_comissao_aplicado": 0.35,
+        "percentual_comissao_total": 7
+      },
+      "depois": {
+        "comissao_gerada": 269.54,
+        "fator_comissao_aplicado": 0.3514,
+        "percentual_comissao_total": 7,
+        "updated_at": "2026-05-21T14:58:16.480Z"
+      },
+      "motivo": "FRANCISCO ASSIS / MATHEUS 408 A: fator do corretor deve ser 20.08%; parcela pendente recalculada pela formula canonica"
+    },
+    {
+      "id": "c0f1e6b4-9a5b-43b3-bf2a-6e4812a7b9b6",
+      "venda_id": "ab3def5e-d139-4f60-9669-d4896c74436d",
+      "contrato": "314",
+      "parcela": 21,
+      "status": "pendente",
+      "campo": "pagamentos_prosoluto",
+      "antes": {
+        "comissao_gerada": 268.46,
+        "fator_comissao_aplicado": 0.35,
+        "percentual_comissao_total": 7
+      },
+      "depois": {
+        "comissao_gerada": 269.54,
+        "fator_comissao_aplicado": 0.3514,
+        "percentual_comissao_total": 7,
+        "updated_at": "2026-05-21T14:58:16.638Z"
+      },
+      "motivo": "FRANCISCO ASSIS / MATHEUS 408 A: fator do corretor deve ser 20.08%; parcela pendente recalculada pela formula canonica"
+    },
+    {
+      "id": "3d14b0ce-b62d-4ff1-b08d-464c973516c7",
+      "venda_id": "ab3def5e-d139-4f60-9669-d4896c74436d",
+      "contrato": "314",
+      "parcela": 12,
+      "status": "pendente",
+      "campo": "pagamentos_prosoluto",
+      "antes": {
+        "comissao_gerada": 268.46,
+        "fator_comissao_aplicado": 0.35,
+        "percentual_comissao_total": 7
+      },
+      "depois": {
+        "comissao_gerada": 269.54,
+        "fator_comissao_aplicado": 0.3514,
+        "percentual_comissao_total": 7,
+        "updated_at": "2026-05-21T14:58:16.779Z"
+      },
+      "motivo": "FRANCISCO ASSIS / MATHEUS 408 A: fator do corretor deve ser 20.08%; parcela pendente recalculada pela formula canonica"
+    },
+    {
+      "id": "aa148675-07ea-45ca-a5ef-c31bd210f7ba",
+      "venda_id": "ab3def5e-d139-4f60-9669-d4896c74436d",
+      "contrato": "314",
+      "parcela": 13,
+      "status": "pendente",
+      "campo": "pagamentos_prosoluto",
+      "antes": {
+        "comissao_gerada": 268.46,
+        "fator_comissao_aplicado": 0.35,
+        "percentual_comissao_total": 7
+      },
+      "depois": {
+        "comissao_gerada": 269.54,
+        "fator_comissao_aplicado": 0.3514,
+        "percentual_comissao_total": 7,
+        "updated_at": "2026-05-21T14:58:16.932Z"
+      },
+      "motivo": "FRANCISCO ASSIS / MATHEUS 408 A: fator do corretor deve ser 20.08%; parcela pendente recalculada pela formula canonica"
+    },
+    {
+      "id": "10b7f469-cece-4d33-9033-3620fb1e4f44",
+      "venda_id": "ab3def5e-d139-4f60-9669-d4896c74436d",
+      "contrato": "314",
+      "parcela": 52,
+      "status": "pendente",
+      "campo": "pagamentos_prosoluto",
+      "antes": {
+        "comissao_gerada": 268.46,
+        "fator_comissao_aplicado": 0.35,
+        "percentual_comissao_total": 7
+      },
+      "depois": {
+        "comissao_gerada": 269.54,
+        "fator_comissao_aplicado": 0.3514,
+        "percentual_comissao_total": 7,
+        "updated_at": "2026-05-21T14:58:17.100Z"
+      },
+      "motivo": "FRANCISCO ASSIS / MATHEUS 408 A: fator do corretor deve ser 20.08%; parcela pendente recalculada pela formula canonica"
+    },
+    {
+      "id": "e0e25ac6-8cd6-4df7-97ae-3882d830ef29",
+      "venda_id": "ab3def5e-d139-4f60-9669-d4896c74436d",
+      "contrato": "314",
+      "parcela": 53,
+      "status": "pendente",
+      "campo": "pagamentos_prosoluto",
+      "antes": {
+        "comissao_gerada": 268.46,
+        "fator_comissao_aplicado": 0.35,
+        "percentual_comissao_total": 7
+      },
+      "depois": {
+        "comissao_gerada": 269.54,
+        "fator_comissao_aplicado": 0.3514,
+        "percentual_comissao_total": 7,
+        "updated_at": "2026-05-21T14:58:17.268Z"
+      },
+      "motivo": "FRANCISCO ASSIS / MATHEUS 408 A: fator do corretor deve ser 20.08%; parcela pendente recalculada pela formula canonica"
+    },
+    {
+      "id": "523cda1a-5ac8-47c3-a6e2-509f40929648",
+      "venda_id": "ab3def5e-d139-4f60-9669-d4896c74436d",
+      "contrato": "314",
+      "parcela": 54,
+      "status": "pendente",
+      "campo": "pagamentos_prosoluto",
+      "antes": {
+        "comissao_gerada": 268.46,
+        "fator_comissao_aplicado": 0.35,
+        "percentual_comissao_total": 7
+      },
+      "depois": {
+        "comissao_gerada": 269.54,
+        "fator_comissao_aplicado": 0.3514,
+        "percentual_comissao_total": 7,
+        "updated_at": "2026-05-21T14:58:17.413Z"
+      },
+      "motivo": "FRANCISCO ASSIS / MATHEUS 408 A: fator do corretor deve ser 20.08%; parcela pendente recalculada pela formula canonica"
+    },
+    {
+      "id": "b53e3283-3ad9-4b48-bff7-99c4136a94a1",
+      "venda_id": "ab3def5e-d139-4f60-9669-d4896c74436d",
+      "contrato": "314",
+      "parcela": 55,
+      "status": "pendente",
+      "campo": "pagamentos_prosoluto",
+      "antes": {
+        "comissao_gerada": 268.46,
+        "fator_comissao_aplicado": 0.35,
+        "percentual_comissao_total": 7
+      },
+      "depois": {
+        "comissao_gerada": 269.54,
+        "fator_comissao_aplicado": 0.3514,
+        "percentual_comissao_total": 7,
+        "updated_at": "2026-05-21T14:58:17.582Z"
+      },
+      "motivo": "FRANCISCO ASSIS / MATHEUS 408 A: fator do corretor deve ser 20.08%; parcela pendente recalculada pela formula canonica"
+    },
+    {
+      "id": "02073244-f1eb-46f8-9635-0a89475487ea",
+      "venda_id": "ab3def5e-d139-4f60-9669-d4896c74436d",
+      "contrato": "314",
+      "parcela": 56,
+      "status": "pendente",
+      "campo": "pagamentos_prosoluto",
+      "antes": {
+        "comissao_gerada": 268.46,
+        "fator_comissao_aplicado": 0.35,
+        "percentual_comissao_total": 7
+      },
+      "depois": {
+        "comissao_gerada": 269.54,
+        "fator_comissao_aplicado": 0.3514,
+        "percentual_comissao_total": 7,
+        "updated_at": "2026-05-21T14:58:17.791Z"
+      },
+      "motivo": "FRANCISCO ASSIS / MATHEUS 408 A: fator do corretor deve ser 20.08%; parcela pendente recalculada pela formula canonica"
+    },
+    {
+      "id": "ee1e4125-72b1-489b-9748-eb514d7704e7",
+      "venda_id": "ab3def5e-d139-4f60-9669-d4896c74436d",
+      "contrato": "314",
+      "parcela": 57,
+      "status": "pendente",
+      "campo": "pagamentos_prosoluto",
+      "antes": {
+        "comissao_gerada": 268.46,
+        "fator_comissao_aplicado": 0.35,
+        "percentual_comissao_total": 7
+      },
+      "depois": {
+        "comissao_gerada": 269.54,
+        "fator_comissao_aplicado": 0.3514,
+        "percentual_comissao_total": 7,
+        "updated_at": "2026-05-21T14:58:17.995Z"
+      },
+      "motivo": "FRANCISCO ASSIS / MATHEUS 408 A: fator do corretor deve ser 20.08%; parcela pendente recalculada pela formula canonica"
+    },
+    {
+      "id": "3c464793-ddfb-4177-aee7-bf5c5471d6b9",
+      "venda_id": "ab3def5e-d139-4f60-9669-d4896c74436d",
+      "contrato": "314",
+      "parcela": 23,
+      "status": "pendente",
+      "campo": "pagamentos_prosoluto",
+      "antes": {
+        "comissao_gerada": 268.46,
+        "fator_comissao_aplicado": 0.35,
+        "percentual_comissao_total": 7
+      },
+      "depois": {
+        "comissao_gerada": 269.54,
+        "fator_comissao_aplicado": 0.3514,
+        "percentual_comissao_total": 7,
+        "updated_at": "2026-05-21T14:58:18.200Z"
+      },
+      "motivo": "FRANCISCO ASSIS / MATHEUS 408 A: fator do corretor deve ser 20.08%; parcela pendente recalculada pela formula canonica"
+    },
+    {
+      "id": "746be72b-fbe7-4cf5-9ff2-98614bf9bbe0",
+      "venda_id": "ab3def5e-d139-4f60-9669-d4896c74436d",
+      "contrato": "314",
+      "parcela": 24,
+      "status": "pendente",
+      "campo": "pagamentos_prosoluto",
+      "antes": {
+        "comissao_gerada": 268.46,
+        "fator_comissao_aplicado": 0.35,
+        "percentual_comissao_total": 7
+      },
+      "depois": {
+        "comissao_gerada": 269.54,
+        "fator_comissao_aplicado": 0.3514,
+        "percentual_comissao_total": 7,
+        "updated_at": "2026-05-21T14:58:18.361Z"
+      },
+      "motivo": "FRANCISCO ASSIS / MATHEUS 408 A: fator do corretor deve ser 20.08%; parcela pendente recalculada pela formula canonica"
+    },
+    {
+      "id": "101a3b07-c678-40e0-849c-88b403fb31de",
+      "venda_id": "ab3def5e-d139-4f60-9669-d4896c74436d",
+      "contrato": "314",
+      "parcela": 26,
+      "status": "pendente",
+      "campo": "pagamentos_prosoluto",
+      "antes": {
+        "comissao_gerada": 268.46,
+        "fator_comissao_aplicado": 0.35,
+        "percentual_comissao_total": 7
+      },
+      "depois": {
+        "comissao_gerada": 269.54,
+        "fator_comissao_aplicado": 0.3514,
+        "percentual_comissao_total": 7,
+        "updated_at": "2026-05-21T14:58:18.533Z"
+      },
+      "motivo": "FRANCISCO ASSIS / MATHEUS 408 A: fator do corretor deve ser 20.08%; parcela pendente recalculada pela formula canonica"
+    },
+    {
+      "id": "a972007c-76f6-4f14-a2c4-76d2f0329c4a",
+      "venda_id": "ab3def5e-d139-4f60-9669-d4896c74436d",
+      "contrato": "314",
+      "parcela": 28,
+      "status": "pendente",
+      "campo": "pagamentos_prosoluto",
+      "antes": {
+        "comissao_gerada": 268.46,
+        "fator_comissao_aplicado": 0.35,
+        "percentual_comissao_total": 7
+      },
+      "depois": {
+        "comissao_gerada": 269.54,
+        "fator_comissao_aplicado": 0.3514,
+        "percentual_comissao_total": 7,
+        "updated_at": "2026-05-21T14:58:18.712Z"
+      },
+      "motivo": "FRANCISCO ASSIS / MATHEUS 408 A: fator do corretor deve ser 20.08%; parcela pendente recalculada pela formula canonica"
+    },
+    {
+      "id": "fdeac58d-54ab-447e-bb08-2b40d62b5381",
+      "venda_id": "ab3def5e-d139-4f60-9669-d4896c74436d",
+      "contrato": "314",
+      "parcela": 35,
+      "status": "pendente",
+      "campo": "pagamentos_prosoluto",
+      "antes": {
+        "comissao_gerada": 268.46,
+        "fator_comissao_aplicado": 0.35,
+        "percentual_comissao_total": 7
+      },
+      "depois": {
+        "comissao_gerada": 269.54,
+        "fator_comissao_aplicado": 0.3514,
+        "percentual_comissao_total": 7,
+        "updated_at": "2026-05-21T14:58:18.858Z"
+      },
+      "motivo": "FRANCISCO ASSIS / MATHEUS 408 A: fator do corretor deve ser 20.08%; parcela pendente recalculada pela formula canonica"
+    },
+    {
+      "id": "1b183860-cd63-49e6-9896-4120a72b6f84",
+      "venda_id": "ab3def5e-d139-4f60-9669-d4896c74436d",
+      "contrato": "314",
+      "parcela": 38,
+      "status": "pendente",
+      "campo": "pagamentos_prosoluto",
+      "antes": {
+        "comissao_gerada": 268.46,
+        "fator_comissao_aplicado": 0.35,
+        "percentual_comissao_total": 7
+      },
+      "depois": {
+        "comissao_gerada": 269.54,
+        "fator_comissao_aplicado": 0.3514,
+        "percentual_comissao_total": 7,
+        "updated_at": "2026-05-21T14:58:19.021Z"
+      },
+      "motivo": "FRANCISCO ASSIS / MATHEUS 408 A: fator do corretor deve ser 20.08%; parcela pendente recalculada pela formula canonica"
+    },
+    {
+      "id": "62b432b8-003a-418f-952b-099d240b3c12",
+      "venda_id": "ab3def5e-d139-4f60-9669-d4896c74436d",
+      "contrato": "314",
+      "parcela": 40,
+      "status": "pendente",
+      "campo": "pagamentos_prosoluto",
+      "antes": {
+        "comissao_gerada": 268.46,
+        "fator_comissao_aplicado": 0.35,
+        "percentual_comissao_total": 7
+      },
+      "depois": {
+        "comissao_gerada": 269.54,
+        "fator_comissao_aplicado": 0.3514,
+        "percentual_comissao_total": 7,
+        "updated_at": "2026-05-21T14:58:19.171Z"
+      },
+      "motivo": "FRANCISCO ASSIS / MATHEUS 408 A: fator do corretor deve ser 20.08%; parcela pendente recalculada pela formula canonica"
+    },
+    {
+      "id": "9da1d888-90ee-41dd-8a5b-7785eefde5be",
+      "venda_id": "ab3def5e-d139-4f60-9669-d4896c74436d",
+      "contrato": "314",
+      "parcela": 42,
+      "status": "pendente",
+      "campo": "pagamentos_prosoluto",
+      "antes": {
+        "comissao_gerada": 268.46,
+        "fator_comissao_aplicado": 0.35,
+        "percentual_comissao_total": 7
+      },
+      "depois": {
+        "comissao_gerada": 269.54,
+        "fator_comissao_aplicado": 0.3514,
+        "percentual_comissao_total": 7,
+        "updated_at": "2026-05-21T14:58:19.350Z"
+      },
+      "motivo": "FRANCISCO ASSIS / MATHEUS 408 A: fator do corretor deve ser 20.08%; parcela pendente recalculada pela formula canonica"
+    },
+    {
+      "id": "6d972870-6125-4231-9661-2b4a28700050",
+      "venda_id": "ab3def5e-d139-4f60-9669-d4896c74436d",
+      "contrato": "314",
+      "parcela": 43,
+      "status": "pendente",
+      "campo": "pagamentos_prosoluto",
+      "antes": {
+        "comissao_gerada": 268.46,
+        "fator_comissao_aplicado": 0.35,
+        "percentual_comissao_total": 7
+      },
+      "depois": {
+        "comissao_gerada": 269.54,
+        "fator_comissao_aplicado": 0.3514,
+        "percentual_comissao_total": 7,
+        "updated_at": "2026-05-21T14:58:19.531Z"
+      },
+      "motivo": "FRANCISCO ASSIS / MATHEUS 408 A: fator do corretor deve ser 20.08%; parcela pendente recalculada pela formula canonica"
+    },
+    {
+      "id": "ec019e97-491e-40ca-a7f4-3675566cd695",
+      "venda_id": "ab3def5e-d139-4f60-9669-d4896c74436d",
+      "contrato": "314",
+      "parcela": 45,
+      "status": "pendente",
+      "campo": "pagamentos_prosoluto",
+      "antes": {
+        "comissao_gerada": 268.46,
+        "fator_comissao_aplicado": 0.35,
+        "percentual_comissao_total": 7
+      },
+      "depois": {
+        "comissao_gerada": 269.54,
+        "fator_comissao_aplicado": 0.3514,
+        "percentual_comissao_total": 7,
+        "updated_at": "2026-05-21T14:58:19.685Z"
+      },
+      "motivo": "FRANCISCO ASSIS / MATHEUS 408 A: fator do corretor deve ser 20.08%; parcela pendente recalculada pela formula canonica"
+    },
+    {
+      "id": "d2590854-2d23-4eb6-827f-8ef4c0976854",
+      "venda_id": "ab3def5e-d139-4f60-9669-d4896c74436d",
+      "contrato": "314",
+      "parcela": 46,
+      "status": "pendente",
+      "campo": "pagamentos_prosoluto",
+      "antes": {
+        "comissao_gerada": 268.46,
+        "fator_comissao_aplicado": 0.35,
+        "percentual_comissao_total": 7
+      },
+      "depois": {
+        "comissao_gerada": 269.54,
+        "fator_comissao_aplicado": 0.3514,
+        "percentual_comissao_total": 7,
+        "updated_at": "2026-05-21T14:58:19.830Z"
+      },
+      "motivo": "FRANCISCO ASSIS / MATHEUS 408 A: fator do corretor deve ser 20.08%; parcela pendente recalculada pela formula canonica"
+    },
+    {
+      "id": "d535b6db-493d-4c36-9664-5ba9d7650fc5",
+      "venda_id": "ab3def5e-d139-4f60-9669-d4896c74436d",
+      "contrato": "314",
+      "parcela": 47,
+      "status": "pendente",
+      "campo": "pagamentos_prosoluto",
+      "antes": {
+        "comissao_gerada": 268.46,
+        "fator_comissao_aplicado": 0.35,
+        "percentual_comissao_total": 7
+      },
+      "depois": {
+        "comissao_gerada": 269.54,
+        "fator_comissao_aplicado": 0.3514,
+        "percentual_comissao_total": 7,
+        "updated_at": "2026-05-21T14:58:19.988Z"
+      },
+      "motivo": "FRANCISCO ASSIS / MATHEUS 408 A: fator do corretor deve ser 20.08%; parcela pendente recalculada pela formula canonica"
+    },
+    {
+      "id": "2e9f2447-2514-4092-bf79-106a368b9aa9",
+      "venda_id": "ab3def5e-d139-4f60-9669-d4896c74436d",
+      "contrato": "314",
+      "parcela": 48,
+      "status": "pendente",
+      "campo": "pagamentos_prosoluto",
+      "antes": {
+        "comissao_gerada": 268.46,
+        "fator_comissao_aplicado": 0.35,
+        "percentual_comissao_total": 7
+      },
+      "depois": {
+        "comissao_gerada": 269.54,
+        "fator_comissao_aplicado": 0.3514,
+        "percentual_comissao_total": 7,
+        "updated_at": "2026-05-21T14:58:20.153Z"
+      },
+      "motivo": "FRANCISCO ASSIS / MATHEUS 408 A: fator do corretor deve ser 20.08%; parcela pendente recalculada pela formula canonica"
+    },
+    {
+      "id": "906fc69d-bc2d-4241-ae36-e146d33234df",
+      "venda_id": "ab3def5e-d139-4f60-9669-d4896c74436d",
+      "contrato": "314",
+      "parcela": 49,
+      "status": "pendente",
+      "campo": "pagamentos_prosoluto",
+      "antes": {
+        "comissao_gerada": 268.46,
+        "fator_comissao_aplicado": 0.35,
+        "percentual_comissao_total": 7
+      },
+      "depois": {
+        "comissao_gerada": 269.54,
+        "fator_comissao_aplicado": 0.3514,
+        "percentual_comissao_total": 7,
+        "updated_at": "2026-05-21T14:58:20.311Z"
+      },
+      "motivo": "FRANCISCO ASSIS / MATHEUS 408 A: fator do corretor deve ser 20.08%; parcela pendente recalculada pela formula canonica"
+    },
+    {
+      "id": "5582da3a-1986-4e55-a582-d82ef4efe8cf",
+      "venda_id": "ab3def5e-d139-4f60-9669-d4896c74436d",
+      "contrato": "314",
+      "parcela": 50,
+      "status": "pendente",
+      "campo": "pagamentos_prosoluto",
+      "antes": {
+        "comissao_gerada": 268.46,
+        "fator_comissao_aplicado": 0.35,
+        "percentual_comissao_total": 7
+      },
+      "depois": {
+        "comissao_gerada": 269.54,
+        "fator_comissao_aplicado": 0.3514,
+        "percentual_comissao_total": 7,
+        "updated_at": "2026-05-21T14:58:20.454Z"
+      },
+      "motivo": "FRANCISCO ASSIS / MATHEUS 408 A: fator do corretor deve ser 20.08%; parcela pendente recalculada pela formula canonica"
+    },
+    {
+      "venda_id": "8d759d05-115a-4690-97b5-6512128a41aa",
+      "contrato": "254",
+      "campo": "vendas",
+      "antes": {
+        "tipo_corretor": "externo",
+        "valor_venda": 363369.59,
+        "valor_venda_total": 363369.59,
+        "fator_comissao": 0.350001,
+        "corretor_id_origem": "sync"
+      },
+      "depois": {
+        "tipo_corretor": "externo",
+        "valor_venda": 399705.9,
+        "valor_venda_total": 399705.9,
+        "fator_comissao": 0.385,
+        "updated_at": "2026-05-21T14:58:21.509Z",
+        "corretor_id_origem": "manual"
+      },
+      "motivo": "GABRIEL LUZ / JACKSON 1404 C: fator do corretor deve ser 22%"
+    },
+    {
+      "id": "61f3728d-3c89-403c-9f63-87e72d0bf234",
+      "venda_id": "8d759d05-115a-4690-97b5-6512128a41aa",
+      "contrato": "254",
+      "parcela": 28,
+      "status": "pendente",
+      "campo": "pagamentos_prosoluto",
+      "antes": {
+        "comissao_gerada": 423.93,
+        "fator_comissao_aplicado": 0.350001,
+        "percentual_comissao_total": 7
+      },
+      "depois": {
+        "comissao_gerada": 466.32,
+        "fator_comissao_aplicado": 0.385,
+        "percentual_comissao_total": 7,
+        "updated_at": "2026-05-21T14:58:21.653Z"
+      },
+      "motivo": "GABRIEL LUZ / JACKSON 1404 C: fator do corretor deve ser 22%; parcela pendente recalculada pela formula canonica"
+    },
+    {
+      "id": "af711df3-491f-480b-80c1-6b62b4ef7a1a",
+      "venda_id": "8d759d05-115a-4690-97b5-6512128a41aa",
+      "contrato": "254",
+      "parcela": 13,
+      "status": "pendente",
+      "campo": "pagamentos_prosoluto",
+      "antes": {
+        "comissao_gerada": 423.93,
+        "fator_comissao_aplicado": 0.350001,
+        "percentual_comissao_total": 7
+      },
+      "depois": {
+        "comissao_gerada": 466.32,
+        "fator_comissao_aplicado": 0.385,
+        "percentual_comissao_total": 7,
+        "updated_at": "2026-05-21T14:58:21.812Z"
+      },
+      "motivo": "GABRIEL LUZ / JACKSON 1404 C: fator do corretor deve ser 22%; parcela pendente recalculada pela formula canonica"
+    },
+    {
+      "id": "a483e63b-1222-434f-ae9e-eb12ee34f519",
+      "venda_id": "8d759d05-115a-4690-97b5-6512128a41aa",
+      "contrato": "254",
+      "parcela": 22,
+      "status": "pendente",
+      "campo": "pagamentos_prosoluto",
+      "antes": {
+        "comissao_gerada": 423.93,
+        "fator_comissao_aplicado": 0.350001,
+        "percentual_comissao_total": 7
+      },
+      "depois": {
+        "comissao_gerada": 466.32,
+        "fator_comissao_aplicado": 0.385,
+        "percentual_comissao_total": 7,
+        "updated_at": "2026-05-21T14:58:21.992Z"
+      },
+      "motivo": "GABRIEL LUZ / JACKSON 1404 C: fator do corretor deve ser 22%; parcela pendente recalculada pela formula canonica"
+    },
+    {
+      "id": "bad4c3eb-9836-49e8-8254-4135f43013e8",
+      "venda_id": "8d759d05-115a-4690-97b5-6512128a41aa",
+      "contrato": "254",
+      "parcela": 32,
+      "status": "pendente",
+      "campo": "pagamentos_prosoluto",
+      "antes": {
+        "comissao_gerada": 423.93,
+        "fator_comissao_aplicado": 0.350001,
+        "percentual_comissao_total": 7
+      },
+      "depois": {
+        "comissao_gerada": 466.32,
+        "fator_comissao_aplicado": 0.385,
+        "percentual_comissao_total": 7,
+        "updated_at": "2026-05-21T14:58:22.160Z"
+      },
+      "motivo": "GABRIEL LUZ / JACKSON 1404 C: fator do corretor deve ser 22%; parcela pendente recalculada pela formula canonica"
+    },
+    {
+      "id": "3a9afe03-93b8-4b9e-aa52-a8bbc1a294a3",
+      "venda_id": "8d759d05-115a-4690-97b5-6512128a41aa",
+      "contrato": "254",
+      "parcela": 21,
+      "status": "pendente",
+      "campo": "pagamentos_prosoluto",
+      "antes": {
+        "comissao_gerada": 423.93,
+        "fator_comissao_aplicado": 0.350001,
+        "percentual_comissao_total": 7
+      },
+      "depois": {
+        "comissao_gerada": 466.32,
+        "fator_comissao_aplicado": 0.385,
+        "percentual_comissao_total": 7,
+        "updated_at": "2026-05-21T14:58:22.304Z"
+      },
+      "motivo": "GABRIEL LUZ / JACKSON 1404 C: fator do corretor deve ser 22%; parcela pendente recalculada pela formula canonica"
+    },
+    {
+      "id": "163da9f6-25c7-48ab-8869-f52669277155",
+      "venda_id": "8d759d05-115a-4690-97b5-6512128a41aa",
+      "contrato": "254",
+      "parcela": 33,
+      "status": "pendente",
+      "campo": "pagamentos_prosoluto",
+      "antes": {
+        "comissao_gerada": 423.93,
+        "fator_comissao_aplicado": 0.350001,
+        "percentual_comissao_total": 7
+      },
+      "depois": {
+        "comissao_gerada": 466.32,
+        "fator_comissao_aplicado": 0.385,
+        "percentual_comissao_total": 7,
+        "updated_at": "2026-05-21T14:58:22.469Z"
+      },
+      "motivo": "GABRIEL LUZ / JACKSON 1404 C: fator do corretor deve ser 22%; parcela pendente recalculada pela formula canonica"
+    },
+    {
+      "id": "ab5e0239-e881-4082-bf3f-7abda62460de",
+      "venda_id": "8d759d05-115a-4690-97b5-6512128a41aa",
+      "contrato": "254",
+      "parcela": 26,
+      "status": "pendente",
+      "campo": "pagamentos_prosoluto",
+      "antes": {
+        "comissao_gerada": 423.93,
+        "fator_comissao_aplicado": 0.350001,
+        "percentual_comissao_total": 7
+      },
+      "depois": {
+        "comissao_gerada": 466.32,
+        "fator_comissao_aplicado": 0.385,
+        "percentual_comissao_total": 7,
+        "updated_at": "2026-05-21T14:58:22.611Z"
+      },
+      "motivo": "GABRIEL LUZ / JACKSON 1404 C: fator do corretor deve ser 22%; parcela pendente recalculada pela formula canonica"
+    },
+    {
+      "id": "bfa624d3-8ff0-41e4-ad0c-3131a1b2d24d",
+      "venda_id": "8d759d05-115a-4690-97b5-6512128a41aa",
+      "contrato": "254",
+      "parcela": 25,
+      "status": "pendente",
+      "campo": "pagamentos_prosoluto",
+      "antes": {
+        "comissao_gerada": 423.93,
+        "fator_comissao_aplicado": 0.350001,
+        "percentual_comissao_total": 7
+      },
+      "depois": {
+        "comissao_gerada": 466.32,
+        "fator_comissao_aplicado": 0.385,
+        "percentual_comissao_total": 7,
+        "updated_at": "2026-05-21T14:58:22.769Z"
+      },
+      "motivo": "GABRIEL LUZ / JACKSON 1404 C: fator do corretor deve ser 22%; parcela pendente recalculada pela formula canonica"
+    },
+    {
+      "id": "65288580-b559-4a35-8101-795d433d0ec8",
+      "venda_id": "8d759d05-115a-4690-97b5-6512128a41aa",
+      "contrato": "254",
+      "parcela": 55,
+      "status": "pendente",
+      "campo": "pagamentos_prosoluto",
+      "antes": {
+        "comissao_gerada": 423.93,
+        "fator_comissao_aplicado": 0.350001,
+        "percentual_comissao_total": 7
+      },
+      "depois": {
+        "comissao_gerada": 466.32,
+        "fator_comissao_aplicado": 0.385,
+        "percentual_comissao_total": 7,
+        "updated_at": "2026-05-21T14:58:22.914Z"
+      },
+      "motivo": "GABRIEL LUZ / JACKSON 1404 C: fator do corretor deve ser 22%; parcela pendente recalculada pela formula canonica"
+    },
+    {
+      "id": "3ca8f4ea-3712-4fed-91a0-0366224693c4",
+      "venda_id": "8d759d05-115a-4690-97b5-6512128a41aa",
+      "contrato": "254",
+      "parcela": 46,
+      "status": "pendente",
+      "campo": "pagamentos_prosoluto",
+      "antes": {
+        "comissao_gerada": 423.93,
+        "fator_comissao_aplicado": 0.350001,
+        "percentual_comissao_total": 7
+      },
+      "depois": {
+        "comissao_gerada": 466.32,
+        "fator_comissao_aplicado": 0.385,
+        "percentual_comissao_total": 7,
+        "updated_at": "2026-05-21T14:58:23.068Z"
+      },
+      "motivo": "GABRIEL LUZ / JACKSON 1404 C: fator do corretor deve ser 22%; parcela pendente recalculada pela formula canonica"
+    },
+    {
+      "id": "7a055169-e7db-4da9-a9ab-8f45a019273a",
+      "venda_id": "8d759d05-115a-4690-97b5-6512128a41aa",
+      "contrato": "254",
+      "parcela": 14,
+      "status": "pendente",
+      "campo": "pagamentos_prosoluto",
+      "antes": {
+        "comissao_gerada": 423.93,
+        "fator_comissao_aplicado": 0.350001,
+        "percentual_comissao_total": 7
+      },
+      "depois": {
+        "comissao_gerada": 466.32,
+        "fator_comissao_aplicado": 0.385,
+        "percentual_comissao_total": 7,
+        "updated_at": "2026-05-21T14:58:23.213Z"
+      },
+      "motivo": "GABRIEL LUZ / JACKSON 1404 C: fator do corretor deve ser 22%; parcela pendente recalculada pela formula canonica"
+    },
+    {
+      "id": "130aa682-35ec-47ca-ac06-be4f797c763c",
+      "venda_id": "8d759d05-115a-4690-97b5-6512128a41aa",
+      "contrato": "254",
+      "parcela": 47,
+      "status": "pendente",
+      "campo": "pagamentos_prosoluto",
+      "antes": {
+        "comissao_gerada": 423.93,
+        "fator_comissao_aplicado": 0.350001,
+        "percentual_comissao_total": 7
+      },
+      "depois": {
+        "comissao_gerada": 466.32,
+        "fator_comissao_aplicado": 0.385,
+        "percentual_comissao_total": 7,
+        "updated_at": "2026-05-21T14:58:23.373Z"
+      },
+      "motivo": "GABRIEL LUZ / JACKSON 1404 C: fator do corretor deve ser 22%; parcela pendente recalculada pela formula canonica"
+    },
+    {
+      "id": "dba52b07-925a-47ae-a13e-b4dd2c8890da",
+      "venda_id": "8d759d05-115a-4690-97b5-6512128a41aa",
+      "contrato": "254",
+      "parcela": 58,
+      "status": "pendente",
+      "campo": "pagamentos_prosoluto",
+      "antes": {
+        "comissao_gerada": 423.93,
+        "fator_comissao_aplicado": 0.350001,
+        "percentual_comissao_total": 7
+      },
+      "depois": {
+        "comissao_gerada": 466.32,
+        "fator_comissao_aplicado": 0.385,
+        "percentual_comissao_total": 7,
+        "updated_at": "2026-05-21T14:58:23.515Z"
+      },
+      "motivo": "GABRIEL LUZ / JACKSON 1404 C: fator do corretor deve ser 22%; parcela pendente recalculada pela formula canonica"
+    },
+    {
+      "id": "9eeec064-9f63-4aad-9249-9f953a4c43a9",
+      "venda_id": "8d759d05-115a-4690-97b5-6512128a41aa",
+      "contrato": "254",
+      "parcela": 16,
+      "status": "pendente",
+      "campo": "pagamentos_prosoluto",
+      "antes": {
+        "comissao_gerada": 423.93,
+        "fator_comissao_aplicado": 0.350001,
+        "percentual_comissao_total": 7
+      },
+      "depois": {
+        "comissao_gerada": 466.32,
+        "fator_comissao_aplicado": 0.385,
+        "percentual_comissao_total": 7,
+        "updated_at": "2026-05-21T14:58:23.678Z"
+      },
+      "motivo": "GABRIEL LUZ / JACKSON 1404 C: fator do corretor deve ser 22%; parcela pendente recalculada pela formula canonica"
+    },
+    {
+      "id": "bee85eef-9d0c-4e47-a7ca-d369125f796f",
+      "venda_id": "8d759d05-115a-4690-97b5-6512128a41aa",
+      "contrato": "254",
+      "parcela": 17,
+      "status": "pendente",
+      "campo": "pagamentos_prosoluto",
+      "antes": {
+        "comissao_gerada": 423.93,
+        "fator_comissao_aplicado": 0.350001,
+        "percentual_comissao_total": 7
+      },
+      "depois": {
+        "comissao_gerada": 466.32,
+        "fator_comissao_aplicado": 0.385,
+        "percentual_comissao_total": 7,
+        "updated_at": "2026-05-21T14:58:23.822Z"
+      },
+      "motivo": "GABRIEL LUZ / JACKSON 1404 C: fator do corretor deve ser 22%; parcela pendente recalculada pela formula canonica"
+    },
+    {
+      "id": "e02a45ba-8cbe-4dbd-a4e7-4d3667b4b734",
+      "venda_id": "8d759d05-115a-4690-97b5-6512128a41aa",
+      "contrato": "254",
+      "parcela": 44,
+      "status": "pendente",
+      "campo": "pagamentos_prosoluto",
+      "antes": {
+        "comissao_gerada": 423.93,
+        "fator_comissao_aplicado": 0.350001,
+        "percentual_comissao_total": 7
+      },
+      "depois": {
+        "comissao_gerada": 466.32,
+        "fator_comissao_aplicado": 0.385,
+        "percentual_comissao_total": 7,
+        "updated_at": "2026-05-21T14:58:23.979Z"
+      },
+      "motivo": "GABRIEL LUZ / JACKSON 1404 C: fator do corretor deve ser 22%; parcela pendente recalculada pela formula canonica"
+    },
+    {
+      "id": "9d9ca52a-30cf-4b70-83ca-5b372ae6aa81",
+      "venda_id": "8d759d05-115a-4690-97b5-6512128a41aa",
+      "contrato": "254",
+      "parcela": 20,
+      "status": "pendente",
+      "campo": "pagamentos_prosoluto",
+      "antes": {
+        "comissao_gerada": 423.93,
+        "fator_comissao_aplicado": 0.350001,
+        "percentual_comissao_total": 7
+      },
+      "depois": {
+        "comissao_gerada": 466.32,
+        "fator_comissao_aplicado": 0.385,
+        "percentual_comissao_total": 7,
+        "updated_at": "2026-05-21T14:58:24.121Z"
+      },
+      "motivo": "GABRIEL LUZ / JACKSON 1404 C: fator do corretor deve ser 22%; parcela pendente recalculada pela formula canonica"
+    },
+    {
+      "id": "5dd39b6d-e4c4-45bc-9986-600c20111b70",
+      "venda_id": "8d759d05-115a-4690-97b5-6512128a41aa",
+      "contrato": "254",
+      "parcela": 38,
+      "status": "pendente",
+      "campo": "pagamentos_prosoluto",
+      "antes": {
+        "comissao_gerada": 423.93,
+        "fator_comissao_aplicado": 0.350001,
+        "percentual_comissao_total": 7
+      },
+      "depois": {
+        "comissao_gerada": 466.32,
+        "fator_comissao_aplicado": 0.385,
+        "percentual_comissao_total": 7,
+        "updated_at": "2026-05-21T14:58:24.281Z"
+      },
+      "motivo": "GABRIEL LUZ / JACKSON 1404 C: fator do corretor deve ser 22%; parcela pendente recalculada pela formula canonica"
+    },
+    {
+      "id": "d374326d-92f7-4f4a-a68c-2b77a9a8f3e3",
+      "venda_id": "8d759d05-115a-4690-97b5-6512128a41aa",
+      "contrato": "254",
+      "parcela": 18,
+      "status": "pendente",
+      "campo": "pagamentos_prosoluto",
+      "antes": {
+        "comissao_gerada": 423.93,
+        "fator_comissao_aplicado": 0.350001,
+        "percentual_comissao_total": 7
+      },
+      "depois": {
+        "comissao_gerada": 466.32,
+        "fator_comissao_aplicado": 0.385,
+        "percentual_comissao_total": 7,
+        "updated_at": "2026-05-21T14:58:24.428Z"
+      },
+      "motivo": "GABRIEL LUZ / JACKSON 1404 C: fator do corretor deve ser 22%; parcela pendente recalculada pela formula canonica"
+    },
+    {
+      "id": "3f1f30fc-8ec1-4ee3-8f1a-279044bf69ab",
+      "venda_id": "8d759d05-115a-4690-97b5-6512128a41aa",
+      "contrato": "254",
+      "parcela": 34,
+      "status": "pendente",
+      "campo": "pagamentos_prosoluto",
+      "antes": {
+        "comissao_gerada": 423.93,
+        "fator_comissao_aplicado": 0.350001,
+        "percentual_comissao_total": 7
+      },
+      "depois": {
+        "comissao_gerada": 466.32,
+        "fator_comissao_aplicado": 0.385,
+        "percentual_comissao_total": 7,
+        "updated_at": "2026-05-21T14:58:24.587Z"
+      },
+      "motivo": "GABRIEL LUZ / JACKSON 1404 C: fator do corretor deve ser 22%; parcela pendente recalculada pela formula canonica"
+    },
+    {
+      "id": "f2024385-ef19-4ee7-a12a-1fa17165afec",
+      "venda_id": "8d759d05-115a-4690-97b5-6512128a41aa",
+      "contrato": "254",
+      "parcela": 31,
+      "status": "pendente",
+      "campo": "pagamentos_prosoluto",
+      "antes": {
+        "comissao_gerada": 423.93,
+        "fator_comissao_aplicado": 0.350001,
+        "percentual_comissao_total": 7
+      },
+      "depois": {
+        "comissao_gerada": 466.32,
+        "fator_comissao_aplicado": 0.385,
+        "percentual_comissao_total": 7,
+        "updated_at": "2026-05-21T14:58:24.730Z"
+      },
+      "motivo": "GABRIEL LUZ / JACKSON 1404 C: fator do corretor deve ser 22%; parcela pendente recalculada pela formula canonica"
+    },
+    {
+      "id": "aed05933-5b41-4811-b833-bd4cdaa412c7",
+      "venda_id": "8d759d05-115a-4690-97b5-6512128a41aa",
+      "contrato": "254",
+      "parcela": 15,
+      "status": "pendente",
+      "campo": "pagamentos_prosoluto",
+      "antes": {
+        "comissao_gerada": 423.93,
+        "fator_comissao_aplicado": 0.350001,
+        "percentual_comissao_total": 7
+      },
+      "depois": {
+        "comissao_gerada": 466.32,
+        "fator_comissao_aplicado": 0.385,
+        "percentual_comissao_total": 7,
+        "updated_at": "2026-05-21T14:58:24.886Z"
+      },
+      "motivo": "GABRIEL LUZ / JACKSON 1404 C: fator do corretor deve ser 22%; parcela pendente recalculada pela formula canonica"
+    },
+    {
+      "id": "1274cfe4-8b49-4b37-a27b-ea14faeb4b18",
+      "venda_id": "8d759d05-115a-4690-97b5-6512128a41aa",
+      "contrato": "254",
+      "parcela": 27,
+      "status": "pendente",
+      "campo": "pagamentos_prosoluto",
+      "antes": {
+        "comissao_gerada": 423.93,
+        "fator_comissao_aplicado": 0.350001,
+        "percentual_comissao_total": 7
+      },
+      "depois": {
+        "comissao_gerada": 466.32,
+        "fator_comissao_aplicado": 0.385,
+        "percentual_comissao_total": 7,
+        "updated_at": "2026-05-21T14:58:25.029Z"
+      },
+      "motivo": "GABRIEL LUZ / JACKSON 1404 C: fator do corretor deve ser 22%; parcela pendente recalculada pela formula canonica"
+    },
+    {
+      "id": "457f76af-76b5-4ed5-b81a-d76600e7d8cb",
+      "venda_id": "8d759d05-115a-4690-97b5-6512128a41aa",
+      "contrato": "254",
+      "parcela": 39,
+      "status": "pendente",
+      "campo": "pagamentos_prosoluto",
+      "antes": {
+        "comissao_gerada": 423.93,
+        "fator_comissao_aplicado": 0.350001,
+        "percentual_comissao_total": 7
+      },
+      "depois": {
+        "comissao_gerada": 466.32,
+        "fator_comissao_aplicado": 0.385,
+        "percentual_comissao_total": 7,
+        "updated_at": "2026-05-21T14:58:25.189Z"
+      },
+      "motivo": "GABRIEL LUZ / JACKSON 1404 C: fator do corretor deve ser 22%; parcela pendente recalculada pela formula canonica"
+    },
+    {
+      "id": "1cff77db-014e-4da4-a8c2-d20d7ea04bf0",
+      "venda_id": "8d759d05-115a-4690-97b5-6512128a41aa",
+      "contrato": "254",
+      "parcela": 48,
+      "status": "pendente",
+      "campo": "pagamentos_prosoluto",
+      "antes": {
+        "comissao_gerada": 423.93,
+        "fator_comissao_aplicado": 0.350001,
+        "percentual_comissao_total": 7
+      },
+      "depois": {
+        "comissao_gerada": 466.32,
+        "fator_comissao_aplicado": 0.385,
+        "percentual_comissao_total": 7,
+        "updated_at": "2026-05-21T14:58:25.359Z"
+      },
+      "motivo": "GABRIEL LUZ / JACKSON 1404 C: fator do corretor deve ser 22%; parcela pendente recalculada pela formula canonica"
+    },
+    {
+      "id": "60f6d09e-bf97-406f-a3d1-ed285274e009",
+      "venda_id": "8d759d05-115a-4690-97b5-6512128a41aa",
+      "contrato": "254",
+      "parcela": 40,
+      "status": "pendente",
+      "campo": "pagamentos_prosoluto",
+      "antes": {
+        "comissao_gerada": 423.93,
+        "fator_comissao_aplicado": 0.350001,
+        "percentual_comissao_total": 7
+      },
+      "depois": {
+        "comissao_gerada": 466.32,
+        "fator_comissao_aplicado": 0.385,
+        "percentual_comissao_total": 7,
+        "updated_at": "2026-05-21T14:58:25.520Z"
+      },
+      "motivo": "GABRIEL LUZ / JACKSON 1404 C: fator do corretor deve ser 22%; parcela pendente recalculada pela formula canonica"
+    },
+    {
+      "id": "eba0a2b0-45b2-4610-a8b0-9970329e1dbc",
+      "venda_id": "8d759d05-115a-4690-97b5-6512128a41aa",
+      "contrato": "254",
+      "parcela": 12,
+      "status": "pendente",
+      "campo": "pagamentos_prosoluto",
+      "antes": {
+        "comissao_gerada": 423.93,
+        "fator_comissao_aplicado": 0.350001,
+        "percentual_comissao_total": 7
+      },
+      "depois": {
+        "comissao_gerada": 466.32,
+        "fator_comissao_aplicado": 0.385,
+        "percentual_comissao_total": 7,
+        "updated_at": "2026-05-21T14:58:25.663Z"
+      },
+      "motivo": "GABRIEL LUZ / JACKSON 1404 C: fator do corretor deve ser 22%; parcela pendente recalculada pela formula canonica"
+    },
+    {
+      "id": "7ea6cbb4-b2a2-45e8-9e64-d0ccb4da5517",
+      "venda_id": "8d759d05-115a-4690-97b5-6512128a41aa",
+      "contrato": "254",
+      "parcela": 19,
+      "status": "pendente",
+      "campo": "pagamentos_prosoluto",
+      "antes": {
+        "comissao_gerada": 423.93,
+        "fator_comissao_aplicado": 0.350001,
+        "percentual_comissao_total": 7
+      },
+      "depois": {
+        "comissao_gerada": 466.32,
+        "fator_comissao_aplicado": 0.385,
+        "percentual_comissao_total": 7,
+        "updated_at": "2026-05-21T14:58:25.819Z"
+      },
+      "motivo": "GABRIEL LUZ / JACKSON 1404 C: fator do corretor deve ser 22%; parcela pendente recalculada pela formula canonica"
+    },
+    {
+      "id": "ae0d61b1-2ff2-4732-a84a-50023548d417",
+      "venda_id": "8d759d05-115a-4690-97b5-6512128a41aa",
+      "contrato": "254",
+      "parcela": 23,
+      "status": "pendente",
+      "campo": "pagamentos_prosoluto",
+      "antes": {
+        "comissao_gerada": 423.93,
+        "fator_comissao_aplicado": 0.350001,
+        "percentual_comissao_total": 7
+      },
+      "depois": {
+        "comissao_gerada": 466.32,
+        "fator_comissao_aplicado": 0.385,
+        "percentual_comissao_total": 7,
+        "updated_at": "2026-05-21T14:58:25.979Z"
+      },
+      "motivo": "GABRIEL LUZ / JACKSON 1404 C: fator do corretor deve ser 22%; parcela pendente recalculada pela formula canonica"
+    },
+    {
+      "id": "ba49d97b-2ed7-449b-92f7-c5af4d0b310e",
+      "venda_id": "8d759d05-115a-4690-97b5-6512128a41aa",
+      "contrato": "254",
+      "parcela": 24,
+      "status": "pendente",
+      "campo": "pagamentos_prosoluto",
+      "antes": {
+        "comissao_gerada": 423.93,
+        "fator_comissao_aplicado": 0.350001,
+        "percentual_comissao_total": 7
+      },
+      "depois": {
+        "comissao_gerada": 466.32,
+        "fator_comissao_aplicado": 0.385,
+        "percentual_comissao_total": 7,
+        "updated_at": "2026-05-21T14:58:26.187Z"
+      },
+      "motivo": "GABRIEL LUZ / JACKSON 1404 C: fator do corretor deve ser 22%; parcela pendente recalculada pela formula canonica"
+    },
+    {
+      "id": "3bcc55a2-bc50-4f1d-8aa7-1dd355aa3216",
+      "venda_id": "8d759d05-115a-4690-97b5-6512128a41aa",
+      "contrato": "254",
+      "parcela": 29,
+      "status": "pendente",
+      "campo": "pagamentos_prosoluto",
+      "antes": {
+        "comissao_gerada": 423.93,
+        "fator_comissao_aplicado": 0.350001,
+        "percentual_comissao_total": 7
+      },
+      "depois": {
+        "comissao_gerada": 466.32,
+        "fator_comissao_aplicado": 0.385,
+        "percentual_comissao_total": 7,
+        "updated_at": "2026-05-21T14:58:26.392Z"
+      },
+      "motivo": "GABRIEL LUZ / JACKSON 1404 C: fator do corretor deve ser 22%; parcela pendente recalculada pela formula canonica"
+    },
+    {
+      "id": "90f25d03-513c-4b71-bc66-7d6f180097f6",
+      "venda_id": "8d759d05-115a-4690-97b5-6512128a41aa",
+      "contrato": "254",
+      "parcela": 30,
+      "status": "pendente",
+      "campo": "pagamentos_prosoluto",
+      "antes": {
+        "comissao_gerada": 423.93,
+        "fator_comissao_aplicado": 0.350001,
+        "percentual_comissao_total": 7
+      },
+      "depois": {
+        "comissao_gerada": 466.32,
+        "fator_comissao_aplicado": 0.385,
+        "percentual_comissao_total": 7,
+        "updated_at": "2026-05-21T14:58:26.597Z"
+      },
+      "motivo": "GABRIEL LUZ / JACKSON 1404 C: fator do corretor deve ser 22%; parcela pendente recalculada pela formula canonica"
+    },
+    {
+      "id": "d57f372a-1450-4200-bb93-a071c3673400",
+      "venda_id": "8d759d05-115a-4690-97b5-6512128a41aa",
+      "contrato": "254",
+      "parcela": 35,
+      "status": "pendente",
+      "campo": "pagamentos_prosoluto",
+      "antes": {
+        "comissao_gerada": 423.93,
+        "fator_comissao_aplicado": 0.350001,
+        "percentual_comissao_total": 7
+      },
+      "depois": {
+        "comissao_gerada": 466.32,
+        "fator_comissao_aplicado": 0.385,
+        "percentual_comissao_total": 7,
+        "updated_at": "2026-05-21T14:58:26.803Z"
+      },
+      "motivo": "GABRIEL LUZ / JACKSON 1404 C: fator do corretor deve ser 22%; parcela pendente recalculada pela formula canonica"
+    },
+    {
+      "id": "f0192ed2-bcad-44be-a5d0-29ff7c665271",
+      "venda_id": "8d759d05-115a-4690-97b5-6512128a41aa",
+      "contrato": "254",
+      "parcela": 36,
+      "status": "pendente",
+      "campo": "pagamentos_prosoluto",
+      "antes": {
+        "comissao_gerada": 423.93,
+        "fator_comissao_aplicado": 0.350001,
+        "percentual_comissao_total": 7
+      },
+      "depois": {
+        "comissao_gerada": 466.32,
+        "fator_comissao_aplicado": 0.385,
+        "percentual_comissao_total": 7,
+        "updated_at": "2026-05-21T14:58:27.008Z"
+      },
+      "motivo": "GABRIEL LUZ / JACKSON 1404 C: fator do corretor deve ser 22%; parcela pendente recalculada pela formula canonica"
+    },
+    {
+      "id": "93c30d53-8a67-4b4f-958c-90c43da96f05",
+      "venda_id": "8d759d05-115a-4690-97b5-6512128a41aa",
+      "contrato": "254",
+      "parcela": 37,
+      "status": "pendente",
+      "campo": "pagamentos_prosoluto",
+      "antes": {
+        "comissao_gerada": 423.93,
+        "fator_comissao_aplicado": 0.350001,
+        "percentual_comissao_total": 7
+      },
+      "depois": {
+        "comissao_gerada": 466.32,
+        "fator_comissao_aplicado": 0.385,
+        "percentual_comissao_total": 7,
+        "updated_at": "2026-05-21T14:58:27.211Z"
+      },
+      "motivo": "GABRIEL LUZ / JACKSON 1404 C: fator do corretor deve ser 22%; parcela pendente recalculada pela formula canonica"
+    },
+    {
+      "id": "9bf14d9e-0efa-464f-a936-8b3b42f82ef5",
+      "venda_id": "8d759d05-115a-4690-97b5-6512128a41aa",
+      "contrato": "254",
+      "parcela": 41,
+      "status": "pendente",
+      "campo": "pagamentos_prosoluto",
+      "antes": {
+        "comissao_gerada": 423.93,
+        "fator_comissao_aplicado": 0.350001,
+        "percentual_comissao_total": 7
+      },
+      "depois": {
+        "comissao_gerada": 466.32,
+        "fator_comissao_aplicado": 0.385,
+        "percentual_comissao_total": 7,
+        "updated_at": "2026-05-21T14:58:27.416Z"
+      },
+      "motivo": "GABRIEL LUZ / JACKSON 1404 C: fator do corretor deve ser 22%; parcela pendente recalculada pela formula canonica"
+    },
+    {
+      "id": "bb31a328-f209-4cc6-bf77-eb1fbaaed496",
+      "venda_id": "8d759d05-115a-4690-97b5-6512128a41aa",
+      "contrato": "254",
+      "parcela": 42,
+      "status": "pendente",
+      "campo": "pagamentos_prosoluto",
+      "antes": {
+        "comissao_gerada": 423.93,
+        "fator_comissao_aplicado": 0.350001,
+        "percentual_comissao_total": 7
+      },
+      "depois": {
+        "comissao_gerada": 466.32,
+        "fator_comissao_aplicado": 0.385,
+        "percentual_comissao_total": 7,
+        "updated_at": "2026-05-21T14:58:27.621Z"
+      },
+      "motivo": "GABRIEL LUZ / JACKSON 1404 C: fator do corretor deve ser 22%; parcela pendente recalculada pela formula canonica"
+    },
+    {
+      "id": "6382009e-e986-4e24-b8ff-5d01e7edce9f",
+      "venda_id": "8d759d05-115a-4690-97b5-6512128a41aa",
+      "contrato": "254",
+      "parcela": 43,
+      "status": "pendente",
+      "campo": "pagamentos_prosoluto",
+      "antes": {
+        "comissao_gerada": 423.93,
+        "fator_comissao_aplicado": 0.350001,
+        "percentual_comissao_total": 7
+      },
+      "depois": {
+        "comissao_gerada": 466.32,
+        "fator_comissao_aplicado": 0.385,
+        "percentual_comissao_total": 7,
+        "updated_at": "2026-05-21T14:58:27.826Z"
+      },
+      "motivo": "GABRIEL LUZ / JACKSON 1404 C: fator do corretor deve ser 22%; parcela pendente recalculada pela formula canonica"
+    },
+    {
+      "id": "a57e65f4-16e7-48b3-a8a1-d118cfe02d1f",
+      "venda_id": "8d759d05-115a-4690-97b5-6512128a41aa",
+      "contrato": "254",
+      "parcela": 45,
+      "status": "pendente",
+      "campo": "pagamentos_prosoluto",
+      "antes": {
+        "comissao_gerada": 423.93,
+        "fator_comissao_aplicado": 0.350001,
+        "percentual_comissao_total": 7
+      },
+      "depois": {
+        "comissao_gerada": 466.32,
+        "fator_comissao_aplicado": 0.385,
+        "percentual_comissao_total": 7,
+        "updated_at": "2026-05-21T14:58:28.030Z"
+      },
+      "motivo": "GABRIEL LUZ / JACKSON 1404 C: fator do corretor deve ser 22%; parcela pendente recalculada pela formula canonica"
+    },
+    {
+      "id": "07ab1e22-e98c-41f9-aa98-40a3f20d06a8",
+      "venda_id": "8d759d05-115a-4690-97b5-6512128a41aa",
+      "contrato": "254",
+      "parcela": 49,
+      "status": "pendente",
+      "campo": "pagamentos_prosoluto",
+      "antes": {
+        "comissao_gerada": 423.93,
+        "fator_comissao_aplicado": 0.350001,
+        "percentual_comissao_total": 7
+      },
+      "depois": {
+        "comissao_gerada": 466.32,
+        "fator_comissao_aplicado": 0.385,
+        "percentual_comissao_total": 7,
+        "updated_at": "2026-05-21T14:58:28.235Z"
+      },
+      "motivo": "GABRIEL LUZ / JACKSON 1404 C: fator do corretor deve ser 22%; parcela pendente recalculada pela formula canonica"
+    },
+    {
+      "id": "3922aa88-a548-4f08-ad77-1ed3ccb9ac6a",
+      "venda_id": "8d759d05-115a-4690-97b5-6512128a41aa",
+      "contrato": "254",
+      "parcela": 50,
+      "status": "pendente",
+      "campo": "pagamentos_prosoluto",
+      "antes": {
+        "comissao_gerada": 423.93,
+        "fator_comissao_aplicado": 0.350001,
+        "percentual_comissao_total": 7
+      },
+      "depois": {
+        "comissao_gerada": 466.32,
+        "fator_comissao_aplicado": 0.385,
+        "percentual_comissao_total": 7,
+        "updated_at": "2026-05-21T14:58:28.543Z"
+      },
+      "motivo": "GABRIEL LUZ / JACKSON 1404 C: fator do corretor deve ser 22%; parcela pendente recalculada pela formula canonica"
+    },
+    {
+      "id": "0f972368-f966-4600-86aa-2d4443d0a30a",
+      "venda_id": "8d759d05-115a-4690-97b5-6512128a41aa",
+      "contrato": "254",
+      "parcela": 59,
+      "status": "pendente",
+      "campo": "pagamentos_prosoluto",
+      "antes": {
+        "comissao_gerada": 423.93,
+        "fator_comissao_aplicado": 0.350001,
+        "percentual_comissao_total": 7
+      },
+      "depois": {
+        "comissao_gerada": 466.32,
+        "fator_comissao_aplicado": 0.385,
+        "percentual_comissao_total": 7,
+        "updated_at": "2026-05-21T14:58:28.747Z"
+      },
+      "motivo": "GABRIEL LUZ / JACKSON 1404 C: fator do corretor deve ser 22%; parcela pendente recalculada pela formula canonica"
+    },
+    {
+      "id": "eccdde50-0142-4509-8491-bb5281b6816c",
+      "venda_id": "8d759d05-115a-4690-97b5-6512128a41aa",
+      "contrato": "254",
+      "parcela": 60,
+      "status": "pendente",
+      "campo": "pagamentos_prosoluto",
+      "antes": {
+        "comissao_gerada": 423.93,
+        "fator_comissao_aplicado": 0.350001,
+        "percentual_comissao_total": 7
+      },
+      "depois": {
+        "comissao_gerada": 466.32,
+        "fator_comissao_aplicado": 0.385,
+        "percentual_comissao_total": 7,
+        "updated_at": "2026-05-21T14:58:28.952Z"
+      },
+      "motivo": "GABRIEL LUZ / JACKSON 1404 C: fator do corretor deve ser 22%; parcela pendente recalculada pela formula canonica"
+    },
+    {
+      "id": "a5840084-af61-4bde-89a4-b55b6f02887a",
+      "venda_id": "8d759d05-115a-4690-97b5-6512128a41aa",
+      "contrato": "254",
+      "parcela": 51,
+      "status": "pendente",
+      "campo": "pagamentos_prosoluto",
+      "antes": {
+        "comissao_gerada": 423.93,
+        "fator_comissao_aplicado": 0.350001,
+        "percentual_comissao_total": 7
+      },
+      "depois": {
+        "comissao_gerada": 466.32,
+        "fator_comissao_aplicado": 0.385,
+        "percentual_comissao_total": 7,
+        "updated_at": "2026-05-21T14:58:29.157Z"
+      },
+      "motivo": "GABRIEL LUZ / JACKSON 1404 C: fator do corretor deve ser 22%; parcela pendente recalculada pela formula canonica"
+    },
+    {
+      "id": "11a87388-6cb1-4fca-b9eb-3e05a8bb3383",
+      "venda_id": "8d759d05-115a-4690-97b5-6512128a41aa",
+      "contrato": "254",
+      "parcela": 52,
+      "status": "pendente",
+      "campo": "pagamentos_prosoluto",
+      "antes": {
+        "comissao_gerada": 423.93,
+        "fator_comissao_aplicado": 0.350001,
+        "percentual_comissao_total": 7
+      },
+      "depois": {
+        "comissao_gerada": 466.32,
+        "fator_comissao_aplicado": 0.385,
+        "percentual_comissao_total": 7,
+        "updated_at": "2026-05-21T14:58:29.361Z"
+      },
+      "motivo": "GABRIEL LUZ / JACKSON 1404 C: fator do corretor deve ser 22%; parcela pendente recalculada pela formula canonica"
+    },
+    {
+      "id": "a56c559b-df18-4041-9604-b3be02a781d1",
+      "venda_id": "8d759d05-115a-4690-97b5-6512128a41aa",
+      "contrato": "254",
+      "parcela": 53,
+      "status": "pendente",
+      "campo": "pagamentos_prosoluto",
+      "antes": {
+        "comissao_gerada": 423.93,
+        "fator_comissao_aplicado": 0.350001,
+        "percentual_comissao_total": 7
+      },
+      "depois": {
+        "comissao_gerada": 466.32,
+        "fator_comissao_aplicado": 0.385,
+        "percentual_comissao_total": 7,
+        "updated_at": "2026-05-21T14:58:29.567Z"
+      },
+      "motivo": "GABRIEL LUZ / JACKSON 1404 C: fator do corretor deve ser 22%; parcela pendente recalculada pela formula canonica"
+    },
+    {
+      "id": "2857e24b-9221-4f3d-8005-d2c74fc00590",
+      "venda_id": "8d759d05-115a-4690-97b5-6512128a41aa",
+      "contrato": "254",
+      "parcela": 54,
+      "status": "pendente",
+      "campo": "pagamentos_prosoluto",
+      "antes": {
+        "comissao_gerada": 423.93,
+        "fator_comissao_aplicado": 0.350001,
+        "percentual_comissao_total": 7
+      },
+      "depois": {
+        "comissao_gerada": 466.32,
+        "fator_comissao_aplicado": 0.385,
+        "percentual_comissao_total": 7,
+        "updated_at": "2026-05-21T14:58:29.771Z"
+      },
+      "motivo": "GABRIEL LUZ / JACKSON 1404 C: fator do corretor deve ser 22%; parcela pendente recalculada pela formula canonica"
+    },
+    {
+      "id": "bab0fb87-65de-44a7-9af2-c1a2f16f0626",
+      "venda_id": "8d759d05-115a-4690-97b5-6512128a41aa",
+      "contrato": "254",
+      "parcela": 56,
+      "status": "pendente",
+      "campo": "pagamentos_prosoluto",
+      "antes": {
+        "comissao_gerada": 423.93,
+        "fator_comissao_aplicado": 0.350001,
+        "percentual_comissao_total": 7
+      },
+      "depois": {
+        "comissao_gerada": 466.32,
+        "fator_comissao_aplicado": 0.385,
+        "percentual_comissao_total": 7,
+        "updated_at": "2026-05-21T14:58:29.976Z"
+      },
+      "motivo": "GABRIEL LUZ / JACKSON 1404 C: fator do corretor deve ser 22%; parcela pendente recalculada pela formula canonica"
+    },
+    {
+      "id": "675e9fb2-a268-4df3-a704-ec7822a35ff5",
+      "venda_id": "8d759d05-115a-4690-97b5-6512128a41aa",
+      "contrato": "254",
+      "parcela": 57,
+      "status": "pendente",
+      "campo": "pagamentos_prosoluto",
+      "antes": {
+        "comissao_gerada": 423.93,
+        "fator_comissao_aplicado": 0.350001,
+        "percentual_comissao_total": 7
+      },
+      "depois": {
+        "comissao_gerada": 466.32,
+        "fator_comissao_aplicado": 0.385,
+        "percentual_comissao_total": 7,
+        "updated_at": "2026-05-21T14:58:30.182Z"
+      },
+      "motivo": "GABRIEL LUZ / JACKSON 1404 C: fator do corretor deve ser 22%; parcela pendente recalculada pela formula canonica"
+    }
+  ],
+  "humano_pendente": [
+    {
+      "venda_id": "2fc89307-9572-4970-9663-08feac626c94",
+      "contrato": "390",
+      "cliente": "CLAUDIO MARTIRE",
+      "corretor": "ERICA FAERBER",
+      "pagos_preservados": 12,
+      "diferenca_teorica_pagos": -384.12,
+      "motivo": "pagamentos status=pago preservam comissao_gerada; eventual acerto deve ser decidido pela controladoria"
+    },
+    {
+      "venda_id": "ab3def5e-d139-4f60-9669-d4896c74436d",
+      "contrato": "314",
+      "cliente": "MATHEUS FELIPE DE CASTRO BATISTA FERNANDES",
+      "corretor": "FRANCISCO ASSIS NECKEL DO NASICMENTO",
+      "pagos_preservados": 11,
+      "diferenca_teorica_pagos": 11.88,
+      "motivo": "pagamentos status=pago preservam comissao_gerada; eventual acerto deve ser decidido pela controladoria"
+    },
+    {
+      "venda_id": "8d759d05-115a-4690-97b5-6512128a41aa",
+      "contrato": "254",
+      "cliente": "JACKSON TEIXEIRA GARCIA ",
+      "corretor": "GABRIEL LUZ IMOVEIS LTDA",
+      "pagos_preservados": 11,
+      "diferenca_teorica_pagos": 466.29,
+      "motivo": "pagamentos status=pago preservam comissao_gerada; eventual acerto deve ser decidido pela controladoria"
+    }
+  ],
+  "errors": []
+}

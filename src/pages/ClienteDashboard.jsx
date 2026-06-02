@@ -894,10 +894,12 @@ const ClienteDashboard = () => {
                                 
                                 {visaoParcelas === 'calendario' ? (
                                   <div className="parcelas-list">
-                                    {sortParcelas(pagamentosCompra, 'calendario').map((pagamento) => (
+                                    {sortParcelas(pagamentosCompra, 'calendario')
+                                      .filter((pagamento) => pagamento.status !== 'cancelado')
+                                      .map((pagamento) => (
                                       <div 
                                         key={pagamento.id} 
-                                        className={`cliente-parcela-row ${pagamento.status === 'pago' ? 'pago' : ''}`}
+                                        className={`cliente-parcela-row ${pagamento.status === 'pago' ? 'pago' : pagamento.status === 'cancelado' ? 'cancelado' : ''}`}
                                       >
                                         <div className="cliente-parcela-tipo">
                                           {pagamento.tipo === 'sinal' && 'Sinal'}
@@ -913,7 +915,7 @@ const ClienteDashboard = () => {
                                         </div>
                                         <div className="cliente-parcela-status">
                                           <span className={`status-pill ${pagamento.status}`}>
-                                            {pagamento.status === 'pago' ? 'Pago' : 'Pendente'}
+                                            {pagamento.status === 'pago' ? 'Pago' : pagamento.status === 'cancelado' ? 'Cancelado' : 'Pendente'}
                                           </span>
                                         </div>
                                       </div>
@@ -921,7 +923,8 @@ const ClienteDashboard = () => {
                                   </div>
                                 ) : (
                                   (() => {
-                                    const grupos = agruparPagamentosPorTipo(pagamentosCompra)
+                                    const pagamentosAtivosCompra = pagamentosCompra.filter((pagamento) => pagamento.status !== 'cancelado')
+                                    const grupos = agruparPagamentosPorTipo(pagamentosAtivosCompra)
                                     const tiposOrdem = ['sinal', 'entrada', 'parcela_entrada', 'balao']
                                     return tiposOrdem.map(tipo => {
                                       const pagamentosGrupo = grupos[tipo]
@@ -953,7 +956,7 @@ const ClienteDashboard = () => {
                                             {pagamentosExibidos.map((pagamento) => (
                                               <div 
                                                 key={pagamento.id} 
-                                                className={`cliente-parcela-row ${pagamento.status === 'pago' ? 'pago' : ''}`}
+                                                className={`cliente-parcela-row ${pagamento.status === 'pago' ? 'pago' : pagamento.status === 'cancelado' ? 'cancelado' : ''}`}
                                               >
                                                 <div className="cliente-parcela-tipo">
                                                   {pagamento.tipo === 'sinal' && 'Sinal'}
@@ -969,7 +972,7 @@ const ClienteDashboard = () => {
                                                 </div>
                                                 <div className="cliente-parcela-status">
                                                   <span className={`status-pill ${pagamento.status}`}>
-                                                    {pagamento.status === 'pago' ? 'Pago' : 'Pendente'}
+                                                    {pagamento.status === 'pago' ? 'Pago' : pagamento.status === 'cancelado' ? 'Cancelado' : 'Pendente'}
                                                   </span>
                                                 </div>
                                               </div>

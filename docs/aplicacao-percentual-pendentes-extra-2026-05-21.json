@@ -1,0 +1,176 @@
+{
+  "meta": {
+    "geradoEm": "2026-05-21T16:25:50.362Z",
+    "script": "inline-corrigir-pendentes-divergentes-2026-05-21",
+    "modo": "apply"
+  },
+  "counts": {
+    "matched": 9,
+    "updated": 8,
+    "skipped_outlier": 1,
+    "errors": 0,
+    "vendas_totais_recalculadas": 3
+  },
+  "drift": [
+    {
+      "id": "c0c943b5-cf1d-4ba6-8175-91a80be322eb",
+      "venda_id": "fbaad3e1-ab0f-451a-a90e-b015d6845368",
+      "contrato": "135",
+      "unidade": "1005 A",
+      "parcela": 2,
+      "tipo": "balao",
+      "antes": {
+        "percentual_comissao_total": 7,
+        "fator_comissao_aplicado": 0.326872,
+        "comissao_gerada": 1307.49
+      },
+      "depois": {
+        "percentual_comissao_total": 6.5,
+        "fator_comissao_aplicado": 0.303524,
+        "comissao_gerada": 1214.1,
+        "updated_at": "2026-05-21T16:25:54.392Z"
+      }
+    },
+    {
+      "id": "3fcc2a5e-6296-497b-998a-ace78d56a525",
+      "venda_id": "fbaad3e1-ab0f-451a-a90e-b015d6845368",
+      "contrato": "135",
+      "unidade": "1005 A",
+      "parcela": 3,
+      "tipo": "balao",
+      "antes": {
+        "percentual_comissao_total": 7,
+        "fator_comissao_aplicado": 0.326872,
+        "comissao_gerada": 1307.49
+      },
+      "depois": {
+        "percentual_comissao_total": 6.5,
+        "fator_comissao_aplicado": 0.303524,
+        "comissao_gerada": 1214.1,
+        "updated_at": "2026-05-21T16:25:54.566Z"
+      }
+    },
+    {
+      "id": "b47cc92b-d5d1-47e9-98d3-ff5220de8257",
+      "venda_id": "fbaad3e1-ab0f-451a-a90e-b015d6845368",
+      "contrato": "135",
+      "unidade": "1005 A",
+      "parcela": 4,
+      "tipo": "balao",
+      "antes": {
+        "percentual_comissao_total": 7,
+        "fator_comissao_aplicado": 0.326872,
+        "comissao_gerada": 1307.49
+      },
+      "depois": {
+        "percentual_comissao_total": 6.5,
+        "fator_comissao_aplicado": 0.303524,
+        "comissao_gerada": 1214.1,
+        "updated_at": "2026-05-21T16:25:55.022Z"
+      }
+    },
+    {
+      "id": "9e1788a6-3ad1-4742-a70c-ee93ce73d5ee",
+      "venda_id": "fbaad3e1-ab0f-451a-a90e-b015d6845368",
+      "contrato": "135",
+      "unidade": "1005 A",
+      "parcela": 5,
+      "tipo": "balao",
+      "antes": {
+        "percentual_comissao_total": 7,
+        "fator_comissao_aplicado": 0.326872,
+        "comissao_gerada": 1307.49
+      },
+      "depois": {
+        "percentual_comissao_total": 6.5,
+        "fator_comissao_aplicado": 0.303524,
+        "comissao_gerada": 1214.1,
+        "updated_at": "2026-05-21T16:25:55.190Z"
+      }
+    },
+    {
+      "id": "9a9c284b-08e9-43dd-905e-f6985a34ee4f",
+      "venda_id": "7c3ca9b3-8251-469b-ae71-5f8a433a6d3e",
+      "contrato": "163",
+      "unidade": "1603 A",
+      "parcela": 5,
+      "tipo": "parcela_entrada",
+      "antes": {
+        "percentual_comissao_total": 7,
+        "fator_comissao_aplicado": 0.350446,
+        "comissao_gerada": 446.84
+      },
+      "depois": {
+        "percentual_comissao_total": 6.5,
+        "fator_comissao_aplicado": 0.325414,
+        "comissao_gerada": 414.93,
+        "updated_at": "2026-05-21T16:25:55.350Z"
+      }
+    },
+    {
+      "id": "dc08124d-d9d4-44c0-8e24-6097ddf663a0",
+      "venda_id": "803041f5-8778-4b59-ab73-63df35a8ac3e",
+      "contrato": "148",
+      "unidade": "1303 A",
+      "parcela": 4,
+      "tipo": "balao",
+      "antes": {
+        "percentual_comissao_total": 7,
+        "fator_comissao_aplicado": 0.341402,
+        "comissao_gerada": 1707.01
+      },
+      "depois": {
+        "percentual_comissao_total": 6.5,
+        "fator_comissao_aplicado": 0.317016,
+        "comissao_gerada": 1585.08,
+        "updated_at": "2026-05-21T16:25:55.520Z"
+      }
+    },
+    {
+      "id": "69c1fed8-7ffa-41ba-9326-51c1b8ffe3e8",
+      "venda_id": "803041f5-8778-4b59-ab73-63df35a8ac3e",
+      "contrato": "148",
+      "unidade": "1303 A",
+      "parcela": 2,
+      "tipo": "balao",
+      "antes": {
+        "percentual_comissao_total": 7,
+        "fator_comissao_aplicado": 0.341402,
+        "comissao_gerada": 1707.01
+      },
+      "depois": {
+        "percentual_comissao_total": 6.5,
+        "fator_comissao_aplicado": 0.317016,
+        "comissao_gerada": 1585.08,
+        "updated_at": "2026-05-21T16:25:55.671Z"
+      }
+    },
+    {
+      "id": "8f058045-f207-4bb6-a512-ae0d3b58f6ad",
+      "venda_id": "803041f5-8778-4b59-ab73-63df35a8ac3e",
+      "contrato": "148",
+      "unidade": "1303 A",
+      "parcela": 3,
+      "tipo": "balao",
+      "antes": {
+        "percentual_comissao_total": 7,
+        "fator_comissao_aplicado": 0.341402,
+        "comissao_gerada": 1707.01
+      },
+      "depois": {
+        "percentual_comissao_total": 6.5,
+        "fator_comissao_aplicado": 0.317016,
+        "comissao_gerada": 1585.08,
+        "updated_at": "2026-05-21T16:25:55.837Z"
+      }
+    }
+  ],
+  "skipped": [
+    {
+      "id": "fba75865-e8d2-4e2b-8d97-d85032be3821",
+      "contrato": "80",
+      "motivo": "outlier conhecido: recalculo reduziria comissao integral de forma anormal"
+    }
+  ],
+  "errors": []
+}

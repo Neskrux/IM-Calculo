@@ -1,0 +1,128 @@
+{
+  "meta": {
+    "geradoEm": "2026-05-25T12:13:56.647Z",
+    "modo": "dry-run",
+    "script": "scripts/corrigir-casos-admin-2026-05-25.mjs",
+    "empreendimento_id": "0d7d01f4-c398-4d9a-a280-13f44c957279"
+  },
+  "rebuilds": [
+    {
+      "caso": "1603 A / Diogo / contrato 163",
+      "venda_id": "7c3ca9b3-8251-469b-ae71-5f8a433a6d3e",
+      "contrato": "163",
+      "bill": 235,
+      "motivo": "grade local com parcelas duplicadas/deslocadas; Sienge bill 235 e fonte da verdade",
+      "antes": {
+        "corretor_id": "9b1f5c90-defa-4b6c-b011-ffb496a14349",
+        "tipo_corretor": "interno",
+        "valor_pro_soluto": 69200,
+        "fator_comissao": 0.325414,
+        "comissao_total": 22518.89,
+        "pagamentos_ativos": 61,
+        "pagamentos_pagos": 13
+      },
+      "depois": {
+        "corretor_id": "9b1f5c90-defa-4b6c-b011-ffb496a14349",
+        "tipo_corretor": "interno",
+        "valor_pro_soluto": 69200,
+        "fator_comissao": 0.325414,
+        "comissao_total": 22518.89,
+        "pagamentos_canonicos": 61,
+        "pagos_canonicos": 13
+      },
+      "dryRun": true,
+      "skipped_idempotent": true,
+      "pagos_revertidos": 0,
+      "antigos_cancelados": 0,
+      "pagamentos_inseridos": 0,
+      "venda_atualizada": 0
+    },
+    {
+      "caso": "1804 A / Giovane / contrato 320",
+      "venda_id": "556ddcf8-acd6-4cb3-bbc3-084d90850026",
+      "contrato": "320",
+      "bill": 232,
+      "motivo": "venda Sienge correta reatribuida para o corretor Matheus e recalculada como interno",
+      "antes": {
+        "corretor_id": "9b1f5c90-defa-4b6c-b011-ffb496a14349",
+        "tipo_corretor": "interno",
+        "valor_pro_soluto": 77031.4,
+        "fator_comissao": 0.319065,
+        "comissao_total": 24578.26,
+        "pagamentos_ativos": 61,
+        "pagamentos_pagos": 13
+      },
+      "depois": {
+        "corretor_id": "9b1f5c90-defa-4b6c-b011-ffb496a14349",
+        "tipo_corretor": "interno",
+        "valor_pro_soluto": 77031.4,
+        "fator_comissao": 0.319065,
+        "comissao_total": 24578.26,
+        "pagamentos_canonicos": 61,
+        "pagos_canonicos": 13
+      },
+      "dryRun": true,
+      "skipped_idempotent": true,
+      "pagos_revertidos": 0,
+      "antigos_cancelados": 0,
+      "pagamentos_inseridos": 0,
+      "venda_atualizada": 0
+    },
+    {
+      "caso": "905 A / Tayara / contrato 80",
+      "venda_id": "8daa3121-fcfa-42fa-8318-8e39fdac8800",
+      "contrato": "80",
+      "bill": 272,
+      "motivo": "valor_pro_soluto estava igual ao valor de venda; recalculo pela base real do Sienge",
+      "antes": {
+        "corretor_id": "9b1f5c90-defa-4b6c-b011-ffb496a14349",
+        "tipo_corretor": "interno",
+        "valor_pro_soluto": 69147,
+        "fator_comissao": 0.324999,
+        "comissao_total": 22472.86,
+        "pagamentos_ativos": 61,
+        "pagamentos_pagos": 12
+      },
+      "depois": {
+        "corretor_id": "9b1f5c90-defa-4b6c-b011-ffb496a14349",
+        "tipo_corretor": "interno",
+        "valor_pro_soluto": 69147,
+        "fator_comissao": 0.324999,
+        "comissao_total": 22472.86,
+        "pagamentos_canonicos": 61,
+        "pagos_canonicos": 12
+      },
+      "dryRun": true,
+      "skipped_idempotent": true,
+      "pagos_revertidos": 0,
+      "antigos_cancelados": 0,
+      "pagamentos_inseridos": 0,
+      "venda_atualizada": 0
+    }
+  ],
+  "exclusoes": [
+    {
+      "venda_id": "ac644733-d731-44e5-8573-99b9231e90a8",
+      "preservada_id": "556ddcf8-acd6-4cb3-bbc3-084d90850026",
+      "motivo": "duplicata local sem contrato Sienge; contrato 320 preservado e reatribuido para Matheus",
+      "ja_excluida": true,
+      "ativos_antes": 0,
+      "pagos_antes": 0,
+      "pagos_revertidos": 0,
+      "pagamentos_cancelados": 0,
+      "venda_excluida": 0
+    },
+    {
+      "venda_id": "9d279176-e4de-4e3f-8ec2-9aa4b6c7f62a",
+      "preservada_id": "556ddcf8-acd6-4cb3-bbc3-084d90850026",
+      "motivo": "duplicata local sem contrato Sienge; contrato 320 preservado e reatribuido para Matheus",
+      "ja_excluida": true,
+      "ativos_antes": 0,
+      "pagos_antes": 0,
+      "pagos_revertidos": 0,
+      "pagamentos_cancelados": 0,
+      "venda_excluida": 0
+    }
+  ],
+  "errors": []
+}

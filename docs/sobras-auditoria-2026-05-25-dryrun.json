@@ -1,0 +1,229 @@
+{
+  "meta": {
+    "geradoEm": "2026-05-25T20:50:00.214Z",
+    "modo": "dry-run",
+    "script": "scripts/corrigir-sobras-auditoria-2026-05-25.mjs"
+  },
+  "grupos": [
+    {
+      "label": "609 D / Diego Ramos / parcela_entrada 3",
+      "keepId": "25bf7945-0408-4ec8-9f7a-87f6215dd63a",
+      "cancelIds": [
+        "9d254307-caf7-43aa-a8a1-daf22ba5ebfd"
+      ],
+      "motivo": "duplicata pendente exata: mesmo tipo, numero, valor e vencimento",
+      "dryRun": true,
+      "antes": [
+        {
+          "id": "25bf7945-0408-4ec8-9f7a-87f6215dd63a",
+          "venda_id": "3771951d-5221-4a3d-8b2f-6a0c5b076b12",
+          "tipo": "parcela_entrada",
+          "numero_parcela": 3,
+          "status": "pendente",
+          "valor": 2500,
+          "data_prevista": "2029-09-10",
+          "data_pagamento": null,
+          "sienge_bill_id": null,
+          "sienge_installment_id": null,
+          "updated_at": "2026-05-13T22:58:20.669973+00:00"
+        },
+        {
+          "id": "9d254307-caf7-43aa-a8a1-daf22ba5ebfd",
+          "venda_id": "3771951d-5221-4a3d-8b2f-6a0c5b076b12",
+          "tipo": "parcela_entrada",
+          "numero_parcela": 3,
+          "status": "pendente",
+          "valor": 2500,
+          "data_prevista": "2029-09-10",
+          "data_pagamento": null,
+          "sienge_bill_id": null,
+          "sienge_installment_id": null,
+          "updated_at": "2026-05-13T22:58:21.916569+00:00"
+        }
+      ],
+      "pagos_revertidos": {
+        "requested": 0,
+        "updated": 0
+      },
+      "pagamentos_cancelados": {
+        "requested": 1,
+        "updated": 1
+      },
+      "depois": [
+        {
+          "id": "25bf7945-0408-4ec8-9f7a-87f6215dd63a",
+          "venda_id": "3771951d-5221-4a3d-8b2f-6a0c5b076b12",
+          "tipo": "parcela_entrada",
+          "numero_parcela": 3,
+          "status": "pendente",
+          "valor": 2500,
+          "data_prevista": "2029-09-10",
+          "data_pagamento": null,
+          "sienge_bill_id": null,
+          "sienge_installment_id": null,
+          "updated_at": "2026-05-13T22:58:20.669973+00:00"
+        },
+        {
+          "id": "9d254307-caf7-43aa-a8a1-daf22ba5ebfd",
+          "venda_id": "3771951d-5221-4a3d-8b2f-6a0c5b076b12",
+          "tipo": "parcela_entrada",
+          "numero_parcela": 3,
+          "status": "pendente",
+          "valor": 2500,
+          "data_prevista": "2029-09-10",
+          "data_pagamento": null,
+          "sienge_bill_id": null,
+          "sienge_installment_id": null,
+          "updated_at": "2026-05-13T22:58:21.916569+00:00"
+        }
+      ]
+    },
+    {
+      "label": "508 A / Michel Borba / parcela_entrada 1",
+      "keepId": "3b1a914c-ac59-43ac-9a2a-b736c44a0382",
+      "cancelIds": [
+        "045d5d72-ac21-43dc-9914-c31510f14abe"
+      ],
+      "motivo": "duplicata paga exata; mantida uma baixa e cancelada a linha extra",
+      "dryRun": true,
+      "antes": [
+        {
+          "id": "045d5d72-ac21-43dc-9914-c31510f14abe",
+          "venda_id": "37357039-b2ed-404a-b8f9-5162019eb51f",
+          "tipo": "parcela_entrada",
+          "numero_parcela": 1,
+          "status": "pago",
+          "valor": 700,
+          "data_prevista": "2025-12-10",
+          "data_pagamento": "2025-12-10",
+          "sienge_bill_id": null,
+          "sienge_installment_id": null,
+          "updated_at": "2026-05-13T22:58:20.447068+00:00"
+        },
+        {
+          "id": "3b1a914c-ac59-43ac-9a2a-b736c44a0382",
+          "venda_id": "37357039-b2ed-404a-b8f9-5162019eb51f",
+          "tipo": "parcela_entrada",
+          "numero_parcela": 1,
+          "status": "pago",
+          "valor": 700,
+          "data_prevista": "2025-12-10",
+          "data_pagamento": "2025-12-10",
+          "sienge_bill_id": null,
+          "sienge_installment_id": null,
+          "updated_at": "2026-05-13T22:58:21.108203+00:00"
+        }
+      ],
+      "pagos_revertidos": {
+        "requested": 1,
+        "updated": 1
+      },
+      "pagamentos_cancelados": {
+        "requested": 1,
+        "updated": 1
+      },
+      "depois": [
+        {
+          "id": "045d5d72-ac21-43dc-9914-c31510f14abe",
+          "venda_id": "37357039-b2ed-404a-b8f9-5162019eb51f",
+          "tipo": "parcela_entrada",
+          "numero_parcela": 1,
+          "status": "pago",
+          "valor": 700,
+          "data_prevista": "2025-12-10",
+          "data_pagamento": "2025-12-10",
+          "sienge_bill_id": null,
+          "sienge_installment_id": null,
+          "updated_at": "2026-05-13T22:58:20.447068+00:00"
+        },
+        {
+          "id": "3b1a914c-ac59-43ac-9a2a-b736c44a0382",
+          "venda_id": "37357039-b2ed-404a-b8f9-5162019eb51f",
+          "tipo": "parcela_entrada",
+          "numero_parcela": 1,
+          "status": "pago",
+          "valor": 700,
+          "data_prevista": "2025-12-10",
+          "data_pagamento": "2025-12-10",
+          "sienge_bill_id": null,
+          "sienge_installment_id": null,
+          "updated_at": "2026-05-13T22:58:21.108203+00:00"
+        }
+      ]
+    },
+    {
+      "label": "508 A / Michel Borba / parcela_entrada 2",
+      "keepId": "0595a8cf-968d-40a1-8ec5-dc06c8a9be1d",
+      "cancelIds": [
+        "3fe24d3d-e074-41b7-93a2-6259c1eb7f51"
+      ],
+      "motivo": "duplicata paga; mantida a baixa que bate com o paymentDate do Sienge (2026-01-06)",
+      "dryRun": true,
+      "antes": [
+        {
+          "id": "0595a8cf-968d-40a1-8ec5-dc06c8a9be1d",
+          "venda_id": "37357039-b2ed-404a-b8f9-5162019eb51f",
+          "tipo": "parcela_entrada",
+          "numero_parcela": 2,
+          "status": "pago",
+          "valor": 700,
+          "data_prevista": "2026-01-10",
+          "data_pagamento": "2026-01-06",
+          "sienge_bill_id": null,
+          "sienge_installment_id": null,
+          "updated_at": "2026-04-23T20:25:46.456996+00:00"
+        },
+        {
+          "id": "3fe24d3d-e074-41b7-93a2-6259c1eb7f51",
+          "venda_id": "37357039-b2ed-404a-b8f9-5162019eb51f",
+          "tipo": "parcela_entrada",
+          "numero_parcela": 2,
+          "status": "pago",
+          "valor": 700,
+          "data_prevista": "2026-01-10",
+          "data_pagamento": "2026-02-02",
+          "sienge_bill_id": null,
+          "sienge_installment_id": null,
+          "updated_at": "2026-02-25T14:58:20.202813+00:00"
+        }
+      ],
+      "pagos_revertidos": {
+        "requested": 1,
+        "updated": 1
+      },
+      "pagamentos_cancelados": {
+        "requested": 1,
+        "updated": 1
+      },
+      "depois": [
+        {
+          "id": "0595a8cf-968d-40a1-8ec5-dc06c8a9be1d",
+          "venda_id": "37357039-b2ed-404a-b8f9-5162019eb51f",
+          "tipo": "parcela_entrada",
+          "numero_parcela": 2,
+          "status": "pago",
+          "valor": 700,
+          "data_prevista": "2026-01-10",
+          "data_pagamento": "2026-01-06",
+          "sienge_bill_id": null,
+          "sienge_installment_id": null,
+          "updated_at": "2026-04-23T20:25:46.456996+00:00"
+        },
+        {
+          "id": "3fe24d3d-e074-41b7-93a2-6259c1eb7f51",
+          "venda_id": "37357039-b2ed-404a-b8f9-5162019eb51f",
+          "tipo": "parcela_entrada",
+          "numero_parcela": 2,
+          "status": "pago",
+          "valor": 700,
+          "data_prevista": "2026-01-10",
+          "data_pagamento": "2026-02-02",
+          "sienge_bill_id": null,
+          "sienge_installment_id": null,
+          "updated_at": "2026-02-25T14:58:20.202813+00:00"
+        }
+      ]
+    }
+  ],
+  "errors": []
+}
