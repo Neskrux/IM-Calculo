@@ -1,0 +1,1080 @@
+{
+  "meta": {
+    "geradoEm": "2026-06-01T20:35:48.347Z",
+    "spec_ref": ".claude/rules/rodadas-b.md",
+    "fonte": "docs/reconciliacao-geral-2026-06-01-dryrun.json",
+    "total": 28,
+    "regra": "soma income (Sienge) ≠ valor_pro_soluto (local). pro_soluto imutável se há parcela paga (spec). Script NÃO decide."
+  },
+  "resumo": {
+    "auto_corrigiveis_A": 0,
+    "escala_negocio_B": 28,
+    "maior_diferenca": 125000
+  },
+  "casos": [
+    {
+      "grupo": "B",
+      "venda_id": "30d53f3b-3306-41b4-a817-70de77ac3aff",
+      "sienge_contract_id": "191",
+      "numero_contrato": "191",
+      "unidade": "903 B",
+      "cliente": "(sem cliente)",
+      "corretor": "Luiz Corazza",
+      "corretor_telefone": "4732483369",
+      "valor_venda": 300000,
+      "pro_soluto_local": 300000,
+      "soma_income_sienge": 175000,
+      "diferenca": -125000,
+      "pct_diferenca": -41.7,
+      "parcelas_pagas": 11,
+      "fator_comissao_atual": 0.07,
+      "fator_comissao_se_corrigir": 0.12,
+      "auto_corrigivel": false,
+      "motivo": "11 parcela(s) paga(s) → pro_soluto IMUTÁVEL pela spec. Decisão de negócio.",
+      "acao_sugerida": null,
+      "opcoes": [
+        {
+          "id": "1",
+          "label": "Manter pro_soluto local",
+          "efeito": "nenhuma alteração"
+        },
+        {
+          "id": "2",
+          "label": "Usar valor do Sienge",
+          "efeito": "BLOQUEADO (tem paga) → só com decisão de negócio explícita"
+        },
+        {
+          "id": "3",
+          "label": "Investigar",
+          "efeito": "aguardar análise caso a caso"
+        }
+      ]
+    },
+    {
+      "grupo": "B",
+      "venda_id": "11c895c4-a75a-46dd-8b14-aed3c21ad5bf",
+      "sienge_contract_id": "305",
+      "numero_contrato": "305",
+      "unidade": "1407 D",
+      "cliente": "(sem cliente)",
+      "corretor": "Luiz Corazza",
+      "corretor_telefone": "4732483369",
+      "valor_venda": 336614.56,
+      "pro_soluto_local": 67923,
+      "soma_income_sienge": 81507.6,
+      "diferenca": 13584.6,
+      "pct_diferenca": 20,
+      "parcelas_pagas": 16,
+      "fator_comissao_atual": 0.346908,
+      "fator_comissao_se_corrigir": 0.28909,
+      "auto_corrigivel": false,
+      "motivo": "16 parcela(s) paga(s) → pro_soluto IMUTÁVEL pela spec. Decisão de negócio.",
+      "acao_sugerida": null,
+      "opcoes": [
+        {
+          "id": "1",
+          "label": "Manter pro_soluto local",
+          "efeito": "nenhuma alteração"
+        },
+        {
+          "id": "2",
+          "label": "Usar valor do Sienge",
+          "efeito": "BLOQUEADO (tem paga) → só com decisão de negócio explícita"
+        },
+        {
+          "id": "3",
+          "label": "Investigar",
+          "efeito": "aguardar análise caso a caso"
+        }
+      ]
+    },
+    {
+      "grupo": "B",
+      "venda_id": "6aa7d912-025b-476f-9179-bf516a2e5a0e",
+      "sienge_contract_id": "332",
+      "numero_contrato": "332",
+      "unidade": "1206 B",
+      "cliente": "(sem cliente)",
+      "corretor": "MY HOUSE NEGOCIOS IMOBILIARIOS LTDA",
+      "corretor_telefone": "4791170880",
+      "valor_venda": 422991.12,
+      "pro_soluto_local": 67695.43,
+      "soma_income_sienge": 58695.43,
+      "diferenca": -9000,
+      "pct_diferenca": -13.3,
+      "parcelas_pagas": 7,
+      "fator_comissao_atual": 0.437391,
+      "fator_comissao_se_corrigir": 0.504458,
+      "auto_corrigivel": false,
+      "motivo": "7 parcela(s) paga(s) → pro_soluto IMUTÁVEL pela spec. Decisão de negócio.",
+      "acao_sugerida": null,
+      "opcoes": [
+        {
+          "id": "1",
+          "label": "Manter pro_soluto local",
+          "efeito": "nenhuma alteração"
+        },
+        {
+          "id": "2",
+          "label": "Usar valor do Sienge",
+          "efeito": "BLOQUEADO (tem paga) → só com decisão de negócio explícita"
+        },
+        {
+          "id": "3",
+          "label": "Investigar",
+          "efeito": "aguardar análise caso a caso"
+        }
+      ]
+    },
+    {
+      "grupo": "B",
+      "venda_id": "5de60ed3-9151-4b09-9b5c-6125f04cd889",
+      "sienge_contract_id": "228",
+      "numero_contrato": "228",
+      "unidade": "903 C",
+      "cliente": "(sem cliente)",
+      "corretor": "MATHEUS DE S. PIRES NEGOCIOS IMOBILIARIOS",
+      "corretor_telefone": "(48) 99994-0606",
+      "valor_venda": 391000.97,
+      "pro_soluto_local": 82712.06,
+      "soma_income_sienge": 91268.48,
+      "diferenca": 8556.42,
+      "pct_diferenca": 10.3,
+      "parcelas_pagas": 3,
+      "fator_comissao_atual": 0.307272,
+      "fator_comissao_se_corrigir": 0.278465,
+      "auto_corrigivel": false,
+      "motivo": "3 parcela(s) paga(s) → pro_soluto IMUTÁVEL pela spec. Decisão de negócio.",
+      "acao_sugerida": null,
+      "opcoes": [
+        {
+          "id": "1",
+          "label": "Manter pro_soluto local",
+          "efeito": "nenhuma alteração"
+        },
+        {
+          "id": "2",
+          "label": "Usar valor do Sienge",
+          "efeito": "BLOQUEADO (tem paga) → só com decisão de negócio explícita"
+        },
+        {
+          "id": "3",
+          "label": "Investigar",
+          "efeito": "aguardar análise caso a caso"
+        }
+      ]
+    },
+    {
+      "grupo": "B",
+      "venda_id": "b7a817c5-aa5e-4461-b04f-0638a24c36e9",
+      "sienge_contract_id": "312",
+      "numero_contrato": "312",
+      "unidade": "712 A",
+      "cliente": "(sem cliente)",
+      "corretor": "CARLOS BRUNO NEGOCIOS IMOBILIARIOS LTDA",
+      "corretor_telefone": "4797071735",
+      "valor_venda": 237084.62,
+      "pro_soluto_local": 47396.8,
+      "soma_income_sienge": 55383.04,
+      "diferenca": 7986.24,
+      "pct_diferenca": 16.8,
+      "parcelas_pagas": 12,
+      "fator_comissao_atual": 0.350149,
+      "fator_comissao_se_corrigir": 0.299657,
+      "auto_corrigivel": false,
+      "motivo": "12 parcela(s) paga(s) → pro_soluto IMUTÁVEL pela spec. Decisão de negócio.",
+      "acao_sugerida": null,
+      "opcoes": [
+        {
+          "id": "1",
+          "label": "Manter pro_soluto local",
+          "efeito": "nenhuma alteração"
+        },
+        {
+          "id": "2",
+          "label": "Usar valor do Sienge",
+          "efeito": "BLOQUEADO (tem paga) → só com decisão de negócio explícita"
+        },
+        {
+          "id": "3",
+          "label": "Investigar",
+          "efeito": "aguardar análise caso a caso"
+        }
+      ]
+    },
+    {
+      "grupo": "B",
+      "venda_id": "7295782a-b03d-409b-b21d-3a257ec8b61f",
+      "sienge_contract_id": "12",
+      "numero_contrato": "12",
+      "unidade": "509 A",
+      "cliente": "(sem cliente)",
+      "corretor": "Édina mea de Oliveira",
+      "corretor_telefone": "",
+      "valor_venda": 313546.42,
+      "pro_soluto_local": 62735,
+      "soma_income_sienge": 69006,
+      "diferenca": 6271,
+      "pct_diferenca": 10,
+      "parcelas_pagas": 11,
+      "fator_comissao_atual": 0.324867,
+      "fator_comissao_se_corrigir": 0.295344,
+      "auto_corrigivel": false,
+      "motivo": "11 parcela(s) paga(s) → pro_soluto IMUTÁVEL pela spec. Decisão de negócio.",
+      "acao_sugerida": null,
+      "opcoes": [
+        {
+          "id": "1",
+          "label": "Manter pro_soluto local",
+          "efeito": "nenhuma alteração"
+        },
+        {
+          "id": "2",
+          "label": "Usar valor do Sienge",
+          "efeito": "BLOQUEADO (tem paga) → só com decisão de negócio explícita"
+        },
+        {
+          "id": "3",
+          "label": "Investigar",
+          "efeito": "aguardar análise caso a caso"
+        }
+      ]
+    },
+    {
+      "grupo": "B",
+      "venda_id": "9760cf8a-5826-4b18-b233-780551ec5586",
+      "sienge_contract_id": "422",
+      "numero_contrato": "422",
+      "unidade": "1603 C",
+      "cliente": "(sem cliente)",
+      "corretor": "Carolina de Oliveira dos Santos Rita",
+      "corretor_telefone": "",
+      "valor_venda": 467016.4,
+      "pro_soluto_local": 93403.23,
+      "soma_income_sienge": 87403.23,
+      "diferenca": -6000,
+      "pct_diferenca": -6.4,
+      "parcelas_pagas": 3,
+      "fator_comissao_atual": 0.35,
+      "fator_comissao_se_corrigir": 0.374027,
+      "auto_corrigivel": false,
+      "motivo": "3 parcela(s) paga(s) → pro_soluto IMUTÁVEL pela spec. Decisão de negócio.",
+      "acao_sugerida": null,
+      "opcoes": [
+        {
+          "id": "1",
+          "label": "Manter pro_soluto local",
+          "efeito": "nenhuma alteração"
+        },
+        {
+          "id": "2",
+          "label": "Usar valor do Sienge",
+          "efeito": "BLOQUEADO (tem paga) → só com decisão de negócio explícita"
+        },
+        {
+          "id": "3",
+          "label": "Investigar",
+          "efeito": "aguardar análise caso a caso"
+        }
+      ]
+    },
+    {
+      "grupo": "B",
+      "venda_id": "c3650d6d-f1e8-4afe-ad0f-f8ee30c19a16",
+      "sienge_contract_id": "411",
+      "numero_contrato": "411",
+      "unidade": "603 B",
+      "cliente": "(sem cliente)",
+      "corretor": "FELICITA IMOBILIARIA LTDA",
+      "corretor_telefone": "",
+      "valor_venda": 426900.16,
+      "pro_soluto_local": 196136.89,
+      "soma_income_sienge": 202071.67,
+      "diferenca": 5934.78,
+      "pct_diferenca": 3,
+      "parcelas_pagas": 2,
+      "fator_comissao_atual": 0.152358,
+      "fator_comissao_se_corrigir": 0.147883,
+      "auto_corrigivel": false,
+      "motivo": "2 parcela(s) paga(s) → pro_soluto IMUTÁVEL pela spec. Decisão de negócio.",
+      "acao_sugerida": null,
+      "opcoes": [
+        {
+          "id": "1",
+          "label": "Manter pro_soluto local",
+          "efeito": "nenhuma alteração"
+        },
+        {
+          "id": "2",
+          "label": "Usar valor do Sienge",
+          "efeito": "BLOQUEADO (tem paga) → só com decisão de negócio explícita"
+        },
+        {
+          "id": "3",
+          "label": "Investigar",
+          "efeito": "aguardar análise caso a caso"
+        }
+      ]
+    },
+    {
+      "grupo": "B",
+      "venda_id": "7978c149-88eb-4568-b57a-3785c93cc953",
+      "sienge_contract_id": "165",
+      "numero_contrato": "165",
+      "unidade": "1606 A",
+      "cliente": "(sem cliente)",
+      "corretor": "Luiz Corazza",
+      "corretor_telefone": "4732483369",
+      "valor_venda": 419197.57,
+      "pro_soluto_local": 83839.8,
+      "soma_income_sienge": 89429.12,
+      "diferenca": 5589.32,
+      "pct_diferenca": 6.7,
+      "parcelas_pagas": 9,
+      "fator_comissao_atual": 0.349999,
+      "fator_comissao_se_corrigir": 0.328124,
+      "auto_corrigivel": false,
+      "motivo": "9 parcela(s) paga(s) → pro_soluto IMUTÁVEL pela spec. Decisão de negócio.",
+      "acao_sugerida": null,
+      "opcoes": [
+        {
+          "id": "1",
+          "label": "Manter pro_soluto local",
+          "efeito": "nenhuma alteração"
+        },
+        {
+          "id": "2",
+          "label": "Usar valor do Sienge",
+          "efeito": "BLOQUEADO (tem paga) → só com decisão de negócio explícita"
+        },
+        {
+          "id": "3",
+          "label": "Investigar",
+          "efeito": "aguardar análise caso a caso"
+        }
+      ]
+    },
+    {
+      "grupo": "B",
+      "venda_id": "f62fedaa-c66a-4abf-b36e-ce12c46334d8",
+      "sienge_contract_id": "206",
+      "numero_contrato": "206",
+      "unidade": "1303 B",
+      "cliente": "(sem cliente)",
+      "corretor": "Betina De Camargo Marcos",
+      "corretor_telefone": "47999227227",
+      "valor_venda": 427221.03,
+      "pro_soluto_local": 85444.35,
+      "soma_income_sienge": 80444.35,
+      "diferenca": -5000,
+      "pct_diferenca": -5.9,
+      "parcelas_pagas": 8,
+      "fator_comissao_atual": 0.349999,
+      "fator_comissao_se_corrigir": 0.371753,
+      "auto_corrigivel": false,
+      "motivo": "8 parcela(s) paga(s) → pro_soluto IMUTÁVEL pela spec. Decisão de negócio.",
+      "acao_sugerida": null,
+      "opcoes": [
+        {
+          "id": "1",
+          "label": "Manter pro_soluto local",
+          "efeito": "nenhuma alteração"
+        },
+        {
+          "id": "2",
+          "label": "Usar valor do Sienge",
+          "efeito": "BLOQUEADO (tem paga) → só com decisão de negócio explícita"
+        },
+        {
+          "id": "3",
+          "label": "Investigar",
+          "efeito": "aguardar análise caso a caso"
+        }
+      ]
+    },
+    {
+      "grupo": "B",
+      "venda_id": "c5e10e5d-cbf4-45df-913e-4eee519ecad7",
+      "sienge_contract_id": "277",
+      "numero_contrato": "277",
+      "unidade": "810 D",
+      "cliente": "(sem cliente)",
+      "corretor": "LAURICIO FESTA",
+      "corretor_telefone": "",
+      "valor_venda": 323047.19,
+      "pro_soluto_local": 70592.4,
+      "soma_income_sienge": 75298.56,
+      "diferenca": 4706.16,
+      "pct_diferenca": 6.7,
+      "parcelas_pagas": 11,
+      "fator_comissao_atual": 0.297455,
+      "fator_comissao_se_corrigir": 0.278864,
+      "auto_corrigivel": false,
+      "motivo": "11 parcela(s) paga(s) → pro_soluto IMUTÁVEL pela spec. Decisão de negócio.",
+      "acao_sugerida": null,
+      "opcoes": [
+        {
+          "id": "1",
+          "label": "Manter pro_soluto local",
+          "efeito": "nenhuma alteração"
+        },
+        {
+          "id": "2",
+          "label": "Usar valor do Sienge",
+          "efeito": "BLOQUEADO (tem paga) → só com decisão de negócio explícita"
+        },
+        {
+          "id": "3",
+          "label": "Investigar",
+          "efeito": "aguardar análise caso a caso"
+        }
+      ]
+    },
+    {
+      "grupo": "B",
+      "venda_id": "8d10b601-d088-4023-81bf-e136195fa8a9",
+      "sienge_contract_id": "150",
+      "numero_contrato": "150",
+      "unidade": "1306 A",
+      "cliente": "(sem cliente)",
+      "corretor": "GUILHERME GONCALVES SALSBRUM",
+      "corretor_telefone": "4792097047",
+      "valor_venda": 336252.04,
+      "pro_soluto_local": 68249.97,
+      "soma_income_sienge": 72809.29,
+      "diferenca": 4559.32,
+      "pct_diferenca": 6.7,
+      "parcelas_pagas": 9,
+      "fator_comissao_atual": 0.344874,
+      "fator_comissao_se_corrigir": 0.323278,
+      "auto_corrigivel": false,
+      "motivo": "9 parcela(s) paga(s) → pro_soluto IMUTÁVEL pela spec. Decisão de negócio.",
+      "acao_sugerida": null,
+      "opcoes": [
+        {
+          "id": "1",
+          "label": "Manter pro_soluto local",
+          "efeito": "nenhuma alteração"
+        },
+        {
+          "id": "2",
+          "label": "Usar valor do Sienge",
+          "efeito": "BLOQUEADO (tem paga) → só com decisão de negócio explícita"
+        },
+        {
+          "id": "3",
+          "label": "Investigar",
+          "efeito": "aguardar análise caso a caso"
+        }
+      ]
+    },
+    {
+      "grupo": "B",
+      "venda_id": "cffb2c73-edb7-4127-8f74-18f382efbe78",
+      "sienge_contract_id": "351",
+      "numero_contrato": "351",
+      "unidade": "506 A",
+      "cliente": "(sem cliente)",
+      "corretor": "CARLOS BRUNO NEGOCIOS IMOBILIARIOS LTDA",
+      "corretor_telefone": "4797071735",
+      "valor_venda": 232413.12,
+      "pro_soluto_local": 46482.63,
+      "soma_income_sienge": 50076.84,
+      "diferenca": 3594.21,
+      "pct_diferenca": 7.7,
+      "parcelas_pagas": 9,
+      "fator_comissao_atual": 0.35,
+      "fator_comissao_se_corrigir": 0.324879,
+      "auto_corrigivel": false,
+      "motivo": "9 parcela(s) paga(s) → pro_soluto IMUTÁVEL pela spec. Decisão de negócio.",
+      "acao_sugerida": null,
+      "opcoes": [
+        {
+          "id": "1",
+          "label": "Manter pro_soluto local",
+          "efeito": "nenhuma alteração"
+        },
+        {
+          "id": "2",
+          "label": "Usar valor do Sienge",
+          "efeito": "BLOQUEADO (tem paga) → só com decisão de negócio explícita"
+        },
+        {
+          "id": "3",
+          "label": "Investigar",
+          "efeito": "aguardar análise caso a caso"
+        }
+      ]
+    },
+    {
+      "grupo": "B",
+      "venda_id": "a2501437-3de4-4b97-b2cc-93474077de6b",
+      "sienge_contract_id": "334",
+      "numero_contrato": "334",
+      "unidade": "1702 A",
+      "cliente": "(sem cliente)",
+      "corretor": "Rodrigo Fernando Viapiana Parada",
+      "corretor_telefone": "4732483369",
+      "valor_venda": 444567.92,
+      "pro_soluto_local": 88913.12,
+      "soma_income_sienge": 92187.68,
+      "diferenca": 3274.56,
+      "pct_diferenca": 3.7,
+      "parcelas_pagas": 3,
+      "fator_comissao_atual": 0.350002,
+      "fator_comissao_se_corrigir": 0.33757,
+      "auto_corrigivel": false,
+      "motivo": "3 parcela(s) paga(s) → pro_soluto IMUTÁVEL pela spec. Decisão de negócio.",
+      "acao_sugerida": null,
+      "opcoes": [
+        {
+          "id": "1",
+          "label": "Manter pro_soluto local",
+          "efeito": "nenhuma alteração"
+        },
+        {
+          "id": "2",
+          "label": "Usar valor do Sienge",
+          "efeito": "BLOQUEADO (tem paga) → só com decisão de negócio explícita"
+        },
+        {
+          "id": "3",
+          "label": "Investigar",
+          "efeito": "aguardar análise caso a caso"
+        }
+      ]
+    },
+    {
+      "grupo": "B",
+      "venda_id": "c6100456-03b1-44a9-8f1b-c47dd16997ad",
+      "sienge_contract_id": "230",
+      "numero_contrato": "230",
+      "unidade": "906 C",
+      "cliente": "(sem cliente)",
+      "corretor": "MATHEUS DE S. PIRES NEGOCIOS IMOBILIARIOS",
+      "corretor_telefone": "1192003475",
+      "valor_venda": 391000.97,
+      "pro_soluto_local": 78199.66,
+      "soma_income_sienge": 80741.01,
+      "diferenca": 2541.35,
+      "pct_diferenca": 3.2,
+      "parcelas_pagas": 8,
+      "fator_comissao_atual": 0.350002,
+      "fator_comissao_se_corrigir": 0.338986,
+      "auto_corrigivel": false,
+      "motivo": "8 parcela(s) paga(s) → pro_soluto IMUTÁVEL pela spec. Decisão de negócio.",
+      "acao_sugerida": null,
+      "opcoes": [
+        {
+          "id": "1",
+          "label": "Manter pro_soluto local",
+          "efeito": "nenhuma alteração"
+        },
+        {
+          "id": "2",
+          "label": "Usar valor do Sienge",
+          "efeito": "BLOQUEADO (tem paga) → só com decisão de negócio explícita"
+        },
+        {
+          "id": "3",
+          "label": "Investigar",
+          "efeito": "aguardar análise caso a caso"
+        }
+      ]
+    },
+    {
+      "grupo": "B",
+      "venda_id": "6a33ac0b-00af-4fc3-8539-7529998a94b2",
+      "sienge_contract_id": "299",
+      "numero_contrato": "299",
+      "unidade": "1305 D",
+      "cliente": "(sem cliente)",
+      "corretor": "Luiz Corazza",
+      "corretor_telefone": "4732483369",
+      "valor_venda": 457103.88,
+      "pro_soluto_local": 91420.75,
+      "soma_income_sienge": 93820.75,
+      "diferenca": 2400,
+      "pct_diferenca": 2.6,
+      "parcelas_pagas": 8,
+      "fator_comissao_atual": 0.35,
+      "fator_comissao_se_corrigir": 0.341047,
+      "auto_corrigivel": false,
+      "motivo": "8 parcela(s) paga(s) → pro_soluto IMUTÁVEL pela spec. Decisão de negócio.",
+      "acao_sugerida": null,
+      "opcoes": [
+        {
+          "id": "1",
+          "label": "Manter pro_soluto local",
+          "efeito": "nenhuma alteração"
+        },
+        {
+          "id": "2",
+          "label": "Usar valor do Sienge",
+          "efeito": "BLOQUEADO (tem paga) → só com decisão de negócio explícita"
+        },
+        {
+          "id": "3",
+          "label": "Investigar",
+          "efeito": "aguardar análise caso a caso"
+        }
+      ]
+    },
+    {
+      "grupo": "B",
+      "venda_id": "ddfe2380-a927-4ad5-b37f-ed7d0913c333",
+      "sienge_contract_id": "63",
+      "numero_contrato": "63",
+      "unidade": "710 A",
+      "cliente": "(sem cliente)",
+      "corretor": "CARLOS BRUNO NEGOCIOS IMOBILIARIOS LTDA",
+      "corretor_telefone": "4797071735",
+      "valor_venda": 351833.57,
+      "pro_soluto_local": 70366,
+      "soma_income_sienge": 72711.54,
+      "diferenca": 2345.54,
+      "pct_diferenca": 3.3,
+      "parcelas_pagas": 8,
+      "fator_comissao_atual": 0.350004,
+      "fator_comissao_se_corrigir": 0.338714,
+      "auto_corrigivel": false,
+      "motivo": "8 parcela(s) paga(s) → pro_soluto IMUTÁVEL pela spec. Decisão de negócio.",
+      "acao_sugerida": null,
+      "opcoes": [
+        {
+          "id": "1",
+          "label": "Manter pro_soluto local",
+          "efeito": "nenhuma alteração"
+        },
+        {
+          "id": "2",
+          "label": "Usar valor do Sienge",
+          "efeito": "BLOQUEADO (tem paga) → só com decisão de negócio explícita"
+        },
+        {
+          "id": "3",
+          "label": "Investigar",
+          "efeito": "aguardar análise caso a caso"
+        }
+      ]
+    },
+    {
+      "grupo": "B",
+      "venda_id": "b42ba471-b3e3-46e0-a344-dba77fb9020a",
+      "sienge_contract_id": "267",
+      "numero_contrato": "267",
+      "unidade": "603 D",
+      "cliente": "(sem cliente)",
+      "corretor": "Josemeiri Dal Aqua Bittencourt",
+      "corretor_telefone": "",
+      "valor_venda": 316681.88,
+      "pro_soluto_local": 61336.4,
+      "soma_income_sienge": 59336.4,
+      "diferenca": -2000,
+      "pct_diferenca": -3.3,
+      "parcelas_pagas": 10,
+      "fator_comissao_atual": 0.361412,
+      "fator_comissao_se_corrigir": 0.373594,
+      "auto_corrigivel": false,
+      "motivo": "10 parcela(s) paga(s) → pro_soluto IMUTÁVEL pela spec. Decisão de negócio.",
+      "acao_sugerida": null,
+      "opcoes": [
+        {
+          "id": "1",
+          "label": "Manter pro_soluto local",
+          "efeito": "nenhuma alteração"
+        },
+        {
+          "id": "2",
+          "label": "Usar valor do Sienge",
+          "efeito": "BLOQUEADO (tem paga) → só com decisão de negócio explícita"
+        },
+        {
+          "id": "3",
+          "label": "Investigar",
+          "efeito": "aguardar análise caso a caso"
+        }
+      ]
+    },
+    {
+      "grupo": "B",
+      "venda_id": "d6cf726c-95eb-42f0-8397-b28d753d56ca",
+      "sienge_contract_id": "195",
+      "numero_contrato": "195",
+      "unidade": "904 B",
+      "cliente": "(sem cliente)",
+      "corretor": "Felipe Madona",
+      "corretor_telefone": "47991881880",
+      "valor_venda": 439267.86,
+      "pro_soluto_local": 87853.76,
+      "soma_income_sienge": 89368.48,
+      "diferenca": 1514.72,
+      "pct_diferenca": 1.7,
+      "parcelas_pagas": 9,
+      "fator_comissao_atual": 0.349999,
+      "fator_comissao_se_corrigir": 0.344067,
+      "auto_corrigivel": false,
+      "motivo": "9 parcela(s) paga(s) → pro_soluto IMUTÁVEL pela spec. Decisão de negócio.",
+      "acao_sugerida": null,
+      "opcoes": [
+        {
+          "id": "1",
+          "label": "Manter pro_soluto local",
+          "efeito": "nenhuma alteração"
+        },
+        {
+          "id": "2",
+          "label": "Usar valor do Sienge",
+          "efeito": "BLOQUEADO (tem paga) → só com decisão de negócio explícita"
+        },
+        {
+          "id": "3",
+          "label": "Investigar",
+          "efeito": "aguardar análise caso a caso"
+        }
+      ]
+    },
+    {
+      "grupo": "B",
+      "venda_id": "39b748cc-65fd-4504-aad8-14443d07a08a",
+      "sienge_contract_id": "175",
+      "numero_contrato": "175",
+      "unidade": "1807 A",
+      "cliente": "(sem cliente)",
+      "corretor": "MATHEUS DE S. PIRES NEGOCIOS IMOBILIARIOS",
+      "corretor_telefone": "(48) 99994-0606",
+      "valor_venda": 353404.27,
+      "pro_soluto_local": 71858.87,
+      "soma_income_sienge": 70680.86,
+      "diferenca": -1178.01,
+      "pct_diferenca": -1.6,
+      "parcelas_pagas": 13,
+      "fator_comissao_atual": 0.319672,
+      "fator_comissao_se_corrigir": 0.325,
+      "auto_corrigivel": false,
+      "motivo": "13 parcela(s) paga(s) → pro_soluto IMUTÁVEL pela spec. Decisão de negócio.",
+      "acao_sugerida": null,
+      "opcoes": [
+        {
+          "id": "1",
+          "label": "Manter pro_soluto local",
+          "efeito": "nenhuma alteração"
+        },
+        {
+          "id": "2",
+          "label": "Usar valor do Sienge",
+          "efeito": "BLOQUEADO (tem paga) → só com decisão de negócio explícita"
+        },
+        {
+          "id": "3",
+          "label": "Investigar",
+          "efeito": "aguardar análise caso a caso"
+        }
+      ]
+    },
+    {
+      "grupo": "B",
+      "venda_id": "fc6ffa37-4354-4f2b-842f-19f4779986d3",
+      "sienge_contract_id": "200",
+      "numero_contrato": "200",
+      "unidade": "1005 B",
+      "cliente": "(sem cliente)",
+      "corretor": "MATHEUS DE S. PIRES NEGOCIOS IMOBILIARIOS",
+      "corretor_telefone": "(48) 99994-0606",
+      "valor_venda": 349191.04,
+      "pro_soluto_local": 70946.67,
+      "soma_income_sienge": 69800,
+      "diferenca": -1146.67,
+      "pct_diferenca": -1.6,
+      "parcelas_pagas": 15,
+      "fator_comissao_atual": 0.319922,
+      "fator_comissao_se_corrigir": 0.325178,
+      "auto_corrigivel": false,
+      "motivo": "15 parcela(s) paga(s) → pro_soluto IMUTÁVEL pela spec. Decisão de negócio.",
+      "acao_sugerida": null,
+      "opcoes": [
+        {
+          "id": "1",
+          "label": "Manter pro_soluto local",
+          "efeito": "nenhuma alteração"
+        },
+        {
+          "id": "2",
+          "label": "Usar valor do Sienge",
+          "efeito": "BLOQUEADO (tem paga) → só com decisão de negócio explícita"
+        },
+        {
+          "id": "3",
+          "label": "Investigar",
+          "efeito": "aguardar análise caso a caso"
+        }
+      ]
+    },
+    {
+      "grupo": "B",
+      "venda_id": "dc949f39-926a-44bd-ae6f-d39499474ee6",
+      "sienge_contract_id": "220",
+      "numero_contrato": "220",
+      "unidade": "709 C",
+      "cliente": "(sem cliente)",
+      "corretor": "MATHEUS DE S. PIRES NEGOCIOS IMOBILIARIOS",
+      "corretor_telefone": "(48) 99994-0606",
+      "valor_venda": 319848.7,
+      "pro_soluto_local": 64863.33,
+      "soma_income_sienge": 63800,
+      "diferenca": -1063.33,
+      "pct_diferenca": -1.6,
+      "parcelas_pagas": 13,
+      "fator_comissao_atual": 0.320523,
+      "fator_comissao_se_corrigir": 0.325865,
+      "auto_corrigivel": false,
+      "motivo": "13 parcela(s) paga(s) → pro_soluto IMUTÁVEL pela spec. Decisão de negócio.",
+      "acao_sugerida": null,
+      "opcoes": [
+        {
+          "id": "1",
+          "label": "Manter pro_soluto local",
+          "efeito": "nenhuma alteração"
+        },
+        {
+          "id": "2",
+          "label": "Usar valor do Sienge",
+          "efeito": "BLOQUEADO (tem paga) → só com decisão de negócio explícita"
+        },
+        {
+          "id": "3",
+          "label": "Investigar",
+          "efeito": "aguardar análise caso a caso"
+        }
+      ]
+    },
+    {
+      "grupo": "B",
+      "venda_id": "61c1cbb3-7f05-437a-8fd2-1a1f63b3d8f9",
+      "sienge_contract_id": "217",
+      "numero_contrato": "217",
+      "unidade": "604 C",
+      "cliente": "(sem cliente)",
+      "corretor": "MATHEUS DE S. PIRES NEGOCIOS IMOBILIARIOS",
+      "corretor_telefone": "(48) 99994-0606",
+      "valor_venda": 316681.88,
+      "pro_soluto_local": 65253.33,
+      "soma_income_sienge": 64200,
+      "diferenca": -1053.33,
+      "pct_diferenca": -1.6,
+      "parcelas_pagas": 15,
+      "fator_comissao_atual": 0.315452,
+      "fator_comissao_se_corrigir": 0.320628,
+      "auto_corrigivel": false,
+      "motivo": "15 parcela(s) paga(s) → pro_soluto IMUTÁVEL pela spec. Decisão de negócio.",
+      "acao_sugerida": null,
+      "opcoes": [
+        {
+          "id": "1",
+          "label": "Manter pro_soluto local",
+          "efeito": "nenhuma alteração"
+        },
+        {
+          "id": "2",
+          "label": "Usar valor do Sienge",
+          "efeito": "BLOQUEADO (tem paga) → só com decisão de negócio explícita"
+        },
+        {
+          "id": "3",
+          "label": "Investigar",
+          "efeito": "aguardar análise caso a caso"
+        }
+      ]
+    },
+    {
+      "grupo": "B",
+      "venda_id": "3491a87f-a63d-42e6-8150-7fbac9ef3f11",
+      "sienge_contract_id": "261",
+      "numero_contrato": "261",
+      "unidade": "410 D",
+      "cliente": "(sem cliente)",
+      "corretor": "MATHEUS DE S. PIRES NEGOCIOS IMOBILIARIOS",
+      "corretor_telefone": "(48) 99994-0606",
+      "valor_venda": 310442,
+      "pro_soluto_local": 63033.33,
+      "soma_income_sienge": 62000,
+      "diferenca": -1033.33,
+      "pct_diferenca": -1.6,
+      "parcelas_pagas": 12,
+      "fator_comissao_atual": 0.320128,
+      "fator_comissao_se_corrigir": 0.325463,
+      "auto_corrigivel": false,
+      "motivo": "12 parcela(s) paga(s) → pro_soluto IMUTÁVEL pela spec. Decisão de negócio.",
+      "acao_sugerida": null,
+      "opcoes": [
+        {
+          "id": "1",
+          "label": "Manter pro_soluto local",
+          "efeito": "nenhuma alteração"
+        },
+        {
+          "id": "2",
+          "label": "Usar valor do Sienge",
+          "efeito": "BLOQUEADO (tem paga) → só com decisão de negócio explícita"
+        },
+        {
+          "id": "3",
+          "label": "Investigar",
+          "efeito": "aguardar análise caso a caso"
+        }
+      ]
+    },
+    {
+      "grupo": "B",
+      "venda_id": "183085e7-9972-4a7f-bbc8-70a4b59ae1ef",
+      "sienge_contract_id": "22",
+      "numero_contrato": "22",
+      "unidade": "504 A",
+      "cliente": "(sem cliente)",
+      "corretor": "MATHEUS DE S. PIRES NEGOCIOS IMOBILIARIOS",
+      "corretor_telefone": "(48) 99994-0606",
+      "valor_venda": 313546.42,
+      "pro_soluto_local": 63737.69,
+      "soma_income_sienge": 62709.2,
+      "diferenca": -1028.49,
+      "pct_diferenca": -1.6,
+      "parcelas_pagas": 15,
+      "fator_comissao_atual": 0.319756,
+      "fator_comissao_se_corrigir": 0.325,
+      "auto_corrigivel": false,
+      "motivo": "15 parcela(s) paga(s) → pro_soluto IMUTÁVEL pela spec. Decisão de negócio.",
+      "acao_sugerida": null,
+      "opcoes": [
+        {
+          "id": "1",
+          "label": "Manter pro_soluto local",
+          "efeito": "nenhuma alteração"
+        },
+        {
+          "id": "2",
+          "label": "Usar valor do Sienge",
+          "efeito": "BLOQUEADO (tem paga) → só com decisão de negócio explícita"
+        },
+        {
+          "id": "3",
+          "label": "Investigar",
+          "efeito": "aguardar análise caso a caso"
+        }
+      ]
+    },
+    {
+      "grupo": "B",
+      "venda_id": "a4b242b6-d5cb-41fe-a501-70d91e50c3bf",
+      "sienge_contract_id": "9",
+      "numero_contrato": "9",
+      "unidade": "409 A",
+      "cliente": "(sem cliente)",
+      "corretor": "MATHEUS DE S. PIRES NEGOCIOS IMOBILIARIOS",
+      "corretor_telefone": "(48) 99994-0606",
+      "valor_venda": 310442,
+      "pro_soluto_local": 63016.67,
+      "soma_income_sienge": 62000,
+      "diferenca": -1016.67,
+      "pct_diferenca": -1.6,
+      "parcelas_pagas": 15,
+      "fator_comissao_atual": 0.320213,
+      "fator_comissao_se_corrigir": 0.325464,
+      "auto_corrigivel": false,
+      "motivo": "15 parcela(s) paga(s) → pro_soluto IMUTÁVEL pela spec. Decisão de negócio.",
+      "acao_sugerida": null,
+      "opcoes": [
+        {
+          "id": "1",
+          "label": "Manter pro_soluto local",
+          "efeito": "nenhuma alteração"
+        },
+        {
+          "id": "2",
+          "label": "Usar valor do Sienge",
+          "efeito": "BLOQUEADO (tem paga) → só com decisão de negócio explícita"
+        },
+        {
+          "id": "3",
+          "label": "Investigar",
+          "efeito": "aguardar análise caso a caso"
+        }
+      ]
+    },
+    {
+      "grupo": "B",
+      "venda_id": "99b07752-8baf-406f-96a8-4932f2010e99",
+      "sienge_contract_id": "64",
+      "numero_contrato": "64",
+      "unidade": "802 A",
+      "cliente": "(sem cliente)",
+      "corretor": "ENZO TORMES",
+      "corretor_telefone": "(51) 98536-1147",
+      "valor_venda": 239455.47,
+      "pro_soluto_local": 48670.48,
+      "soma_income_sienge": 47889,
+      "diferenca": -781.48,
+      "pct_diferenca": -1.6,
+      "parcelas_pagas": 16,
+      "fator_comissao_atual": 0.319796,
+      "fator_comissao_se_corrigir": 0.325015,
+      "auto_corrigivel": false,
+      "motivo": "16 parcela(s) paga(s) → pro_soluto IMUTÁVEL pela spec. Decisão de negócio.",
+      "acao_sugerida": null,
+      "opcoes": [
+        {
+          "id": "1",
+          "label": "Manter pro_soluto local",
+          "efeito": "nenhuma alteração"
+        },
+        {
+          "id": "2",
+          "label": "Usar valor do Sienge",
+          "efeito": "BLOQUEADO (tem paga) → só com decisão de negócio explícita"
+        },
+        {
+          "id": "3",
+          "label": "Investigar",
+          "efeito": "aguardar análise caso a caso"
+        }
+      ]
+    },
+    {
+      "grupo": "B",
+      "venda_id": "85f070c7-e436-482c-ac8a-2242602aa984",
+      "sienge_contract_id": "69",
+      "numero_contrato": "69",
+      "unidade": "805 A",
+      "cliente": "(sem cliente)",
+      "corretor": "MATHEUS DE S. PIRES NEGOCIOS IMOBILIARIOS",
+      "corretor_telefone": "(48) 99994-0606",
+      "valor_venda": 239455.47,
+      "pro_soluto_local": 48096.67,
+      "soma_income_sienge": 47800,
+      "diferenca": -296.67,
+      "pct_diferenca": -0.6,
+      "parcelas_pagas": 16,
+      "fator_comissao_atual": 0.323611,
+      "fator_comissao_se_corrigir": 0.325619,
+      "auto_corrigivel": false,
+      "motivo": "16 parcela(s) paga(s) → pro_soluto IMUTÁVEL pela spec. Decisão de negócio.",
+      "acao_sugerida": null,
+      "opcoes": [
+        {
+          "id": "1",
+          "label": "Manter pro_soluto local",
+          "efeito": "nenhuma alteração"
+        },
+        {
+          "id": "2",
+          "label": "Usar valor do Sienge",
+          "efeito": "BLOQUEADO (tem paga) → só com decisão de negócio explícita"
+        },
+        {
+          "id": "3",
+          "label": "Investigar",
+          "efeito": "aguardar análise caso a caso"
+        }
+      ]
+    }
+  ]
+}
