@@ -1,0 +1,438 @@
+{
+  "meta": {
+    "src": "docs/auditorias/fase0/fase0-universo-pagos-futuro.json",
+    "geradoEm": "2026-05-29T18:37:43.760Z",
+    "totalRows": 3721
+  },
+  "installmentId": {
+    "distintos": 69,
+    "nulos": 0,
+    "paresBillInst": 3721,
+    "unico1a1": true
+  },
+  "installmentNumber": {
+    "comBarra": 3721,
+    "semBarra": 0,
+    "exemplos": [
+      "1/1",
+      "1/58",
+      "2/58",
+      "1/57",
+      "2/57",
+      "3/57",
+      "4/57",
+      "5/57",
+      "6/57",
+      "7/57",
+      "8/57",
+      "1/60",
+      "2/60",
+      "3/60",
+      "4/60"
+    ]
+  },
+  "colisao": {
+    "billsTotal": 294,
+    "billsNumeroInteiroColide": 116,
+    "billsInstallmentIdDuplica": 0,
+    "amostra": [
+      {
+        "billId": 1,
+        "linhas": [
+          {
+            "installmentId": 1,
+            "installmentNumber": "1/1",
+            "paymentTerm": "SN",
+            "originalAmount": 1338.68
+          },
+          {
+            "installmentId": 2,
+            "installmentNumber": "1/58",
+            "paymentTerm": "PM",
+            "originalAmount": 1338.68
+          },
+          {
+            "installmentId": 3,
+            "installmentNumber": "2/58",
+            "paymentTerm": "PM",
+            "originalAmount": 1338.68
+          }
+        ]
+      },
+      {
+        "billId": 5,
+        "linhas": [
+          {
+            "installmentId": 1,
+            "installmentNumber": "1/1",
+            "paymentTerm": "SN",
+            "originalAmount": 20000
+          },
+          {
+            "installmentId": 2,
+            "installmentNumber": "1/57",
+            "paymentTerm": "PM",
+            "originalAmount": 1089.27
+          },
+          {
+            "installmentId": 3,
+            "installmentNumber": "2/57",
+            "paymentTerm": "PM",
+            "originalAmount": 1089.27
+          },
+          {
+            "installmentId": 4,
+            "installmentNumber": "3/57",
+            "paymentTerm": "PM",
+            "originalAmount": 1089.27
+          },
+          {
+            "installmentId": 5,
+            "installmentNumber": "4/57",
+            "paymentTerm": "PM",
+            "originalAmount": 1089.27
+          },
+          {
+            "installmentId": 6,
+            "installmentNumber": "5/57",
+            "paymentTerm": "PM",
+            "originalAmount": 1089.27
+          },
+          {
+            "installmentId": 7,
+            "installmentNumber": "6/57",
+            "paymentTerm": "PM",
+            "originalAmount": 1089.27
+          },
+          {
+            "installmentId": 8,
+            "installmentNumber": "7/57",
+            "paymentTerm": "PM",
+            "originalAmount": 1089.27
+          },
+          {
+            "installmentId": 9,
+            "installmentNumber": "8/57",
+            "paymentTerm": "PM",
+            "originalAmount": 1089.27
+          }
+        ]
+      },
+      {
+        "billId": 6,
+        "linhas": [
+          {
+            "installmentId": 1,
+            "installmentNumber": "1/1",
+            "paymentTerm": "SN",
+            "originalAmount": 1000
+          },
+          {
+            "installmentId": 2,
+            "installmentNumber": "1/60",
+            "paymentTerm": "PM",
+            "originalAmount": 781.68
+          },
+          {
+            "installmentId": 3,
+            "installmentNumber": "2/60",
+            "paymentTerm": "PM",
+            "originalAmount": 781.48
+          },
+          {
+            "installmentId": 4,
+            "installmentNumber": "3/60",
+            "paymentTerm": "PM",
+            "originalAmount": 781.48
+          },
+          {
+            "installmentId": 5,
+            "installmentNumber": "4/60",
+            "paymentTerm": "PM",
+            "originalAmount": 781.48
+          },
+          {
+            "installmentId": 6,
+            "installmentNumber": "5/60",
+            "paymentTerm": "PM",
+            "originalAmount": 781.48
+          },
+          {
+            "installmentId": 7,
+            "installmentNumber": "6/60",
+            "paymentTerm": "PM",
+            "originalAmount": 781.48
+          },
+          {
+            "installmentId": 8,
+            "installmentNumber": "7/60",
+            "paymentTerm": "PM",
+            "originalAmount": 781.48
+          },
+          {
+            "installmentId": 9,
+            "installmentNumber": "8/60",
+            "paymentTerm": "PM",
+            "originalAmount": 781.48
+          },
+          {
+            "installmentId": 10,
+            "installmentNumber": "9/60",
+            "paymentTerm": "PM",
+            "originalAmount": 781.48
+          },
+          {
+            "installmentId": 11,
+            "installmentNumber": "10/60",
+            "paymentTerm": "PM",
+            "originalAmount": 781.48
+          },
+          {
+            "installmentId": 12,
+            "installmentNumber": "11/60",
+            "paymentTerm": "PM",
+            "originalAmount": 781.48
+          },
+          {
+            "installmentId": 13,
+            "installmentNumber": "12/60",
+            "paymentTerm": "PM",
+            "originalAmount": 781.48
+          }
+        ]
+      },
+      {
+        "billId": 7,
+        "linhas": [
+          {
+            "installmentId": 1,
+            "installmentNumber": "1/1",
+            "paymentTerm": "AT",
+            "originalAmount": 1000
+          },
+          {
+            "installmentId": 2,
+            "installmentNumber": "1/60",
+            "paymentTerm": "PM",
+            "originalAmount": 1060
+          },
+          {
+            "installmentId": 3,
+            "installmentNumber": "2/60",
+            "paymentTerm": "PM",
+            "originalAmount": 1060
+          },
+          {
+            "installmentId": 4,
+            "installmentNumber": "3/60",
+            "paymentTerm": "PM",
+            "originalAmount": 1060
+          },
+          {
+            "installmentId": 5,
+            "installmentNumber": "4/60",
+            "paymentTerm": "PM",
+            "originalAmount": 1060
+          },
+          {
+            "installmentId": 6,
+            "installmentNumber": "5/60",
+            "paymentTerm": "PM",
+            "originalAmount": 1060
+          },
+          {
+            "installmentId": 7,
+            "installmentNumber": "6/60",
+            "paymentTerm": "PM",
+            "originalAmount": 1060
+          },
+          {
+            "installmentId": 8,
+            "installmentNumber": "7/60",
+            "paymentTerm": "PM",
+            "originalAmount": 1060
+          },
+          {
+            "installmentId": 9,
+            "installmentNumber": "8/60",
+            "paymentTerm": "PM",
+            "originalAmount": 1060
+          },
+          {
+            "installmentId": 10,
+            "installmentNumber": "9/60",
+            "paymentTerm": "PM",
+            "originalAmount": 1060
+          },
+          {
+            "installmentId": 11,
+            "installmentNumber": "10/60",
+            "paymentTerm": "PM",
+            "originalAmount": 1060
+          },
+          {
+            "installmentId": 12,
+            "installmentNumber": "11/60",
+            "paymentTerm": "PM",
+            "originalAmount": 1060
+          }
+        ]
+      },
+      {
+        "billId": 8,
+        "linhas": [
+          {
+            "installmentId": 1,
+            "installmentNumber": "1/60",
+            "paymentTerm": "PM",
+            "originalAmount": 523
+          },
+          {
+            "installmentId": 2,
+            "installmentNumber": "2/60",
+            "paymentTerm": "PM",
+            "originalAmount": 523
+          },
+          {
+            "installmentId": 3,
+            "installmentNumber": "3/60",
+            "paymentTerm": "PM",
+            "originalAmount": 523
+          },
+          {
+            "installmentId": 4,
+            "installmentNumber": "4/60",
+            "paymentTerm": "PM",
+            "originalAmount": 523
+          },
+          {
+            "installmentId": 5,
+            "installmentNumber": "5/60",
+            "paymentTerm": "PM",
+            "originalAmount": 523
+          },
+          {
+            "installmentId": 6,
+            "installmentNumber": "6/60",
+            "paymentTerm": "PM",
+            "originalAmount": 523
+          },
+          {
+            "installmentId": 7,
+            "installmentNumber": "7/60",
+            "paymentTerm": "PM",
+            "originalAmount": 523
+          },
+          {
+            "installmentId": 8,
+            "installmentNumber": "8/60",
+            "paymentTerm": "PM",
+            "originalAmount": 523
+          },
+          {
+            "installmentId": 9,
+            "installmentNumber": "1/1",
+            "paymentTerm": "B1",
+            "originalAmount": 6271
+          },
+          {
+            "installmentId": 10,
+            "installmentNumber": "9/60",
+            "paymentTerm": "PM",
+            "originalAmount": 523
+          },
+          {
+            "installmentId": 67,
+            "installmentNumber": "1/1",
+            "paymentTerm": "B1",
+            "originalAmount": 2500
+          },
+          {
+            "installmentId": 68,
+            "installmentNumber": "1/1",
+            "paymentTerm": "B2",
+            "originalAmount": 2500
+          },
+          {
+            "installmentId": 69,
+            "installmentNumber": "1/1",
+            "paymentTerm": "B3",
+            "originalAmount": 1271
+          }
+        ]
+      }
+    ]
+  },
+  "paymentTerms": [
+    {
+      "id": "PM",
+      "descricao": "Parcelas Mensais",
+      "n": 3550
+    },
+    {
+      "id": "AT",
+      "descricao": "Ato",
+      "n": 54
+    },
+    {
+      "id": "CA",
+      "descricao": "CREDITO ASSOCIATIVO",
+      "n": 27
+    },
+    {
+      "id": "B1",
+      "descricao": "BALÃO1",
+      "n": 23
+    },
+    {
+      "id": "SN",
+      "descricao": "SINAL",
+      "n": 22
+    },
+    {
+      "id": "BA",
+      "descricao": "BALÃO ANUAL",
+      "n": 10
+    },
+    {
+      "id": "PU",
+      "descricao": "PARCELA UNICA",
+      "n": 9
+    },
+    {
+      "id": "B2",
+      "descricao": "BALÃO2",
+      "n": 5
+    },
+    {
+      "id": "B3",
+      "descricao": "BALÃO3",
+      "n": 5
+    },
+    {
+      "id": "CV",
+      "descricao": "COMISSÃO DE VENDA",
+      "n": 5
+    },
+    {
+      "id": "B4",
+      "descricao": "BALÃO4",
+      "n": 4
+    },
+    {
+      "id": "B5",
+      "descricao": "BALÃO5 ",
+      "n": 4
+    },
+    {
+      "id": "PA",
+      "descricao": "PARCELAS ANUAIS",
+      "n": 2
+    },
+    {
+      "id": "BN",
+      "descricao": "BENS",
+      "n": 1
+    }
+  ]
+}
