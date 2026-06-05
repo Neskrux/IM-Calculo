@@ -38,6 +38,20 @@ export const isCancelado = (pag) => pag?.status === STATUS.CANCELADO
 export const isAtivo = (pag) => pag?.status !== STATUS.CANCELADO
 
 /**
+ * Predicate de VENDA ativa — para CONTAGEM e OCUPAÇÃO DE UNIDADE, não para soma financeira.
+ *
+ * Uma venda distratada (status='distrato', vindo de situacao_contrato='3' do Sienge) NÃO é
+ * uma venda ativa: não deve contar como "venda ativa", nem ocupar unidade, nem disparar
+ * alerta de unidade duplicada. Mas a comissão JÁ PAGA dela continua nos totais — por isso
+ * NÃO use este predicate pra filtrar pagamentos numa soma de comissão; some sempre dos
+ * pagamentos (que preservam as linhas 'pago' do distrato). Ver:
+ *   .claude/rules/visualizacao-totais.md  ·  docs/contexto/2026-06-01-distratos-mapa-completo.md
+ */
+export const isVendaAtiva = (v) =>
+  (v?.excluido === false || v?.excluido == null) &&
+  v?.status !== 'distrato'
+
+/**
  * Data efetiva para relatórios e filtros temporais:
  * - Pago → usa data_pagamento (quando realmente ocorreu)
  * - Pendente/outros → usa data_prevista (quando deveria ocorrer)

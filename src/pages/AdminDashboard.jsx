@@ -3475,17 +3475,43 @@ const AdminDashboard = () => {
       }
     }
 
-    if (novosPagamentos.length > 0) {
-      const { error } = await supabase.from('pagamentos_prosoluto').insert(novosPagamentos)
-      if (error) {
-        setMessage({ type: 'error', text: 'Erro ao gerar pagamentos: ' + error.message })
-      } else {
-        const msgExtra = aplicarComissaoIntegral ? ' (Comissão integral - entrada ≥ 20% no ato)' : ''
-        setMessage({ type: 'success', text: `${novosPagamentos.length} pagamentos gerados!${msgExtra}` })
-        fetchData()
-      }
-    } else {
+    // ver .claude/rules/sincronizacao-sienge.md — gerador idempotente (Parte B, Opção B não-destrutiva)
+    // Grava a âncora sienge_bill_id quando a venda já tem bill no Sienge
+    // (sienge_installment_id só chega pelo income — fica null aqui, e o índice 023 não dispara com null).
+    const billIdVenda = venda.sienge_receivable_bill_id ?? null
+    if (billIdVenda != null) {
+      for (const p of novosPagamentos) p.sienge_bill_id = billIdVenda
+    }
+
+    if (novosPagamentos.length === 0) {
       setMessage({ type: 'warning', text: 'Esta venda não tem parcelas pro-soluto configuradas (sinal, entrada ou balão)' })
+    } else {
+      // Idempotência: só insere chaves (tipo, numero_parcela) que ainda NÃO existem.
+      // Nunca deleta nem toca linha existente — pago é protegido por trigger; pendente
+      // espúrio é resolvido na reconciliação contra o Sienge, não aqui. Rodar 2x = no-op.
+      const chaveDe = (p) => `${p.tipo}__${p.numero_parcela ?? ''}`
+      const { data: existentes, error: errExist } = await supabase
+        .from('pagamentos_prosoluto')
+        .select('tipo, numero_parcela')
+        .eq('venda_id', venda.id)
+      if (errExist) {
+        setMessage({ type: 'error', text: 'Erro ao checar pagamentos existentes: ' + errExist.message })
+      } else {
+        const chavesExistentes = new Set((existentes || []).map(chaveDe))
+        const aInserir = novosPagamentos.filter(p => !chavesExistentes.has(chaveDe(p)))
+        if (aInserir.length === 0) {
+          setMessage({ type: 'info', text: 'Pagamentos já gerados para esta venda — nada a fazer (idempotente).' })
+        } else {
+          const { error } = await supabase.from('pagamentos_prosoluto').insert(aInserir)
+          if (error) {
+            setMessage({ type: 'error', text: 'Erro ao gerar pagamentos: ' + error.message })
+          } else {
+            const msgExtra = aplicarComissaoIntegral ? ' (Comissão integral - entrada ≥ 20% no ato)' : ''
+            setMessage({ type: 'success', text: `${aInserir.length} pagamentos gerados!${msgExtra}` })
+            fetchData()
+          }
+        }
+      }
     }
     
     setSaving(false)
@@ -5327,9 +5353,11 @@ const AdminDashboard = () => {
     // Filtro por empreendimento
     const matchEmpreendimento = !filtrosVendas.empreendimento || venda.empreendimento_id === filtrosVendas.empreendimento
     
-    // Filtro por status (distrato só aparece quando filtrado explicitamente)
+    // Filtro por status. Decisão 2 (2026-06-01): distrato NÃO some da listagem —
+    // aparece no "Todos" marcado em vermelho (rendering na linha ~6217) e no filtro próprio.
+    // Transparência: distrato é visível mas visivelmente distinto de venda ativa.
     const matchStatus = (() => {
-      if (venda.status === 'distrato') return filtrosVendas.status === 'distrato'
+      if (venda.status === 'distrato') return filtrosVendas.status === 'distrato' || filtrosVendas.status === 'todos'
       return filtrosVendas.status === 'todos' || venda.status === filtrosVendas.status
     })()
     
