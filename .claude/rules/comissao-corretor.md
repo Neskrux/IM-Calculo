@@ -71,6 +71,27 @@ const calcularComissaoPagamento = (pagamento) => {
 
 ---
 
+## 🧮 FATIA DO CORRETOR vs COMISSÃO TOTAL
+
+`pagamentos_prosoluto.comissao_gerada` é a **comissão TOTAL** da parcela (todos os cargos somados), calculada com
+o fator total (`7%` externo / `6,5%` interno). **Não é** o que o corretor recebe.
+
+Para a **fatia do corretor**, aplique a proporção do cargo (ver [fator-comissao.md](fator-comissao.md)):
+
+```javascript
+// fatia do cargo Corretor numa parcela
+const fatiaCorretor = comissao_gerada * (pctCorretor / pctTotal)
+// interno: pctCorretor=2,5  pctTotal=6,5  → ~38% do total
+// externo: pctCorretor=4    pctTotal=7    → ~57% do total
+```
+
+- **CorretorDashboard** já deriva a fatia do corretor (via `percentual_corretor` / proporção sobre o snapshot).
+- **AdminDashboard → Relatórios/PDF** decompõe por cargo (`calcularComissaoPorCargoPagamento`): filtro de cargo
+  **"Corretor"** = fatia do corretor; **"Total"/"Todos os cargos"** = comissão total. Ao conferir o repasse de um
+  corretor, usar **sempre** o cargo **"Corretor"** — senão o número (total) fica inflado, sobretudo p/ internos.
+
+---
+
 ## 📍 ONDE APLICAR
 
 | Local | Descrição |

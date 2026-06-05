@@ -1,0 +1,69 @@
+{
+  "meta": {
+    "geradoEm": "2026-06-05",
+    "spec_ref": ".claude/rules/sincronizacao-sienge.md",
+    "script": "curativo-maio",
+    "modo": "apply",
+    "escopo": "relatorio de maio/2026"
+  },
+  "counts": {
+    "distratos_marcados": 3,
+    "parcelas_baixa_canceladas": 158,
+    "comissao_falsa_removida": 77265.53,
+    "cessao_aplicada": 0,
+    "cessao_adiada": 1,
+    "synclag_marcadas_pagas": 7,
+    "synclag_comissao_add": 2837.09
+  },
+  "distratos": [
+    {
+      "c": "c382",
+      "un": "1305 A",
+      "baixa": 50
+    },
+    {
+      "c": "c279",
+      "un": "903 D",
+      "baixa": 56
+    },
+    {
+      "c": "c302",
+      "un": "1403 D",
+      "baixa": 52
+    }
+  ],
+  "cessao_pendente": {
+    "contrato": "c340",
+    "motivo": "Gabriel (sienge 670) nao existe como cliente; cosmetico, comissao nao afetada (mesmo corretor)"
+  },
+  "maio_pos_curativo": {
+    "LIMPO": 79029.93,
+    "ADITIVO": 4882.550000000002
+  },
+  "aditivo_pendente_schema": [
+    {
+      "c": "c150",
+      "un": "1306 A",
+      "valor": 455.93,
+      "inst": "5/10",
+      "pago": "2026-05-11",
+      "motivo": "parcela grade nova do aditivo; banco nao tem; mapear no schema"
+    },
+    {
+      "c": "c351",
+      "un": "506 A",
+      "valor": 773.55,
+      "inst": "2/4",
+      "pago": "2026-05-21",
+      "motivo": "parcela grade nova do aditivo; banco nao tem; mapear no schema"
+    },
+    {
+      "c": "c411",
+      "un": "603 B",
+      "valor": 2967.39,
+      "inst": "3/51",
+      "pago": "2026-05-25",
+      "motivo": "2o pagamento R$2967.39 (caso 1 CAYO); banco so tem 1; mapear no schema"
+    }
+  ]
+}
