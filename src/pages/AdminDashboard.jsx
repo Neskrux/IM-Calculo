@@ -1014,6 +1014,7 @@ const AdminDashboard = () => {
     corretorId: '', // filtro por corretor
     vendaId: '',
     cargoId: 'Corretor', // Padrão: Corretor
+    coordenadoraId: '', // 2º seletor: filtra vendas por coordenadora (cargo Coordenadora)
     status: 'todos',
     dataInicio: '',
     dataFim: '',
@@ -1021,6 +1022,7 @@ const AdminDashboard = () => {
     empreendimentoDetalhe: '' // para o card de detalhes por empreendimento
   })
   const [buscaCorretorRelatorio, setBuscaCorretorRelatorio] = useState('')
+  const [coordenadoras, setCoordenadoras] = useState([])
   const [gerandoPdf, setGerandoPdf] = useState(false)
   const [pdfPreviewUrl, setPdfPreviewUrl] = useState(null) // Preview PDF (aba temporária para ajuste visual)
 
@@ -1353,14 +1355,29 @@ const AdminDashboard = () => {
     
     // Calcular percentual total dos cargos para distribuição
     const percentualTotal = cargosDoTipo.reduce((acc, c) => acc + (parseFloat(c.percentual) || 0), 0)
-    
+
+    // Taxa NEGOCIADA da coordenadora (override do cargo 'Coordenadora'): a venda aponta
+    // uma coordenadora (vendas.coordenadora_id) que pode ter percentual_padrao != 0,5%
+    // (ex.: Jessica=1,0). percentualTotal permanece 7 → fatia = comissao_gerada × (rate/7).
+    // Ver migration 031 + .claude/rules/fator-comissao.md. No-op se sem coordenadora/legado.
+    const taxaCoordenadora = (() => {
+      if (!venda.coordenadora_id) return null
+      const co = coordenadoras.find(c => String(c.id) === String(venda.coordenadora_id))
+      const r = co ? parseFloat(co.percentual_padrao) : NaN
+      return Number.isFinite(r) && r > 0 ? r : null
+    })()
+
     // Distribuir entre os cargos proporcionalmente
     return cargosDoTipo.map(cargo => {
-      const percentualCargo = parseFloat(cargo.percentual) || 0
+      let percentualCargo = parseFloat(cargo.percentual) || 0
+      // Override SÓ do cargo Coordenadora pela taxa negociada da coordenadora da venda.
+      if (cargo.nome_cargo === 'Coordenadora' && taxaCoordenadora != null) {
+        percentualCargo = taxaCoordenadora
+      }
       // Proporção deste cargo no total
       const proporcaoCargo = percentualTotal > 0 ? percentualCargo / percentualTotal : 0
       const valorComissaoCargo = comissaoTotalParcela * proporcaoCargo
-      
+
       return {
         nome_cargo: cargo.nome_cargo,
         percentual: percentualCargo,
@@ -1526,6 +1543,11 @@ const AdminDashboard = () => {
       if (cargosError) {
         console.error('Erro ao buscar cargos:', cargosError)
       }
+
+      // Buscar coordenadoras (2º seletor do relatório quando cargo = Coordenadora)
+      const { data: coordenadorasData } = await supabase
+        .from('coordenadoras').select('*').eq('ativo', true).order('nome')
+      setCoordenadoras(coordenadorasData || [])
 
       // Buscar pagamentos pro-soluto (sem JOINs) - buscar todos sem limite
       // O Supabase tem limite padrão de 1000, então precisamos buscar em lotes ou aumentar o limite
@@ -4695,6 +4717,19 @@ const AdminDashboard = () => {
         dadosFiltrados = dadosFiltrados.filter(g => {
           const empIdVenda = String(g.venda?.empreendimento?.id || g.venda?.empreendimento_id || '')
           return empIdVenda === String(relatorioFiltros.empreendimentoId)
+        })
+      }
+
+      // Filtro por COORDENADORA (2º seletor; venda direcionada à coordenadora).
+      // Exclui as vendas-PRÓPRIAS da coordenadora (corretor_id === coordenadora.usuario_id):
+      // coordenadora não reporta venda que ela mesma vendeu. Ver migration 031.
+      if (relatorioFiltros.coordenadoraId) {
+        const coSel = coordenadoras.find(c => String(c.id) === String(relatorioFiltros.coordenadoraId))
+        const coUsuarioId = coSel?.usuario_id ? String(coSel.usuario_id) : null
+        dadosFiltrados = dadosFiltrados.filter(g => {
+          if (String(g.venda?.coordenadora_id || '') !== String(relatorioFiltros.coordenadoraId)) return false
+          if (coUsuarioId && String(g.venda?.corretor?.id || g.venda?.corretor_id || '') === coUsuarioId) return false
+          return true
         })
       }
       
@@ -8437,7 +8472,7 @@ const AdminDashboard = () => {
                     <label>Beneficiário / Cargo</label>
                     <select
                       value={relatorioFiltros.cargoId}
-                      onChange={(e) => setRelatorioFiltros({...relatorioFiltros, cargoId: e.target.value})}
+                      onChange={(e) => setRelatorioFiltros({...relatorioFiltros, cargoId: e.target.value, coordenadoraId: e.target.value === 'Coordenadora' ? relatorioFiltros.coordenadoraId : ''})}
                     >
                       <option value="__total__">Total</option>
                       <option value="">Todos os cargos</option>
@@ -8465,7 +8500,26 @@ const AdminDashboard = () => {
                     </small>
                   </div>
                 )}
-                
+
+                {/* 2º seletor: coordenadora — só quando cargo = Coordenadora (vendas externas) */}
+                {relatorioFiltros.cargoId === 'Coordenadora' && (
+                  <div className="filtro-grupo">
+                    <label>Coordenadora</label>
+                    <select
+                      value={relatorioFiltros.coordenadoraId}
+                      onChange={(e) => setRelatorioFiltros({...relatorioFiltros, coordenadoraId: e.target.value})}
+                    >
+                      <option value="">Todas as coordenadoras</option>
+                      {coordenadoras.map(co => (
+                        <option key={co.id} value={co.id}>{co.nome}</option>
+                      ))}
+                    </select>
+                    <small style={{ color: '#64748b', marginTop: '4px', display: 'block' }}>
+                      Vendas direcionadas à coordenadora
+                    </small>
+                  </div>
+                )}
+
                 <div className="filtro-grupo">
                   <label>Venda Específica</label>
                   <select
@@ -8517,7 +8571,7 @@ const AdminDashboard = () => {
               </div>
               
               {/* Botão Limpar Filtros */}
-              {(relatorioFiltros.corretorId || relatorioFiltros.empreendimentoId || relatorioFiltros.vendaId || relatorioFiltros.status !== 'todos' || relatorioFiltros.cargoId !== 'Corretor' || relatorioFiltros.dataInicio || relatorioFiltros.dataFim || buscaCorretorRelatorio) && (
+              {(relatorioFiltros.corretorId || relatorioFiltros.empreendimentoId || relatorioFiltros.vendaId || relatorioFiltros.status !== 'todos' || relatorioFiltros.cargoId !== 'Corretor' || relatorioFiltros.coordenadoraId || relatorioFiltros.dataInicio || relatorioFiltros.dataFim || buscaCorretorRelatorio) && (
                 <button
                   className="btn-clear-filters"
                   onClick={() => {
@@ -8526,6 +8580,7 @@ const AdminDashboard = () => {
                       corretorId: '',
                       vendaId: '',
                       cargoId: 'Corretor', // Manter padrão como Corretor
+                      coordenadoraId: '',
                       status: 'todos',
                       dataInicio: '',
                       dataFim: '',
