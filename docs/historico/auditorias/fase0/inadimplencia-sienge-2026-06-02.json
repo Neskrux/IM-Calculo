@@ -1,0 +1,109 @@
+{
+  "meta": {
+    "geradoEm": "2026-06-02T18:46:20.716Z",
+    "spec_ref": ".claude/rules/sincronizacao-sienge.md",
+    "script": "scripts/medir-inadimplencia-sienge.mjs",
+    "endpoint": "/bulk-data/v1/income",
+    "params": {
+      "startDate": "2018-01-01",
+      "endDate": "2026-06-02",
+      "selectionType": "D",
+      "companyId": 5
+    }
+  },
+  "universo": {
+    "parcelasVencidas": 3020,
+    "valorOriginalVencido": 8495098.75,
+    "pagasVencidas": 2718,
+    "valorPagasVencidas": 8089984.59
+  },
+  "inadimplencia": {
+    "clientesInadimplentes": 80,
+    "parcelasEmAtraso": 302,
+    "saldoEmAberto": 402626.14,
+    "valorOriginalEmAtraso": 405453.84,
+    "aging": {
+      "1-30": 85,
+      "31-90": 100,
+      "91-180": 73,
+      "181-365": 43,
+      "365+": 1
+    }
+  },
+  "taxa": {
+    "inadimplenciaPctParcelas": 10,
+    "inadimplenciaPctValor": 4.77
+  },
+  "sanityCheck": {
+    "pagasVencidasLocalSnapshot": 2415,
+    "pagasVencidasSiengeD": 2718
+  },
+  "porPaymentTerm": [
+    {
+      "id": "PM",
+      "matured": 2887,
+      "inad": 290,
+      "saldo": 350355.61
+    },
+    {
+      "id": "B1",
+      "matured": 27,
+      "inad": 4,
+      "saldo": 18085.5
+    },
+    {
+      "id": "AT",
+      "matured": 58,
+      "inad": 4,
+      "saldo": 32294.51
+    },
+    {
+      "id": "CV",
+      "matured": 8,
+      "inad": 3,
+      "saldo": 890.52
+    },
+    {
+      "id": "SN",
+      "matured": 23,
+      "inad": 1,
+      "saldo": 1000
+    },
+    {
+      "id": "B2",
+      "matured": 1,
+      "inad": 0,
+      "saldo": 0
+    },
+    {
+      "id": "B3",
+      "matured": 1,
+      "inad": 0,
+      "saldo": 0
+    },
+    {
+      "id": "BA",
+      "matured": 2,
+      "inad": 0,
+      "saldo": 0
+    },
+    {
+      "id": "BN",
+      "matured": 2,
+      "inad": 0,
+      "saldo": 0
+    },
+    {
+      "id": "PU",
+      "matured": 9,
+      "inad": 0,
+      "saldo": 0
+    },
+    {
+      "id": "PA",
+      "matured": 2,
+      "inad": 0,
+      "saldo": 0
+    }
+  ]
+}

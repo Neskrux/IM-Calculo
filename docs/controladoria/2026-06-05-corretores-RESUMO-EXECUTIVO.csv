@@ -1,0 +1,15 @@
+﻿Corretor;Tipo;Telefone;Nº contratos a resolver;Tipos de problema;Contratos;O que destrava;Prazo / dependencia
+CARLOS BRUNO NEGOCIOS IMOBILIARIOS LTDA;externo;4797071735;4;"DISTRATO, ADITIVO";c246 1302 C | c312 712 A | c351 506 A | c63 710 A;Marcar distrato + backfill + Refletir reparcelamento do Sienge;Aguarda wiring de reparcelamento (etapa termos)
+MATHEUS DE S. PIRES NEGOCIOS IMOBILIARIOS;externo;1192003475;4;"DISTRATO, ADITIVO, CESSAO";c229 904 C | c230 906 C | c340 905 B | c357 405 B;Marcar distrato + backfill + Refletir reparcelamento do Sienge + Rodar sync;Aguarda wiring de reparcelamento (etapa termos)
+Luiz Corazza;externo;4732483369;4;"DISTRATO, ADITIVO";c165 1606 A | c299 1305 D | c302 1403 D | c305 1407 D;Refletir reparcelamento do Sienge + Marcar distrato + backfill;Aguarda wiring de reparcelamento (etapa termos)
+Rodrigo Fernando Viapiana Parada;externo;4732483369;2;"DISTRATO, ADITIVO";c196 908 B | c334 1702 A;Marcar distrato + backfill + Refletir reparcelamento do Sienge;Aguarda wiring de reparcelamento (etapa termos)
+MATHEUS DE S. PIRES NEGOCIOS IMOBILIARIOS;interno;(48) 99994-0606;1;ADITIVO;c228 903 C;Refletir reparcelamento do Sienge;Aguarda wiring de reparcelamento (etapa termos)
+Felipe Madona;externo;47991881880;1;"DISTRATO, ADITIVO";c195 904 B;Marcar distrato + backfill;Aguarda wiring de reparcelamento (etapa termos)
+LEAL NEGOCIOS IMOBILIARIOS LTDA;externo;4799467820;1;DISTRATO;c266 510 D;Marcar distrato + backfill;Aguarda confirmacao controladoria + backfill
+MATEUS GABRIEL DE OLIVEIRA;externo;47999033809;1;DISTRATO;c382 1305 A;Marcar distrato + backfill;Aguarda confirmacao controladoria + backfill
+GUILHERME GONCALVES SALSBRUM;externo;4792097047;1;ADITIVO;c150 1306 A;Refletir reparcelamento do Sienge;Aguarda wiring de reparcelamento (etapa termos)
+FELICITA IMOBILIARIA LTDA;externo;;1;ADITIVO;c411 603 B;Refletir reparcelamento do Sienge;Aguarda wiring de reparcelamento (etapa termos)
+LAURICIO FESTA;interno;;1;ADITIVO;c277 810 D;Refletir reparcelamento do Sienge;Aguarda wiring de reparcelamento (etapa termos)
+Édina mea de Oliveira;interno;;1;ADITIVO;c12 509 A;Refletir reparcelamento do Sienge;Aguarda wiring de reparcelamento (etapa termos)
+RODOLFO GABRIEL NEGOCIOS IMOBILIARIOS LTDA;externo;4796831011;1;DISTRATO;c259 403 D;Marcar distrato + backfill;Aguarda confirmacao controladoria + backfill
+VANDIR CORRETORA DE IMOVEIS LTDA;externo;;1;DISTRATO;c279 903 D;Marcar distrato + backfill;Aguarda confirmacao controladoria + backfill

@@ -22,6 +22,18 @@ customers-raw-data.json
 contracts-raw-data.json
 creditors-corretores-only.json
 
+# Dumps RAW regeneráveis pelo bulk Sienge — NUNCA versionar (regenera sob demanda)
+# (limpeza 2026-06-05: docs/ de 92MB -> 4MB; ver docs/README.md)
+docs/**/*universo*.json
+docs/**/*-raw*.json
+docs/**/income-D-raw*.json
+docs/**/backfill-stage*.json
+docs/**/fase0-*.json
+docs/**/fase5-*.json
+docs/**/*-dryrun.json
+docs/**/reconciliacao-cauda-*.json
+scripts/_tmp-*.mjs
+
 # IDE
 .vscode/
 .idea/

@@ -1,0 +1,338 @@
+{
+  "meta": {
+    "geradoEm": "2026-06-05",
+    "empreendimento": "FIGUEIRA GARCIA 2104 / companyId 5",
+    "fontes": [
+      "sienge_relatorio-20260603-174452.xlsx (distrato)",
+      "RELATORIO CESSAO DE DIREITOS.pdf",
+      "relatorio_reparcelamento-20260605-103631.csv",
+      "API /remade-installments",
+      "API /sales-contracts"
+    ]
+  },
+  "distrato": {
+    "sienge_total": 36,
+    "banco_marcado": 25,
+    "pendentes": 11,
+    "casos": [
+      {
+        "relContrato": "137",
+        "valorContrato": "R$Â 380.307,07",
+        "unidade": "904 C",
+        "cliente": "132 - LUCAS ANTONIO LAMIM",
+        "motivo": "desistiu da compra e nÃ£o assinou o distrato",
+        "valorRecebido": "0",
+        "dataDistrato": "2026-04-28",
+        "banco_venda_id": "58657142-c9b7-4612-aa2e-ae6fa84d876f",
+        "banco_contrato": "229",
+        "banco_situacao": "2",
+        "banco_status": "pago"
+      },
+      {
+        "relContrato": "268",
+        "valorContrato": "R$Â 457.103,88",
+        "unidade": "1305 A",
+        "cliente": "616 - ALISSON RODRIGUES DO CARMO",
+        "motivo": "DESISTIU DA COMPRA",
+        "valorRecebido": "R$Â 3.250,00",
+        "dataDistrato": "2026-05-04",
+        "banco_venda_id": "e476bbdb-88ce-464d-9238-ebbe6badb81b",
+        "banco_contrato": "382",
+        "banco_situacao": "2",
+        "banco_status": "pago"
+      },
+      {
+        "relContrato": "104",
+        "valorContrato": "R$Â 418.341,47",
+        "unidade": "908 B",
+        "cliente": "103 - LAELSON RODRIGUES DE QUEIROZÂ",
+        "motivo": "SOLICITOU DISTRATO",
+        "valorRecebido": "R$Â 5.634,16",
+        "dataDistrato": "2026-04-22",
+        "banco_venda_id": "59ff9a4f-ef24-4e80-acab-502606e79741",
+        "banco_contrato": "196",
+        "banco_situacao": "2",
+        "banco_status": "pago"
+      },
+      {
+        "relContrato": "154",
+        "valorContrato": "R$Â 427.221,03",
+        "unidade": "1302 C",
+        "cliente": "523 - MARIA VITORIA DA SILVA FRANCISCO",
+        "motivo": "SOLICITOU DISTRATO",
+        "valorRecebido": "R$Â 6.160,59",
+        "dataDistrato": "2026-04-22",
+        "banco_venda_id": "ac1c4423-44f2-4c1d-b09c-866fcf326fe3",
+        "banco_contrato": "246",
+        "banco_situacao": "2",
+        "banco_status": "pago"
+      },
+      {
+        "relContrato": "167",
+        "valorContrato": "R$Â 375.638,57",
+        "unidade": "403 D",
+        "cliente": "152 - ADRIELE FERNANDA DE SÃ DANIEL",
+        "motivo": "OPTOU PELO DISTRATO",
+        "valorRecebido": "R$Â 2.000,00",
+        "dataDistrato": "2026-04-22",
+        "banco_venda_id": "e14ded4d-9161-4d65-bf6e-27d6518d199c",
+        "banco_contrato": "259",
+        "banco_situacao": "2",
+        "banco_status": "pago"
+      },
+      {
+        "relContrato": "174",
+        "valorContrato": "R$Â 398.372,68",
+        "unidade": "510 D",
+        "cliente": "158 - JESSE VELOSO",
+        "motivo": "OPTOU PELO DISTRATO",
+        "valorRecebido": "R$Â 2.700,82",
+        "dataDistrato": "2026-04-22",
+        "banco_venda_id": "090eb74d-8ff4-448a-9a52-03d95c9614c5",
+        "banco_contrato": "266",
+        "banco_situacao": "2",
+        "banco_status": "pago"
+      },
+      {
+        "relContrato": "103",
+        "valorContrato": "R$Â 439.267,86",
+        "unidade": "904 B",
+        "cliente": "101 - AMANDA ERZINGER",
+        "motivo": "CLIENTE DESISTIU DA COMPRA",
+        "valorRecebido": "R$Â 12.117,76",
+        "dataDistrato": "2026-04-22",
+        "banco_venda_id": "d6cf726c-95eb-42f0-8397-b28d753d56ca",
+        "banco_contrato": "195",
+        "banco_situacao": "2",
+        "banco_status": "pago"
+      },
+      {
+        "relContrato": "254",
+        "valorContrato": "R$Â 292.366,06",
+        "unidade": "405 B",
+        "cliente": "587 - TIAGO DE BORBA DE LIMA",
+        "motivo": "CLIENTE SOLICITOU DISTRATO",
+        "valorRecebido": "R$Â 974,55",
+        "dataDistrato": "2026-04-22",
+        "banco_venda_id": "a2879ab1-2f41-42e5-b054-61c6e92811ad",
+        "banco_contrato": "357",
+        "banco_situacao": "2",
+        "banco_status": "pago"
+      },
+      {
+        "relContrato": "187",
+        "valorContrato": "R$Â 410.551,02",
+        "unidade": "903 D",
+        "cliente": "532 - LEONARDO DA CUNHA ESPINDOLA",
+        "motivo": "Optou por distratar",
+        "valorRecebido": "R$Â 6.757,84",
+        "dataDistrato": "2026-05-21",
+        "banco_venda_id": "d645c7c0-6956-410f-ae8d-2ba56db29177",
+        "banco_contrato": "279",
+        "banco_situacao": "2",
+        "banco_status": "pago"
+      },
+      {
+        "relContrato": "210",
+        "valorContrato": "R$Â 339.614,56",
+        "unidade": "1403 D",
+        "cliente": "185 - NICOLLE NASCIMENTBEATRI",
+        "motivo": "optou pelo distrato da unidade",
+        "valorRecebido": "R$Â 9.056,40",
+        "dataDistrato": "2026-05-28",
+        "banco_venda_id": "29de8242-608a-4bbf-b675-d8f8f86dcfae",
+        "banco_contrato": "302",
+        "banco_situacao": "2",
+        "banco_status": "pago"
+      },
+      {
+        "relContrato": "304",
+        "valorContrato": "R$Â 329.122,61",
+        "unidade": "412 B",
+        "cliente": "666 - GABRIEL ADRIANO GOMES",
+        "motivo": "Optou pelo distrato da unidade",
+        "valorRecebido": "0",
+        "dataDistrato": "2026-06-02",
+        "banco": "SEM VENDA"
+      }
+    ]
+  },
+  "aditivo": {
+    "total": 15,
+    "banco_refletido_auto": 0,
+    "casos": [
+      {
+        "titulo": "8",
+        "data": "27/02/2026",
+        "cliente": "MAX EMILIANO DE OLIVEIRA",
+        "parcOrig": "9",
+        "parcGer": "67/68/69",
+        "valor": "6.271,00"
+      },
+      {
+        "titulo": "20",
+        "data": "12/01/2026",
+        "cliente": "MICHAEL WILLYCE LEAL CARDOSO",
+        "parcOrig": "6/7",
+        "parcGer": "62/63/64",
+        "valor": "2.345,54"
+      },
+      {
+        "titulo": "176",
+        "data": "05/05/2026",
+        "cliente": "CAROLINE HONORATO TEIXEIRA",
+        "parcOrig": "4/5/7/8/9/10/11/12/13/14/15/16",
+        "parcGer": "62/63/64/65/66/67/68/69/70/71/72/73/74/75/76/77/78/79/80/81/82/83/84/85/86/87/88/89/90/91/92/93/94/95/96/97/98/99/100/101/102/103/104/105/106/107/108/109/110/111",
+        "valor": "13.584,60"
+      },
+      {
+        "titulo": "180",
+        "data": "28/04/2026",
+        "cliente": "EDHUARDO JUNIO COSTA SOUSA",
+        "parcOrig": "3/4/5/6/7/8",
+        "parcGer": "60/61/62/63/64/65/66/67/68/69/70/71/72/73/74/75/76/77/78/79/80/81/82/83/84/85/86/87/88/89",
+        "valor": "8.556,42"
+      },
+      {
+        "titulo": "194",
+        "data": "11/03/2026",
+        "cliente": "AMANDA ERZINGER",
+        "parcOrig": "9",
+        "parcGer": "60/61/62/63/64/65/66/67",
+        "valor": "1.514,72"
+      },
+      {
+        "titulo": "202",
+        "data": "19/02/2026",
+        "cliente": "RAIMUNDO SEBASTIAO PORFIRIO BRAGA",
+        "parcOrig": "7/8/9/10",
+        "parcGer": "62/63/64/65/66/67/68/69/70/71/72/73/74/75/76/77/78/79/80/81/82/83/84/85/86/87/88/89/90/91/92/93/94/95/96/97/98/99/100/101/102/103/104/105/106",
+        "valor": "4.706,16"
+      },
+      {
+        "titulo": "218",
+        "data": "05/03/2026",
+        "cliente": "DEIVITI AMORIM DIASÂ",
+        "parcOrig": "2/3/4/5/6/7/8/9/10",
+        "parcGer": "67/68/69/70/71/72/73/74/75/76/77/78/79/80/81/82/83/84/85/86/87/88/89/90/91/92/93/94/95/96/97/98/99/100/101/102/103/104/105/106",
+        "valor": "7.986,24"
+      },
+      {
+        "titulo": "225",
+        "data": "27/04/2026",
+        "cliente": "MARIANE GOES DA SILVA GOMES",
+        "parcOrig": "10/11/12",
+        "parcGer": "63/64/65/66/67/68",
+        "valor": "4.191,99"
+      },
+      {
+        "titulo": "225",
+        "data": "12/01/2026",
+        "cliente": "MARIANE GOES DA SILVA GOMES",
+        "parcOrig": "6",
+        "parcGer": "62",
+        "valor": "1.397,33"
+      },
+      {
+        "titulo": "246",
+        "data": "12/01/2026",
+        "cliente": "GUSTAVO AUGUSTO DA COSTA",
+        "parcOrig": "3/4/5/6",
+        "parcGer": "62/63/64/65/66/67/68/69/70/71",
+        "valor": "4.559,32"
+      },
+      {
+        "titulo": "247",
+        "data": "05/03/2026",
+        "cliente": "MARCOS HENRIQUE ALVES DE AZEVEDO",
+        "parcOrig": "6/7",
+        "parcGer": "60/61/62/63/64/65/66/67/68/69/70/71/72/73/74/75/76/77/78/79",
+        "valor": "2.541,35"
+      },
+      {
+        "titulo": "305",
+        "data": "11/03/2026",
+        "cliente": "LURDES COLMAN LOPES",
+        "parcOrig": "5/6",
+        "parcGer": "65/66/67/68/69/70/71/72/73/74/75/76/77/78/79",
+        "valor": "2.400,00"
+      },
+      {
+        "titulo": "399",
+        "data": "18/02/2026",
+        "cliente": "THALISON FRANCESCONI COELHO",
+        "parcOrig": "2/3",
+        "parcGer": "57/58/59/60/61/62",
+        "valor": "3.274,56"
+      },
+      {
+        "titulo": "418",
+        "data": "26/03/2026",
+        "cliente": "LILIAM THAINE CARVALHO",
+        "parcOrig": "11/61/62/63/64",
+        "parcGer": "67/68/69/70",
+        "valor": "3.094,21"
+      },
+      {
+        "titulo": "483",
+        "data": "25/05/2026",
+        "cliente": "CAYO KAMENAC RAMOS DA SILVA",
+        "parcOrig": "3/4",
+        "parcGer": "58/59/60/61/62/63/64/65/66/67/68/69/70/71/72/73/74/75/76/77/78/79/80/81/82",
+        "valor": "5.934,78"
+      }
+    ]
+  },
+  "cessao": {
+    "total": 3,
+    "ja_ok": 2,
+    "pendentes": [
+      {
+        "titulo": 410,
+        "unidade": "905 B",
+        "data": "2026-05-29",
+        "antigo": "102 CAROLINE SARAIVA",
+        "novo": "670 GABRIEL ANTONIO MARQUES",
+        "banco_venda_id": "e3bd5695-27ce-436b-a578-ce1bfac3d7aa",
+        "banco_contrato": "340",
+        "banco_cliente": "102 CAROLINE SARAIVA DA SILVEIRA RODRIGUES",
+        "pendente": true
+      }
+    ],
+    "casos": [
+      {
+        "titulo": 160,
+        "unidade": "1208 C",
+        "data": "2025-12-03",
+        "antigo": "144 EDUARDO VIDAL DE SOUZA",
+        "novo": "575 KAINÃ LUIS DE SOUZA + conjuge 099831 TAYNARA",
+        "banco_venda_id": "9ec13f46-ded0-4853-94c0-fd3f8b98fc44",
+        "banco_contrato": "245",
+        "banco_cliente": "575 KAINÃ LUIS DE SOUZA",
+        "pendente": false
+      },
+      {
+        "titulo": 410,
+        "unidade": "905 B",
+        "data": "2026-05-29",
+        "antigo": "102 CAROLINE SARAIVA",
+        "novo": "670 GABRIEL ANTONIO MARQUES",
+        "banco_venda_id": "e3bd5695-27ce-436b-a578-ce1bfac3d7aa",
+        "banco_contrato": "340",
+        "banco_cliente": "102 CAROLINE SARAIVA DA SILVEIRA RODRIGUES",
+        "pendente": true
+      },
+      {
+        "titulo": 418,
+        "unidade": "506 A",
+        "data": "2025-09-11",
+        "antigo": "16 BEATRIZ APARECIDA",
+        "novo": "582 LILIAM THAINE CARVALHO",
+        "banco_venda_id": "cffb2c73-edb7-4127-8f74-18f382efbe78",
+        "banco_contrato": "351",
+        "banco_cliente": "582 LILIAM THAINE CARVALHO",
+        "pendente": false
+      }
+    ]
+  }
+}

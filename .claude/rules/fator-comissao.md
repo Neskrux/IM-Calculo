@@ -90,6 +90,35 @@ O **FATOR** faz a conversão entre esses dois mundos:
 
 ---
 
+## 🏢 INTERNO vs EXTERNO — VISÃO GERAL (FIGUEIRA GARCIA)
+
+A composição de cargos e o **percentual total** dependem do `tipo_corretor` da venda:
+
+| Cargo | Externo | Interno |
+|-------|---------|---------|
+| Corretor | 4,00% | 2,50% |
+| Ferretti Consultoria | 1,00% | 1,00% |
+| Beton Arme | 0,50% | 1,25% |
+| Nohros | 0,50% | 1,25% |
+| Diretor | 0,50% | 0,50% |
+| Coordenadora | 0,50% | — |
+| **TOTAL** | **7,00%** | **6,50%** |
+
+- **Fator total** usa o percentual conforme o tipo: `7%` externo, `6,5%` interno —
+  `fator_total = (valor_venda × pct_total/100) / pro_soluto`.
+- `pagamentos_prosoluto.comissao_gerada` = `valor × fator_total` → é a **comissão TOTAL** (todos os cargos),
+  **não** a fatia do corretor.
+- A **fatia de um cargo** é proporcional: `comissao_cargo = comissao_gerada × (pct_cargo / pct_total)`.
+  Ex.: corretor **interno** = `× (2,5/6,5)` ≈ 38% do total; corretor **externo** = `× (4/7)` ≈ 57%.
+- Fonte: `cargos_empreendimento` filtrado por `tipo_corretor` (migration 025 fixou interno = 6,5%).
+
+> ⚠️ **No relatório/PDF do Admin (`AdminDashboard.gerarRelatorioPDF`, o que a controladoria usa):** o filtro
+> **"Total"/"Todos os cargos"** mostra a comissão TOTAL da venda; pra ver **o que o corretor recebe**, filtrar o
+> **cargo "Corretor"**. Não confundir o total (interno ≈ 28% de fator) com a fatia do corretor (interno ≈ 11%).
+> O "ATUAL 27%" da auditoria THAI era o total/estado pré-correção, não a fatia.
+
+---
+
 ## 🔧 ONDE APLICAR NO CÓDIGO
 
 1. **`syncVendasV2.js`** - Ao criar pagamentos pro-soluto
@@ -146,3 +175,10 @@ Quando um percentual é alterado:
 > **NUNCA recalcule comissões de vendas antigas ao alterar percentuais.**
 >
 > Use sempre o `fator_comissao_aplicado` salvo em `pagamentos_prosoluto`.
+
+> **Exceção única e auditada (2026-06-03):** reconciliação do fator contra a auditoria da controladoria,
+> **enquanto nenhum relatório foi repassado aos corretores pelo sistema**. Permite restaurar a identidade
+> `comissao_gerada = valor × fator_comissao_aplicado` em parcelas pagas (inclusive) quando o snapshot está
+> comprovadamente errado. Não é afrouxamento geral — só restaura a identidade. Justificativa: sem repasse, o
+> snapshot não tem valor histórico a preservar; se está errado, corrige.
+> Ver [docs/contexto/2026-06-03-plano-reconciliacao-fator-comissao.md](../../docs/contexto/2026-06-03-plano-reconciliacao-fator-comissao.md).

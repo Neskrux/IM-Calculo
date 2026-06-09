@@ -11,6 +11,8 @@
 //   - ativa casa     -> popula sienge_installment_id; Sienge pago + banco
 //                       pendente -> marca pago
 //   - so cancelada   -> reativa (pago se Sienge pago, senao pendente)
+//                       EXCETO baixa de liquidacao de distrato (paymentDate >= data_distrato):
+//                       fica cancelada (nao e pagamento real do cliente) — protege o curativo
 //   - Sienge sem match-> CRIA a parcela
 //   - banco ativa sem match -> loga (NAO mexe)
 //
@@ -71,7 +73,7 @@ const vendas = []
 for (let from = 0; ; from += PAGE) {
   const { data, error } = await supa
     .from('vendas')
-    .select('id, sienge_contract_id, sienge_receivable_bill_id, unidade, cliente_id, valor_venda, valor_pro_soluto, tipo_corretor, excluido, empreendimento_id')
+    .select('id, sienge_contract_id, sienge_receivable_bill_id, unidade, cliente_id, valor_venda, valor_pro_soluto, tipo_corretor, excluido, empreendimento_id, situacao_contrato, data_distrato')
     .eq('empreendimento_id', FIGUEIRA).not('sienge_receivable_bill_id', 'is', null).eq('excluido', false)
     .range(from, from + PAGE - 1)
   if (error) { console.error(error); process.exit(1) }
@@ -90,7 +92,7 @@ for (let i = 0; i < vendaIds.length; i += 50) {
   for (let f = 0; ; f += PAGE) {
     const { data } = await supa
       .from('pagamentos_prosoluto')
-      .select('id, venda_id, numero_parcela, tipo, valor, data_prevista, data_pagamento, status, sienge_bill_id, sienge_installment_id')
+      .select('id, venda_id, numero_parcela, tipo, valor, data_prevista, data_pagamento, status, sienge_bill_id, sienge_installment_id, motivo_cancelamento_parcela')
       .in('venda_id', chunk).order('id').range(f, f + PAGE - 1)
     if (!data?.length) break
     pagamentos.push(...data)
@@ -170,13 +172,18 @@ for (const v of vendas) {
   const usados = new Set()
   const acoes = { popular: [], marcar_pago: [], reativar: [], criar: [] }
   let maxNum = Math.max(0, ...pags.filter((p) => p.numero_parcela != null).map((p) => Number(p.numero_parcela)))
+  // Distrato-aware (ver .claude/rules/sincronizacao-sienge.md): no distrato o Sienge dá baixa em
+  // TODAS as parcelas restantes (paymentDate >= data_distrato). Essa baixa NÃO é pagamento real do
+  // cliente — só conta como pago o que foi pago ANTES do distrato. Protege o curativo de re-pago.
+  const dataDistrato = v.situacao_contrato === '3' && v.data_distrato ? String(v.data_distrato).slice(0, 10) : null
 
   for (const i of inc) {
     const valor = Number(i.originalAmount || 0)
     const due = i.dueDate
     const pd = i.paymentDate || i.receipts?.[0]?.paymentDate || null
     const recebido = (i.receipts || []).reduce((s, x) => s + Number(x.netAmount || 0), 0)
-    const siengePago = !!pd && recebido > 0
+    const ehBaixaDistrato = dataDistrato && pd && String(pd).slice(0, 10) >= dataDistrato
+    const siengePago = !!pd && recebido > 0 && !ehBaixaDistrato
     const instId = String(i.installmentId ?? i.installmentNumber ?? '')
     const k = chave(i._tipoInterno, valor, due)
     const porInstallmentId = instId
@@ -194,7 +201,12 @@ for (const v of vendas) {
       else if (String(ativa.sienge_installment_id || '') !== instId) acoes.popular.push({ id: ativa.id, instId })
     } else if (cancelada) {
       usados.add(cancelada.id)
-      acoes.reativar.push({ id: cancelada.id, novo_status: siengePago ? 'pago' : 'pendente', data_pagamento: siengePago ? pd : null, instId })
+      // NÃO reativa: (a) baixa de liquidação de distrato; (b) parcela cancelada DE PROPÓSITO
+      // (motivo_cancelamento_parcela setado: duplicata/cronograma_refeito/aditivo_renegociado/...).
+      // Só reativa cancelamento sem motivo (cancelado por engano que o Sienge mostra ativo).
+      if (!ehBaixaDistrato && !cancelada.motivo_cancelamento_parcela) {
+        acoes.reativar.push({ id: cancelada.id, novo_status: siengePago ? 'pago' : 'pendente', data_pagamento: siengePago ? pd : null, instId })
+      }
     } else {
       maxNum++
       acoes.criar.push({
