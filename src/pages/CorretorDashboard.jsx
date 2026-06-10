@@ -27,6 +27,7 @@ import {
   calcularComissaoPagamentoCompleto,
   isPago,
   isPendente,
+  isAtivo,
   dataEfetiva,
 } from '../utils/comissaoCalculator'
 import { parseDataLocal, formatDataBR } from '../utils/datas'
@@ -114,7 +115,14 @@ const CorretorDashboard = () => {
   const [perfilForm, setPerfilForm] = useState({
     nome: '',
     telefone: '',
-    email: ''
+    email: '',
+    // Dados para repasse de comissão
+    banco: '',
+    agencia: '',
+    conta: '',
+    tipo_conta: '',
+    chave_pix: '',
+    tipo_chave_pix: ''
   })
   const [salvandoPerfil, setSalvandoPerfil] = useState(false)
 
@@ -594,14 +602,22 @@ const CorretorDashboard = () => {
       setPerfilForm({
         nome: userProfile.nome || '',
         telefone: userProfile.telefone || '',
-        email: userProfile.email || ''
+        email: userProfile.email || '',
+        banco: userProfile.banco || '',
+        agencia: userProfile.agencia || '',
+        conta: userProfile.conta || '',
+        tipo_conta: userProfile.tipo_conta || '',
+        chave_pix: userProfile.chave_pix || '',
+        tipo_chave_pix: userProfile.tipo_chave_pix || ''
       })
     }
   }, [userProfile, activeTab])
 
-  // Forçar modal de foto no primeiro acesso (sem foto cadastrada)
+  // Desligado: visão do corretor ainda não foi liberada, então não faz sentido
+  // bloquear o primeiro acesso com o modal de foto. Ligar (true) quando liberar.
+  const FORCAR_FOTO_PRIMEIRO_ACESSO = false
   useEffect(() => {
-    if (userProfile && !userProfile.foto_url) {
+    if (FORCAR_FOTO_PRIMEIRO_ACESSO && userProfile && !userProfile.foto_url) {
       setPhotoModalOpen(true)
       setPhotoModalForced(true)
     } else if (userProfile?.foto_url && photoModalForced) {
@@ -626,6 +642,12 @@ const CorretorDashboard = () => {
         .update({
           nome: perfilForm.nome.trim(),
           telefone: perfilForm.telefone.trim() || null,
+          banco: perfilForm.banco.trim() || null,
+          agencia: perfilForm.agencia.trim() || null,
+          conta: perfilForm.conta.trim() || null,
+          tipo_conta: perfilForm.tipo_conta || null,
+          chave_pix: perfilForm.chave_pix.trim() || null,
+          tipo_chave_pix: perfilForm.tipo_chave_pix || null,
           updated_at: new Date().toISOString()
         })
         .eq('id', user.id)
@@ -855,8 +877,10 @@ const CorretorDashboard = () => {
   })
 
   // Agrupar pagamentos por venda
+  // Ignora canceladas: contrato 100% cancelado não gera grupo (some da lista)
+  // e os totais por-contrato deixam de contar parcelas canceladas.
   const filteredPagamentosAgrupados = Object.values(
-    filteredMeusPagamentos.reduce((acc, pag) => {
+    filteredMeusPagamentos.filter(isAtivo).reduce((acc, pag) => {
       const vendaId = pag.venda_id
       if (!acc[vendaId]) {
         acc[vendaId] = {
@@ -2064,7 +2088,11 @@ const CorretorDashboard = () => {
                     <div className="empty-state-box">
             <DollarSign size={48} />
             <h3>Nenhuma venda encontrada</h3>
-                      <p>Não há vendas que correspondam aos filtros selecionados</p>
+                      <p>
+                        {(filtrosVendas.periodo !== 'todos' || filtrosVendas.dataInicio || filtrosVendas.dataFim)
+                          ? 'Nenhuma venda fechada neste período — o filtro considera a data da venda (fechamento), não a data das parcelas.'
+                          : 'Não há vendas que correspondam aos filtros selecionados'}
+                      </p>
           </div>
         ) : (
           <div className="vendas-list">
@@ -2484,31 +2512,20 @@ const CorretorDashboard = () => {
                     <div className="resumo-card">
                       <span className="resumo-label">Comissão Pendente</span>
                       <span className="resumo-valor pendente">
-                        {formatCurrency(filteredMeusPagamentos.filter(p => p.status === 'pendente').reduce((acc, p) => {
-                          const venda = vendas.find(v => v.id === p.venda_id)
-                          if (!venda) return acc
-                          return acc + calcularComissaoPagamento(p)
-                        }, 0))}
+                        {formatCurrency(somarMinhaComissao(filteredMeusPagamentos, isPendente))}
                       </span>
                     </div>
                     <div className="resumo-card">
                       <span className="resumo-label">Comissão Paga</span>
                       <span className="resumo-valor pago">
-                        {formatCurrency(filteredMeusPagamentos.filter(p => p.status === 'pago').reduce((acc, p) => {
-                          const venda = vendas.find(v => v.id === p.venda_id)
-                          if (!venda) return acc
-                          return acc + calcularComissaoPagamento(p)
-                        }, 0))}
+                        {formatCurrency(somarMinhaComissao(filteredMeusPagamentos, isPago))}
                       </span>
                     </div>
                     <div className="resumo-card">
                       <span className="resumo-label">Comissão Total</span>
                       <span className="resumo-valor">
-                        {formatCurrency(filteredMeusPagamentos.reduce((acc, p) => {
-                          const venda = vendas.find(v => v.id === p.venda_id)
-                          if (!venda) return acc
-                          return acc + calcularComissaoPagamento(p)
-                        }, 0))}
+                        {/* Total ignora canceladas (default de somarMinhaComissao) → Total = Pendente + Paga */}
+                        {formatCurrency(somarMinhaComissao(filteredMeusPagamentos))}
                       </span>
                     </div>
                   </div>
@@ -3414,6 +3431,72 @@ const CorretorDashboard = () => {
                         />
                         <small>O e-mail não pode ser alterado</small>
                       </div>
+
+                      <h3 style={{ marginTop: '8px' }}>Dados para repasse</h3>
+                      <small style={{ display: 'block', marginBottom: '8px', opacity: 0.7 }}>
+                        Usados para o repasse da sua comissão.
+                      </small>
+                      <div className="form-group">
+                        <label>Banco</label>
+                        <input
+                          type="text"
+                          value={perfilForm.banco}
+                          onChange={(e) => setPerfilForm({...perfilForm, banco: e.target.value})}
+                          placeholder="Ex.: 341 - Itaú"
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label>Agência</label>
+                        <input
+                          type="text"
+                          value={perfilForm.agencia}
+                          onChange={(e) => setPerfilForm({...perfilForm, agencia: e.target.value})}
+                          placeholder="0000"
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label>Conta</label>
+                        <input
+                          type="text"
+                          value={perfilForm.conta}
+                          onChange={(e) => setPerfilForm({...perfilForm, conta: e.target.value})}
+                          placeholder="00000-0"
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label>Tipo de conta</label>
+                        <select
+                          value={perfilForm.tipo_conta}
+                          onChange={(e) => setPerfilForm({...perfilForm, tipo_conta: e.target.value})}
+                        >
+                          <option value="">Selecione...</option>
+                          <option value="corrente">Conta corrente</option>
+                          <option value="poupanca">Poupança</option>
+                        </select>
+                      </div>
+                      <div className="form-group">
+                        <label>Tipo de chave PIX</label>
+                        <select
+                          value={perfilForm.tipo_chave_pix}
+                          onChange={(e) => setPerfilForm({...perfilForm, tipo_chave_pix: e.target.value})}
+                        >
+                          <option value="">Selecione...</option>
+                          <option value="cpf">CPF</option>
+                          <option value="cnpj">CNPJ</option>
+                          <option value="email">E-mail</option>
+                          <option value="celular">Celular</option>
+                          <option value="aleatoria">Aleatória</option>
+                        </select>
+                      </div>
+                      <div className="form-group">
+                        <label>Chave PIX</label>
+                        <input
+                          type="text"
+                          value={perfilForm.chave_pix}
+                          onChange={(e) => setPerfilForm({...perfilForm, chave_pix: e.target.value})}
+                          placeholder="Sua chave PIX"
+                        />
+                      </div>
                       <div className="perfil-edit-actions">
                         <button 
                           className="btn-secondary"
@@ -3422,7 +3505,13 @@ const CorretorDashboard = () => {
                             setPerfilForm({
                               nome: userProfile?.nome || '',
                               telefone: userProfile?.telefone || '',
-                              email: userProfile?.email || ''
+                              email: userProfile?.email || '',
+                              banco: userProfile?.banco || '',
+                              agencia: userProfile?.agencia || '',
+                              conta: userProfile?.conta || '',
+                              tipo_conta: userProfile?.tipo_conta || '',
+                              chave_pix: userProfile?.chave_pix || '',
+                              tipo_chave_pix: userProfile?.tipo_chave_pix || ''
                             })
                           }}
                         >
@@ -3463,15 +3552,22 @@ const CorretorDashboard = () => {
                       {userProfile?.ativo ? 'Ativa' : 'Inativa'}
                     </span>
                   </div>
-                  <div className="account-info-item">
-                    <span className="info-label">Membro desde</span>
-                    <span className="info-value">
-                      {userProfile?.created_at 
-                        ? new Date(userProfile.created_at).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })
-                        : 'N/A'
-                      }
-                    </span>
-                  </div>
+                  {(() => {
+                    // "Atuando desde" = 1ª venda do corretor (MIN data_venda).
+                    // created_at é data de import (não significa nada). Esconde se sem vendas.
+                    const primeiraVenda = vendas
+                      .map(v => v.data_venda)
+                      .filter(Boolean)
+                      .sort()[0]
+                    if (!primeiraVenda) return null
+                    const dataFmt = parseDataLocal(primeiraVenda)?.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })
+                    return (
+                      <div className="account-info-item">
+                        <span className="info-label">Atuando desde</span>
+                        <span className="info-value">{dataFmt || '—'}</span>
+                      </div>
+                    )
+                  })()}
                 </div>
               </div>
 

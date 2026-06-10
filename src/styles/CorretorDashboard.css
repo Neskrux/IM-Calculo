@@ -3014,6 +3014,7 @@
 
 .stat-card-content {
   flex: 1;
+  min-width: 0; /* permite o conteúdo encolher dentro do card (evita forçar quebra do valor) */
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -3029,13 +3030,14 @@
 }
 
 .stat-card-value {
-  font-size: 24px;
+  /* encolhe pra caber números grandes (ex.: R$ 19.596.783,71) sem quebrar linha */
+  font-size: clamp(16px, 1.45vw, 24px);
   font-weight: 600;
   color: var(--text-primary, #f0f4f8);
   font-family: 'Montserrat', sans-serif;
   white-space: nowrap;
-  overflow: visible;
-  text-overflow: clip;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .stat-card-decoration {
