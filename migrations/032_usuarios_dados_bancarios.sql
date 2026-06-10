@@ -1,6 +1,6 @@
--- Migration 030: Dados bancários / PIX do corretor
--- Criada em: 2026-06-09 (renumerada de 026 → 030 em 2026-06-10: a main já ocupa
---   026_comissao_gerada_restaura_identidade até 029 via PR da reconciliação)
+-- Migration 032: Dados bancários / PIX do corretor
+-- Criada em: 2026-06-09 (renumerada de 026 → 032 em 2026-06-10 após merge da main,
+--   que já ocupa até 031_coordenadora_percentual_padrao via PR da reconciliação)
 --
 -- Contexto:
 --   A visão do corretor não tinha onde informar COMO recebe o repasse de comissão.
