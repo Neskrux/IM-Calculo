@@ -408,8 +408,13 @@ async function upsertVenda(
     data_emissao: contract.issueDate || null,
     data_entrega_prevista: contract.expectedDeliveryDate || null,
     descricao: `Contrato ${contract.number ?? contract.id}`,
-    status: situacao === "2" ? "pago" : "pendente",
+    // Ponte distrato (A.1, ver docs/contexto/2026-06-01-distratos-mapa-completo.md):
+    // situacao_contrato='3' (distrato no Sienge) -> status='distrato' pra a UI tratar como
+    // não-ativa (rótulo vermelho + calcularComissaoVendaDistrato). Tolera reversão: se o
+    // contrato é reativado (situacao volta a '2'), status volta a 'pago' e data_distrato zera.
+    status: situacao === "3" ? "distrato" : (situacao === "2" ? "pago" : "pendente"),
     situacao_contrato: situacao,
+    data_distrato: situacao === "3" ? (contract.cancellationDate ?? null) : null,
     sienge_broker_id: corP?.id != null ? String(corP.id) : null,
     sienge_unit_id: uniP?.id != null ? String(uniP.id) : null,
     sienge_customer_id: cliP?.id != null ? String(cliP.id) : null,

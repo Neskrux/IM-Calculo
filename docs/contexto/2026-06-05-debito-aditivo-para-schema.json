@@ -1,0 +1,31 @@
+{
+  "meta": {
+    "geradoEm": "2026-06-05",
+    "proposito": "DÉBITO TÉCNICO p/ quando construir o schema dos termos (renegociacao_id). Estas parcelas de aditivo foram inseridas como padrão p/ fechar o relatório de maio. Ao migrar: ligar via renegociacao_id, marcar a grade antiga renegociada como cancelado/renegociado, e remover a inflação do total."
+  },
+  "total": 2,
+  "casos": [
+    {
+      "contrato": "c150",
+      "unidade": "1306 A",
+      "venda_id": "8d10b601-d088-4023-81bf-e136195fa8a9",
+      "valor": 455.93,
+      "comissao_gerada": 157.24,
+      "data_pagamento": "2026-05-11",
+      "sienge_bill_id": 246,
+      "sienge_installment_id": "66",
+      "motivo": "Parcela da grade NOVA do aditivo, inserida como parcela_entrada padrão p/ o relatório de maio. A grade ANTIGA ainda está no contrato -> infla o total/pendente."
+    },
+    {
+      "contrato": "c351",
+      "unidade": "506 A",
+      "venda_id": "cffb2c73-edb7-4127-8f74-18f382efbe78",
+      "valor": 773.55,
+      "comissao_gerada": 270.74,
+      "data_pagamento": "2026-05-21",
+      "sienge_bill_id": 418,
+      "sienge_installment_id": "68",
+      "motivo": "Parcela da grade NOVA do aditivo, inserida como parcela_entrada padrão p/ o relatório de maio. A grade ANTIGA ainda está no contrato -> infla o total/pendente."
+    }
+  ]
+}

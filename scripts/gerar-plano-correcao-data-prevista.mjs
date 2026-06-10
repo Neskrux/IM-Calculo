@@ -96,38 +96,32 @@ for (const i of income) {
 }
 console.log(`  income indexado: ${incomeIdx.size} chaves (billId, numero)`)
 
-// 3. Carregar vendas afetadas
-console.log('\n=== 2. Carregando vendas afetadas ===')
-// Apos reorganizacao de docs/ em 2026-05-18 (commit 87493e1), arquivos
-// foram movidos pra subpastas. Tenta o caminho atual primeiro, depois o legado.
-const VARREDURA_PATHS = [
-  'docs/auditorias/2026-05-13-drift/varredura-pagamentos-bagunca-2026-05-13.json',
-  'docs/varredura-pagamentos-bagunca-2026-05-13.json',
-]
-const varreduraPath = VARREDURA_PATHS.find((p) => existsSync(p))
-if (!varreduraPath) {
-  console.error('Nao achei varredura-pagamentos-bagunca-2026-05-13.json em nenhum dos paths conhecidos.')
-  process.exit(1)
-}
-const varredura = JSON.parse(readFileSync(varreduraPath, 'utf8'))
-const vendasIds = varredura.vendas.map((v) => v.venda_id)
-console.log(`  vendas afetadas: ${vendasIds.length}`)
-
+// 3. Carregar vendas afetadas — universo COMPLETO (sem snapshot congelado).
+// ANTES: lia uma lista fixa de docs/.../varredura-pagamentos-bagunca-2026-05-13.json
+// (snapshot de 13/maio). Esse arquivo foi deletado na reorg de docs (commit a360d25,
+// PR #29) e quebrou o cron em producao (run 2026-06-10 05:01 BRT, exit 1). Alem disso
+// ele so cobria ~99-299 vendas de maio — venda nova com drift de data_prevista nunca
+// era pega. AGORA: consulta o MESMO universo que reconciliar-todas-vendas.mjs usa —
+// FIGUEIRA, com sienge_receivable_bill_id, nao-excluida. Generico, sem hard-code, sem
+// dependencia de arquivo. ver CLAUDE.md "Achado — cron passo ① legado".
+console.log('\n=== 2. Carregando vendas afetadas (universo completo) ===')
+const FIGUEIRA = '0d7d01f4-c398-4d9a-a280-13f44c957279'
 const vendasMeta = new Map()
-for (let i = 0; i < vendasIds.length; i += 200) {
-  const chunk = vendasIds.slice(i, i + 200)
-  const { data } = await supa
+for (let from = 0; ; from += 1000) {
+  const { data, error } = await supa
     .from('vendas')
     .select('id, sienge_contract_id, sienge_receivable_bill_id, numero_contrato, unidade')
-    .in('id', chunk)
-  for (const v of data || []) vendasMeta.set(v.id, v)
+    .eq('empreendimento_id', FIGUEIRA)
+    .not('sienge_receivable_bill_id', 'is', null)
+    .eq('excluido', false)
+    .range(from, from + 999)
+  if (error) { console.error('  erro carregando vendas:', error); process.exit(1) }
+  if (!data?.length) break
+  for (const v of data) vendasMeta.set(v.id, v)
+  if (data.length < 1000) break
 }
-const semBillId = []
-for (const vid of vendasIds) {
-  const v = vendasMeta.get(vid)
-  if (!v?.sienge_receivable_bill_id) semBillId.push(vid)
-}
-console.log(`  vendas sem sienge_receivable_bill_id (ignoradas): ${semBillId.length}`)
+const vendasIds = [...vendasMeta.keys()]
+console.log(`  vendas no universo (FIGUEIRA, com bill_id, ativas): ${vendasIds.length}`)
 
 // 4. Carregar pagamentos das vendas afetadas (paginar dentro do chunk —
 //    PostgREST cap=1000 por request).

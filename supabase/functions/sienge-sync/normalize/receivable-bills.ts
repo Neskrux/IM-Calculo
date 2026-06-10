@@ -131,6 +131,7 @@ function tipoInternoOf(inc: IncomePayload): string | null {
   if (term === "SN" || term === "AT") return "sinal"
   if (term === "EN") return "entrada"
   if (term === "BA" || /^B[1-9]$/.test(term)) return "balao"
+  if (term === "BN") return "bens"
   return null
 }
 
