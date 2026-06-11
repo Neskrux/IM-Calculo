@@ -106,6 +106,24 @@ for (const p of pagamentos) {
   pagsPorVenda.get(p.venda_id).push(p)
 }
 
+// 2b. renegociacoes (aditivo-aware, F4): installments RENEGOCIADOS saem do universo —
+// a baixa deles no Sienge é liquidação de reparcelamento (não pagamento real; o valor
+// rolou pra grade GERADA, que está materializada e ancorada). Sem este filtro o S2
+// parqueia toda venda com aditivo pra sempre (soma income > pro_soluto pelo remadeValue).
+// Com o filtro a soma fecha exata (juros de aditivo = 0, decisão 2026-06-05).
+// ver docs/contexto/2026-06-10-north-star-3-ancora-correta.md (F4)
+const renegPorVenda = new Map() // venda_id -> Set(installmentId renegociado)
+{
+  for (let i = 0; i < vendaIds.length; i += 100) {
+    const { data } = await supa.from('renegociacoes').select('venda_id, parcelas_originais').in('venda_id', vendaIds.slice(i, i + 100))
+    for (const rn of data || []) {
+      if (!renegPorVenda.has(rn.venda_id)) renegPorVenda.set(rn.venda_id, new Set())
+      for (const n of rn.parcelas_originais || []) renegPorVenda.get(rn.venda_id).add(String(n))
+    }
+  }
+  if (renegPorVenda.size) console.log(`  ${renegPorVenda.size} vendas com renegociação (aditivo) — installments renegociados saem do universo`)
+}
+
 // 3. income Sienge
 console.log('Baixando income do Sienge (bulk-data)...')
 const r = await siengeGet({
@@ -133,8 +151,12 @@ const resultado = {
 
 for (const v of vendas) {
   const bill = Number(v.sienge_receivable_bill_id)
-  const inc = incomePorBill.get(bill) || []
+  let inc = incomePorBill.get(bill) || []
   const pags = pagsPorVenda.get(v.id) || []
+
+  // aditivo-aware (2b): remove os installments renegociados do universo da venda
+  const renegSet = renegPorVenda.get(v.id)
+  if (renegSet?.size) inc = inc.filter((i) => !renegSet.has(String(i.installmentId)))
 
   // S1
   if (inc.length === 0) { resultado.revisao_humana.push({ venda_id: v.id, unidade: v.unidade, contrato: v.sienge_contract_id, motivo: 'bill sem parcelas relevantes no income' }); continue }

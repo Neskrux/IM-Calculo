@@ -1,0 +1,3395 @@
+{
+  "meta": {
+    "geradoEm": "2026-06-11T13:22:04.898Z",
+    "spec_ref": ".claude/rules/sincronizacao-sienge.md",
+    "doc_ref": "docs/contexto/2026-06-10-north-star-3-ancora-correta.md (F4)",
+    "script": "scripts/f4-materializar-aditivos.mjs",
+    "modo": "apply"
+  },
+  "counts": {
+    "eventos": 16,
+    "cancelar_baixa_falsa": 43,
+    "cancelar_pendente": 4,
+    "inserir": 241,
+    "ancorar_existente": 23,
+    "link_existente": 2,
+    "flags": 11,
+    "inserted": 241,
+    "updated": 72,
+    "reneg_inseridas": 15,
+    "errors": 0
+  },
+  "comissao_falsa_a_remover": 18355.98,
+  "plano": [
+    {
+      "bill": 8,
+      "contrato": "12",
+      "unidade": "509 A",
+      "venda_id": "7295782a-b03d-409b-b21d-3a257ec8b61f",
+      "data_aditivo": "2026-02-27",
+      "renegociadas": [
+        9
+      ],
+      "geradas": [
+        67,
+        68,
+        69
+      ],
+      "reneg_existente": null,
+      "acoes": {
+        "cancelar_baixa_falsa": [
+          {
+            "id": "5c2a8800-1708-4170-845b-c2bd9441760b",
+            "inst": 9,
+            "valor": 6271,
+            "comissao": 2037.24,
+            "data_pagamento": "2026-03-13"
+          }
+        ],
+        "cancelar_pendente": [],
+        "link_existente": [],
+        "ancorar_existente": [],
+        "inserir": [
+          {
+            "inst": 67,
+            "valor": 2500,
+            "data_prevista": "2026-01-28",
+            "term": "B1",
+            "comissao_gerada": 812.17,
+            "fator": 0.324867,
+            "pct": 6.5
+          },
+          {
+            "inst": 68,
+            "valor": 2500,
+            "data_prevista": "2026-02-25",
+            "term": "B2",
+            "comissao_gerada": 812.17,
+            "fator": 0.324867,
+            "pct": 6.5
+          },
+          {
+            "inst": 69,
+            "valor": 1271,
+            "data_prevista": "2026-03-15",
+            "term": "B3",
+            "comissao_gerada": 412.91,
+            "fator": 0.324867,
+            "pct": 6.5
+          }
+        ]
+      }
+    },
+    {
+      "bill": 20,
+      "contrato": "63",
+      "unidade": "710 A",
+      "venda_id": "ddfe2380-a927-4ad5-b37f-ed7d0913c333",
+      "data_aditivo": "2026-01-12",
+      "renegociadas": [
+        6,
+        7
+      ],
+      "geradas": [
+        62,
+        63,
+        64
+      ],
+      "reneg_existente": null,
+      "acoes": {
+        "cancelar_baixa_falsa": [
+          {
+            "id": "bf6f6870-2e6a-4310-8601-d0b7e429bc39",
+            "inst": 6,
+            "valor": 1172.77,
+            "comissao": 410.47,
+            "data_pagamento": "2026-01-12"
+          },
+          {
+            "id": "7d6b1889-fb17-4872-920a-057860ef0bd9",
+            "inst": 7,
+            "valor": 1172.77,
+            "comissao": 410.47,
+            "data_pagamento": "2026-01-12"
+          }
+        ],
+        "cancelar_pendente": [],
+        "link_existente": [],
+        "ancorar_existente": [],
+        "inserir": [
+          {
+            "inst": 62,
+            "valor": 781.84,
+            "data_prevista": "2026-02-20",
+            "term": "PM",
+            "comissao_gerada": 273.65,
+            "fator": 0.350004,
+            "pct": 7
+          },
+          {
+            "inst": 63,
+            "valor": 781.85,
+            "data_prevista": "2026-03-20",
+            "term": "PM",
+            "comissao_gerada": 273.65,
+            "fator": 0.350004,
+            "pct": 7
+          },
+          {
+            "inst": 64,
+            "valor": 781.85,
+            "data_prevista": "2026-04-20",
+            "term": "PM",
+            "comissao_gerada": 273.65,
+            "fator": 0.350004,
+            "pct": 7
+          }
+        ]
+      }
+    },
+    {
+      "bill": 176,
+      "contrato": "305",
+      "unidade": "1407 D",
+      "venda_id": "11c895c4-a75a-46dd-8b14-aed3c21ad5bf",
+      "data_aditivo": "2026-05-05",
+      "renegociadas": [
+        4,
+        5,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16
+      ],
+      "geradas": [
+        62,
+        63,
+        64,
+        65,
+        66,
+        67,
+        68,
+        69,
+        70,
+        71,
+        72,
+        73,
+        74,
+        75,
+        76,
+        77,
+        78,
+        79,
+        80,
+        81,
+        82,
+        83,
+        84,
+        85,
+        86,
+        87,
+        88,
+        89,
+        90,
+        91,
+        92,
+        93,
+        94,
+        95,
+        96,
+        97,
+        98,
+        99,
+        100,
+        101,
+        102,
+        103,
+        104,
+        105,
+        106,
+        107,
+        108,
+        109,
+        110,
+        111
+      ],
+      "reneg_existente": null,
+      "acoes": {
+        "cancelar_baixa_falsa": [
+          {
+            "id": "f9d233ba-65b8-4157-94ff-7b580ec05c1e",
+            "inst": 4,
+            "valor": 1132.05,
+            "comissao": 392.72,
+            "data_pagamento": "2026-05-05"
+          },
+          {
+            "id": "1152b3ba-a164-4adf-9845-19b5b3b1d66d",
+            "inst": 5,
+            "valor": 1132.05,
+            "comissao": 392.72,
+            "data_pagamento": "2026-05-05"
+          },
+          {
+            "id": "2bdd9849-895b-4bb1-a4ff-5cfe31b7eb20",
+            "inst": 7,
+            "valor": 1132.05,
+            "comissao": 392.72,
+            "data_pagamento": "2026-05-05"
+          },
+          {
+            "id": "32f89723-62c1-4292-8d50-305a1951a2c1",
+            "inst": 8,
+            "valor": 1132.05,
+            "comissao": 392.72,
+            "data_pagamento": "2026-05-05"
+          },
+          {
+            "id": "f30063e3-d993-4eaf-8da3-20c3d1abce0c",
+            "inst": 9,
+            "valor": 1132.05,
+            "comissao": 392.72,
+            "data_pagamento": "2026-05-05"
+          },
+          {
+            "id": "c9a73d5f-a131-4538-bbce-d27b1484ed03",
+            "inst": 10,
+            "valor": 1132.05,
+            "comissao": 392.72,
+            "data_pagamento": "2026-05-05"
+          },
+          {
+            "id": "22c964d0-f7f4-4e4c-bd59-6c7583547d70",
+            "inst": 11,
+            "valor": 1132.05,
+            "comissao": 392.72,
+            "data_pagamento": "2026-05-05"
+          },
+          {
+            "id": "c5418f45-87ef-420c-9014-be7589b4835f",
+            "inst": 12,
+            "valor": 1132.05,
+            "comissao": 392.72,
+            "data_pagamento": "2026-05-05"
+          },
+          {
+            "id": "f54ee293-84f9-480a-b06b-8e189a893b4d",
+            "inst": 13,
+            "valor": 1132.05,
+            "comissao": 392.72,
+            "data_pagamento": "2026-05-05"
+          },
+          {
+            "id": "e38acf9b-a200-43e1-9199-7a16ea5aeb86",
+            "inst": 14,
+            "valor": 1132.05,
+            "comissao": 392.72,
+            "data_pagamento": "2026-05-05"
+          },
+          {
+            "id": "c6501f16-8ded-4413-9a43-3c7d95031821",
+            "inst": 15,
+            "valor": 1132.05,
+            "comissao": 392.72,
+            "data_pagamento": "2026-05-05"
+          },
+          {
+            "id": "be573335-2fe0-4dc6-a2ed-c9a1bd7b0068",
+            "inst": 16,
+            "valor": 1132.05,
+            "comissao": 392.72,
+            "data_pagamento": "2026-05-05"
+          }
+        ],
+        "cancelar_pendente": [],
+        "link_existente": [],
+        "ancorar_existente": [],
+        "inserir": [
+          {
+            "inst": 62,
+            "valor": 800,
+            "data_prevista": "2026-05-10",
+            "term": "PM",
+            "comissao_gerada": 277.53,
+            "fator": 0.346908,
+            "pct": 7
+          },
+          {
+            "inst": 63,
+            "valor": 800,
+            "data_prevista": "2026-06-10",
+            "term": "PM",
+            "comissao_gerada": 277.53,
+            "fator": 0.346908,
+            "pct": 7
+          },
+          {
+            "inst": 64,
+            "valor": 800,
+            "data_prevista": "2026-07-10",
+            "term": "PM",
+            "comissao_gerada": 277.53,
+            "fator": 0.346908,
+            "pct": 7
+          },
+          {
+            "inst": 65,
+            "valor": 800,
+            "data_prevista": "2026-08-10",
+            "term": "PM",
+            "comissao_gerada": 277.53,
+            "fator": 0.346908,
+            "pct": 7
+          },
+          {
+            "inst": 66,
+            "valor": 800,
+            "data_prevista": "2026-09-10",
+            "term": "PM",
+            "comissao_gerada": 277.53,
+            "fator": 0.346908,
+            "pct": 7
+          },
+          {
+            "inst": 67,
+            "valor": 800,
+            "data_prevista": "2026-10-10",
+            "term": "PM",
+            "comissao_gerada": 277.53,
+            "fator": 0.346908,
+            "pct": 7
+          },
+          {
+            "inst": 68,
+            "valor": 199.65,
+            "data_prevista": "2026-11-10",
+            "term": "PM",
+            "comissao_gerada": 69.26,
+            "fator": 0.346908,
+            "pct": 7
+          },
+          {
+            "inst": 69,
+            "valor": 199.65,
+            "data_prevista": "2026-12-10",
+            "term": "PM",
+            "comissao_gerada": 69.26,
+            "fator": 0.346908,
+            "pct": 7
+          },
+          {
+            "inst": 70,
+            "valor": 199.65,
+            "data_prevista": "2027-01-10",
+            "term": "PM",
+            "comissao_gerada": 69.26,
+            "fator": 0.346908,
+            "pct": 7
+          },
+          {
+            "inst": 71,
+            "valor": 199.65,
+            "data_prevista": "2027-02-10",
+            "term": "PM",
+            "comissao_gerada": 69.26,
+            "fator": 0.346908,
+            "pct": 7
+          },
+          {
+            "inst": 72,
+            "valor": 199.65,
+            "data_prevista": "2027-03-10",
+            "term": "PM",
+            "comissao_gerada": 69.26,
+            "fator": 0.346908,
+            "pct": 7
+          },
+          {
+            "inst": 73,
+            "valor": 199.65,
+            "data_prevista": "2027-04-10",
+            "term": "PM",
+            "comissao_gerada": 69.26,
+            "fator": 0.346908,
+            "pct": 7
+          },
+          {
+            "inst": 74,
+            "valor": 199.65,
+            "data_prevista": "2027-05-10",
+            "term": "PM",
+            "comissao_gerada": 69.26,
+            "fator": 0.346908,
+            "pct": 7
+          },
+          {
+            "inst": 75,
+            "valor": 199.65,
+            "data_prevista": "2027-06-10",
+            "term": "PM",
+            "comissao_gerada": 69.26,
+            "fator": 0.346908,
+            "pct": 7
+          },
+          {
+            "inst": 76,
+            "valor": 199.65,
+            "data_prevista": "2027-07-10",
+            "term": "PM",
+            "comissao_gerada": 69.26,
+            "fator": 0.346908,
+            "pct": 7
+          },
+          {
+            "inst": 77,
+            "valor": 199.65,
+            "data_prevista": "2027-08-10",
+            "term": "PM",
+            "comissao_gerada": 69.26,
+            "fator": 0.346908,
+            "pct": 7
+          },
+          {
+            "inst": 78,
+            "valor": 199.65,
+            "data_prevista": "2027-09-10",
+            "term": "PM",
+            "comissao_gerada": 69.26,
+            "fator": 0.346908,
+            "pct": 7
+          },
+          {
+            "inst": 79,
+            "valor": 199.65,
+            "data_prevista": "2027-10-10",
+            "term": "PM",
+            "comissao_gerada": 69.26,
+            "fator": 0.346908,
+            "pct": 7
+          },
+          {
+            "inst": 80,
+            "valor": 199.65,
+            "data_prevista": "2027-11-10",
+            "term": "PM",
+            "comissao_gerada": 69.26,
+            "fator": 0.346908,
+            "pct": 7
+          },
+          {
+            "inst": 81,
+            "valor": 199.65,
+            "data_prevista": "2027-12-10",
+            "term": "PM",
+            "comissao_gerada": 69.26,
+            "fator": 0.346908,
+            "pct": 7
+          },
+          {
+            "inst": 82,
+            "valor": 199.65,
+            "data_prevista": "2028-01-10",
+            "term": "PM",
+            "comissao_gerada": 69.26,
+            "fator": 0.346908,
+            "pct": 7
+          },
+          {
+            "inst": 83,
+            "valor": 199.65,
+            "data_prevista": "2028-02-10",
+            "term": "PM",
+            "comissao_gerada": 69.26,
+            "fator": 0.346908,
+            "pct": 7
+          },
+          {
+            "inst": 84,
+            "valor": 199.65,
+            "data_prevista": "2028-03-10",
+            "term": "PM",
+            "comissao_gerada": 69.26,
+            "fator": 0.346908,
+            "pct": 7
+          },
+          {
+            "inst": 85,
+            "valor": 199.65,
+            "data_prevista": "2028-04-10",
+            "term": "PM",
+            "comissao_gerada": 69.26,
+            "fator": 0.346908,
+            "pct": 7
+          },
+          {
+            "inst": 86,
+            "valor": 199.65,
+            "data_prevista": "2028-05-10",
+            "term": "PM",
+            "comissao_gerada": 69.26,
+            "fator": 0.346908,
+            "pct": 7
+          },
+          {
+            "inst": 87,
+            "valor": 199.65,
+            "data_prevista": "2028-06-10",
+            "term": "PM",
+            "comissao_gerada": 69.26,
+            "fator": 0.346908,
+            "pct": 7
+          },
+          {
+            "inst": 88,
+            "valor": 199.65,
+            "data_prevista": "2028-07-10",
+            "term": "PM",
+            "comissao_gerada": 69.26,
+            "fator": 0.346908,
+            "pct": 7
+          },
+          {
+            "inst": 89,
+            "valor": 199.65,
+            "data_prevista": "2028-08-10",
+            "term": "PM",
+            "comissao_gerada": 69.26,
+            "fator": 0.346908,
+            "pct": 7
+          },
+          {
+            "inst": 90,
+            "valor": 199.65,
+            "data_prevista": "2028-09-10",
+            "term": "PM",
+            "comissao_gerada": 69.26,
+            "fator": 0.346908,
+            "pct": 7
+          },
+          {
+            "inst": 91,
+            "valor": 199.65,
+            "data_prevista": "2028-10-10",
+            "term": "PM",
+            "comissao_gerada": 69.26,
+            "fator": 0.346908,
+            "pct": 7
+          },
+          {
+            "inst": 92,
+            "valor": 199.65,
+            "data_prevista": "2028-11-10",
+            "term": "PM",
+            "comissao_gerada": 69.26,
+            "fator": 0.346908,
+            "pct": 7
+          },
+          {
+            "inst": 93,
+            "valor": 199.65,
+            "data_prevista": "2028-12-10",
+            "term": "PM",
+            "comissao_gerada": 69.26,
+            "fator": 0.346908,
+            "pct": 7
+          },
+          {
+            "inst": 94,
+            "valor": 199.65,
+            "data_prevista": "2029-01-10",
+            "term": "PM",
+            "comissao_gerada": 69.26,
+            "fator": 0.346908,
+            "pct": 7
+          },
+          {
+            "inst": 95,
+            "valor": 199.65,
+            "data_prevista": "2029-02-10",
+            "term": "PM",
+            "comissao_gerada": 69.26,
+            "fator": 0.346908,
+            "pct": 7
+          },
+          {
+            "inst": 96,
+            "valor": 199.65,
+            "data_prevista": "2029-03-10",
+            "term": "PM",
+            "comissao_gerada": 69.26,
+            "fator": 0.346908,
+            "pct": 7
+          },
+          {
+            "inst": 97,
+            "valor": 199.65,
+            "data_prevista": "2029-04-10",
+            "term": "PM",
+            "comissao_gerada": 69.26,
+            "fator": 0.346908,
+            "pct": 7
+          },
+          {
+            "inst": 98,
+            "valor": 199.65,
+            "data_prevista": "2029-05-10",
+            "term": "PM",
+            "comissao_gerada": 69.26,
+            "fator": 0.346908,
+            "pct": 7
+          },
+          {
+            "inst": 99,
+            "valor": 199.65,
+            "data_prevista": "2029-06-10",
+            "term": "PM",
+            "comissao_gerada": 69.26,
+            "fator": 0.346908,
+            "pct": 7
+          },
+          {
+            "inst": 100,
+            "valor": 199.65,
+            "data_prevista": "2029-07-10",
+            "term": "PM",
+            "comissao_gerada": 69.26,
+            "fator": 0.346908,
+            "pct": 7
+          },
+          {
+            "inst": 101,
+            "valor": 199.65,
+            "data_prevista": "2029-08-10",
+            "term": "PM",
+            "comissao_gerada": 69.26,
+            "fator": 0.346908,
+            "pct": 7
+          },
+          {
+            "inst": 102,
+            "valor": 199.65,
+            "data_prevista": "2029-09-10",
+            "term": "PM",
+            "comissao_gerada": 69.26,
+            "fator": 0.346908,
+            "pct": 7
+          },
+          {
+            "inst": 103,
+            "valor": 199.65,
+            "data_prevista": "2029-10-10",
+            "term": "PM",
+            "comissao_gerada": 69.26,
+            "fator": 0.346908,
+            "pct": 7
+          },
+          {
+            "inst": 104,
+            "valor": 199.65,
+            "data_prevista": "2029-11-10",
+            "term": "PM",
+            "comissao_gerada": 69.26,
+            "fator": 0.346908,
+            "pct": 7
+          },
+          {
+            "inst": 105,
+            "valor": 199.65,
+            "data_prevista": "2029-12-10",
+            "term": "PM",
+            "comissao_gerada": 69.26,
+            "fator": 0.346908,
+            "pct": 7
+          },
+          {
+            "inst": 106,
+            "valor": 199.65,
+            "data_prevista": "2030-01-10",
+            "term": "PM",
+            "comissao_gerada": 69.26,
+            "fator": 0.346908,
+            "pct": 7
+          },
+          {
+            "inst": 107,
+            "valor": 199.65,
+            "data_prevista": "2030-02-10",
+            "term": "PM",
+            "comissao_gerada": 69.26,
+            "fator": 0.346908,
+            "pct": 7
+          },
+          {
+            "inst": 108,
+            "valor": 199.65,
+            "data_prevista": "2030-03-10",
+            "term": "PM",
+            "comissao_gerada": 69.26,
+            "fator": 0.346908,
+            "pct": 7
+          },
+          {
+            "inst": 109,
+            "valor": 199.65,
+            "data_prevista": "2030-04-10",
+            "term": "PM",
+            "comissao_gerada": 69.26,
+            "fator": 0.346908,
+            "pct": 7
+          },
+          {
+            "inst": 110,
+            "valor": 199.65,
+            "data_prevista": "2030-05-10",
+            "term": "PM",
+            "comissao_gerada": 69.26,
+            "fator": 0.346908,
+            "pct": 7
+          },
+          {
+            "inst": 111,
+            "valor": 199.65,
+            "data_prevista": "2030-06-10",
+            "term": "PM",
+            "comissao_gerada": 69.26,
+            "fator": 0.346908,
+            "pct": 7
+          }
+        ]
+      }
+    },
+    {
+      "bill": 180,
+      "contrato": "228",
+      "unidade": "903 C",
+      "venda_id": "5de60ed3-9151-4b09-9b5c-6125f04cd889",
+      "data_aditivo": "2026-04-28",
+      "renegociadas": [
+        3,
+        4,
+        5,
+        6,
+        7,
+        8
+      ],
+      "geradas": [
+        60,
+        61,
+        62,
+        63,
+        64,
+        65,
+        66,
+        67,
+        68,
+        69,
+        70,
+        71,
+        72,
+        73,
+        74,
+        75,
+        76,
+        77,
+        78,
+        79,
+        80,
+        81,
+        82,
+        83,
+        84,
+        85,
+        86,
+        87,
+        88,
+        89
+      ],
+      "reneg_existente": "cd078497-d55c-42b6-8fe2-74c472d887c0",
+      "acoes": {
+        "cancelar_baixa_falsa": [],
+        "cancelar_pendente": [],
+        "link_existente": [],
+        "ancorar_existente": [
+          {
+            "id": "1e84b764-e3b9-49e6-803b-555da4112777",
+            "inst": 61,
+            "valor": 285.21
+          },
+          {
+            "id": "e868643a-b3ea-4e6d-8ca4-813adb4400c4",
+            "inst": 62,
+            "valor": 285.21
+          },
+          {
+            "id": "00b8fbcd-0b33-48b6-8252-cddc22165fca",
+            "inst": 63,
+            "valor": 285.21
+          },
+          {
+            "id": "ada73f9f-b5be-45d8-93a5-73ef5634460b",
+            "inst": 64,
+            "valor": 285.21
+          },
+          {
+            "id": "4cb66ca1-beb0-4f77-9786-68a6c91bf4a8",
+            "inst": 65,
+            "valor": 285.21
+          },
+          {
+            "id": "27626e9f-09e4-41d9-bb03-a6e29e4b5f9e",
+            "inst": 66,
+            "valor": 285.21
+          },
+          {
+            "id": "42365bf8-e08a-4ebf-a3a7-d999affdfe55",
+            "inst": 67,
+            "valor": 285.21
+          },
+          {
+            "id": "d378d31e-d24a-4e43-8d2a-67bd1d18e404",
+            "inst": 68,
+            "valor": 285.21
+          },
+          {
+            "id": "95f85ba1-cc73-4a71-85d0-0ad775143a56",
+            "inst": 69,
+            "valor": 285.21
+          },
+          {
+            "id": "000a354d-e786-4ab1-a4a8-14c49fcdb02d",
+            "inst": 70,
+            "valor": 285.21
+          },
+          {
+            "id": "cf684dcc-9502-44f0-8c09-0258ffa3b1bd",
+            "inst": 71,
+            "valor": 285.21
+          },
+          {
+            "id": "eb415ac8-f7eb-4f97-b24e-4eb1f474fcd3",
+            "inst": 72,
+            "valor": 285.21
+          },
+          {
+            "id": "4c3b0b47-92e3-4afa-bf4f-215235d2a6bc",
+            "inst": 73,
+            "valor": 285.21
+          },
+          {
+            "id": "8192e11b-b917-4a37-86d2-2df649fff024",
+            "inst": 74,
+            "valor": 285.21
+          },
+          {
+            "id": "6a3ce503-6771-4d0e-b9d9-4c5f4376a368",
+            "inst": 75,
+            "valor": 285.21
+          },
+          {
+            "id": "48583996-c7b1-4a35-a9b3-e5154d39b0a3",
+            "inst": 76,
+            "valor": 285.21
+          },
+          {
+            "id": "3521852c-0629-4392-8fd5-12f20eed73d7",
+            "inst": 77,
+            "valor": 285.21
+          },
+          {
+            "id": "348f453a-6ef5-4c18-bc21-1182e506a7b8",
+            "inst": 78,
+            "valor": 285.21
+          },
+          {
+            "id": "23269ab5-58fe-4e54-b4cc-322b745893b9",
+            "inst": 79,
+            "valor": 285.21
+          },
+          {
+            "id": "6a3408a2-258a-4f5f-973a-24f5b0ad443f",
+            "inst": 80,
+            "valor": 285.21
+          },
+          {
+            "id": "3b97ddf9-a41d-42da-8e3a-8414e55eb64b",
+            "inst": 81,
+            "valor": 285.21
+          },
+          {
+            "id": "0a854922-048b-431b-813e-8f64c2e824c9",
+            "inst": 82,
+            "valor": 285.21
+          }
+        ],
+        "inserir": [
+          {
+            "inst": 60,
+            "valor": 285.33,
+            "data_prevista": "2026-05-20",
+            "term": "PM",
+            "comissao_gerada": 87.67,
+            "fator": 0.307272,
+            "pct": 6.5
+          },
+          {
+            "inst": 83,
+            "valor": 285.21,
+            "data_prevista": "2028-04-20",
+            "term": "PM",
+            "comissao_gerada": 87.64,
+            "fator": 0.307272,
+            "pct": 6.5
+          },
+          {
+            "inst": 84,
+            "valor": 285.21,
+            "data_prevista": "2028-05-20",
+            "term": "PM",
+            "comissao_gerada": 87.64,
+            "fator": 0.307272,
+            "pct": 6.5
+          },
+          {
+            "inst": 85,
+            "valor": 285.21,
+            "data_prevista": "2028-06-20",
+            "term": "PM",
+            "comissao_gerada": 87.64,
+            "fator": 0.307272,
+            "pct": 6.5
+          },
+          {
+            "inst": 86,
+            "valor": 285.21,
+            "data_prevista": "2028-07-20",
+            "term": "PM",
+            "comissao_gerada": 87.64,
+            "fator": 0.307272,
+            "pct": 6.5
+          },
+          {
+            "inst": 87,
+            "valor": 285.21,
+            "data_prevista": "2028-08-20",
+            "term": "PM",
+            "comissao_gerada": 87.64,
+            "fator": 0.307272,
+            "pct": 6.5
+          },
+          {
+            "inst": 88,
+            "valor": 285.21,
+            "data_prevista": "2028-09-20",
+            "term": "PM",
+            "comissao_gerada": 87.64,
+            "fator": 0.307272,
+            "pct": 6.5
+          },
+          {
+            "inst": 89,
+            "valor": 285.21,
+            "data_prevista": "2028-10-20",
+            "term": "PM",
+            "comissao_gerada": 87.64,
+            "fator": 0.307272,
+            "pct": 6.5
+          }
+        ]
+      }
+    },
+    {
+      "bill": 194,
+      "contrato": "195",
+      "unidade": "904 B",
+      "venda_id": "d6cf726c-95eb-42f0-8397-b28d753d56ca",
+      "data_aditivo": "2026-03-11",
+      "renegociadas": [
+        9
+      ],
+      "geradas": [
+        60,
+        61,
+        62,
+        63,
+        64,
+        65,
+        66,
+        67
+      ],
+      "reneg_existente": null,
+      "acoes": {
+        "cancelar_baixa_falsa": [
+          {
+            "id": "09b395b5-a1b1-4437-81f7-7b85799d5c79",
+            "inst": 9,
+            "valor": 1514.72,
+            "comissao": 530.15,
+            "data_pagamento": "2026-03-11"
+          }
+        ],
+        "cancelar_pendente": [],
+        "link_existente": [],
+        "ancorar_existente": [],
+        "inserir": [
+          {
+            "inst": 60,
+            "valor": 189.34,
+            "data_prevista": "2026-05-10",
+            "term": "PM",
+            "comissao_gerada": 66.27,
+            "fator": 0.349999,
+            "pct": 7
+          },
+          {
+            "inst": 61,
+            "valor": 189.34,
+            "data_prevista": "2026-06-10",
+            "term": "PM",
+            "comissao_gerada": 66.27,
+            "fator": 0.349999,
+            "pct": 7
+          },
+          {
+            "inst": 62,
+            "valor": 189.34,
+            "data_prevista": "2026-07-10",
+            "term": "PM",
+            "comissao_gerada": 66.27,
+            "fator": 0.349999,
+            "pct": 7
+          },
+          {
+            "inst": 63,
+            "valor": 189.34,
+            "data_prevista": "2026-08-10",
+            "term": "PM",
+            "comissao_gerada": 66.27,
+            "fator": 0.349999,
+            "pct": 7
+          },
+          {
+            "inst": 64,
+            "valor": 189.34,
+            "data_prevista": "2026-09-10",
+            "term": "PM",
+            "comissao_gerada": 66.27,
+            "fator": 0.349999,
+            "pct": 7
+          },
+          {
+            "inst": 65,
+            "valor": 189.34,
+            "data_prevista": "2026-10-10",
+            "term": "PM",
+            "comissao_gerada": 66.27,
+            "fator": 0.349999,
+            "pct": 7
+          },
+          {
+            "inst": 66,
+            "valor": 189.34,
+            "data_prevista": "2026-11-10",
+            "term": "PM",
+            "comissao_gerada": 66.27,
+            "fator": 0.349999,
+            "pct": 7
+          },
+          {
+            "inst": 67,
+            "valor": 189.34,
+            "data_prevista": "2026-12-10",
+            "term": "PM",
+            "comissao_gerada": 66.27,
+            "fator": 0.349999,
+            "pct": 7
+          }
+        ]
+      }
+    },
+    {
+      "bill": 202,
+      "contrato": "277",
+      "unidade": "810 D",
+      "venda_id": "c5e10e5d-cbf4-45df-913e-4eee519ecad7",
+      "data_aditivo": "2026-02-19",
+      "renegociadas": [
+        7,
+        8,
+        9,
+        10
+      ],
+      "geradas": [
+        62,
+        63,
+        64,
+        65,
+        66,
+        67,
+        68,
+        69,
+        70,
+        71,
+        72,
+        73,
+        74,
+        75,
+        76,
+        77,
+        78,
+        79,
+        80,
+        81,
+        82,
+        83,
+        84,
+        85,
+        86,
+        87,
+        88,
+        89,
+        90,
+        91,
+        92,
+        93,
+        94,
+        95,
+        96,
+        97,
+        98,
+        99,
+        100,
+        101,
+        102,
+        103,
+        104,
+        105,
+        106
+      ],
+      "reneg_existente": null,
+      "acoes": {
+        "cancelar_baixa_falsa": [
+          {
+            "id": "f0c17921-1413-44dc-96e5-152fad8cca4a",
+            "inst": 7,
+            "valor": 1176.54,
+            "comissao": 349.97,
+            "data_pagamento": "2026-02-19"
+          },
+          {
+            "id": "54c10e80-60ea-447a-aeb4-aa0fafddd0b3",
+            "inst": 8,
+            "valor": 1176.54,
+            "comissao": 349.97,
+            "data_pagamento": "2026-02-19"
+          },
+          {
+            "id": "47826f48-5c99-4c1a-8f76-d06ff58f705b",
+            "inst": 9,
+            "valor": 1176.54,
+            "comissao": 349.97,
+            "data_pagamento": "2026-02-19"
+          },
+          {
+            "id": "f1dc618f-b1c9-491e-8bec-a5ac872e4825",
+            "inst": 10,
+            "valor": 1176.54,
+            "comissao": 349.97,
+            "data_pagamento": "2026-02-19"
+          }
+        ],
+        "cancelar_pendente": [],
+        "link_existente": [],
+        "ancorar_existente": [],
+        "inserir": [
+          {
+            "inst": 62,
+            "valor": 104.64,
+            "data_prevista": "2026-04-20",
+            "term": "PM",
+            "comissao_gerada": 31.13,
+            "fator": 0.297455,
+            "pct": 6.5
+          },
+          {
+            "inst": 63,
+            "valor": 104.58,
+            "data_prevista": "2026-05-20",
+            "term": "PM",
+            "comissao_gerada": 31.11,
+            "fator": 0.297455,
+            "pct": 6.5
+          },
+          {
+            "inst": 64,
+            "valor": 104.58,
+            "data_prevista": "2026-06-20",
+            "term": "PM",
+            "comissao_gerada": 31.11,
+            "fator": 0.297455,
+            "pct": 6.5
+          },
+          {
+            "inst": 65,
+            "valor": 104.58,
+            "data_prevista": "2026-07-20",
+            "term": "PM",
+            "comissao_gerada": 31.11,
+            "fator": 0.297455,
+            "pct": 6.5
+          },
+          {
+            "inst": 66,
+            "valor": 104.58,
+            "data_prevista": "2026-08-20",
+            "term": "PM",
+            "comissao_gerada": 31.11,
+            "fator": 0.297455,
+            "pct": 6.5
+          },
+          {
+            "inst": 67,
+            "valor": 104.58,
+            "data_prevista": "2026-09-20",
+            "term": "PM",
+            "comissao_gerada": 31.11,
+            "fator": 0.297455,
+            "pct": 6.5
+          },
+          {
+            "inst": 68,
+            "valor": 104.58,
+            "data_prevista": "2026-10-20",
+            "term": "PM",
+            "comissao_gerada": 31.11,
+            "fator": 0.297455,
+            "pct": 6.5
+          },
+          {
+            "inst": 69,
+            "valor": 104.58,
+            "data_prevista": "2026-11-20",
+            "term": "PM",
+            "comissao_gerada": 31.11,
+            "fator": 0.297455,
+            "pct": 6.5
+          },
+          {
+            "inst": 70,
+            "valor": 104.58,
+            "data_prevista": "2026-12-20",
+            "term": "PM",
+            "comissao_gerada": 31.11,
+            "fator": 0.297455,
+            "pct": 6.5
+          },
+          {
+            "inst": 71,
+            "valor": 104.58,
+            "data_prevista": "2027-01-20",
+            "term": "PM",
+            "comissao_gerada": 31.11,
+            "fator": 0.297455,
+            "pct": 6.5
+          },
+          {
+            "inst": 72,
+            "valor": 104.58,
+            "data_prevista": "2027-02-20",
+            "term": "PM",
+            "comissao_gerada": 31.11,
+            "fator": 0.297455,
+            "pct": 6.5
+          },
+          {
+            "inst": 73,
+            "valor": 104.58,
+            "data_prevista": "2027-03-20",
+            "term": "PM",
+            "comissao_gerada": 31.11,
+            "fator": 0.297455,
+            "pct": 6.5
+          },
+          {
+            "inst": 74,
+            "valor": 104.58,
+            "data_prevista": "2027-04-20",
+            "term": "PM",
+            "comissao_gerada": 31.11,
+            "fator": 0.297455,
+            "pct": 6.5
+          },
+          {
+            "inst": 75,
+            "valor": 104.58,
+            "data_prevista": "2027-05-20",
+            "term": "PM",
+            "comissao_gerada": 31.11,
+            "fator": 0.297455,
+            "pct": 6.5
+          },
+          {
+            "inst": 76,
+            "valor": 104.58,
+            "data_prevista": "2027-06-20",
+            "term": "PM",
+            "comissao_gerada": 31.11,
+            "fator": 0.297455,
+            "pct": 6.5
+          },
+          {
+            "inst": 77,
+            "valor": 104.58,
+            "data_prevista": "2027-07-20",
+            "term": "PM",
+            "comissao_gerada": 31.11,
+            "fator": 0.297455,
+            "pct": 6.5
+          },
+          {
+            "inst": 78,
+            "valor": 104.58,
+            "data_prevista": "2027-08-20",
+            "term": "PM",
+            "comissao_gerada": 31.11,
+            "fator": 0.297455,
+            "pct": 6.5
+          },
+          {
+            "inst": 79,
+            "valor": 104.58,
+            "data_prevista": "2027-09-20",
+            "term": "PM",
+            "comissao_gerada": 31.11,
+            "fator": 0.297455,
+            "pct": 6.5
+          },
+          {
+            "inst": 80,
+            "valor": 104.58,
+            "data_prevista": "2027-10-20",
+            "term": "PM",
+            "comissao_gerada": 31.11,
+            "fator": 0.297455,
+            "pct": 6.5
+          },
+          {
+            "inst": 81,
+            "valor": 104.58,
+            "data_prevista": "2027-11-20",
+            "term": "PM",
+            "comissao_gerada": 31.11,
+            "fator": 0.297455,
+            "pct": 6.5
+          },
+          {
+            "inst": 82,
+            "valor": 104.58,
+            "data_prevista": "2027-12-20",
+            "term": "PM",
+            "comissao_gerada": 31.11,
+            "fator": 0.297455,
+            "pct": 6.5
+          },
+          {
+            "inst": 83,
+            "valor": 104.58,
+            "data_prevista": "2028-01-20",
+            "term": "PM",
+            "comissao_gerada": 31.11,
+            "fator": 0.297455,
+            "pct": 6.5
+          },
+          {
+            "inst": 84,
+            "valor": 104.58,
+            "data_prevista": "2028-02-20",
+            "term": "PM",
+            "comissao_gerada": 31.11,
+            "fator": 0.297455,
+            "pct": 6.5
+          },
+          {
+            "inst": 85,
+            "valor": 104.58,
+            "data_prevista": "2028-03-20",
+            "term": "PM",
+            "comissao_gerada": 31.11,
+            "fator": 0.297455,
+            "pct": 6.5
+          },
+          {
+            "inst": 86,
+            "valor": 104.58,
+            "data_prevista": "2028-04-20",
+            "term": "PM",
+            "comissao_gerada": 31.11,
+            "fator": 0.297455,
+            "pct": 6.5
+          },
+          {
+            "inst": 87,
+            "valor": 104.58,
+            "data_prevista": "2028-05-20",
+            "term": "PM",
+            "comissao_gerada": 31.11,
+            "fator": 0.297455,
+            "pct": 6.5
+          },
+          {
+            "inst": 88,
+            "valor": 104.58,
+            "data_prevista": "2028-06-20",
+            "term": "PM",
+            "comissao_gerada": 31.11,
+            "fator": 0.297455,
+            "pct": 6.5
+          },
+          {
+            "inst": 89,
+            "valor": 104.58,
+            "data_prevista": "2028-07-20",
+            "term": "PM",
+            "comissao_gerada": 31.11,
+            "fator": 0.297455,
+            "pct": 6.5
+          },
+          {
+            "inst": 90,
+            "valor": 104.58,
+            "data_prevista": "2028-08-20",
+            "term": "PM",
+            "comissao_gerada": 31.11,
+            "fator": 0.297455,
+            "pct": 6.5
+          },
+          {
+            "inst": 91,
+            "valor": 104.58,
+            "data_prevista": "2028-09-20",
+            "term": "PM",
+            "comissao_gerada": 31.11,
+            "fator": 0.297455,
+            "pct": 6.5
+          },
+          {
+            "inst": 92,
+            "valor": 104.58,
+            "data_prevista": "2028-10-20",
+            "term": "PM",
+            "comissao_gerada": 31.11,
+            "fator": 0.297455,
+            "pct": 6.5
+          },
+          {
+            "inst": 93,
+            "valor": 104.58,
+            "data_prevista": "2028-11-20",
+            "term": "PM",
+            "comissao_gerada": 31.11,
+            "fator": 0.297455,
+            "pct": 6.5
+          },
+          {
+            "inst": 94,
+            "valor": 104.58,
+            "data_prevista": "2028-12-20",
+            "term": "PM",
+            "comissao_gerada": 31.11,
+            "fator": 0.297455,
+            "pct": 6.5
+          },
+          {
+            "inst": 95,
+            "valor": 104.58,
+            "data_prevista": "2029-01-20",
+            "term": "PM",
+            "comissao_gerada": 31.11,
+            "fator": 0.297455,
+            "pct": 6.5
+          },
+          {
+            "inst": 96,
+            "valor": 104.58,
+            "data_prevista": "2029-02-20",
+            "term": "PM",
+            "comissao_gerada": 31.11,
+            "fator": 0.297455,
+            "pct": 6.5
+          },
+          {
+            "inst": 97,
+            "valor": 104.58,
+            "data_prevista": "2029-03-20",
+            "term": "PM",
+            "comissao_gerada": 31.11,
+            "fator": 0.297455,
+            "pct": 6.5
+          },
+          {
+            "inst": 98,
+            "valor": 104.58,
+            "data_prevista": "2029-04-20",
+            "term": "PM",
+            "comissao_gerada": 31.11,
+            "fator": 0.297455,
+            "pct": 6.5
+          },
+          {
+            "inst": 99,
+            "valor": 104.58,
+            "data_prevista": "2029-05-20",
+            "term": "PM",
+            "comissao_gerada": 31.11,
+            "fator": 0.297455,
+            "pct": 6.5
+          },
+          {
+            "inst": 100,
+            "valor": 104.58,
+            "data_prevista": "2029-06-20",
+            "term": "PM",
+            "comissao_gerada": 31.11,
+            "fator": 0.297455,
+            "pct": 6.5
+          },
+          {
+            "inst": 101,
+            "valor": 104.58,
+            "data_prevista": "2029-07-20",
+            "term": "PM",
+            "comissao_gerada": 31.11,
+            "fator": 0.297455,
+            "pct": 6.5
+          },
+          {
+            "inst": 102,
+            "valor": 104.58,
+            "data_prevista": "2029-08-20",
+            "term": "PM",
+            "comissao_gerada": 31.11,
+            "fator": 0.297455,
+            "pct": 6.5
+          },
+          {
+            "inst": 103,
+            "valor": 104.58,
+            "data_prevista": "2029-09-20",
+            "term": "PM",
+            "comissao_gerada": 31.11,
+            "fator": 0.297455,
+            "pct": 6.5
+          },
+          {
+            "inst": 104,
+            "valor": 104.58,
+            "data_prevista": "2029-10-20",
+            "term": "PM",
+            "comissao_gerada": 31.11,
+            "fator": 0.297455,
+            "pct": 6.5
+          },
+          {
+            "inst": 105,
+            "valor": 104.58,
+            "data_prevista": "2029-11-20",
+            "term": "PM",
+            "comissao_gerada": 31.11,
+            "fator": 0.297455,
+            "pct": 6.5
+          },
+          {
+            "inst": 106,
+            "valor": 104.58,
+            "data_prevista": "2029-12-20",
+            "term": "PM",
+            "comissao_gerada": 31.11,
+            "fator": 0.297455,
+            "pct": 6.5
+          }
+        ]
+      }
+    },
+    {
+      "bill": 218,
+      "contrato": "312",
+      "unidade": "712 A",
+      "venda_id": "b7a817c5-aa5e-4461-b04f-0638a24c36e9",
+      "data_aditivo": "2026-03-05",
+      "renegociadas": [
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "geradas": [
+        67,
+        68,
+        69,
+        70,
+        71,
+        72,
+        73,
+        74,
+        75,
+        76,
+        77,
+        78,
+        79,
+        80,
+        81,
+        82,
+        83,
+        84,
+        85,
+        86,
+        87,
+        88,
+        89,
+        90,
+        91,
+        92,
+        93,
+        94,
+        95,
+        96,
+        97,
+        98,
+        99,
+        100,
+        101,
+        102,
+        103,
+        104,
+        105,
+        106
+      ],
+      "reneg_existente": null,
+      "acoes": {
+        "cancelar_baixa_falsa": [
+          {
+            "id": "7471adf8-06da-4040-b581-1d44b0a2c7f2",
+            "inst": 2,
+            "valor": 373.28,
+            "comissao": 130.7,
+            "data_pagamento": "2026-03-05"
+          },
+          {
+            "id": "a88fa81e-ed0b-4345-aeac-d7e8aa8eaace",
+            "inst": 3,
+            "valor": 373.28,
+            "comissao": 130.7,
+            "data_pagamento": "2026-03-05"
+          },
+          {
+            "id": "7bc653a1-ec28-4253-9d3e-a85b74e94af0",
+            "inst": 4,
+            "valor": 373.28,
+            "comissao": 130.7,
+            "data_pagamento": "2026-03-05"
+          },
+          {
+            "id": "57267623-166d-4484-9cc3-345351040806",
+            "inst": 5,
+            "valor": 373.28,
+            "comissao": 130.7,
+            "data_pagamento": "2026-03-05"
+          },
+          {
+            "id": "c89b356e-d6c2-4d0d-8912-3f2450022cb4",
+            "inst": 6,
+            "valor": 373.28,
+            "comissao": 130.7,
+            "data_pagamento": "2026-03-05"
+          },
+          {
+            "id": "eca9b9a0-3186-499b-8e60-c83249bb62b4",
+            "inst": 7,
+            "valor": 373.28,
+            "comissao": 130.7,
+            "data_pagamento": "2026-03-05"
+          },
+          {
+            "id": "28f395e1-e1bf-45bc-8c4e-614e6492b38c",
+            "inst": 8,
+            "valor": 373.28,
+            "comissao": 130.7,
+            "data_pagamento": "2026-03-05"
+          },
+          {
+            "id": "baa59077-92cf-45ff-8d50-bdfc759ed147",
+            "inst": 9,
+            "valor": 373.28,
+            "comissao": 130.7,
+            "data_pagamento": "2026-03-05"
+          },
+          {
+            "id": "96d10aa0-7762-40c8-920f-122a4db94aef",
+            "inst": 10,
+            "valor": 5000,
+            "comissao": 1750.75,
+            "data_pagamento": "2026-03-05"
+          }
+        ],
+        "cancelar_pendente": [],
+        "link_existente": [],
+        "ancorar_existente": [],
+        "inserir": [
+          {
+            "inst": 67,
+            "valor": 199.5,
+            "data_prevista": "2026-03-20",
+            "term": "PM",
+            "comissao_gerada": 69.85,
+            "fator": 0.350149,
+            "pct": 7
+          },
+          {
+            "inst": 68,
+            "valor": 199.66,
+            "data_prevista": "2026-04-20",
+            "term": "PM",
+            "comissao_gerada": 69.91,
+            "fator": 0.350149,
+            "pct": 7
+          },
+          {
+            "inst": 69,
+            "valor": 199.66,
+            "data_prevista": "2026-05-20",
+            "term": "PM",
+            "comissao_gerada": 69.91,
+            "fator": 0.350149,
+            "pct": 7
+          },
+          {
+            "inst": 70,
+            "valor": 199.66,
+            "data_prevista": "2026-06-20",
+            "term": "PM",
+            "comissao_gerada": 69.91,
+            "fator": 0.350149,
+            "pct": 7
+          },
+          {
+            "inst": 71,
+            "valor": 199.66,
+            "data_prevista": "2026-07-20",
+            "term": "PM",
+            "comissao_gerada": 69.91,
+            "fator": 0.350149,
+            "pct": 7
+          },
+          {
+            "inst": 72,
+            "valor": 199.66,
+            "data_prevista": "2026-08-20",
+            "term": "PM",
+            "comissao_gerada": 69.91,
+            "fator": 0.350149,
+            "pct": 7
+          },
+          {
+            "inst": 73,
+            "valor": 199.66,
+            "data_prevista": "2026-09-20",
+            "term": "PM",
+            "comissao_gerada": 69.91,
+            "fator": 0.350149,
+            "pct": 7
+          },
+          {
+            "inst": 74,
+            "valor": 199.66,
+            "data_prevista": "2026-10-20",
+            "term": "PM",
+            "comissao_gerada": 69.91,
+            "fator": 0.350149,
+            "pct": 7
+          },
+          {
+            "inst": 75,
+            "valor": 199.66,
+            "data_prevista": "2026-11-20",
+            "term": "PM",
+            "comissao_gerada": 69.91,
+            "fator": 0.350149,
+            "pct": 7
+          },
+          {
+            "inst": 76,
+            "valor": 199.66,
+            "data_prevista": "2026-12-20",
+            "term": "PM",
+            "comissao_gerada": 69.91,
+            "fator": 0.350149,
+            "pct": 7
+          },
+          {
+            "inst": 77,
+            "valor": 199.66,
+            "data_prevista": "2027-01-20",
+            "term": "PM",
+            "comissao_gerada": 69.91,
+            "fator": 0.350149,
+            "pct": 7
+          },
+          {
+            "inst": 78,
+            "valor": 199.66,
+            "data_prevista": "2027-02-20",
+            "term": "PM",
+            "comissao_gerada": 69.91,
+            "fator": 0.350149,
+            "pct": 7
+          },
+          {
+            "inst": 79,
+            "valor": 199.66,
+            "data_prevista": "2027-03-20",
+            "term": "PM",
+            "comissao_gerada": 69.91,
+            "fator": 0.350149,
+            "pct": 7
+          },
+          {
+            "inst": 80,
+            "valor": 199.66,
+            "data_prevista": "2027-04-20",
+            "term": "PM",
+            "comissao_gerada": 69.91,
+            "fator": 0.350149,
+            "pct": 7
+          },
+          {
+            "inst": 81,
+            "valor": 199.66,
+            "data_prevista": "2027-05-20",
+            "term": "PM",
+            "comissao_gerada": 69.91,
+            "fator": 0.350149,
+            "pct": 7
+          },
+          {
+            "inst": 82,
+            "valor": 199.66,
+            "data_prevista": "2027-06-20",
+            "term": "PM",
+            "comissao_gerada": 69.91,
+            "fator": 0.350149,
+            "pct": 7
+          },
+          {
+            "inst": 83,
+            "valor": 199.66,
+            "data_prevista": "2027-07-20",
+            "term": "PM",
+            "comissao_gerada": 69.91,
+            "fator": 0.350149,
+            "pct": 7
+          },
+          {
+            "inst": 84,
+            "valor": 199.66,
+            "data_prevista": "2027-08-20",
+            "term": "PM",
+            "comissao_gerada": 69.91,
+            "fator": 0.350149,
+            "pct": 7
+          },
+          {
+            "inst": 85,
+            "valor": 199.66,
+            "data_prevista": "2027-09-20",
+            "term": "PM",
+            "comissao_gerada": 69.91,
+            "fator": 0.350149,
+            "pct": 7
+          },
+          {
+            "inst": 86,
+            "valor": 199.66,
+            "data_prevista": "2027-10-20",
+            "term": "PM",
+            "comissao_gerada": 69.91,
+            "fator": 0.350149,
+            "pct": 7
+          },
+          {
+            "inst": 87,
+            "valor": 199.66,
+            "data_prevista": "2027-11-20",
+            "term": "PM",
+            "comissao_gerada": 69.91,
+            "fator": 0.350149,
+            "pct": 7
+          },
+          {
+            "inst": 88,
+            "valor": 199.66,
+            "data_prevista": "2027-12-20",
+            "term": "PM",
+            "comissao_gerada": 69.91,
+            "fator": 0.350149,
+            "pct": 7
+          },
+          {
+            "inst": 89,
+            "valor": 199.66,
+            "data_prevista": "2028-01-20",
+            "term": "PM",
+            "comissao_gerada": 69.91,
+            "fator": 0.350149,
+            "pct": 7
+          },
+          {
+            "inst": 90,
+            "valor": 199.66,
+            "data_prevista": "2028-02-20",
+            "term": "PM",
+            "comissao_gerada": 69.91,
+            "fator": 0.350149,
+            "pct": 7
+          },
+          {
+            "inst": 91,
+            "valor": 199.66,
+            "data_prevista": "2028-03-20",
+            "term": "PM",
+            "comissao_gerada": 69.91,
+            "fator": 0.350149,
+            "pct": 7
+          },
+          {
+            "inst": 92,
+            "valor": 199.66,
+            "data_prevista": "2028-04-20",
+            "term": "PM",
+            "comissao_gerada": 69.91,
+            "fator": 0.350149,
+            "pct": 7
+          },
+          {
+            "inst": 93,
+            "valor": 199.66,
+            "data_prevista": "2028-05-20",
+            "term": "PM",
+            "comissao_gerada": 69.91,
+            "fator": 0.350149,
+            "pct": 7
+          },
+          {
+            "inst": 94,
+            "valor": 199.66,
+            "data_prevista": "2028-06-20",
+            "term": "PM",
+            "comissao_gerada": 69.91,
+            "fator": 0.350149,
+            "pct": 7
+          },
+          {
+            "inst": 95,
+            "valor": 199.66,
+            "data_prevista": "2028-07-20",
+            "term": "PM",
+            "comissao_gerada": 69.91,
+            "fator": 0.350149,
+            "pct": 7
+          },
+          {
+            "inst": 96,
+            "valor": 199.66,
+            "data_prevista": "2028-08-20",
+            "term": "PM",
+            "comissao_gerada": 69.91,
+            "fator": 0.350149,
+            "pct": 7
+          },
+          {
+            "inst": 97,
+            "valor": 199.66,
+            "data_prevista": "2028-09-20",
+            "term": "PM",
+            "comissao_gerada": 69.91,
+            "fator": 0.350149,
+            "pct": 7
+          },
+          {
+            "inst": 98,
+            "valor": 199.66,
+            "data_prevista": "2028-10-20",
+            "term": "PM",
+            "comissao_gerada": 69.91,
+            "fator": 0.350149,
+            "pct": 7
+          },
+          {
+            "inst": 99,
+            "valor": 199.66,
+            "data_prevista": "2028-11-20",
+            "term": "PM",
+            "comissao_gerada": 69.91,
+            "fator": 0.350149,
+            "pct": 7
+          },
+          {
+            "inst": 100,
+            "valor": 199.66,
+            "data_prevista": "2028-12-20",
+            "term": "PM",
+            "comissao_gerada": 69.91,
+            "fator": 0.350149,
+            "pct": 7
+          },
+          {
+            "inst": 101,
+            "valor": 199.66,
+            "data_prevista": "2029-01-20",
+            "term": "PM",
+            "comissao_gerada": 69.91,
+            "fator": 0.350149,
+            "pct": 7
+          },
+          {
+            "inst": 102,
+            "valor": 199.66,
+            "data_prevista": "2029-02-20",
+            "term": "PM",
+            "comissao_gerada": 69.91,
+            "fator": 0.350149,
+            "pct": 7
+          },
+          {
+            "inst": 103,
+            "valor": 199.66,
+            "data_prevista": "2029-03-20",
+            "term": "PM",
+            "comissao_gerada": 69.91,
+            "fator": 0.350149,
+            "pct": 7
+          },
+          {
+            "inst": 104,
+            "valor": 199.66,
+            "data_prevista": "2029-04-20",
+            "term": "PM",
+            "comissao_gerada": 69.91,
+            "fator": 0.350149,
+            "pct": 7
+          },
+          {
+            "inst": 105,
+            "valor": 199.66,
+            "data_prevista": "2029-05-20",
+            "term": "PM",
+            "comissao_gerada": 69.91,
+            "fator": 0.350149,
+            "pct": 7
+          },
+          {
+            "inst": 106,
+            "valor": 199.66,
+            "data_prevista": "2029-06-20",
+            "term": "PM",
+            "comissao_gerada": 69.91,
+            "fator": 0.350149,
+            "pct": 7
+          }
+        ]
+      }
+    },
+    {
+      "bill": 225,
+      "contrato": "165",
+      "unidade": "1606 A",
+      "venda_id": "7978c149-88eb-4568-b57a-3785c93cc953",
+      "data_aditivo": "2026-01-12",
+      "renegociadas": [
+        6
+      ],
+      "geradas": [
+        62
+      ],
+      "reneg_existente": null,
+      "acoes": {
+        "cancelar_baixa_falsa": [
+          {
+            "id": "c36ba656-42fd-466d-8828-94967bf1cf55",
+            "inst": 6,
+            "valor": 1397.33,
+            "comissao": 489.06,
+            "data_pagamento": "2026-01-12"
+          }
+        ],
+        "cancelar_pendente": [],
+        "link_existente": [],
+        "ancorar_existente": [
+          {
+            "id": "8301822e-a8aa-42aa-8135-7008d28c4bff",
+            "inst": 62,
+            "valor": 1397.33
+          }
+        ],
+        "inserir": []
+      }
+    },
+    {
+      "bill": 225,
+      "contrato": "165",
+      "unidade": "1606 A",
+      "venda_id": "7978c149-88eb-4568-b57a-3785c93cc953",
+      "data_aditivo": "2026-04-27",
+      "renegociadas": [
+        10,
+        11,
+        12
+      ],
+      "geradas": [
+        63,
+        64,
+        65,
+        66,
+        67,
+        68
+      ],
+      "reneg_existente": null,
+      "acoes": {
+        "cancelar_baixa_falsa": [],
+        "cancelar_pendente": [
+          {
+            "id": "4f537d5b-4b2b-42b7-8154-415f8ef499ab",
+            "inst": 10,
+            "valor": 1397.33
+          },
+          {
+            "id": "8cbb1eff-2e63-49b3-b63f-da9867155ad4",
+            "inst": 11,
+            "valor": 1397.33
+          },
+          {
+            "id": "05c45afa-7285-4a80-9f51-05b05e319511",
+            "inst": 12,
+            "valor": 1397.33
+          }
+        ],
+        "link_existente": [],
+        "ancorar_existente": [],
+        "inserir": [
+          {
+            "inst": 63,
+            "valor": 698.64,
+            "data_prevista": "2029-12-20",
+            "term": "PM",
+            "comissao_gerada": 244.52,
+            "fator": 0.349999,
+            "pct": 7
+          },
+          {
+            "inst": 64,
+            "valor": 698.67,
+            "data_prevista": "2030-01-20",
+            "term": "PM",
+            "comissao_gerada": 244.53,
+            "fator": 0.349999,
+            "pct": 7
+          },
+          {
+            "inst": 65,
+            "valor": 698.67,
+            "data_prevista": "2030-02-20",
+            "term": "PM",
+            "comissao_gerada": 244.53,
+            "fator": 0.349999,
+            "pct": 7
+          },
+          {
+            "inst": 66,
+            "valor": 698.67,
+            "data_prevista": "2030-03-20",
+            "term": "PM",
+            "comissao_gerada": 244.53,
+            "fator": 0.349999,
+            "pct": 7
+          },
+          {
+            "inst": 67,
+            "valor": 698.67,
+            "data_prevista": "2030-04-20",
+            "term": "PM",
+            "comissao_gerada": 244.53,
+            "fator": 0.349999,
+            "pct": 7
+          },
+          {
+            "inst": 68,
+            "valor": 698.67,
+            "data_prevista": "2030-05-20",
+            "term": "PM",
+            "comissao_gerada": 244.53,
+            "fator": 0.349999,
+            "pct": 7
+          }
+        ]
+      }
+    },
+    {
+      "bill": 246,
+      "contrato": "150",
+      "unidade": "1306 A",
+      "venda_id": "8d10b601-d088-4023-81bf-e136195fa8a9",
+      "data_aditivo": "2026-01-12",
+      "renegociadas": [
+        3,
+        4,
+        5,
+        6
+      ],
+      "geradas": [
+        62,
+        63,
+        64,
+        65,
+        66,
+        67,
+        68,
+        69,
+        70,
+        71
+      ],
+      "reneg_existente": null,
+      "acoes": {
+        "cancelar_baixa_falsa": [
+          {
+            "id": "88da941d-a580-447d-acc9-b0b00fe591f2",
+            "inst": 3,
+            "valor": 1139.83,
+            "comissao": 393.1,
+            "data_pagamento": "2026-02-11"
+          },
+          {
+            "id": "bf1ed368-c020-4063-a0cc-659c05e50a14",
+            "inst": 4,
+            "valor": 1139.83,
+            "comissao": 393.1,
+            "data_pagamento": "2026-04-02"
+          },
+          {
+            "id": "97423994-fe34-40d3-9c0e-2beceda8654b",
+            "inst": 5,
+            "valor": 1139.83,
+            "comissao": 393.1,
+            "data_pagamento": "2026-01-12"
+          },
+          {
+            "id": "d3b0aeba-a49d-4dfc-a856-595b6d3d2a2b",
+            "inst": 6,
+            "valor": 1139.83,
+            "comissao": 393.1,
+            "data_pagamento": "2026-01-12"
+          }
+        ],
+        "cancelar_pendente": [],
+        "link_existente": [
+          {
+            "id": "fa8eb189-f681-4542-8bf4-56e498b1d273",
+            "inst": 66,
+            "nota": "já ancorada (status pago)"
+          }
+        ],
+        "ancorar_existente": [],
+        "inserir": [
+          {
+            "inst": 62,
+            "valor": 455.95,
+            "data_prevista": "2026-01-10",
+            "term": "PM",
+            "comissao_gerada": 157.25,
+            "fator": 0.344874,
+            "pct": 7
+          },
+          {
+            "inst": 63,
+            "valor": 455.93,
+            "data_prevista": "2026-02-10",
+            "term": "PM",
+            "comissao_gerada": 157.24,
+            "fator": 0.344874,
+            "pct": 7
+          },
+          {
+            "inst": 64,
+            "valor": 455.93,
+            "data_prevista": "2026-03-10",
+            "term": "PM",
+            "comissao_gerada": 157.24,
+            "fator": 0.344874,
+            "pct": 7
+          },
+          {
+            "inst": 65,
+            "valor": 455.93,
+            "data_prevista": "2026-04-10",
+            "term": "PM",
+            "comissao_gerada": 157.24,
+            "fator": 0.344874,
+            "pct": 7
+          },
+          {
+            "inst": 67,
+            "valor": 455.93,
+            "data_prevista": "2026-06-10",
+            "term": "PM",
+            "comissao_gerada": 157.24,
+            "fator": 0.344874,
+            "pct": 7
+          },
+          {
+            "inst": 68,
+            "valor": 455.93,
+            "data_prevista": "2026-07-10",
+            "term": "PM",
+            "comissao_gerada": 157.24,
+            "fator": 0.344874,
+            "pct": 7
+          },
+          {
+            "inst": 69,
+            "valor": 455.93,
+            "data_prevista": "2026-08-10",
+            "term": "PM",
+            "comissao_gerada": 157.24,
+            "fator": 0.344874,
+            "pct": 7
+          },
+          {
+            "inst": 70,
+            "valor": 455.93,
+            "data_prevista": "2026-09-10",
+            "term": "PM",
+            "comissao_gerada": 157.24,
+            "fator": 0.344874,
+            "pct": 7
+          },
+          {
+            "inst": 71,
+            "valor": 455.93,
+            "data_prevista": "2026-10-10",
+            "term": "PM",
+            "comissao_gerada": 157.24,
+            "fator": 0.344874,
+            "pct": 7
+          }
+        ]
+      }
+    },
+    {
+      "bill": 247,
+      "contrato": "230",
+      "unidade": "906 C",
+      "venda_id": "c6100456-03b1-44a9-8f1b-c47dd16997ad",
+      "data_aditivo": "2026-03-05",
+      "renegociadas": [
+        6,
+        7
+      ],
+      "geradas": [
+        60,
+        61,
+        62,
+        63,
+        64,
+        65,
+        66,
+        67,
+        68,
+        69,
+        70,
+        71,
+        72,
+        73,
+        74,
+        75,
+        76,
+        77,
+        78,
+        79
+      ],
+      "reneg_existente": null,
+      "acoes": {
+        "cancelar_baixa_falsa": [
+          {
+            "id": "d6cce2b9-0b7d-46d8-95ed-b94d1e2a830f",
+            "inst": 6,
+            "valor": 1348.27,
+            "comissao": 471.9,
+            "data_pagamento": "2026-03-05"
+          },
+          {
+            "id": "2a3ab0e4-5654-43d6-8fe8-5ac67d9e86e3",
+            "inst": 7,
+            "valor": 1348.27,
+            "comissao": 471.9,
+            "data_pagamento": "2026-03-05"
+          }
+        ],
+        "cancelar_pendente": [],
+        "link_existente": [],
+        "ancorar_existente": [],
+        "inserir": [
+          {
+            "inst": 60,
+            "valor": 127.02,
+            "data_prevista": "2026-04-10",
+            "term": "PM",
+            "comissao_gerada": 44.46,
+            "fator": 0.350002,
+            "pct": 7
+          },
+          {
+            "inst": 61,
+            "valor": 127.07,
+            "data_prevista": "2026-05-10",
+            "term": "PM",
+            "comissao_gerada": 44.47,
+            "fator": 0.350002,
+            "pct": 7
+          },
+          {
+            "inst": 62,
+            "valor": 127.07,
+            "data_prevista": "2026-06-10",
+            "term": "PM",
+            "comissao_gerada": 44.47,
+            "fator": 0.350002,
+            "pct": 7
+          },
+          {
+            "inst": 63,
+            "valor": 127.07,
+            "data_prevista": "2026-07-10",
+            "term": "PM",
+            "comissao_gerada": 44.47,
+            "fator": 0.350002,
+            "pct": 7
+          },
+          {
+            "inst": 64,
+            "valor": 127.07,
+            "data_prevista": "2026-08-10",
+            "term": "PM",
+            "comissao_gerada": 44.47,
+            "fator": 0.350002,
+            "pct": 7
+          },
+          {
+            "inst": 65,
+            "valor": 127.07,
+            "data_prevista": "2026-09-10",
+            "term": "PM",
+            "comissao_gerada": 44.47,
+            "fator": 0.350002,
+            "pct": 7
+          },
+          {
+            "inst": 66,
+            "valor": 127.07,
+            "data_prevista": "2026-10-10",
+            "term": "PM",
+            "comissao_gerada": 44.47,
+            "fator": 0.350002,
+            "pct": 7
+          },
+          {
+            "inst": 67,
+            "valor": 127.07,
+            "data_prevista": "2026-11-10",
+            "term": "PM",
+            "comissao_gerada": 44.47,
+            "fator": 0.350002,
+            "pct": 7
+          },
+          {
+            "inst": 68,
+            "valor": 127.07,
+            "data_prevista": "2026-12-10",
+            "term": "PM",
+            "comissao_gerada": 44.47,
+            "fator": 0.350002,
+            "pct": 7
+          },
+          {
+            "inst": 69,
+            "valor": 127.07,
+            "data_prevista": "2027-01-10",
+            "term": "PM",
+            "comissao_gerada": 44.47,
+            "fator": 0.350002,
+            "pct": 7
+          },
+          {
+            "inst": 70,
+            "valor": 127.07,
+            "data_prevista": "2027-02-10",
+            "term": "PM",
+            "comissao_gerada": 44.47,
+            "fator": 0.350002,
+            "pct": 7
+          },
+          {
+            "inst": 71,
+            "valor": 127.07,
+            "data_prevista": "2027-03-10",
+            "term": "PM",
+            "comissao_gerada": 44.47,
+            "fator": 0.350002,
+            "pct": 7
+          },
+          {
+            "inst": 72,
+            "valor": 127.07,
+            "data_prevista": "2027-04-10",
+            "term": "PM",
+            "comissao_gerada": 44.47,
+            "fator": 0.350002,
+            "pct": 7
+          },
+          {
+            "inst": 73,
+            "valor": 127.07,
+            "data_prevista": "2027-05-10",
+            "term": "PM",
+            "comissao_gerada": 44.47,
+            "fator": 0.350002,
+            "pct": 7
+          },
+          {
+            "inst": 74,
+            "valor": 127.07,
+            "data_prevista": "2027-06-10",
+            "term": "PM",
+            "comissao_gerada": 44.47,
+            "fator": 0.350002,
+            "pct": 7
+          },
+          {
+            "inst": 75,
+            "valor": 127.07,
+            "data_prevista": "2027-07-10",
+            "term": "PM",
+            "comissao_gerada": 44.47,
+            "fator": 0.350002,
+            "pct": 7
+          },
+          {
+            "inst": 76,
+            "valor": 127.07,
+            "data_prevista": "2027-08-10",
+            "term": "PM",
+            "comissao_gerada": 44.47,
+            "fator": 0.350002,
+            "pct": 7
+          },
+          {
+            "inst": 77,
+            "valor": 127.07,
+            "data_prevista": "2027-09-10",
+            "term": "PM",
+            "comissao_gerada": 44.47,
+            "fator": 0.350002,
+            "pct": 7
+          },
+          {
+            "inst": 78,
+            "valor": 127.07,
+            "data_prevista": "2027-10-10",
+            "term": "PM",
+            "comissao_gerada": 44.47,
+            "fator": 0.350002,
+            "pct": 7
+          },
+          {
+            "inst": 79,
+            "valor": 127.07,
+            "data_prevista": "2027-11-10",
+            "term": "PM",
+            "comissao_gerada": 44.47,
+            "fator": 0.350002,
+            "pct": 7
+          }
+        ]
+      }
+    },
+    {
+      "bill": 305,
+      "contrato": "299",
+      "unidade": "1305 D",
+      "venda_id": "6a33ac0b-00af-4fc3-8539-7529998a94b2",
+      "data_aditivo": "2026-03-11",
+      "renegociadas": [
+        5,
+        6
+      ],
+      "geradas": [
+        65,
+        66,
+        67,
+        68,
+        69,
+        70,
+        71,
+        72,
+        73,
+        74,
+        75,
+        76,
+        77,
+        78,
+        79
+      ],
+      "reneg_existente": null,
+      "acoes": {
+        "cancelar_baixa_falsa": [
+          {
+            "id": "4ebf503c-37d2-4cd6-8f08-f66360d7ba62",
+            "inst": 5,
+            "valor": 1200,
+            "comissao": 420,
+            "data_pagamento": "2026-03-11"
+          },
+          {
+            "id": "6b96450d-1a99-49e5-9d9f-42d2cea52633",
+            "inst": 6,
+            "valor": 1200,
+            "comissao": 420,
+            "data_pagamento": "2026-03-11"
+          }
+        ],
+        "cancelar_pendente": [],
+        "link_existente": [],
+        "ancorar_existente": [],
+        "inserir": [
+          {
+            "inst": 65,
+            "valor": 160,
+            "data_prevista": "2026-05-20",
+            "term": "PM",
+            "comissao_gerada": 56,
+            "fator": 0.35,
+            "pct": 7
+          },
+          {
+            "inst": 66,
+            "valor": 160,
+            "data_prevista": "2026-06-20",
+            "term": "PM",
+            "comissao_gerada": 56,
+            "fator": 0.35,
+            "pct": 7
+          },
+          {
+            "inst": 67,
+            "valor": 160,
+            "data_prevista": "2026-07-20",
+            "term": "PM",
+            "comissao_gerada": 56,
+            "fator": 0.35,
+            "pct": 7
+          },
+          {
+            "inst": 68,
+            "valor": 160,
+            "data_prevista": "2026-08-20",
+            "term": "PM",
+            "comissao_gerada": 56,
+            "fator": 0.35,
+            "pct": 7
+          },
+          {
+            "inst": 69,
+            "valor": 160,
+            "data_prevista": "2026-09-20",
+            "term": "PM",
+            "comissao_gerada": 56,
+            "fator": 0.35,
+            "pct": 7
+          },
+          {
+            "inst": 70,
+            "valor": 160,
+            "data_prevista": "2026-10-20",
+            "term": "PM",
+            "comissao_gerada": 56,
+            "fator": 0.35,
+            "pct": 7
+          },
+          {
+            "inst": 71,
+            "valor": 160,
+            "data_prevista": "2026-11-20",
+            "term": "PM",
+            "comissao_gerada": 56,
+            "fator": 0.35,
+            "pct": 7
+          },
+          {
+            "inst": 72,
+            "valor": 160,
+            "data_prevista": "2026-12-20",
+            "term": "PM",
+            "comissao_gerada": 56,
+            "fator": 0.35,
+            "pct": 7
+          },
+          {
+            "inst": 73,
+            "valor": 160,
+            "data_prevista": "2027-01-20",
+            "term": "PM",
+            "comissao_gerada": 56,
+            "fator": 0.35,
+            "pct": 7
+          },
+          {
+            "inst": 74,
+            "valor": 160,
+            "data_prevista": "2027-02-20",
+            "term": "PM",
+            "comissao_gerada": 56,
+            "fator": 0.35,
+            "pct": 7
+          },
+          {
+            "inst": 75,
+            "valor": 160,
+            "data_prevista": "2027-03-20",
+            "term": "PM",
+            "comissao_gerada": 56,
+            "fator": 0.35,
+            "pct": 7
+          },
+          {
+            "inst": 76,
+            "valor": 160,
+            "data_prevista": "2027-04-20",
+            "term": "PM",
+            "comissao_gerada": 56,
+            "fator": 0.35,
+            "pct": 7
+          },
+          {
+            "inst": 77,
+            "valor": 160,
+            "data_prevista": "2027-05-20",
+            "term": "PM",
+            "comissao_gerada": 56,
+            "fator": 0.35,
+            "pct": 7
+          },
+          {
+            "inst": 78,
+            "valor": 160,
+            "data_prevista": "2027-06-20",
+            "term": "PM",
+            "comissao_gerada": 56,
+            "fator": 0.35,
+            "pct": 7
+          },
+          {
+            "inst": 79,
+            "valor": 160,
+            "data_prevista": "2027-07-20",
+            "term": "PM",
+            "comissao_gerada": 56,
+            "fator": 0.35,
+            "pct": 7
+          }
+        ]
+      }
+    },
+    {
+      "bill": 399,
+      "contrato": "334",
+      "unidade": "1702 A",
+      "venda_id": "a2501437-3de4-4b97-b2cc-93474077de6b",
+      "data_aditivo": "2026-02-18",
+      "renegociadas": [
+        2,
+        3
+      ],
+      "geradas": [
+        57,
+        58,
+        59,
+        60,
+        61,
+        62
+      ],
+      "reneg_existente": null,
+      "acoes": {
+        "cancelar_baixa_falsa": [
+          {
+            "id": "5d9aabcc-5069-4aea-bdc9-b5e249336a44",
+            "inst": 2,
+            "valor": 1637.28,
+            "comissao": 573.05,
+            "data_pagamento": "2026-02-18"
+          },
+          {
+            "id": "017b685e-320d-4227-8c65-8e2b5e65aaca",
+            "inst": 3,
+            "valor": 1637.28,
+            "comissao": 573.05,
+            "data_pagamento": "2026-02-18"
+          }
+        ],
+        "cancelar_pendente": [],
+        "link_existente": [],
+        "ancorar_existente": [],
+        "inserir": [
+          {
+            "inst": 57,
+            "valor": 545.76,
+            "data_prevista": "2026-04-20",
+            "term": "PM",
+            "comissao_gerada": 191.02,
+            "fator": 0.350002,
+            "pct": 7
+          },
+          {
+            "inst": 58,
+            "valor": 545.76,
+            "data_prevista": "2026-05-20",
+            "term": "PM",
+            "comissao_gerada": 191.02,
+            "fator": 0.350002,
+            "pct": 7
+          },
+          {
+            "inst": 59,
+            "valor": 545.76,
+            "data_prevista": "2026-06-20",
+            "term": "PM",
+            "comissao_gerada": 191.02,
+            "fator": 0.350002,
+            "pct": 7
+          },
+          {
+            "inst": 60,
+            "valor": 545.76,
+            "data_prevista": "2026-07-20",
+            "term": "PM",
+            "comissao_gerada": 191.02,
+            "fator": 0.350002,
+            "pct": 7
+          },
+          {
+            "inst": 61,
+            "valor": 545.76,
+            "data_prevista": "2026-08-20",
+            "term": "PM",
+            "comissao_gerada": 191.02,
+            "fator": 0.350002,
+            "pct": 7
+          },
+          {
+            "inst": 62,
+            "valor": 545.76,
+            "data_prevista": "2026-09-20",
+            "term": "PM",
+            "comissao_gerada": 191.02,
+            "fator": 0.350002,
+            "pct": 7
+          }
+        ]
+      }
+    },
+    {
+      "bill": 418,
+      "contrato": "351",
+      "unidade": "506 A",
+      "venda_id": "cffb2c73-edb7-4127-8f74-18f382efbe78",
+      "data_aditivo": "2025-12-20",
+      "renegociadas": [
+        60,
+        8
+      ],
+      "geradas": [],
+      "reneg_existente": null,
+      "acoes": {
+        "cancelar_baixa_falsa": [
+          {
+            "id": "5887a33d-c977-4107-b8b6-53339883a39a",
+            "inst": 8,
+            "valor": 500,
+            "comissao": 232.34,
+            "data_pagamento": "2025-12-20"
+          }
+        ],
+        "cancelar_pendente": [],
+        "link_existente": [],
+        "ancorar_existente": [],
+        "inserir": []
+      }
+    },
+    {
+      "bill": 418,
+      "contrato": "351",
+      "unidade": "506 A",
+      "venda_id": "cffb2c73-edb7-4127-8f74-18f382efbe78",
+      "data_aditivo": "2026-03-26",
+      "renegociadas": [
+        11,
+        61,
+        62,
+        63,
+        64
+      ],
+      "geradas": [
+        67,
+        68,
+        69,
+        70
+      ],
+      "reneg_existente": null,
+      "acoes": {
+        "cancelar_baixa_falsa": [
+          {
+            "id": "a4a35645-39ec-47ea-a3b6-5747a4069b1c",
+            "inst": 11,
+            "valor": 1094.21,
+            "comissao": 382.97,
+            "data_pagamento": "2026-03-26"
+          }
+        ],
+        "cancelar_pendente": [],
+        "link_existente": [
+          {
+            "id": "8e034f80-f9c4-4ca5-ac67-cbd6da805603",
+            "inst": 68,
+            "nota": "já ancorada (status pago)"
+          }
+        ],
+        "ancorar_existente": [],
+        "inserir": [
+          {
+            "inst": 67,
+            "valor": 773.56,
+            "data_prevista": "2026-04-10",
+            "term": "PM",
+            "comissao_gerada": 270.75,
+            "fator": 0.35,
+            "pct": 7
+          },
+          {
+            "inst": 69,
+            "valor": 773.55,
+            "data_prevista": "2026-06-10",
+            "term": "PM",
+            "comissao_gerada": 270.74,
+            "fator": 0.35,
+            "pct": 7
+          },
+          {
+            "inst": 70,
+            "valor": 773.55,
+            "data_prevista": "2026-07-10",
+            "term": "PM",
+            "comissao_gerada": 270.74,
+            "fator": 0.35,
+            "pct": 7
+          }
+        ]
+      }
+    },
+    {
+      "bill": 483,
+      "contrato": "411",
+      "unidade": "603 B",
+      "venda_id": "c3650d6d-f1e8-4afe-ad0f-f8ee30c19a16",
+      "data_aditivo": "2026-05-25",
+      "renegociadas": [
+        3,
+        4
+      ],
+      "geradas": [
+        58,
+        59,
+        60,
+        61,
+        62,
+        63,
+        64,
+        65,
+        66,
+        67,
+        68,
+        69,
+        70,
+        71,
+        72,
+        73,
+        74,
+        75,
+        76,
+        77,
+        78,
+        79,
+        80,
+        81,
+        82
+      ],
+      "reneg_existente": null,
+      "acoes": {
+        "cancelar_baixa_falsa": [
+          {
+            "id": "8fc88385-e944-4084-891c-117356a3e7cb",
+            "inst": 3,
+            "valor": 2967.39,
+            "comissao": 452.11,
+            "data_pagamento": "2026-05-25"
+          }
+        ],
+        "cancelar_pendente": [
+          {
+            "id": "88fe3dbe-3a29-48bb-8899-a1e54a5f9887",
+            "inst": 4,
+            "valor": 2967.39
+          }
+        ],
+        "link_existente": [],
+        "ancorar_existente": [],
+        "inserir": [
+          {
+            "inst": 58,
+            "valor": 237.42,
+            "data_prevista": "2027-01-20",
+            "term": "PM",
+            "comissao_gerada": 36.17,
+            "fator": 0.152358,
+            "pct": 7
+          },
+          {
+            "inst": 59,
+            "valor": 237.39,
+            "data_prevista": "2027-02-20",
+            "term": "PM",
+            "comissao_gerada": 36.17,
+            "fator": 0.152358,
+            "pct": 7
+          },
+          {
+            "inst": 60,
+            "valor": 237.39,
+            "data_prevista": "2027-03-20",
+            "term": "PM",
+            "comissao_gerada": 36.17,
+            "fator": 0.152358,
+            "pct": 7
+          },
+          {
+            "inst": 61,
+            "valor": 237.39,
+            "data_prevista": "2027-04-20",
+            "term": "PM",
+            "comissao_gerada": 36.17,
+            "fator": 0.152358,
+            "pct": 7
+          },
+          {
+            "inst": 62,
+            "valor": 237.39,
+            "data_prevista": "2027-05-20",
+            "term": "PM",
+            "comissao_gerada": 36.17,
+            "fator": 0.152358,
+            "pct": 7
+          },
+          {
+            "inst": 63,
+            "valor": 237.39,
+            "data_prevista": "2027-06-20",
+            "term": "PM",
+            "comissao_gerada": 36.17,
+            "fator": 0.152358,
+            "pct": 7
+          },
+          {
+            "inst": 64,
+            "valor": 237.39,
+            "data_prevista": "2027-07-20",
+            "term": "PM",
+            "comissao_gerada": 36.17,
+            "fator": 0.152358,
+            "pct": 7
+          },
+          {
+            "inst": 65,
+            "valor": 237.39,
+            "data_prevista": "2027-08-20",
+            "term": "PM",
+            "comissao_gerada": 36.17,
+            "fator": 0.152358,
+            "pct": 7
+          },
+          {
+            "inst": 66,
+            "valor": 237.39,
+            "data_prevista": "2027-09-20",
+            "term": "PM",
+            "comissao_gerada": 36.17,
+            "fator": 0.152358,
+            "pct": 7
+          },
+          {
+            "inst": 67,
+            "valor": 237.39,
+            "data_prevista": "2027-10-20",
+            "term": "PM",
+            "comissao_gerada": 36.17,
+            "fator": 0.152358,
+            "pct": 7
+          },
+          {
+            "inst": 68,
+            "valor": 237.39,
+            "data_prevista": "2027-11-20",
+            "term": "PM",
+            "comissao_gerada": 36.17,
+            "fator": 0.152358,
+            "pct": 7
+          },
+          {
+            "inst": 69,
+            "valor": 237.39,
+            "data_prevista": "2027-12-20",
+            "term": "PM",
+            "comissao_gerada": 36.17,
+            "fator": 0.152358,
+            "pct": 7
+          },
+          {
+            "inst": 70,
+            "valor": 237.39,
+            "data_prevista": "2028-01-20",
+            "term": "PM",
+            "comissao_gerada": 36.17,
+            "fator": 0.152358,
+            "pct": 7
+          },
+          {
+            "inst": 71,
+            "valor": 237.39,
+            "data_prevista": "2028-02-20",
+            "term": "PM",
+            "comissao_gerada": 36.17,
+            "fator": 0.152358,
+            "pct": 7
+          },
+          {
+            "inst": 72,
+            "valor": 237.39,
+            "data_prevista": "2028-03-20",
+            "term": "PM",
+            "comissao_gerada": 36.17,
+            "fator": 0.152358,
+            "pct": 7
+          },
+          {
+            "inst": 73,
+            "valor": 237.39,
+            "data_prevista": "2028-04-20",
+            "term": "PM",
+            "comissao_gerada": 36.17,
+            "fator": 0.152358,
+            "pct": 7
+          },
+          {
+            "inst": 74,
+            "valor": 237.39,
+            "data_prevista": "2028-05-20",
+            "term": "PM",
+            "comissao_gerada": 36.17,
+            "fator": 0.152358,
+            "pct": 7
+          },
+          {
+            "inst": 75,
+            "valor": 237.39,
+            "data_prevista": "2028-06-20",
+            "term": "PM",
+            "comissao_gerada": 36.17,
+            "fator": 0.152358,
+            "pct": 7
+          },
+          {
+            "inst": 76,
+            "valor": 237.39,
+            "data_prevista": "2028-07-20",
+            "term": "PM",
+            "comissao_gerada": 36.17,
+            "fator": 0.152358,
+            "pct": 7
+          },
+          {
+            "inst": 77,
+            "valor": 237.39,
+            "data_prevista": "2028-08-20",
+            "term": "PM",
+            "comissao_gerada": 36.17,
+            "fator": 0.152358,
+            "pct": 7
+          },
+          {
+            "inst": 78,
+            "valor": 237.39,
+            "data_prevista": "2028-09-20",
+            "term": "PM",
+            "comissao_gerada": 36.17,
+            "fator": 0.152358,
+            "pct": 7
+          },
+          {
+            "inst": 79,
+            "valor": 237.39,
+            "data_prevista": "2028-10-20",
+            "term": "PM",
+            "comissao_gerada": 36.17,
+            "fator": 0.152358,
+            "pct": 7
+          },
+          {
+            "inst": 80,
+            "valor": 237.39,
+            "data_prevista": "2028-11-20",
+            "term": "PM",
+            "comissao_gerada": 36.17,
+            "fator": 0.152358,
+            "pct": 7
+          },
+          {
+            "inst": 81,
+            "valor": 237.39,
+            "data_prevista": "2028-12-20",
+            "term": "PM",
+            "comissao_gerada": 36.17,
+            "fator": 0.152358,
+            "pct": 7
+          },
+          {
+            "inst": 82,
+            "valor": 237.39,
+            "data_prevista": "2029-01-20",
+            "term": "PM",
+            "comissao_gerada": 36.17,
+            "fator": 0.152358,
+            "pct": 7
+          }
+        ]
+      }
+    }
+  ],
+  "flags": [
+    {
+      "bill": 180,
+      "contrato": "228",
+      "ev": "2026-04-28",
+      "tipo": "renegociada_sem_row",
+      "inst": 3,
+      "nota": "sem linha no banco (ex. grade de aditivo anterior não materializada) — nada a cancelar"
+    },
+    {
+      "bill": 180,
+      "contrato": "228",
+      "ev": "2026-04-28",
+      "tipo": "renegociada_sem_row",
+      "inst": 4,
+      "nota": "sem linha no banco (ex. grade de aditivo anterior não materializada) — nada a cancelar"
+    },
+    {
+      "bill": 180,
+      "contrato": "228",
+      "ev": "2026-04-28",
+      "tipo": "renegociada_sem_row",
+      "inst": 5,
+      "nota": "sem linha no banco (ex. grade de aditivo anterior não materializada) — nada a cancelar"
+    },
+    {
+      "bill": 180,
+      "contrato": "228",
+      "ev": "2026-04-28",
+      "tipo": "renegociada_sem_row",
+      "inst": 6,
+      "nota": "sem linha no banco (ex. grade de aditivo anterior não materializada) — nada a cancelar"
+    },
+    {
+      "bill": 180,
+      "contrato": "228",
+      "ev": "2026-04-28",
+      "tipo": "renegociada_sem_row",
+      "inst": 7,
+      "nota": "sem linha no banco (ex. grade de aditivo anterior não materializada) — nada a cancelar"
+    },
+    {
+      "bill": 180,
+      "contrato": "228",
+      "ev": "2026-04-28",
+      "tipo": "renegociada_sem_row",
+      "inst": 8,
+      "nota": "sem linha no banco (ex. grade de aditivo anterior não materializada) — nada a cancelar"
+    },
+    {
+      "bill": 418,
+      "contrato": "351",
+      "ev": "2025-12-20",
+      "tipo": "renegociada_sem_row",
+      "inst": 60,
+      "nota": "sem linha no banco (ex. grade de aditivo anterior não materializada) — nada a cancelar"
+    },
+    {
+      "bill": 418,
+      "contrato": "351",
+      "ev": "2026-03-26",
+      "tipo": "renegociada_paga_antes",
+      "inst": 61,
+      "nota": "paga 2025-12-20 ANTES do aditivo 2026-03-26 — preservada, conferir"
+    },
+    {
+      "bill": 418,
+      "contrato": "351",
+      "ev": "2026-03-26",
+      "tipo": "renegociada_ambigua",
+      "inst": 62,
+      "n": 3,
+      "nota": "múltiplas linhas casam — rodada-b"
+    },
+    {
+      "bill": 418,
+      "contrato": "351",
+      "ev": "2026-03-26",
+      "tipo": "renegociada_ambigua",
+      "inst": 63,
+      "n": 3,
+      "nota": "múltiplas linhas casam — rodada-b"
+    },
+    {
+      "bill": 418,
+      "contrato": "351",
+      "ev": "2026-03-26",
+      "tipo": "renegociada_ambigua",
+      "inst": 64,
+      "n": 3,
+      "nota": "múltiplas linhas casam — rodada-b"
+    }
+  ],
+  "errors": []
+}

@@ -1,0 +1,16 @@
+{
+  "meta": {
+    "geradoEm": "2026-06-08T18:31:55.165Z",
+    "mes": "2026-05",
+    "spec_ref": ".claude/rules/sincronizacao-sienge.md",
+    "modo": "read-only"
+  },
+  "resumo": {
+    "sync_lag": 0,
+    "banco_a_mais": 0,
+    "income_linhas": 17567,
+    "vendas": 270
+  },
+  "sync_lag": [],
+  "banco_a_mais": []
+}
