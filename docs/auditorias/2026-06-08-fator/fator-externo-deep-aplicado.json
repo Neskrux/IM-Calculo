@@ -1,0 +1,35 @@
+{
+  "meta": {
+    "geradoEm": "2026-06-08",
+    "spec_ref": ".claude/rules/fator-comissao.md",
+    "origem": "controladoria flagou 3 casos; verificacao confirmou o caso do fator",
+    "script": "execute_sql direto (MCP) — exceção auditada migration 026",
+    "modo": "apply",
+    "regua": "fator_comissao_aplicado da parcela paga != fator_comissao da venda (canonico = valor x 7% / pro_soluto)",
+    "nota": "3a regra de fator-correto (mais profunda): passa em % e identidade, falha em fator_parcela==fator_venda. Foi o residuo que as duas reguas anteriores (06-03 identidade, 06-08 percentual) nao pegaram."
+  },
+  "counts": {
+    "matched": 31,
+    "updated": 31,
+    "vendas_afetadas": 4,
+    "errors": 0,
+    "skipped_humano": 3
+  },
+  "totais": {
+    "delta_liquido": 585.42,
+    "obs": "positivo = comissao subindo (corretor estava sub-pago)"
+  },
+  "vendas": [
+    { "contrato": "254", "unidade": "1404 C", "corretor": "GABRIEL LUZ IMOVEIS LTDA", "parcelas": 11, "fator_antes": 0.350001, "fator_depois": 0.385000, "delta": 466.29, "causa": "fator da venda corrigido p/ 0,385; 11 pagas travadas em 0,35 pela imutabilidade; np12 (maio) ja estava correta" },
+    { "contrato": "8", "unidade": "404 A", "corretor": "MATHEUS DE S. PIRES", "parcelas": 5, "fator_antes": 0.325465, "fator_depois": 0.350499, "delta": 127.25, "causa": "np2-6 gravadas no nivel 6,5% (interno) numa venda EXTERNA; np1+sinal ja a 7%" },
+    { "contrato": "314", "unidade": "408 A", "corretor": "FRANCISCO ASSIS NECKEL", "parcelas": 11, "fator_antes": 0.350000, "fator_depois": 0.351400, "delta": 11.88, "causa": "desvio fino de fator (0,35 vs 0,3514 canonico)" },
+    { "contrato": "319", "unidade": "510 B", "corretor": "RODOLFO GABRIEL", "parcelas": 4, "fator_antes": 0.406594, "fator_depois": 0.404923, "delta": -20.00, "causa": "desvio fino p/ cima (0,4066 vs 0,4049 canonico) — leve sobre-pagamento corrigido" }
+  ],
+  "humano_pendente": [
+    { "contrato": "351", "unidade": "506 A", "corretor": "CARLOS BRUNO", "motivo": "fator misto (0,35 correto + 0,4647 errado em 3 parcelas, +R$203,56) MAS tambem tem np2 duplicado e cronograma bagunçado (venda de aditivo com inserts manuais de maio). Nao e fix de fator isolado — precisa reconciliar a grade inteira contra o income. Rota: rodada-b.", "delta_fator_isolado": 203.56 }
+  ],
+  "invariantes_pos": {
+    "identidade_quebrada_pagas": 0,
+    "fator_deep_residuo": "apenas 506 A (held)"
+  }
+}
