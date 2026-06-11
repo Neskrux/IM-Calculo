@@ -33,7 +33,16 @@ Hipóteses a confirmar depois (sem mexer agora):
 - (b) Total inclui parcelas `cancelado` que não entram em Pendente nem Paga;
 - (c) diferença de fonte/cálculo entre os três cards.
 
-**Status:** 🔴 a investigar (não mexer agora)
+**Causa-raiz descoberta (auditoria 2026-06-11) — hipótese (d), nova:** `fetchMeusPagamentos` buscava
+`pagamentos_prosoluto` **sem paginação** e o PostgREST corta em **1000 linhas silenciosamente**.
+A conta de teste (Carlos Bruno) tem **2.559 parcelas** → todos os cards somavam só as primeiras 1000
+(~39% da carteira). 4 corretores afetados em produção (MATHEUS 2.930, CARLOS 2.559, Corazza 1.812,
+Madona 1.114). **Fix aplicado** no mesmo dia: paginação via `fetchAllPaginated`
+(ver `.claude/rules/leitura-de-listas-e-refetch.md`). A conexão com o Ponto 3 (vendas que não expandem)
+é compatível: as parcelas das vendas fora das primeiras 1000 linhas simplesmente não existiam no estado.
+
+**Status:** 🟡 fix do cap-1000 aplicado — **re-validar** os 3 cards com o Carlos depois do deploy;
+se ainda houver diferença residual entre Total e Pendente+Paga, aí sim é semântica de filtro (a/b/c).
 
 ---
 
