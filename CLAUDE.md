@@ -17,6 +17,7 @@ Regras de negócio críticas que **SEMPRE** devem ser respeitadas ao alterar có
 ## Regras de visualização e processo (carregadas automaticamente)
 
 @.claude/rules/visualizacao-totais.md
+@.claude/rules/leitura-de-listas-e-refetch.md
 @.claude/rules/rodadas-b.md
 
 ---

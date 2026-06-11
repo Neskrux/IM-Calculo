@@ -3,6 +3,7 @@ import { safeGet, safeSet } from '../utils/storage'
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { supabase } from '../lib/supabase'
+import { fetchAllPaginated } from '../utils/supabaseQuery'
 import { 
   DollarSign, TrendingUp, LogOut, 
   Calendar, User, CheckCircle, Clock, 
@@ -239,13 +240,17 @@ const CorretorDashboard = () => {
         return
       }
 
-      const { data, error } = await supabase
-        .from('pagamentos_prosoluto')
-        .select('*')
-        .in('venda_id', vendaIds)
-        .order('data_prevista', { ascending: true })
-
-      if (error) throw error
+      // Paginado: PostgREST corta em 1000 linhas silenciosamente e corretores
+      // grandes passam de 2.900 parcelas (ver .claude/rules/leitura-de-listas-e-refetch.md)
+      const data = await fetchAllPaginated((from, to) =>
+        supabase
+          .from('pagamentos_prosoluto')
+          .select('*')
+          .in('venda_id', vendaIds)
+          .order('data_prevista', { ascending: true })
+          .order('id', { ascending: true })
+          .range(from, to)
+      )
 
       // Associar nome do cliente e empreendimento a cada pagamento
       const pagamentosEnriquecidos = (data || []).map(pag => {
@@ -465,12 +470,15 @@ const CorretorDashboard = () => {
   // Função para buscar todos os clientes (para o select de nova venda)
   const fetchTodosClientes = async () => {
     try {
-      const { data, error } = await supabase
-        .from('clientes')
-        .select('id, nome_completo, cpf')
-        .order('nome_completo')
-      
-      if (error) throw error
+      // Paginado: tabela inteira sem filtro cresce com a base (cap-1000 do PostgREST)
+      const data = await fetchAllPaginated((from, to) =>
+        supabase
+          .from('clientes')
+          .select('id, nome_completo, cpf')
+          .order('nome_completo')
+          .order('id', { ascending: true })
+          .range(from, to)
+      )
       setTodosClientes(data || [])
     } catch (error) {
       console.error('Erro ao buscar clientes:', error)
