@@ -47,3 +47,4 @@ jobs:
           name: sienge-cache
           path: .sienge-cache
           retention-days: 2
+          include-hidden-files: true # .sienge-cache é dir oculto — sem isso o v4 não acha nada

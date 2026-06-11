@@ -189,6 +189,7 @@ jobs:
           name: sienge-cache-${{ github.run_id }}
           path: .sienge-cache
           retention-days: 3
+          include-hidden-files: true # .sienge-cache é dir oculto — sem isso o v4 não acha nada
 
       # Falha ruidosa: se houver erros em qualquer report, marca o job como
       # failed pra disparar email do GitHub Actions.
