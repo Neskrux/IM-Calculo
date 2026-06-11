@@ -1001,6 +1001,8 @@ const AdminDashboard = () => {
   const [abaVisualizarVenda, setAbaVisualizarVenda] = useState('detalhes')
   const [pagamentosVisualizacao, setPagamentosVisualizacao] = useState([])
   const [visaoParcelas, setVisaoParcelas] = useState('contrato')
+  // Distratos são visão segregada (spec 2026-06-11): nunca misturam na lista padrão
+  const [mostrarDistratos, setMostrarDistratos] = useState(false)
 
   // Estados para solicitações
   const [solicitacoes, setSolicitacoes] = useState([])
@@ -5551,7 +5553,12 @@ const AdminDashboard = () => {
     .filter(grupo => {
       // Agora filtrar os grupos que não têm pagamentos após o filtro de data
       if (grupo.pagamentos.length === 0) return false
-      
+
+      // Distrato é visão segregada: só aparece com o botão "Distratos" ativo,
+      // e a lista padrão nunca mistura distratadas (spec 2026-06-11)
+      const ehDistrato = grupo.venda?.status === 'distrato'
+      if (mostrarDistratos ? !ehDistrato : ehDistrato) return false
+
       // Filtro por corretor
       const matchCorretor = !filtrosPagamentos.corretor || grupo.venda?.corretor_id === filtrosPagamentos.corretor
       
@@ -7551,8 +7558,26 @@ const AdminDashboard = () => {
                   </div>
                 </div>
 
-                {/* Toggle Visão: Contrato / Calendário */}
+                {/* Toggle Visão: Distratos / Contrato / Calendário */}
                 <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '12px', gap: '4px' }}>
+                  <button
+                    onClick={() => setMostrarDistratos(v => !v)}
+                    title="Vendas distratadas ficam fora da lista padrão; este botão mostra SÓ elas"
+                    style={{
+                      padding: '5px 14px',
+                      fontSize: '12px',
+                      borderRadius: '6px',
+                      cursor: 'pointer',
+                      border: mostrarDistratos ? '1px solid #dc2626' : '1px solid rgba(255,255,255,0.15)',
+                      background: mostrarDistratos ? 'rgba(220, 38, 38, 0.85)' : 'transparent',
+                      color: mostrarDistratos ? '#fff' : 'rgba(255,255,255,0.7)',
+                      fontWeight: mostrarDistratos ? 600 : 400,
+                      transition: 'all 0.2s'
+                    }}
+                  >
+                    <XCircle size={12} style={{ marginRight: '4px', verticalAlign: 'middle' }} />
+                    Distratos
+                  </button>
                   <button
                     onClick={() => setVisaoParcelas('contrato')}
                     style={{
@@ -7608,6 +7633,12 @@ const AdminDashboard = () => {
                           <div className="venda-titulo">
                             <Building size={18} />
                             <strong>{grupo.venda?.empreendimento?.nome || 'Empreendimento'}</strong>
+                            {grupo.venda?.status === 'distrato' && (
+                              <span className="status-badge distrato" style={{ marginLeft: '8px' }}>
+                                <XCircle size={12} style={{ marginRight: '4px', verticalAlign: 'middle' }} />
+                                DISTRATO{grupo.venda?.data_distrato ? ` • ${formatDataBR(grupo.venda.data_distrato)}` : ''}
+                              </span>
+                            )}
                           </div>
                           <div className="venda-subtitulo">
                             <User size={14} />
@@ -7743,6 +7774,11 @@ const AdminDashboard = () => {
                                         Reverter
                                       </button>
                                     </>
+                                  )}
+                                  {pag.renegociacao_id && (
+                                    <span className="pill-aditivo" title="Parcela de grade renegociada por aditivo (reparcelamento)">
+                                      Aditivo
+                                    </span>
                                   )}
                                 </div>
                               </div>

@@ -961,9 +961,17 @@ const CorretorDashboard = () => {
         return false
       }
     }
-    // Filtro por status
-    if (filtrosVendas.status !== 'todos' && venda.status !== filtrosVendas.status) {
-      return false
+    // Distrato é visão segregada (spec 2026-06-11): a lista padrão NUNCA mistura
+    // distratadas; o filtro Status="Distratos" mostra SÓ elas
+    const ehDistrato = venda.status === 'distrato'
+    if (filtrosVendas.status === 'distrato') {
+      if (!ehDistrato) return false
+    } else {
+      if (ehDistrato) return false
+      // Filtro por status (demais)
+      if (filtrosVendas.status !== 'todos' && venda.status !== filtrosVendas.status) {
+        return false
+      }
     }
     // Filtro por empreendimento
     if (filtrosVendas.empreendimento && venda.empreendimento_nome !== filtrosVendas.empreendimento) {
@@ -1988,13 +1996,14 @@ const CorretorDashboard = () => {
                   <div className="filter-item">
                     <label className="filter-label">Status</label>
                     <select 
-                      value={filtrosVendas.status} 
+                      value={filtrosVendas.status}
                       onChange={(e) => setFiltrosVendas({...filtrosVendas, status: e.target.value})}
                       className="filter-select"
                     >
                       <option value="todos">Todos</option>
                       <option value="pendente">Pendente</option>
                       <option value="pago">Pago</option>
+                      <option value="distrato">Distratos</option>
                     </select>
                   </div>
                   
@@ -2112,11 +2121,15 @@ const CorretorDashboard = () => {
                           .filter(p => p.status === 'pago')
                           .reduce((acc, pag) => acc + calcularComissaoPagamento(pag), 0)
                         
-                        // Status baseado nos pagamentos
+                        // Status baseado nos pagamentos; distrato sobrepõe (decisão de negócio:
+                        // venda distratada aparece em vermelho, não some — comissão paga é mantida)
                         const percentPago = comissaoVenda > 0 ? (comissaoPagaVenda / comissaoVenda) * 100 : 0
                         let statusClass = 'pendente'
                         let statusLabel = 'Pendente'
-                        if (percentPago >= 100) {
+                        if (venda.status === 'distrato') {
+                          statusClass = 'distrato'
+                          statusLabel = venda.data_distrato ? `Distrato • ${formatDataBR(venda.data_distrato)}` : 'Distrato'
+                        } else if (percentPago >= 100) {
                           statusClass = 'pago'
                           statusLabel = 'Pago'
                         } else if (percentPago > 0) {
@@ -2181,6 +2194,11 @@ const CorretorDashboard = () => {
                         {statusClass === 'pago' ? (
                           <>
                             <CheckCircle size={12} />
+                            {statusLabel}
+                          </>
+                        ) : statusClass === 'distrato' ? (
+                          <>
+                            <XCircle size={12} />
                             {statusLabel}
                           </>
                         ) : statusClass === 'parcial' ? (
@@ -2289,6 +2307,11 @@ const CorretorDashboard = () => {
                                               <span className={`status-pill ${pagamento.status}`}>
                                                 {pagamento.status === 'pago' ? 'Pago' : pagamento.status === 'cancelado' ? 'Cancelado' : 'Pendente'}
                                               </span>
+                                              {pagamento.renegociacao_id && (
+                                                <span className="pill-aditivo" title="Parcela de grade renegociada por aditivo (reparcelamento)">
+                                                  Aditivo
+                                                </span>
+                                              )}
                                             </div>
                                           </div>
                                         )
@@ -2356,6 +2379,11 @@ const CorretorDashboard = () => {
                                                     <span className={`status-pill ${pagamento.status}`}>
                                                       {pagamento.status === 'pago' ? 'Pago' : pagamento.status === 'cancelado' ? 'Cancelado' : 'Pendente'}
                                                     </span>
+                                                    {pagamento.renegociacao_id && (
+                                                      <span className="pill-aditivo" title="Parcela de grade renegociada por aditivo (reparcelamento)">
+                                                        Aditivo
+                                                      </span>
+                                                    )}
                                                   </div>
                                                 </div>
                                               )
@@ -2668,6 +2696,11 @@ const CorretorDashboard = () => {
                                             <span className={`status-pill ${pag.status}`}>
                                               {pag.status === 'pago' ? 'Pago' : pag.status === 'cancelado' ? 'Cancelado' : 'Pendente'}
                                             </span>
+                                            {pag.renegociacao_id && (
+                                              <span className="pill-aditivo" title="Parcela de grade renegociada por aditivo (reparcelamento)">
+                                                Aditivo
+                                              </span>
+                                            )}
                                           </div>
                                         </div>
                                       </div>
