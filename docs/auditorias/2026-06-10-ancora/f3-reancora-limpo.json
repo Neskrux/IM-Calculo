@@ -1,6 +1,6 @@
 {
   "meta": {
-    "geradoEm": "2026-06-10T20:38:55.663Z",
+    "geradoEm": "2026-06-11T13:51:59.472Z",
     "spec_ref": ".claude/rules/sincronizacao-sienge.md",
     "doc_ref": "docs/contexto/2026-06-10-north-star-3-ancora-correta.md (F3)",
     "script": "scripts/f3-reancora-limpo.mjs",
@@ -8,15 +8,15 @@
     "regra": "match valor EXATO + data EXATA no mesmo bill (segmento limpo = installment unico)"
   },
   "counts": {
-    "achados": 79,
+    "achados": 43,
     "re_ancoravel": 0,
-    "ambiguo": 16,
-    "over_pay_real": 63
+    "ambiguo": 13,
+    "over_pay_real": 30
   },
   "comissao": {
     "re_ancoravel": 0,
-    "ambiguo": 16069.29,
-    "over_pay_real": 33583.72
+    "ambiguo": 15654.48,
+    "over_pay_real": 20252.42
   },
   "re_ancoravel": [],
   "over_pay_real": [
@@ -85,22 +85,6 @@
       "veredito": "nenhum installment do bill bate valor+data -> Excluir Baixa"
     },
     {
-      "contrato": "424",
-      "unidade": "1702 C",
-      "cliente": "VALDEMIR DA SILVA",
-      "np": 3,
-      "tipo": "parcela_entrada",
-      "valor": 1721.16,
-      "comissao_gerada": 602.41,
-      "data_pagamento_local": "2026-06-08",
-      "bill": 497,
-      "inst": "4",
-      "parcela_id": "93fb10a2-eca2-4a44-af3c-32fda3c7132f",
-      "motivo": "installment ancorado NAO pago no Sienge",
-      "origem": "nao_pago",
-      "veredito": "nenhum installment do bill bate valor+data -> Excluir Baixa"
-    },
-    {
       "contrato": "385",
       "unidade": "906 A",
       "cliente": "THIAGO DOS SANTOS CARVALHO BORGES",
@@ -144,22 +128,6 @@
       "bill": 268,
       "inst": "18",
       "parcela_id": "7c2d0087-ff0e-470d-84b2-208bc1b4a65c",
-      "motivo": "installment ancorado NAO pago no Sienge",
-      "origem": "nao_pago",
-      "veredito": "nenhum installment do bill bate valor+data -> Excluir Baixa"
-    },
-    {
-      "contrato": "405",
-      "unidade": "1103 A",
-      "cliente": "JEFERSON FURTADO DE SOUSA STALL",
-      "np": 5,
-      "tipo": "parcela_entrada",
-      "valor": 1577.4,
-      "comissao_gerada": 552.09,
-      "data_pagamento_local": "2026-06-09",
-      "bill": 476,
-      "inst": "6",
-      "parcela_id": "9a40efde-6418-474e-9fcd-a9a41404355b",
       "motivo": "installment ancorado NAO pago no Sienge",
       "origem": "nao_pago",
       "veredito": "nenhum installment do bill bate valor+data -> Excluir Baixa"
@@ -213,38 +181,6 @@
       "veredito": "nenhum installment do bill bate valor+data -> Excluir Baixa"
     },
     {
-      "contrato": "429",
-      "unidade": "803 B",
-      "cliente": "Miguel Firmo Evaristo",
-      "np": 3,
-      "tipo": "parcela_entrada",
-      "valor": 1573.39,
-      "comissao_gerada": 551.17,
-      "data_pagamento_local": "2026-06-08",
-      "bill": 501,
-      "inst": "4",
-      "parcela_id": "1975984b-7037-4f27-b6c3-c19857616c56",
-      "motivo": "installment ancorado NAO pago no Sienge",
-      "origem": "nao_pago",
-      "veredito": "nenhum installment do bill bate valor+data -> Excluir Baixa"
-    },
-    {
-      "contrato": "410",
-      "unidade": "609 A",
-      "cliente": "JADER DA SILVA MENEZES",
-      "np": 5,
-      "tipo": "parcela_entrada",
-      "valor": 1507.6,
-      "comissao_gerada": 527.66,
-      "data_pagamento_local": "2026-06-05",
-      "bill": 482,
-      "inst": "6",
-      "parcela_id": "fb5c473e-2484-451f-81cd-ad578bf96931",
-      "motivo": "installment ancorado NAO pago no Sienge",
-      "origem": "nao_pago",
-      "veredito": "nenhum installment do bill bate valor+data -> Excluir Baixa"
-    },
-    {
       "contrato": "204",
       "unidade": "1204 B",
       "cliente": "SARA JANE DE OLIVEIRA BARBOSA",
@@ -293,38 +229,6 @@
       "veredito": "nenhum installment do bill bate valor+data -> Excluir Baixa"
     },
     {
-      "contrato": "203",
-      "unidade": "1104 B",
-      "cliente": "MAURÍCIO CEREJO DOS SANTOS ",
-      "np": 12,
-      "tipo": "parcela_entrada",
-      "valor": 1446.64,
-      "comissao_gerada": 497.89,
-      "data_pagamento_local": "2026-06-05",
-      "bill": 304,
-      "inst": "12",
-      "parcela_id": "812f3025-8a80-4d38-a171-faa346f9f652",
-      "motivo": "installment ancorado NAO pago no Sienge",
-      "origem": "nao_pago",
-      "veredito": "nenhum installment do bill bate valor+data -> Excluir Baixa"
-    },
-    {
-      "contrato": "227",
-      "unidade": "902 C",
-      "cliente": "THEO LOPES DOMINGOS",
-      "np": 11,
-      "tipo": "parcela_entrada",
-      "valor": 3200.06,
-      "comissao_gerada": 495.49,
-      "data_pagamento_local": "2026-06-05",
-      "bill": 287,
-      "inst": "11",
-      "parcela_id": "b7d227c4-e98c-4288-9980-142f994cd269",
-      "motivo": "installment ancorado NAO pago no Sienge",
-      "origem": "nao_pago",
-      "veredito": "nenhum installment do bill bate valor+data -> Excluir Baixa"
-    },
-    {
       "contrato": "87",
       "unidade": "908 A",
       "cliente": "LEANDRO DE OLIVEIRA VICENTIN ",
@@ -357,102 +261,6 @@
       "veredito": "nenhum installment do bill bate valor+data -> Excluir Baixa"
     },
     {
-      "contrato": "187",
-      "unidade": "810 B",
-      "cliente": "ROZANA DE FÁTIMA CORREA",
-      "np": 12,
-      "tipo": "parcela_entrada",
-      "valor": 1185.08,
-      "comissao_gerada": 463.78,
-      "data_pagamento_local": "2026-06-08",
-      "bill": 140,
-      "inst": "12",
-      "parcela_id": "48dadc76-19e6-4b4d-a6ef-f0058cd4cd64",
-      "motivo": "installment ancorado NAO pago no Sienge",
-      "origem": "nao_pago",
-      "veredito": "nenhum installment do bill bate valor+data -> Excluir Baixa"
-    },
-    {
-      "contrato": "222",
-      "unidade": "803 C",
-      "cliente": "DIEGO FRANCISCO PEREIRA",
-      "np": 12,
-      "tipo": "parcela_entrada",
-      "valor": 6625.4,
-      "comissao_gerada": 463.78,
-      "data_pagamento_local": "2026-06-08",
-      "bill": 139,
-      "inst": "12",
-      "parcela_id": "aef30575-d46d-419b-b088-a9e34e82f873",
-      "motivo": "installment ancorado NAO pago no Sienge",
-      "origem": "nao_pago",
-      "veredito": "nenhum installment do bill bate valor+data -> Excluir Baixa"
-    },
-    {
-      "contrato": "283",
-      "unidade": "907 D",
-      "cliente": "RENATA CIBELI GIRARDI",
-      "np": 13,
-      "tipo": "parcela_entrada",
-      "valor": 1303.31,
-      "comissao_gerada": 456.16,
-      "data_pagamento_local": "2026-06-08",
-      "bill": 220,
-      "inst": "13",
-      "parcela_id": "84809780-969a-400b-b587-0df4ee7476ff",
-      "motivo": "installment ancorado NAO pago no Sienge",
-      "origem": "nao_pago",
-      "veredito": "nenhum installment do bill bate valor+data -> Excluir Baixa"
-    },
-    {
-      "contrato": "75",
-      "unidade": "902 A",
-      "cliente": "RICARDO JOSÉ GIRARD",
-      "np": 7,
-      "tipo": "parcela_entrada",
-      "valor": 1303.31,
-      "comissao_gerada": 456.16,
-      "data_pagamento_local": "2026-06-01",
-      "bill": 11,
-      "inst": "7",
-      "parcela_id": "7ac0083d-1c7d-4a35-974e-1d80d84ff6f4",
-      "motivo": "installment ancorado NAO pago no Sienge",
-      "origem": "nao_pago",
-      "veredito": "nenhum installment do bill bate valor+data -> Excluir Baixa"
-    },
-    {
-      "contrato": "349",
-      "unidade": "610 B",
-      "cliente": "CAMILI ALBANAZ DA SILVA ",
-      "np": 12,
-      "tipo": "parcela_entrada",
-      "valor": 1282.02,
-      "comissao_gerada": 448.71,
-      "data_pagamento_local": "2026-06-09",
-      "bill": 413,
-      "inst": "13",
-      "parcela_id": "aa04ab2d-8c27-4b6f-931f-e9f34c01e151",
-      "motivo": "installment ancorado NAO pago no Sienge",
-      "origem": "nao_pago",
-      "veredito": "nenhum installment do bill bate valor+data -> Excluir Baixa"
-    },
-    {
-      "contrato": "270",
-      "unidade": "610 D",
-      "cliente": "MAKI UJIIE AIRES AUGUSTO PEREIRA NETO",
-      "np": 12,
-      "tipo": "parcela_entrada",
-      "valor": 1277.32,
-      "comissao_gerada": 447.06,
-      "data_pagamento_local": "2026-06-09",
-      "bill": 270,
-      "inst": "12",
-      "parcela_id": "80928628-9b46-463a-9243-e89ba40ea119",
-      "motivo": "installment ancorado NAO pago no Sienge",
-      "origem": "nao_pago",
-      "veredito": "nenhum installment do bill bate valor+data -> Excluir Baixa"
-    },
-    {
       "contrato": "27",
       "unidade": "604 A",
       "cliente": "TARCISIO LOCH JUNIOR",
@@ -469,22 +277,6 @@
       "veredito": "nenhum installment do bill bate valor+data -> Excluir Baixa"
     },
     {
-      "contrato": "156",
-      "unidade": "1408 A",
-      "cliente": "CAIO GORGULHO CAMPOS",
-      "np": 10,
-      "tipo": "parcela_entrada",
-      "valor": 1439.39,
-      "comissao_gerada": 440.03,
-      "data_pagamento_local": "2026-06-05",
-      "bill": 214,
-      "inst": "11",
-      "parcela_id": "2504eabf-8bbf-43fe-a6f1-496e678c60c1",
-      "motivo": "installment ancorado NAO pago no Sienge",
-      "origem": "nao_pago",
-      "veredito": "nenhum installment do bill bate valor+data -> Excluir Baixa"
-    },
-    {
       "contrato": "240",
       "unidade": "1107 C",
       "cliente": "RAFAEL FELIPE DOS PASSOS KOGLER",
@@ -496,54 +288,6 @@
       "bill": 200,
       "inst": "9",
       "parcela_id": "1cd0a507-59ae-4a2b-9fc8-6843efa03c48",
-      "motivo": "installment ancorado NAO pago no Sienge",
-      "origem": "nao_pago",
-      "veredito": "nenhum installment do bill bate valor+data -> Excluir Baixa"
-    },
-    {
-      "contrato": "243",
-      "unidade": "1206 C",
-      "cliente": "FRANCIELE RODIO ",
-      "np": 14,
-      "tipo": "parcela_entrada",
-      "valor": 1109.74,
-      "comissao_gerada": 427.25,
-      "data_pagamento_local": "2026-06-08",
-      "bill": 165,
-      "inst": "14",
-      "parcela_id": "2dc23158-33bd-4d77-81ab-01d00ffc3752",
-      "motivo": "installment ancorado NAO pago no Sienge",
-      "origem": "nao_pago",
-      "veredito": "nenhum installment do bill bate valor+data -> Excluir Baixa"
-    },
-    {
-      "contrato": "303",
-      "unidade": "1405 D",
-      "cliente": "VANDERLY MIRANDA FILHO",
-      "np": 14,
-      "tipo": "parcela_entrada",
-      "valor": 1211.23,
-      "comissao_gerada": 423.93,
-      "data_pagamento_local": "2026-06-01",
-      "bill": 275,
-      "inst": "14",
-      "parcela_id": "d07c5eb8-16a9-4489-8a0e-89abef26515f",
-      "motivo": "installment ancorado NAO pago no Sienge",
-      "origem": "nao_pago",
-      "veredito": "nenhum installment do bill bate valor+data -> Excluir Baixa"
-    },
-    {
-      "contrato": "244",
-      "unidade": "1207 C",
-      "cliente": "GUILHERME PEREIRA DO NASCIMENTO",
-      "np": 9,
-      "tipo": "parcela_entrada",
-      "valor": 1200,
-      "comissao_gerada": 420,
-      "data_pagamento_local": "2026-06-08",
-      "bill": 223,
-      "inst": "9",
-      "parcela_id": "3f984a23-5186-44d3-ae09-32900a7b68fe",
       "motivo": "installment ancorado NAO pago no Sienge",
       "origem": "nao_pago",
       "veredito": "nenhum installment do bill bate valor+data -> Excluir Baixa"
@@ -581,102 +325,6 @@
       "veredito": "nenhum installment do bill bate valor+data -> Excluir Baixa"
     },
     {
-      "contrato": "43",
-      "unidade": "610 A",
-      "cliente": "NAHELEM NAYARA SILVA BERNARDO",
-      "np": 13,
-      "tipo": "parcela_entrada",
-      "valor": 1161.18,
-      "comissao_gerada": 406.41,
-      "data_pagamento_local": "2026-06-03",
-      "bill": 19,
-      "inst": "13",
-      "parcela_id": "e89571ca-5d59-42f8-b23c-b079ad0cda37",
-      "motivo": "installment ancorado NAO pago no Sienge",
-      "origem": "nao_pago",
-      "veredito": "nenhum installment do bill bate valor+data -> Excluir Baixa"
-    },
-    {
-      "contrato": "13",
-      "unidade": "510 A",
-      "cliente": "ELOISA CANDIDO GARCIA ",
-      "np": 13,
-      "tipo": "parcela_entrada",
-      "valor": 1149.67,
-      "comissao_gerada": 402.38,
-      "data_pagamento_local": "2026-06-08",
-      "bill": 18,
-      "inst": "13",
-      "parcela_id": "e3a02b5d-c2d9-4930-9886-c2a02307c746",
-      "motivo": "installment ancorado NAO pago no Sienge",
-      "origem": "nao_pago",
-      "veredito": "nenhum installment do bill bate valor+data -> Excluir Baixa"
-    },
-    {
-      "contrato": "319",
-      "unidade": "510 B",
-      "cliente": "MATHEUS PETTER BRASIL",
-      "np": 13,
-      "tipo": "parcela_entrada",
-      "valor": 989.27,
-      "comissao_gerada": 400.58,
-      "data_pagamento_local": "2026-06-05",
-      "bill": 224,
-      "inst": "15",
-      "parcela_id": "43550b90-37d3-47db-850d-6ada196e55ff",
-      "motivo": "installment ancorado NAO pago no Sienge",
-      "origem": "nao_pago",
-      "veredito": "nenhum installment do bill bate valor+data -> Excluir Baixa"
-    },
-    {
-      "contrato": "126",
-      "unidade": "1202 D",
-      "cliente": "LARISSA KRUGER DA SILVA",
-      "np": 9,
-      "tipo": "parcela_entrada",
-      "valor": 1135,
-      "comissao_gerada": 397.43,
-      "data_pagamento_local": "2026-06-05",
-      "bill": 34,
-      "inst": "10",
-      "parcela_id": "400b3dd4-a58a-4cad-9034-8a0fb8285ac8",
-      "motivo": "installment ancorado NAO pago no Sienge",
-      "origem": "nao_pago",
-      "veredito": "nenhum installment do bill bate valor+data -> Excluir Baixa"
-    },
-    {
-      "contrato": "151",
-      "unidade": "1402 A",
-      "cliente": "SANDERSON CARLOS CARDOSO",
-      "np": 14,
-      "tipo": "parcela_entrada",
-      "valor": 1132.05,
-      "comissao_gerada": 396.22,
-      "data_pagamento_local": "2026-06-08",
-      "bill": 318,
-      "inst": "14",
-      "parcela_id": "fb3e9cd0-3540-445f-8e60-8fd19b7aa3ce",
-      "motivo": "installment ancorado NAO pago no Sienge",
-      "origem": "nao_pago",
-      "veredito": "nenhum installment do bill bate valor+data -> Excluir Baixa"
-    },
-    {
-      "contrato": "296",
-      "unidade": "1206 D",
-      "cliente": "YURI MATEUS DOS SANTOS",
-      "np": 12,
-      "tipo": "parcela_entrada",
-      "valor": 1131.06,
-      "comissao_gerada": 395.87,
-      "data_pagamento_local": "2026-06-08",
-      "bill": 265,
-      "inst": "13",
-      "parcela_id": "00ad62b0-58e4-4e87-a738-eafdb26212c3",
-      "motivo": "installment ancorado NAO pago no Sienge",
-      "origem": "nao_pago",
-      "veredito": "nenhum installment do bill bate valor+data -> Excluir Baixa"
-    },
-    {
       "contrato": "346",
       "unidade": "508 A",
       "cliente": "MICHEL CHRISTIAN BORBA",
@@ -688,40 +336,8 @@
       "bill": 422,
       "inst": "7",
       "parcela_id": "502e4c30-cd73-4528-87d7-da94e0cbaf0c",
-      "motivo": "installment ancorado NAO pago no Sienge",
-      "origem": "nao_pago",
-      "veredito": "nenhum installment do bill bate valor+data -> Excluir Baixa"
-    },
-    {
-      "contrato": "184",
-      "unidade": "703 B",
-      "cliente": "YASMIN BORCHARDT",
-      "np": 11,
-      "tipo": "parcela_entrada",
-      "valor": 1084,
-      "comissao_gerada": 379.6,
-      "data_pagamento_local": "2026-06-05",
-      "bill": 315,
-      "inst": "11",
-      "parcela_id": "1b56e4db-3695-4f17-b8f2-b2deba532fd6",
-      "motivo": "installment ancorado NAO pago no Sienge",
-      "origem": "nao_pago",
-      "veredito": "nenhum installment do bill bate valor+data -> Excluir Baixa"
-    },
-    {
-      "contrato": "322",
-      "unidade": "405 A",
-      "cliente": "CIBELE JANAINA DE SOUZA",
-      "np": 7,
-      "tipo": "parcela_entrada",
-      "valor": 1292.67,
-      "comissao_gerada": 378.99,
-      "data_pagamento_local": "2026-06-01",
-      "bill": 373,
-      "inst": "7",
-      "parcela_id": "0ed75b7f-384e-4d65-9183-a9dbfd79817f",
-      "motivo": "installment ancorado NAO pago no Sienge",
-      "origem": "nao_pago",
+      "data_sienge": "2026-06-03",
+      "origem": "data_diverge",
       "veredito": "nenhum installment do bill bate valor+data -> Excluir Baixa"
     },
     {
@@ -805,70 +421,6 @@
       "veredito": "nenhum installment do bill bate valor+data -> Excluir Baixa"
     },
     {
-      "contrato": "10",
-      "unidade": "412 A",
-      "cliente": "GABRIEL BENJAMIM DA SILVA GONÇALVES",
-      "np": 12,
-      "tipo": "parcela_entrada",
-      "valor": 990.91,
-      "comissao_gerada": 346.82,
-      "data_pagamento_local": "2026-06-05",
-      "bill": 371,
-      "inst": "13",
-      "parcela_id": "c1bbbd4d-959c-404a-bb40-f721a22673ab",
-      "motivo": "installment ancorado NAO pago no Sienge",
-      "origem": "nao_pago",
-      "veredito": "nenhum installment do bill bate valor+data -> Excluir Baixa"
-    },
-    {
-      "contrato": "70",
-      "unidade": "806 A",
-      "cliente": "VALMIR MARTINI JUNIOR ",
-      "np": 12,
-      "tipo": "parcela_entrada",
-      "valor": 982.2,
-      "comissao_gerada": 343.77,
-      "data_pagamento_local": "2026-06-08",
-      "bill": 24,
-      "inst": "12",
-      "parcela_id": "4d4d7188-5ac1-4aba-8488-ee88974dc989",
-      "motivo": "installment ancorado NAO pago no Sienge",
-      "origem": "nao_pago",
-      "veredito": "nenhum installment do bill bate valor+data -> Excluir Baixa"
-    },
-    {
-      "contrato": "21",
-      "unidade": "503 A",
-      "cliente": "RAISSA SANTOS  FERREIRA",
-      "np": 13,
-      "tipo": "parcela_entrada",
-      "valor": 753.49,
-      "comissao_gerada": 332.32,
-      "data_pagamento_local": "2026-06-05",
-      "bill": 368,
-      "inst": "14",
-      "parcela_id": "62bbb573-efcc-49bd-a14b-30942a1eb87e",
-      "motivo": "installment ancorado NAO pago no Sienge",
-      "origem": "nao_pago",
-      "veredito": "nenhum installment do bill bate valor+data -> Excluir Baixa"
-    },
-    {
-      "contrato": "239",
-      "unidade": "1106 C",
-      "cliente": "CLARISSA MARTINS FERREIRA ",
-      "np": 14,
-      "tipo": "parcela_entrada",
-      "valor": 750,
-      "comissao_gerada": 315.07,
-      "data_pagamento_local": "2026-06-09",
-      "bill": 150,
-      "inst": "16",
-      "parcela_id": "58d5dade-14f8-490e-8f6e-c40c3b0deb10",
-      "motivo": "installment ancorado NAO pago no Sienge",
-      "origem": "nao_pago",
-      "veredito": "nenhum installment do bill bate valor+data -> Excluir Baixa"
-    },
-    {
       "contrato": "275",
       "unidade": "803 D",
       "cliente": "SAMUEL MUELLER LEMOS",
@@ -946,86 +498,6 @@
       "parcela_id": "f4be1a69-16ed-4ae0-84e3-7951dc63a9b4",
       "valor_sienge": 2650,
       "origem": "valor_diverge",
-      "veredito": "nenhum installment do bill bate valor+data -> Excluir Baixa"
-    },
-    {
-      "contrato": "427",
-      "unidade": "401 A",
-      "cliente": "DIEGO DA COSTA",
-      "np": 3,
-      "tipo": "parcela_entrada",
-      "valor": 804.7,
-      "comissao_gerada": 281.65,
-      "data_pagamento_local": "2026-06-05",
-      "bill": 499,
-      "inst": "4",
-      "parcela_id": "223288d9-96fd-4abf-ba2c-a5e5e45ce18e",
-      "motivo": "installment ancorado NAO pago no Sienge",
-      "origem": "nao_pago",
-      "veredito": "nenhum installment do bill bate valor+data -> Excluir Baixa"
-    },
-    {
-      "contrato": "44",
-      "unidade": "612 A",
-      "cliente": "GUSTAVO KAUE SAIBERT ",
-      "np": 14,
-      "tipo": "parcela_entrada",
-      "valor": 782.46,
-      "comissao_gerada": 254.3,
-      "data_pagamento_local": "2026-06-08",
-      "bill": 30,
-      "inst": "14",
-      "parcela_id": "e4424a93-7d91-42d8-8227-d8a030866461",
-      "motivo": "installment ancorado NAO pago no Sienge",
-      "origem": "nao_pago",
-      "veredito": "nenhum installment do bill bate valor+data -> Excluir Baixa"
-    },
-    {
-      "contrato": "161",
-      "unidade": "1506 A",
-      "cliente": "LUCAS PORTO MARTINS",
-      "np": 12,
-      "tipo": "parcela_entrada",
-      "valor": 3504.17,
-      "comissao_gerada": 245.29,
-      "data_pagamento_local": "2026-06-08",
-      "bill": 181,
-      "inst": "14",
-      "parcela_id": "0fc5de4c-0d29-4dbe-adbb-d5da87e9a1ff",
-      "motivo": "installment ancorado NAO pago no Sienge",
-      "origem": "nao_pago",
-      "veredito": "nenhum installment do bill bate valor+data -> Excluir Baixa"
-    },
-    {
-      "contrato": "15",
-      "unidade": "512 A",
-      "cliente": "SABRINA LEMOS VIANA",
-      "np": 13,
-      "tipo": "parcela_entrada",
-      "valor": 775.2,
-      "comissao_gerada": 206.03,
-      "data_pagamento_local": "2026-06-08",
-      "bill": 367,
-      "inst": "15",
-      "parcela_id": "650b602a-f4f6-4d98-a3a7-4f10b21bccf0",
-      "motivo": "installment ancorado NAO pago no Sienge",
-      "origem": "nao_pago",
-      "veredito": "nenhum installment do bill bate valor+data -> Excluir Baixa"
-    },
-    {
-      "contrato": "246",
-      "unidade": "1302 C",
-      "cliente": "MARIA VITORIA DA SILVA FRANCISCO",
-      "np": 3,
-      "tipo": "parcela_entrada",
-      "valor": 500,
-      "comissao_gerada": 175,
-      "data_pagamento_local": "2026-03-05",
-      "bill": 240,
-      "inst": "3",
-      "parcela_id": "2eec3d3e-d868-4700-8893-8be8ad73f778",
-      "data_sienge": "2026-01-13",
-      "origem": "data_diverge",
       "veredito": "nenhum installment do bill bate valor+data -> Excluir Baixa"
     }
   ],
@@ -1293,108 +765,6 @@
         }
       ],
       "veredito": "unico candidato mas OCUPADO -> rodada-b"
-    },
-    {
-      "contrato": "255",
-      "unidade": "1405 C",
-      "cliente": "ANDREY LUIZ MESSIAS SANTOS ",
-      "np": 1,
-      "tipo": "parcela_entrada",
-      "valor": 400,
-      "comissao_gerada": 138.27,
-      "data_pagamento_local": "2025-12-29",
-      "bill": 143,
-      "inst": "1",
-      "parcela_id": "1c96c993-331c-43f7-a340-6e7e244dbbcf",
-      "data_sienge": "2025-08-27",
-      "origem": "data_diverge",
-      "candidatos": [
-        {
-          "inst": "4",
-          "ocupado_por": "366df36b-ab73-472f-9c3d-a56bb1ea6bfb"
-        },
-        {
-          "inst": "5",
-          "ocupado_por": "bed2b393-a373-4525-9825-f83420a308df"
-        },
-        {
-          "inst": "6",
-          "ocupado_por": "1f72cf9f-f999-4bf4-8e23-4ce77dfa58d7"
-        },
-        {
-          "inst": "7",
-          "ocupado_por": "a2ef8370-ba56-424c-b628-7dcc09cbec3c"
-        }
-      ],
-      "veredito": "2+ candidatos exatos"
-    },
-    {
-      "contrato": "255",
-      "unidade": "1405 C",
-      "cliente": "ANDREY LUIZ MESSIAS SANTOS ",
-      "np": 2,
-      "tipo": "parcela_entrada",
-      "valor": 400,
-      "comissao_gerada": 138.27,
-      "data_pagamento_local": "2025-12-29",
-      "bill": 143,
-      "inst": "2",
-      "parcela_id": "38a31eac-31b6-4983-823d-fc50c6c5d068",
-      "data_sienge": "2025-09-05",
-      "origem": "data_diverge",
-      "candidatos": [
-        {
-          "inst": "4",
-          "ocupado_por": "366df36b-ab73-472f-9c3d-a56bb1ea6bfb"
-        },
-        {
-          "inst": "5",
-          "ocupado_por": "bed2b393-a373-4525-9825-f83420a308df"
-        },
-        {
-          "inst": "6",
-          "ocupado_por": "1f72cf9f-f999-4bf4-8e23-4ce77dfa58d7"
-        },
-        {
-          "inst": "7",
-          "ocupado_por": "a2ef8370-ba56-424c-b628-7dcc09cbec3c"
-        }
-      ],
-      "veredito": "2+ candidatos exatos"
-    },
-    {
-      "contrato": "255",
-      "unidade": "1405 C",
-      "cliente": "ANDREY LUIZ MESSIAS SANTOS ",
-      "np": 3,
-      "tipo": "parcela_entrada",
-      "valor": 400,
-      "comissao_gerada": 138.27,
-      "data_pagamento_local": "2025-12-29",
-      "bill": 143,
-      "inst": "3",
-      "parcela_id": "50abac0a-83f5-4805-ac59-364f31d4d79a",
-      "data_sienge": "2025-09-05",
-      "origem": "data_diverge",
-      "candidatos": [
-        {
-          "inst": "4",
-          "ocupado_por": "366df36b-ab73-472f-9c3d-a56bb1ea6bfb"
-        },
-        {
-          "inst": "5",
-          "ocupado_por": "bed2b393-a373-4525-9825-f83420a308df"
-        },
-        {
-          "inst": "6",
-          "ocupado_por": "1f72cf9f-f999-4bf4-8e23-4ce77dfa58d7"
-        },
-        {
-          "inst": "7",
-          "ocupado_por": "a2ef8370-ba56-424c-b628-7dcc09cbec3c"
-        }
-      ],
-      "veredito": "2+ candidatos exatos"
     },
     {
       "contrato": "214",

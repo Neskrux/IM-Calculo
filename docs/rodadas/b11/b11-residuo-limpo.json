@@ -1,0 +1,1449 @@
+{
+  "meta": {
+    "geradoEm": "2026-06-11T13:53:04.855Z",
+    "total": 43,
+    "regra": "Residuo do segmento LIMPO apos cura de distrato (R$887k) e aditivos (2026-06-11). Grupo 1 = banco diz pago mas o Sienge nao confirma NENHUM installment com mesmo valor+data no bill (over-pay; reverter pago e decisao humana por spec). Grupo 2 = existe match exato mas o alvo ja esta ocupado por outra parcela (ambiguo).",
+    "fonte": "docs/auditorias/2026-06-10-ancora/f3-reancora-limpo.json (income de 2026-06-11 05:11)",
+    "comissao": {
+      "overpay": 20252.42,
+      "ambiguo": 15654.48
+    }
+  },
+  "grupo1_overpay_excluir_baixa": [
+    {
+      "contrato": "420",
+      "unidade": "1606 C",
+      "cliente": "ZAQUIEL DA SILVA",
+      "numero_parcela": null,
+      "tipo": "sinal",
+      "valor": 10000,
+      "comissao_gerada": 3499.97,
+      "data_pagamento_local": "2026-02-20",
+      "ancora": {
+        "bill": 492,
+        "installment": "1"
+      },
+      "parcela_id": "7e5cc192-9d87-41c5-a3ba-76f7823c73e3",
+      "origem": "data_diverge",
+      "motivo": "nenhum installment do bill bate valor+data -> Excluir Baixa",
+      "acao_sugerida": "excluir_baixa",
+      "opcoes": [
+        {
+          "id": "1",
+          "label": "Confirma Excluir Baixa",
+          "efeito": "parcela volta a pendente (banco deixa de contar comissao que o Sienge nao confirma)"
+        },
+        {
+          "id": "2",
+          "label": "Aguarda investigacao",
+          "efeito": "fica como esta; marcar pra olhar com a controladoria"
+        }
+      ]
+    },
+    {
+      "contrato": "328",
+      "unidade": "1105 B",
+      "cliente": "BRUNA DOS SANTOS SILVA ",
+      "numero_parcela": 2,
+      "tipo": "balao",
+      "valor": 20000,
+      "comissao_gerada": 2904.44,
+      "data_pagamento_local": "2026-01-19",
+      "ancora": {
+        "bill": 382,
+        "installment": "21"
+      },
+      "parcela_id": "ea1126d1-a4bc-4bdc-801f-aff60a3cfc81",
+      "origem": "nao_pago",
+      "motivo": "nenhum installment do bill bate valor+data -> Excluir Baixa",
+      "acao_sugerida": "excluir_baixa",
+      "opcoes": [
+        {
+          "id": "1",
+          "label": "Confirma Excluir Baixa",
+          "efeito": "parcela volta a pendente (banco deixa de contar comissao que o Sienge nao confirma)"
+        },
+        {
+          "id": "2",
+          "label": "Aguarda investigacao",
+          "efeito": "fica como esta; marcar pra olhar com a controladoria"
+        }
+      ]
+    },
+    {
+      "contrato": "155",
+      "unidade": "1407 A",
+      "cliente": "ALEXSANDRO WILLIAN DOS SANTOS",
+      "numero_parcela": 2,
+      "tipo": "balao",
+      "valor": 5000,
+      "comissao_gerada": 1750,
+      "data_pagamento_local": "2026-01-19",
+      "ancora": {
+        "bill": 239,
+        "installment": "20"
+      },
+      "parcela_id": "f8b8a3fe-2415-4944-ad14-6ece8eedaf6d",
+      "origem": "nao_pago",
+      "motivo": "nenhum installment do bill bate valor+data -> Excluir Baixa",
+      "acao_sugerida": "excluir_baixa",
+      "opcoes": [
+        {
+          "id": "1",
+          "label": "Confirma Excluir Baixa",
+          "efeito": "parcela volta a pendente (banco deixa de contar comissao que o Sienge nao confirma)"
+        },
+        {
+          "id": "2",
+          "label": "Aguarda investigacao",
+          "efeito": "fica como esta; marcar pra olhar com a controladoria"
+        }
+      ]
+    },
+    {
+      "contrato": "87",
+      "unidade": "908 A",
+      "cliente": "LEANDRO DE OLIVEIRA VICENTIN ",
+      "numero_parcela": 1,
+      "tipo": "parcela_entrada",
+      "valor": 2761.39,
+      "comissao_gerada": 966.49,
+      "data_pagamento_local": "2026-02-02",
+      "ancora": {
+        "bill": 381,
+        "installment": "8"
+      },
+      "parcela_id": "ae7bccce-f471-4be8-83c2-01aaef9b8de0",
+      "origem": "data_diverge",
+      "motivo": "nenhum installment do bill bate valor+data -> Excluir Baixa",
+      "acao_sugerida": "excluir_baixa",
+      "opcoes": [
+        {
+          "id": "1",
+          "label": "Confirma Excluir Baixa",
+          "efeito": "parcela volta a pendente (banco deixa de contar comissao que o Sienge nao confirma)"
+        },
+        {
+          "id": "2",
+          "label": "Aguarda investigacao",
+          "efeito": "fica como esta; marcar pra olhar com a controladoria"
+        }
+      ]
+    },
+    {
+      "contrato": "385",
+      "unidade": "906 A",
+      "cliente": "THIAGO DOS SANTOS CARVALHO BORGES",
+      "numero_parcela": 4,
+      "tipo": "parcela_entrada",
+      "valor": 1675.36,
+      "comissao_gerada": 586.38,
+      "data_pagamento_local": "2026-04-20",
+      "ancora": {
+        "bill": 457,
+        "installment": "4"
+      },
+      "parcela_id": "2b18513b-5405-4cc1-aa35-7e2ba40581da",
+      "origem": "data_diverge",
+      "motivo": "nenhum installment do bill bate valor+data -> Excluir Baixa",
+      "acao_sugerida": "excluir_baixa",
+      "opcoes": [
+        {
+          "id": "1",
+          "label": "Confirma Excluir Baixa",
+          "efeito": "parcela volta a pendente (banco deixa de contar comissao que o Sienge nao confirma)"
+        },
+        {
+          "id": "2",
+          "label": "Aguarda investigacao",
+          "efeito": "fica como esta; marcar pra olhar com a controladoria"
+        }
+      ]
+    },
+    {
+      "contrato": "287",
+      "unidade": "1004 D",
+      "cliente": "FERNANDA DOS SANTOS DE ALMEIDA",
+      "numero_parcela": 3,
+      "tipo": "parcela_entrada",
+      "valor": 1766.35,
+      "comissao_gerada": 555.47,
+      "data_pagamento_local": "2026-03-20",
+      "ancora": {
+        "bill": 268,
+        "installment": "17"
+      },
+      "parcela_id": "6970cb43-5901-43f1-a30f-b6439ce87814",
+      "origem": "nao_pago",
+      "motivo": "nenhum installment do bill bate valor+data -> Excluir Baixa",
+      "acao_sugerida": "excluir_baixa",
+      "opcoes": [
+        {
+          "id": "1",
+          "label": "Confirma Excluir Baixa",
+          "efeito": "parcela volta a pendente (banco deixa de contar comissao que o Sienge nao confirma)"
+        },
+        {
+          "id": "2",
+          "label": "Aguarda investigacao",
+          "efeito": "fica como esta; marcar pra olhar com a controladoria"
+        }
+      ]
+    },
+    {
+      "contrato": "287",
+      "unidade": "1004 D",
+      "cliente": "FERNANDA DOS SANTOS DE ALMEIDA",
+      "numero_parcela": 4,
+      "tipo": "parcela_entrada",
+      "valor": 1766.35,
+      "comissao_gerada": 555.47,
+      "data_pagamento_local": "2025-10-13",
+      "ancora": {
+        "bill": 268,
+        "installment": "18"
+      },
+      "parcela_id": "7c2d0087-ff0e-470d-84b2-208bc1b4a65c",
+      "origem": "nao_pago",
+      "motivo": "nenhum installment do bill bate valor+data -> Excluir Baixa",
+      "acao_sugerida": "excluir_baixa",
+      "opcoes": [
+        {
+          "id": "1",
+          "label": "Confirma Excluir Baixa",
+          "efeito": "parcela volta a pendente (banco deixa de contar comissao que o Sienge nao confirma)"
+        },
+        {
+          "id": "2",
+          "label": "Aguarda investigacao",
+          "efeito": "fica como esta; marcar pra olhar com a controladoria"
+        }
+      ]
+    },
+    {
+      "contrato": "340",
+      "unidade": "905 B",
+      "cliente": "CAROLINE SARAIVA DA SILVEIRA RODRIGUES ",
+      "numero_parcela": 3,
+      "tipo": "parcela_entrada",
+      "valor": 1574.8,
+      "comissao_gerada": 551.39,
+      "data_pagamento_local": "2025-08-20",
+      "ancora": {
+        "bill": 410,
+        "installment": "62"
+      },
+      "parcela_id": "615959e5-d7cc-4388-9aca-9d282a0ad4a3",
+      "origem": "nao_pago",
+      "motivo": "nenhum installment do bill bate valor+data -> Excluir Baixa",
+      "acao_sugerida": "excluir_baixa",
+      "opcoes": [
+        {
+          "id": "1",
+          "label": "Confirma Excluir Baixa",
+          "efeito": "parcela volta a pendente (banco deixa de contar comissao que o Sienge nao confirma)"
+        },
+        {
+          "id": "2",
+          "label": "Aguarda investigacao",
+          "efeito": "fica como esta; marcar pra olhar com a controladoria"
+        }
+      ]
+    },
+    {
+      "contrato": "340",
+      "unidade": "905 B",
+      "cliente": "CAROLINE SARAIVA DA SILVEIRA RODRIGUES ",
+      "numero_parcela": 1,
+      "tipo": "parcela_entrada",
+      "valor": 1574.8,
+      "comissao_gerada": 551.39,
+      "data_pagamento_local": "2025-06-20",
+      "ancora": {
+        "bill": 410,
+        "installment": "60"
+      },
+      "parcela_id": "9b27c83c-59c9-4e2f-9eb2-ed9bc808e494",
+      "origem": "nao_pago",
+      "motivo": "nenhum installment do bill bate valor+data -> Excluir Baixa",
+      "acao_sugerida": "excluir_baixa",
+      "opcoes": [
+        {
+          "id": "1",
+          "label": "Confirma Excluir Baixa",
+          "efeito": "parcela volta a pendente (banco deixa de contar comissao que o Sienge nao confirma)"
+        },
+        {
+          "id": "2",
+          "label": "Aguarda investigacao",
+          "efeito": "fica como esta; marcar pra olhar com a controladoria"
+        }
+      ]
+    },
+    {
+      "contrato": "340",
+      "unidade": "905 B",
+      "cliente": "CAROLINE SARAIVA DA SILVEIRA RODRIGUES ",
+      "numero_parcela": 5,
+      "tipo": "parcela_entrada",
+      "valor": 1574.8,
+      "comissao_gerada": 551.39,
+      "data_pagamento_local": "2025-11-04",
+      "ancora": {
+        "bill": 410,
+        "installment": "64"
+      },
+      "parcela_id": "d007dc8a-2241-4441-a464-fa63a82c783a",
+      "origem": "nao_pago",
+      "motivo": "nenhum installment do bill bate valor+data -> Excluir Baixa",
+      "acao_sugerida": "excluir_baixa",
+      "opcoes": [
+        {
+          "id": "1",
+          "label": "Confirma Excluir Baixa",
+          "efeito": "parcela volta a pendente (banco deixa de contar comissao que o Sienge nao confirma)"
+        },
+        {
+          "id": "2",
+          "label": "Aguarda investigacao",
+          "efeito": "fica como esta; marcar pra olhar com a controladoria"
+        }
+      ]
+    },
+    {
+      "contrato": "204",
+      "unidade": "1204 B",
+      "cliente": "SARA JANE DE OLIVEIRA BARBOSA",
+      "numero_parcela": 1,
+      "tipo": "parcela_entrada",
+      "valor": 1461.11,
+      "comissao_gerada": 511.39,
+      "data_pagamento_local": "2025-11-24",
+      "ancora": {
+        "bill": 146,
+        "installment": "1"
+      },
+      "parcela_id": "30d6cafa-c29d-4a48-be9e-167a58d8788d",
+      "origem": "data_diverge",
+      "motivo": "nenhum installment do bill bate valor+data -> Excluir Baixa",
+      "acao_sugerida": "excluir_baixa",
+      "opcoes": [
+        {
+          "id": "1",
+          "label": "Confirma Excluir Baixa",
+          "efeito": "parcela volta a pendente (banco deixa de contar comissao que o Sienge nao confirma)"
+        },
+        {
+          "id": "2",
+          "label": "Aguarda investigacao",
+          "efeito": "fica como esta; marcar pra olhar com a controladoria"
+        }
+      ]
+    },
+    {
+      "contrato": "204",
+      "unidade": "1204 B",
+      "cliente": "SARA JANE DE OLIVEIRA BARBOSA",
+      "numero_parcela": 2,
+      "tipo": "parcela_entrada",
+      "valor": 1461.11,
+      "comissao_gerada": 511.39,
+      "data_pagamento_local": "2025-11-24",
+      "ancora": {
+        "bill": 146,
+        "installment": "2"
+      },
+      "parcela_id": "ab621c00-1aeb-4141-bc23-0fd644f50f6b",
+      "origem": "data_diverge",
+      "motivo": "nenhum installment do bill bate valor+data -> Excluir Baixa",
+      "acao_sugerida": "excluir_baixa",
+      "opcoes": [
+        {
+          "id": "1",
+          "label": "Confirma Excluir Baixa",
+          "efeito": "parcela volta a pendente (banco deixa de contar comissao que o Sienge nao confirma)"
+        },
+        {
+          "id": "2",
+          "label": "Aguarda investigacao",
+          "efeito": "fica como esta; marcar pra olhar com a controladoria"
+        }
+      ]
+    },
+    {
+      "contrato": "292",
+      "unidade": "1106 D",
+      "cliente": "ALESSANDRA KEMPINSKI",
+      "numero_parcela": 6,
+      "tipo": "parcela_entrada",
+      "valor": 1444.15,
+      "comissao_gerada": 505.45,
+      "data_pagamento_local": "2026-01-15",
+      "ancora": {
+        "bill": 277,
+        "installment": "6"
+      },
+      "parcela_id": "cd1fa383-d027-49fc-9040-1cdadb01fd88",
+      "origem": "nao_pago",
+      "motivo": "nenhum installment do bill bate valor+data -> Excluir Baixa",
+      "acao_sugerida": "excluir_baixa",
+      "opcoes": [
+        {
+          "id": "1",
+          "label": "Confirma Excluir Baixa",
+          "efeito": "parcela volta a pendente (banco deixa de contar comissao que o Sienge nao confirma)"
+        },
+        {
+          "id": "2",
+          "label": "Aguarda investigacao",
+          "efeito": "fica como esta; marcar pra olhar com a controladoria"
+        }
+      ]
+    },
+    {
+      "contrato": "87",
+      "unidade": "908 A",
+      "cliente": "LEANDRO DE OLIVEIRA VICENTIN ",
+      "numero_parcela": 4,
+      "tipo": "parcela_entrada",
+      "valor": 1394.47,
+      "comissao_gerada": 488.06,
+      "data_pagamento_local": "2025-05-08",
+      "ancora": {
+        "bill": 381,
+        "installment": "12"
+      },
+      "parcela_id": "5ba910c4-0ecb-478a-8494-2cd444f8ef72",
+      "origem": "data_diverge",
+      "motivo": "nenhum installment do bill bate valor+data -> Excluir Baixa",
+      "acao_sugerida": "excluir_baixa",
+      "opcoes": [
+        {
+          "id": "1",
+          "label": "Confirma Excluir Baixa",
+          "efeito": "parcela volta a pendente (banco deixa de contar comissao que o Sienge nao confirma)"
+        },
+        {
+          "id": "2",
+          "label": "Aguarda investigacao",
+          "efeito": "fica como esta; marcar pra olhar com a controladoria"
+        }
+      ]
+    },
+    {
+      "contrato": "87",
+      "unidade": "908 A",
+      "cliente": "LEANDRO DE OLIVEIRA VICENTIN ",
+      "numero_parcela": 3,
+      "tipo": "parcela_entrada",
+      "valor": 1394.47,
+      "comissao_gerada": 488.06,
+      "data_pagamento_local": "2025-08-10",
+      "ancora": {
+        "bill": 381,
+        "installment": "11"
+      },
+      "parcela_id": "8eecf9b0-20ee-4fd7-928d-72d0ab07d522",
+      "origem": "data_diverge",
+      "motivo": "nenhum installment do bill bate valor+data -> Excluir Baixa",
+      "acao_sugerida": "excluir_baixa",
+      "opcoes": [
+        {
+          "id": "1",
+          "label": "Confirma Excluir Baixa",
+          "efeito": "parcela volta a pendente (banco deixa de contar comissao que o Sienge nao confirma)"
+        },
+        {
+          "id": "2",
+          "label": "Aguarda investigacao",
+          "efeito": "fica como esta; marcar pra olhar com a controladoria"
+        }
+      ]
+    },
+    {
+      "contrato": "27",
+      "unidade": "604 A",
+      "cliente": "TARCISIO LOCH JUNIOR",
+      "numero_parcela": 10,
+      "tipo": "parcela_entrada",
+      "valor": 1277.3,
+      "comissao_gerada": 447.05,
+      "data_pagamento_local": "2026-04-26",
+      "ancora": {
+        "bill": 370,
+        "installment": "10"
+      },
+      "parcela_id": "687dea6b-a5ad-417a-b32a-374e511379c9",
+      "origem": "data_diverge",
+      "motivo": "nenhum installment do bill bate valor+data -> Excluir Baixa",
+      "acao_sugerida": "excluir_baixa",
+      "opcoes": [
+        {
+          "id": "1",
+          "label": "Confirma Excluir Baixa",
+          "efeito": "parcela volta a pendente (banco deixa de contar comissao que o Sienge nao confirma)"
+        },
+        {
+          "id": "2",
+          "label": "Aguarda investigacao",
+          "efeito": "fica como esta; marcar pra olhar com a controladoria"
+        }
+      ]
+    },
+    {
+      "contrato": "240",
+      "unidade": "1107 C",
+      "cliente": "RAFAEL FELIPE DOS PASSOS KOGLER",
+      "numero_parcela": 8,
+      "tipo": "parcela_entrada",
+      "valor": 990.18,
+      "comissao_gerada": 433.33,
+      "data_pagamento_local": "2026-01-19",
+      "ancora": {
+        "bill": 200,
+        "installment": "9"
+      },
+      "parcela_id": "1cd0a507-59ae-4a2b-9fc8-6843efa03c48",
+      "origem": "nao_pago",
+      "motivo": "nenhum installment do bill bate valor+data -> Excluir Baixa",
+      "acao_sugerida": "excluir_baixa",
+      "opcoes": [
+        {
+          "id": "1",
+          "label": "Confirma Excluir Baixa",
+          "efeito": "parcela volta a pendente (banco deixa de contar comissao que o Sienge nao confirma)"
+        },
+        {
+          "id": "2",
+          "label": "Aguarda investigacao",
+          "efeito": "fica como esta; marcar pra olhar com a controladoria"
+        }
+      ]
+    },
+    {
+      "contrato": "134",
+      "unidade": "1004 A",
+      "cliente": "GABRIEL PEDRO DA LUZ",
+      "numero_parcela": 7,
+      "tipo": "parcela_entrada",
+      "valor": 1163.97,
+      "comissao_gerada": 407.39,
+      "data_pagamento_local": "2026-01-19",
+      "ancora": {
+        "bill": 221,
+        "installment": "7"
+      },
+      "parcela_id": "cd4ace1c-9530-4b16-8250-fee0f3455f5d",
+      "origem": "nao_pago",
+      "motivo": "nenhum installment do bill bate valor+data -> Excluir Baixa",
+      "acao_sugerida": "excluir_baixa",
+      "opcoes": [
+        {
+          "id": "1",
+          "label": "Confirma Excluir Baixa",
+          "efeito": "parcela volta a pendente (banco deixa de contar comissao que o Sienge nao confirma)"
+        },
+        {
+          "id": "2",
+          "label": "Aguarda investigacao",
+          "efeito": "fica como esta; marcar pra olhar com a controladoria"
+        }
+      ]
+    },
+    {
+      "contrato": "134",
+      "unidade": "1004 A",
+      "cliente": "GABRIEL PEDRO DA LUZ",
+      "numero_parcela": 8,
+      "tipo": "parcela_entrada",
+      "valor": 1163.97,
+      "comissao_gerada": 407.39,
+      "data_pagamento_local": "2026-02-04",
+      "ancora": {
+        "bill": 221,
+        "installment": "8"
+      },
+      "parcela_id": "ebc3c091-0cc8-41a1-ae56-7b202fccd69e",
+      "origem": "nao_pago",
+      "motivo": "nenhum installment do bill bate valor+data -> Excluir Baixa",
+      "acao_sugerida": "excluir_baixa",
+      "opcoes": [
+        {
+          "id": "1",
+          "label": "Confirma Excluir Baixa",
+          "efeito": "parcela volta a pendente (banco deixa de contar comissao que o Sienge nao confirma)"
+        },
+        {
+          "id": "2",
+          "label": "Aguarda investigacao",
+          "efeito": "fica como esta; marcar pra olhar com a controladoria"
+        }
+      ]
+    },
+    {
+      "contrato": "346",
+      "unidade": "508 A",
+      "cliente": "MICHEL CHRISTIAN BORBA",
+      "numero_parcela": 3,
+      "tipo": "parcela_entrada",
+      "valor": 1200,
+      "comissao_gerada": 394.97,
+      "data_pagamento_local": "2026-02-06",
+      "ancora": {
+        "bill": 422,
+        "installment": "7"
+      },
+      "parcela_id": "502e4c30-cd73-4528-87d7-da94e0cbaf0c",
+      "origem": "data_diverge",
+      "motivo": "nenhum installment do bill bate valor+data -> Excluir Baixa",
+      "acao_sugerida": "excluir_baixa",
+      "opcoes": [
+        {
+          "id": "1",
+          "label": "Confirma Excluir Baixa",
+          "efeito": "parcela volta a pendente (banco deixa de contar comissao que o Sienge nao confirma)"
+        },
+        {
+          "id": "2",
+          "label": "Aguarda investigacao",
+          "efeito": "fica como esta; marcar pra olhar com a controladoria"
+        }
+      ]
+    },
+    {
+      "contrato": "142",
+      "unidade": "1106 A",
+      "cliente": "JOAO LUCAS VAZ MACEDO",
+      "numero_parcela": 12,
+      "tipo": "parcela_entrada",
+      "valor": 2033.33,
+      "comissao_gerada": 357.1,
+      "data_pagamento_local": "2026-05-20",
+      "ancora": {
+        "bill": 183,
+        "installment": "12"
+      },
+      "parcela_id": "cc0edb1a-4d1a-449d-b211-c826f55e5109",
+      "origem": "data_diverge",
+      "motivo": "nenhum installment do bill bate valor+data -> Excluir Baixa",
+      "acao_sugerida": "excluir_baixa",
+      "opcoes": [
+        {
+          "id": "1",
+          "label": "Confirma Excluir Baixa",
+          "efeito": "parcela volta a pendente (banco deixa de contar comissao que o Sienge nao confirma)"
+        },
+        {
+          "id": "2",
+          "label": "Aguarda investigacao",
+          "efeito": "fica como esta; marcar pra olhar com a controladoria"
+        }
+      ]
+    },
+    {
+      "contrato": "204",
+      "unidade": "1204 B",
+      "cliente": "SARA JANE DE OLIVEIRA BARBOSA",
+      "numero_parcela": 4,
+      "tipo": "parcela_entrada",
+      "valor": 1000,
+      "comissao_gerada": 350,
+      "data_pagamento_local": "2025-11-06",
+      "ancora": {
+        "bill": 146,
+        "installment": "8"
+      },
+      "parcela_id": "50afdcce-e5a5-4594-90f5-dd47e470fada",
+      "origem": "data_diverge",
+      "motivo": "nenhum installment do bill bate valor+data -> Excluir Baixa",
+      "acao_sugerida": "excluir_baixa",
+      "opcoes": [
+        {
+          "id": "1",
+          "label": "Confirma Excluir Baixa",
+          "efeito": "parcela volta a pendente (banco deixa de contar comissao que o Sienge nao confirma)"
+        },
+        {
+          "id": "2",
+          "label": "Aguarda investigacao",
+          "efeito": "fica como esta; marcar pra olhar com a controladoria"
+        }
+      ]
+    },
+    {
+      "contrato": "204",
+      "unidade": "1204 B",
+      "cliente": "SARA JANE DE OLIVEIRA BARBOSA",
+      "numero_parcela": 2,
+      "tipo": "parcela_entrada",
+      "valor": 1000,
+      "comissao_gerada": 350,
+      "data_pagamento_local": "2025-08-20",
+      "ancora": {
+        "bill": 146,
+        "installment": "6"
+      },
+      "parcela_id": "c408fa9e-0389-4767-a245-6b131f5208c0",
+      "origem": "data_diverge",
+      "motivo": "nenhum installment do bill bate valor+data -> Excluir Baixa",
+      "acao_sugerida": "excluir_baixa",
+      "opcoes": [
+        {
+          "id": "1",
+          "label": "Confirma Excluir Baixa",
+          "efeito": "parcela volta a pendente (banco deixa de contar comissao que o Sienge nao confirma)"
+        },
+        {
+          "id": "2",
+          "label": "Aguarda investigacao",
+          "efeito": "fica como esta; marcar pra olhar com a controladoria"
+        }
+      ]
+    },
+    {
+      "contrato": "87",
+      "unidade": "908 A",
+      "cliente": "LEANDRO DE OLIVEIRA VICENTIN ",
+      "numero_parcela": 3,
+      "tipo": "parcela_entrada",
+      "valor": 1000,
+      "comissao_gerada": 350,
+      "data_pagamento_local": "2026-04-09",
+      "ancora": {
+        "bill": 381,
+        "installment": "3"
+      },
+      "parcela_id": "844eaa70-2c4c-4957-9abb-7087d44d3f12",
+      "origem": "data_diverge",
+      "motivo": "nenhum installment do bill bate valor+data -> Excluir Baixa",
+      "acao_sugerida": "excluir_baixa",
+      "opcoes": [
+        {
+          "id": "1",
+          "label": "Confirma Excluir Baixa",
+          "efeito": "parcela volta a pendente (banco deixa de contar comissao que o Sienge nao confirma)"
+        },
+        {
+          "id": "2",
+          "label": "Aguarda investigacao",
+          "efeito": "fica como esta; marcar pra olhar com a controladoria"
+        }
+      ]
+    },
+    {
+      "contrato": "87",
+      "unidade": "908 A",
+      "cliente": "LEANDRO DE OLIVEIRA VICENTIN ",
+      "numero_parcela": 2,
+      "tipo": "parcela_entrada",
+      "valor": 1000,
+      "comissao_gerada": 350,
+      "data_pagamento_local": "2026-03-03",
+      "ancora": {
+        "bill": 381,
+        "installment": "2"
+      },
+      "parcela_id": "865aa881-a691-41a1-92c6-b6aa3113bc20",
+      "origem": "data_diverge",
+      "motivo": "nenhum installment do bill bate valor+data -> Excluir Baixa",
+      "acao_sugerida": "excluir_baixa",
+      "opcoes": [
+        {
+          "id": "1",
+          "label": "Confirma Excluir Baixa",
+          "efeito": "parcela volta a pendente (banco deixa de contar comissao que o Sienge nao confirma)"
+        },
+        {
+          "id": "2",
+          "label": "Aguarda investigacao",
+          "efeito": "fica como esta; marcar pra olhar com a controladoria"
+        }
+      ]
+    },
+    {
+      "contrato": "275",
+      "unidade": "803 D",
+      "cliente": "SAMUEL MUELLER LEMOS",
+      "numero_parcela": 3,
+      "tipo": "parcela_entrada",
+      "valor": 1500,
+      "comissao_gerada": 285.69,
+      "data_pagamento_local": "2025-12-10",
+      "ancora": {
+        "bill": 178,
+        "installment": "4"
+      },
+      "parcela_id": "0441c4ef-389f-4f56-b98d-938e5380af6a",
+      "origem": "valor_diverge",
+      "motivo": "nenhum installment do bill bate valor+data -> Excluir Baixa",
+      "acao_sugerida": "excluir_baixa",
+      "opcoes": [
+        {
+          "id": "1",
+          "label": "Confirma Excluir Baixa",
+          "efeito": "parcela volta a pendente (banco deixa de contar comissao que o Sienge nao confirma)"
+        },
+        {
+          "id": "2",
+          "label": "Aguarda investigacao",
+          "efeito": "fica como esta; marcar pra olhar com a controladoria"
+        }
+      ]
+    },
+    {
+      "contrato": "275",
+      "unidade": "803 D",
+      "cliente": "SAMUEL MUELLER LEMOS",
+      "numero_parcela": 7,
+      "tipo": "parcela_entrada",
+      "valor": 1500,
+      "comissao_gerada": 285.69,
+      "data_pagamento_local": "2026-04-10",
+      "ancora": {
+        "bill": 178,
+        "installment": "8"
+      },
+      "parcela_id": "7219de20-b5e3-449a-b3c8-ced28f2e3e74",
+      "origem": "valor_diverge",
+      "motivo": "nenhum installment do bill bate valor+data -> Excluir Baixa",
+      "acao_sugerida": "excluir_baixa",
+      "opcoes": [
+        {
+          "id": "1",
+          "label": "Confirma Excluir Baixa",
+          "efeito": "parcela volta a pendente (banco deixa de contar comissao que o Sienge nao confirma)"
+        },
+        {
+          "id": "2",
+          "label": "Aguarda investigacao",
+          "efeito": "fica como esta; marcar pra olhar com a controladoria"
+        }
+      ]
+    },
+    {
+      "contrato": "275",
+      "unidade": "803 D",
+      "cliente": "SAMUEL MUELLER LEMOS",
+      "numero_parcela": 6,
+      "tipo": "parcela_entrada",
+      "valor": 1500,
+      "comissao_gerada": 285.69,
+      "data_pagamento_local": "2026-03-10",
+      "ancora": {
+        "bill": 178,
+        "installment": "7"
+      },
+      "parcela_id": "891de658-accc-45a6-9ada-162f13355ab5",
+      "origem": "valor_diverge",
+      "motivo": "nenhum installment do bill bate valor+data -> Excluir Baixa",
+      "acao_sugerida": "excluir_baixa",
+      "opcoes": [
+        {
+          "id": "1",
+          "label": "Confirma Excluir Baixa",
+          "efeito": "parcela volta a pendente (banco deixa de contar comissao que o Sienge nao confirma)"
+        },
+        {
+          "id": "2",
+          "label": "Aguarda investigacao",
+          "efeito": "fica como esta; marcar pra olhar com a controladoria"
+        }
+      ]
+    },
+    {
+      "contrato": "275",
+      "unidade": "803 D",
+      "cliente": "SAMUEL MUELLER LEMOS",
+      "numero_parcela": 2,
+      "tipo": "parcela_entrada",
+      "valor": 1500,
+      "comissao_gerada": 285.69,
+      "data_pagamento_local": "2025-11-10",
+      "ancora": {
+        "bill": 178,
+        "installment": "3"
+      },
+      "parcela_id": "9cb89990-01a2-4183-9a54-75b6de80383d",
+      "origem": "valor_diverge",
+      "motivo": "nenhum installment do bill bate valor+data -> Excluir Baixa",
+      "acao_sugerida": "excluir_baixa",
+      "opcoes": [
+        {
+          "id": "1",
+          "label": "Confirma Excluir Baixa",
+          "efeito": "parcela volta a pendente (banco deixa de contar comissao que o Sienge nao confirma)"
+        },
+        {
+          "id": "2",
+          "label": "Aguarda investigacao",
+          "efeito": "fica como esta; marcar pra olhar com a controladoria"
+        }
+      ]
+    },
+    {
+      "contrato": "275",
+      "unidade": "803 D",
+      "cliente": "SAMUEL MUELLER LEMOS",
+      "numero_parcela": 8,
+      "tipo": "parcela_entrada",
+      "valor": 1500,
+      "comissao_gerada": 285.69,
+      "data_pagamento_local": "2026-05-11",
+      "ancora": {
+        "bill": 178,
+        "installment": "9"
+      },
+      "parcela_id": "f4be1a69-16ed-4ae0-84e3-7951dc63a9b4",
+      "origem": "valor_diverge",
+      "motivo": "nenhum installment do bill bate valor+data -> Excluir Baixa",
+      "acao_sugerida": "excluir_baixa",
+      "opcoes": [
+        {
+          "id": "1",
+          "label": "Confirma Excluir Baixa",
+          "efeito": "parcela volta a pendente (banco deixa de contar comissao que o Sienge nao confirma)"
+        },
+        {
+          "id": "2",
+          "label": "Aguarda investigacao",
+          "efeito": "fica como esta; marcar pra olhar com a controladoria"
+        }
+      ]
+    }
+  ],
+  "grupo2_ambiguo": [
+    {
+      "contrato": "247",
+      "unidade": "1303 C",
+      "cliente": "DIEGO MERTZ",
+      "numero_parcela": 3,
+      "tipo": "balao",
+      "valor": 14833.26,
+      "comissao_gerada": 3461.09,
+      "data_pagamento_local": "2026-01-08",
+      "ancora": {
+        "bill": 138,
+        "installment": "30"
+      },
+      "parcela_id": "0e609a42-a64f-4d1c-85f9-3fc8c05bd05a",
+      "origem": "nao_pago",
+      "motivo": "unico candidato mas OCUPADO -> rodada-b",
+      "acao_sugerida": "analisar_candidatos",
+      "opcoes": [
+        {
+          "id": "1",
+          "label": "Re-ancorar no installment indicado",
+          "efeito": "so muda o par 1:1 (metadado); financeiro intacto"
+        },
+        {
+          "id": "2",
+          "label": "Excluir Baixa",
+          "efeito": "se nao houver pagamento real correspondente"
+        },
+        {
+          "id": "3",
+          "label": "Aguarda investigacao",
+          "efeito": "fica como esta"
+        }
+      ],
+      "candidatos": [
+        {
+          "inst": "4",
+          "ocupado_por": "4d6d22d6-a213-4144-869b-bb36b3e43ff9"
+        }
+      ]
+    },
+    {
+      "contrato": "328",
+      "unidade": "1105 B",
+      "cliente": "BRUNA DOS SANTOS SILVA ",
+      "numero_parcela": 4,
+      "tipo": "balao",
+      "valor": 20000,
+      "comissao_gerada": 2904.44,
+      "data_pagamento_local": "2025-12-15",
+      "ancora": {
+        "bill": 382,
+        "installment": "47"
+      },
+      "parcela_id": "7c6a944a-b6ca-46ae-9fc8-796e5551cc5d",
+      "origem": "nao_pago",
+      "motivo": "unico candidato mas OCUPADO -> rodada-b",
+      "acao_sugerida": "analisar_candidatos",
+      "opcoes": [
+        {
+          "id": "1",
+          "label": "Re-ancorar no installment indicado",
+          "efeito": "so muda o par 1:1 (metadado); financeiro intacto"
+        },
+        {
+          "id": "2",
+          "label": "Excluir Baixa",
+          "efeito": "se nao houver pagamento real correspondente"
+        },
+        {
+          "id": "3",
+          "label": "Aguarda investigacao",
+          "efeito": "fica como esta"
+        }
+      ],
+      "candidatos": [
+        {
+          "inst": "8",
+          "ocupado_por": "d337d088-4021-4970-be98-f921bb810035"
+        }
+      ]
+    },
+    {
+      "contrato": "4",
+      "unidade": "1008 B",
+      "cliente": "JEFERSON CARDOSO DA SILVA",
+      "numero_parcela": 4,
+      "tipo": "balao",
+      "valor": 6000,
+      "comissao_gerada": 2100,
+      "data_pagamento_local": "2025-12-19",
+      "ancora": {
+        "bill": 27,
+        "installment": "44"
+      },
+      "parcela_id": "4ef0c2f5-5f21-4641-b607-b40b5c1027d3",
+      "origem": "nao_pago",
+      "motivo": "unico candidato mas OCUPADO -> rodada-b",
+      "acao_sugerida": "analisar_candidatos",
+      "opcoes": [
+        {
+          "id": "1",
+          "label": "Re-ancorar no installment indicado",
+          "efeito": "so muda o par 1:1 (metadado); financeiro intacto"
+        },
+        {
+          "id": "2",
+          "label": "Excluir Baixa",
+          "efeito": "se nao houver pagamento real correspondente"
+        },
+        {
+          "id": "3",
+          "label": "Aguarda investigacao",
+          "efeito": "fica como esta"
+        }
+      ],
+      "candidatos": [
+        {
+          "inst": "5",
+          "ocupado_por": "a279194a-dc1b-4f84-85f3-186b66653b90"
+        }
+      ]
+    },
+    {
+      "contrato": "319",
+      "unidade": "510 B",
+      "cliente": "MATHEUS PETTER BRASIL",
+      "numero_parcela": 2,
+      "tipo": "balao",
+      "valor": 5000,
+      "comissao_gerada": 2024.62,
+      "data_pagamento_local": "2025-12-18",
+      "ancora": {
+        "bill": 224,
+        "installment": "22"
+      },
+      "parcela_id": "111ddafb-0d62-4076-af19-875f669a27a3",
+      "origem": "nao_pago",
+      "motivo": "unico candidato mas OCUPADO -> rodada-b",
+      "acao_sugerida": "analisar_candidatos",
+      "opcoes": [
+        {
+          "id": "1",
+          "label": "Re-ancorar no installment indicado",
+          "efeito": "so muda o par 1:1 (metadado); financeiro intacto"
+        },
+        {
+          "id": "2",
+          "label": "Excluir Baixa",
+          "efeito": "se nao houver pagamento real correspondente"
+        },
+        {
+          "id": "3",
+          "label": "Aguarda investigacao",
+          "efeito": "fica como esta"
+        }
+      ],
+      "candidatos": [
+        {
+          "inst": "9",
+          "ocupado_por": "1f034a18-a45d-4e4f-9a82-423bd2c5c00a"
+        }
+      ]
+    },
+    {
+      "contrato": "176",
+      "unidade": "403 B",
+      "cliente": "MILENA PAULA NASCIMENTO SANTOS",
+      "numero_parcela": 2,
+      "tipo": "balao",
+      "valor": 5000,
+      "comissao_gerada": 1625.02,
+      "data_pagamento_local": "2025-12-19",
+      "ancora": {
+        "bill": 321,
+        "installment": "22"
+      },
+      "parcela_id": "29a62264-12b2-4b07-a96f-008630bf5760",
+      "origem": "nao_pago",
+      "motivo": "unico candidato mas OCUPADO -> rodada-b",
+      "acao_sugerida": "analisar_candidatos",
+      "opcoes": [
+        {
+          "id": "1",
+          "label": "Re-ancorar no installment indicado",
+          "efeito": "so muda o par 1:1 (metadado); financeiro intacto"
+        },
+        {
+          "id": "2",
+          "label": "Excluir Baixa",
+          "efeito": "se nao houver pagamento real correspondente"
+        },
+        {
+          "id": "3",
+          "label": "Aguarda investigacao",
+          "efeito": "fica como esta"
+        }
+      ],
+      "candidatos": [
+        {
+          "inst": "9",
+          "ocupado_por": "4caa89c8-53c4-4f93-968e-5a36130c8295"
+        }
+      ]
+    },
+    {
+      "contrato": "15",
+      "unidade": "512 A",
+      "cliente": "SABRINA LEMOS VIANA",
+      "numero_parcela": 5,
+      "tipo": "balao",
+      "valor": 2000,
+      "comissao_gerada": 531.56,
+      "data_pagamento_local": "2025-10-28",
+      "ancora": {
+        "bill": 367,
+        "installment": "60"
+      },
+      "parcela_id": "3f0a04c1-6e4d-4a52-84dd-3de9b7745ef0",
+      "origem": "nao_pago",
+      "motivo": "unico candidato mas OCUPADO -> rodada-b",
+      "acao_sugerida": "analisar_candidatos",
+      "opcoes": [
+        {
+          "id": "1",
+          "label": "Re-ancorar no installment indicado",
+          "efeito": "so muda o par 1:1 (metadado); financeiro intacto"
+        },
+        {
+          "id": "2",
+          "label": "Excluir Baixa",
+          "efeito": "se nao houver pagamento real correspondente"
+        },
+        {
+          "id": "3",
+          "label": "Aguarda investigacao",
+          "efeito": "fica como esta"
+        }
+      ],
+      "candidatos": [
+        {
+          "inst": "8",
+          "ocupado_por": "adae42e1-e462-4e5f-a999-80619e54cdcc"
+        }
+      ]
+    },
+    {
+      "contrato": "87",
+      "unidade": "908 A",
+      "cliente": "LEANDRO DE OLIVEIRA VICENTIN ",
+      "numero_parcela": 6,
+      "tipo": "parcela_entrada",
+      "valor": 1394.47,
+      "comissao_gerada": 488.06,
+      "data_pagamento_local": "2026-05-08",
+      "ancora": {
+        "bill": 381,
+        "installment": "14"
+      },
+      "parcela_id": "1c4b2719-056d-47a1-a323-a39b6cca20fd",
+      "origem": "nao_pago",
+      "motivo": "unico candidato mas OCUPADO -> rodada-b",
+      "acao_sugerida": "analisar_candidatos",
+      "opcoes": [
+        {
+          "id": "1",
+          "label": "Re-ancorar no installment indicado",
+          "efeito": "so muda o par 1:1 (metadado); financeiro intacto"
+        },
+        {
+          "id": "2",
+          "label": "Excluir Baixa",
+          "efeito": "se nao houver pagamento real correspondente"
+        },
+        {
+          "id": "3",
+          "label": "Aguarda investigacao",
+          "efeito": "fica como esta"
+        }
+      ],
+      "candidatos": [
+        {
+          "inst": "12",
+          "ocupado_por": "5ba910c4-0ecb-478a-8494-2cd444f8ef72"
+        }
+      ]
+    },
+    {
+      "contrato": "27",
+      "unidade": "604 A",
+      "cliente": "TARCISIO LOCH JUNIOR",
+      "numero_parcela": 11,
+      "tipo": "parcela_entrada",
+      "valor": 1277.3,
+      "comissao_gerada": 447.05,
+      "data_pagamento_local": "2026-05-26",
+      "ancora": {
+        "bill": 370,
+        "installment": "11"
+      },
+      "parcela_id": "3e5a5d72-4e78-4c98-a191-6c522c31c163",
+      "origem": "nao_pago",
+      "motivo": "unico candidato mas OCUPADO -> rodada-b",
+      "acao_sugerida": "analisar_candidatos",
+      "opcoes": [
+        {
+          "id": "1",
+          "label": "Re-ancorar no installment indicado",
+          "efeito": "so muda o par 1:1 (metadado); financeiro intacto"
+        },
+        {
+          "id": "2",
+          "label": "Excluir Baixa",
+          "efeito": "se nao houver pagamento real correspondente"
+        },
+        {
+          "id": "3",
+          "label": "Aguarda investigacao",
+          "efeito": "fica como esta"
+        }
+      ],
+      "candidatos": [
+        {
+          "inst": "10",
+          "ocupado_por": "687dea6b-a5ad-417a-b32a-374e511379c9"
+        }
+      ]
+    },
+    {
+      "contrato": "214",
+      "unidade": "504 C",
+      "cliente": "ESTER DORALI CORDEIRO BROCKWELD",
+      "numero_parcela": 12,
+      "tipo": "parcela_entrada",
+      "valor": 1045.15,
+      "comissao_gerada": 365.83,
+      "data_pagamento_local": "2026-05-04",
+      "ancora": {
+        "bill": 137,
+        "installment": "12"
+      },
+      "parcela_id": "eb6344ea-ab0d-4525-abcd-1681de483839",
+      "origem": "nao_pago",
+      "motivo": "unico candidato mas OCUPADO -> rodada-b",
+      "acao_sugerida": "analisar_candidatos",
+      "opcoes": [
+        {
+          "id": "1",
+          "label": "Re-ancorar no installment indicado",
+          "efeito": "so muda o par 1:1 (metadado); financeiro intacto"
+        },
+        {
+          "id": "2",
+          "label": "Excluir Baixa",
+          "efeito": "se nao houver pagamento real correspondente"
+        },
+        {
+          "id": "3",
+          "label": "Aguarda investigacao",
+          "efeito": "fica como esta"
+        }
+      ],
+      "candidatos": [
+        {
+          "inst": "11",
+          "ocupado_por": "d57242e8-409a-4a2b-b525-95264f7f4e4b"
+        }
+      ]
+    },
+    {
+      "contrato": "161",
+      "unidade": "1506 A",
+      "cliente": "LUCAS PORTO MARTINS",
+      "numero_parcela": 5,
+      "tipo": "balao",
+      "valor": 5000,
+      "comissao_gerada": 350,
+      "data_pagamento_local": "2025-12-11",
+      "ancora": {
+        "bill": 181,
+        "installment": "60"
+      },
+      "parcela_id": "1cd19f9c-4304-40aa-9968-5c7ea821907f",
+      "origem": "nao_pago",
+      "motivo": "unico candidato mas OCUPADO -> rodada-b",
+      "acao_sugerida": "analisar_candidatos",
+      "opcoes": [
+        {
+          "id": "1",
+          "label": "Re-ancorar no installment indicado",
+          "efeito": "so muda o par 1:1 (metadado); financeiro intacto"
+        },
+        {
+          "id": "2",
+          "label": "Excluir Baixa",
+          "efeito": "se nao houver pagamento real correspondente"
+        },
+        {
+          "id": "3",
+          "label": "Aguarda investigacao",
+          "efeito": "fica como esta"
+        }
+      ],
+      "candidatos": [
+        {
+          "inst": "8",
+          "ocupado_por": "80f1961c-31c0-457f-8c9d-b232c9b3a92a"
+        }
+      ]
+    },
+    {
+      "contrato": "231",
+      "unidade": "907 C",
+      "cliente": "PATRICIA CAMPOS TERRA LOPES",
+      "numero_parcela": 9,
+      "tipo": "parcela_entrada",
+      "valor": 1416,
+      "comissao_gerada": 495.49,
+      "data_pagamento_local": "2026-04-29",
+      "ancora": {
+        "bill": 144,
+        "installment": "9"
+      },
+      "parcela_id": "59f77768-9570-40c0-a8b2-cbf8f428c108",
+      "origem": "data_diverge",
+      "motivo": "unico candidato mas OCUPADO -> rodada-b",
+      "acao_sugerida": "analisar_candidatos",
+      "opcoes": [
+        {
+          "id": "1",
+          "label": "Re-ancorar no installment indicado",
+          "efeito": "so muda o par 1:1 (metadado); financeiro intacto"
+        },
+        {
+          "id": "2",
+          "label": "Excluir Baixa",
+          "efeito": "se nao houver pagamento real correspondente"
+        },
+        {
+          "id": "3",
+          "label": "Aguarda investigacao",
+          "efeito": "fica como esta"
+        }
+      ],
+      "candidatos": [
+        {
+          "inst": "10",
+          "ocupado_por": "632cad7f-cd05-4b6c-8ea6-9c9c5251158d"
+        }
+      ]
+    },
+    {
+      "contrato": "231",
+      "unidade": "907 C",
+      "cliente": "PATRICIA CAMPOS TERRA LOPES",
+      "numero_parcela": 10,
+      "tipo": "parcela_entrada",
+      "valor": 1416,
+      "comissao_gerada": 495.49,
+      "data_pagamento_local": "2026-04-30",
+      "ancora": {
+        "bill": 144,
+        "installment": "10"
+      },
+      "parcela_id": "632cad7f-cd05-4b6c-8ea6-9c9c5251158d",
+      "origem": "data_diverge",
+      "motivo": "unico candidato mas OCUPADO -> rodada-b",
+      "acao_sugerida": "analisar_candidatos",
+      "opcoes": [
+        {
+          "id": "1",
+          "label": "Re-ancorar no installment indicado",
+          "efeito": "so muda o par 1:1 (metadado); financeiro intacto"
+        },
+        {
+          "id": "2",
+          "label": "Excluir Baixa",
+          "efeito": "se nao houver pagamento real correspondente"
+        },
+        {
+          "id": "3",
+          "label": "Aguarda investigacao",
+          "efeito": "fica como esta"
+        }
+      ],
+      "candidatos": [
+        {
+          "inst": "9",
+          "ocupado_por": "59f77768-9570-40c0-a8b2-cbf8f428c108"
+        }
+      ]
+    },
+    {
+      "contrato": "214",
+      "unidade": "504 C",
+      "cliente": "ESTER DORALI CORDEIRO BROCKWELD",
+      "numero_parcela": 11,
+      "tipo": "parcela_entrada",
+      "valor": 1045.15,
+      "comissao_gerada": 365.83,
+      "data_pagamento_local": "2026-04-20",
+      "ancora": {
+        "bill": 137,
+        "installment": "11"
+      },
+      "parcela_id": "d57242e8-409a-4a2b-b525-95264f7f4e4b",
+      "origem": "data_diverge",
+      "motivo": "unico candidato mas OCUPADO -> rodada-b",
+      "acao_sugerida": "analisar_candidatos",
+      "opcoes": [
+        {
+          "id": "1",
+          "label": "Re-ancorar no installment indicado",
+          "efeito": "so muda o par 1:1 (metadado); financeiro intacto"
+        },
+        {
+          "id": "2",
+          "label": "Excluir Baixa",
+          "efeito": "se nao houver pagamento real correspondente"
+        },
+        {
+          "id": "3",
+          "label": "Aguarda investigacao",
+          "efeito": "fica como esta"
+        }
+      ],
+      "candidatos": [
+        {
+          "inst": "10",
+          "ocupado_por": "d183ee1f-39fb-4cc8-8e13-c95968329d0c"
+        }
+      ]
+    }
+  ]
+}
