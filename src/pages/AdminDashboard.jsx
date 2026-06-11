@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useMemo } from 'react'
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { supabase } from '../lib/supabase'
+import { fetchAllPaginated } from '../utils/supabaseQuery'
 import { deleteCliente } from '../services/adminClientes'
 import { jsPDF } from 'jspdf'
 import autoTable from 'jspdf-autotable'
@@ -1549,32 +1550,17 @@ const AdminDashboard = () => {
         .from('coordenadoras').select('*').eq('ativo', true).order('nome')
       setCoordenadoras(coordenadorasData || [])
 
-      // Buscar pagamentos pro-soluto (sem JOINs) - buscar todos sem limite
-      // O Supabase tem limite padrão de 1000, então precisamos buscar em lotes ou aumentar o limite
-      let pagamentosData = []
-      let hasMore = true
-      let page = 0
-      const pageSize = 1000
-      
-      while (hasMore) {
-        const { data: pageData, error: pagamentosError } = await supabase
+      // Buscar pagamentos pro-soluto (sem JOINs) — paginado com ordenação total.
+      // ver .claude/rules/leitura-de-listas-e-refetch.md: o loop antigo paginava sem
+      // ORDER BY (ordem instável entre páginas) e fazia break silencioso em erro
+      // (dado parcial apresentado como completo).
+      const pagamentosData = await fetchAllPaginated((from, to) =>
+        supabase
           .from('pagamentos_prosoluto')
           .select('*')
-          .range(page * pageSize, (page + 1) * pageSize - 1)
-        
-        if (pagamentosError) {
-          console.error('Erro ao buscar pagamentos:', pagamentosError)
-          break
-        }
-        
-        if (pageData && pageData.length > 0) {
-          pagamentosData = [...pagamentosData, ...pageData]
-          hasMore = pageData.length === pageSize
-          page++
-        } else {
-          hasMore = false
-        }
-      }
+          .order('id', { ascending: true })
+          .range(from, to)
+      )
       
      // console.log('Pagamentos do banco:', pagamentosData.length, 'registros')
       
@@ -1732,6 +1718,66 @@ const AdminDashboard = () => {
       setLoading(false)
      // console.log('🏁 fetchData finalizado')
     }
+  }
+
+  // ── Refetch cirúrgico pós-mutação (ver .claude/rules/leitura-de-listas-e-refetch.md) ──
+  // Mutação NÃO re-dispara fetchData() (~26 queries, 19k linhas): re-lê só o que mudou e
+  // faz merge imutável no estado. O retorno do banco é a verdade (triggers 017/020/026
+  // podem ajustar o write), nunca o payload local.
+
+  // Merge de UMA parcela retornada por update().select().single(); preserva pag.venda
+  // (objeto aninhado do enriquecimento — proibido mutar).
+  const aplicarPagamentoNoEstado = (row) => {
+    setPagamentos(prev => prev.map(p => (p.id === row.id ? { ...p, ...row, venda: p.venda } : p)))
+  }
+
+  // Re-lê venda + parcelas de UMA venda e substitui no estado (mesmo shape do fetchData).
+  const refetchVendaEPagamentos = async (vendaId) => {
+    const [vendaRes, pagsRes] = await Promise.all([
+      supabase.from('vendas').select('*').eq('id', vendaId).maybeSingle(),
+      supabase
+        .from('pagamentos_prosoluto')
+        .select('*')
+        .eq('venda_id', vendaId)
+        .order('data_prevista', { ascending: true })
+        .order('id', { ascending: true })
+    ])
+    if (vendaRes.error) throw vendaRes.error
+    if (pagsRes.error) throw pagsRes.error
+    const venda = vendaRes.data
+    // Sob RLS futuro, linha negada vem como ausência silenciosa — erro explícito aqui.
+    if (!venda) throw new Error(`Venda ${vendaId} não encontrada — verifique permissão/RLS`)
+
+    const corretor = corretores.find(c => String(c.id) === String(venda.corretor_id)) || null
+    const empreendimento = empreendimentos.find(e => String(e.id) === String(venda.empreendimento_id)) || null
+    const cliente = clientes.find(c => String(c.id) === String(venda.cliente_id)) || null
+
+    const vendaEnriquecida = {
+      ...venda,
+      corretor: corretor ? { id: corretor.id, nome: corretor.nome, email: corretor.email, tipo_corretor: corretor.tipo_corretor, percentual_corretor: corretor.percentual_corretor } : null,
+      empreendimento: empreendimento ? { id: empreendimento.id, nome: empreendimento.nome } : null,
+      cliente: cliente ? { id: cliente.id, nome: cliente.nome_completo, cpf: cliente.cpf, cnpj: cliente.cnpj, email: cliente.email, telefone: cliente.telefone } : null
+    }
+
+    // Shape do aninhado de pagamentos (subset de campos do corretor/cliente, como no fetchData)
+    const vendaAninhada = {
+      ...vendaEnriquecida,
+      corretor: corretor ? { id: corretor.id, nome: corretor.nome, percentual_corretor: corretor.percentual_corretor } : null,
+      cliente: cliente ? { id: cliente.id, nome: cliente.nome_completo, cpf: cliente.cpf, cnpj: cliente.cnpj } : null
+    }
+
+    const pagamentosEnriquecidos = (pagsRes.data || []).map(pag => ({ ...pag, venda: vendaAninhada }))
+
+    setVendas(prev => {
+      const existe = prev.some(v => String(v.id) === String(vendaId))
+      return existe
+        ? prev.map(v => (String(v.id) === String(vendaId) ? vendaEnriquecida : v))
+        : [...prev, vendaEnriquecida]
+    })
+    setPagamentos(prev => [
+      ...prev.filter(p => String(p.venda_id) !== String(vendaId)),
+      ...pagamentosEnriquecidos
+    ])
   }
 
   // Função para buscar solicitações
@@ -3227,10 +3273,12 @@ const AdminDashboard = () => {
     if (!pagamentoParaExcluir || excluindoBaixa) return
     setExcluindoBaixa(true)
     try {
-      const { error } = await supabase
+      const { data: row, error } = await supabase
         .from('pagamentos_prosoluto')
         .update({ status: 'pendente', data_pagamento: null })
         .eq('id', pagamentoParaExcluir.id)
+        .select()
+        .single()
       if (error) {
         setMessage({ type: 'error', text: 'Erro ao reverter baixa: ' + error.message })
         setExcluindoBaixa(false)
@@ -3239,7 +3287,8 @@ const AdminDashboard = () => {
       setShowModalExcluirBaixa(false)
       setPagamentoParaExcluir(null)
       setExcluindoBaixa(false)
-      fetchData()
+      // Refetch cirúrgico: merge da linha pós-trigger (020 valida o par status+data)
+      aplicarPagamentoNoEstado(row)
       setMessage({ type: 'success', text: 'Baixa revertida. Parcela voltou a Pendente.' })
       clearMessageAfter(3000)
     } catch (err) {
@@ -3273,10 +3322,12 @@ const AdminDashboard = () => {
         updateData.comissao_gerada = valorComissao
       }
 
-      const { error } = await supabase
+      const { data: row, error } = await supabase
         .from('pagamentos_prosoluto')
         .update(updateData)
         .eq('id', pagamentoParaConfirmar.id)
+        .select()
+        .single()
 
       if (error) {
         setMessage({ type: 'error', text: 'Erro ao confirmar: ' + error.message })
@@ -3287,7 +3338,8 @@ const AdminDashboard = () => {
       setShowModalConfirmarPagamento(false)
       setPagamentoParaConfirmar(null)
       setConfirmandoPagamento(false)
-      fetchData()
+      // Refetch cirúrgico: merge da linha pós-trigger, sem recarregar o banco inteiro
+      aplicarPagamentoNoEstado(row)
       setMessage({ type: 'success', text: pagamentoParaConfirmar.status === 'pago' ? 'Baixa atualizada!' : 'Pagamento confirmado!' })
       clearMessageAfter(3000)
     } catch (error) {
@@ -3530,7 +3582,8 @@ const AdminDashboard = () => {
           } else {
             const msgExtra = aplicarComissaoIntegral ? ' (Comissão integral - entrada ≥ 20% no ato)' : ''
             setMessage({ type: 'success', text: `${aInserir.length} pagamentos gerados!${msgExtra}` })
-            fetchData()
+            // Refetch cirúrgico: só a venda tocada e suas parcelas
+            await refetchVendaEPagamentos(venda.id)
           }
         }
       }
@@ -3551,9 +3604,9 @@ const AdminDashboard = () => {
       await gerarPagamentosVenda(venda)
       totalGerados++
     }
-    
+
     setSaving(false)
-    fetchData()
+    // Sem fetchData: cada gerarPagamentosVenda já fez o refetch cirúrgico da própria venda
     setMessage({ type: 'success', text: `Pagamentos gerados para ${totalGerados} vendas!` })
     clearMessageAfter(3000)
   }
@@ -4478,7 +4531,8 @@ const AdminDashboard = () => {
       setShowModalRenegociacao(false)
       setParcelasSelecionadas([])
       setShowModal(false)
-      fetchData()
+      // Refetch cirúrgico: renegociação só toca esta venda e suas parcelas
+      await refetchVendaEPagamentos(venda.id)
       setMessage({ type: 'success', text: 'Renegociação salva com sucesso!' })
       clearMessageAfter(4000)
     } catch (err) {
