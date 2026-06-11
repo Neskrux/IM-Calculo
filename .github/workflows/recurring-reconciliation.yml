@@ -179,6 +179,17 @@ jobs:
           path: .sienge-cache
           key: sienge-cache-${{ github.run_id }}-${{ github.run_attempt }}
 
+      # Artifact do cache Sienge: o budget do bulk-data é ~1 pull cheio/23h POR CONTA —
+      # o pull diário do cron vira artifact baixável pra análise local não gastar quota
+      # (e não tomar 429). Complementa o sienge-cache-export.yml (export sob demanda).
+      - name: Publicar cache Sienge como artifact
+        if: always() && steps.sienge-cache-state.outputs.has-files == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: sienge-cache-${{ github.run_id }}
+          path: .sienge-cache
+          retention-days: 3
+
       # Falha ruidosa: se houver erros em qualquer report, marca o job como
       # failed pra disparar email do GitHub Actions.
       - name: Verificar erros

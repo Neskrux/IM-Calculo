@@ -1,0 +1,321 @@
+{
+  "meta": {
+    "geradoEm": "2026-06-11T13:20:46.493Z",
+    "spec_ref": ".claude/rules/sincronizacao-sienge.md",
+    "script": "scripts/backfill-data-distrato.mjs",
+    "modo": "apply",
+    "fonte": "sienge_relatorio-20260603-174452.xlsx (relatório oficial) + REST /sales-contracts (limbo)"
+  },
+  "counts": {
+    "matched": 22,
+    "limbo": 7,
+    "noMatch": 0,
+    "updated": 29,
+    "skipped_idempotent": 6,
+    "errors": 0
+  },
+  "plano": [
+    {
+      "venda_id": "54497681-10e3-4a1a-89d8-b3356fdec09a",
+      "contrato": "380",
+      "unidade": "507 A",
+      "cliente_banco": "NATHALIA GRANCONATO TEIXEIRA",
+      "cliente_xlsx": "614 - NATHALIA GRANCONATO TEIXEIRA",
+      "rel_contrato": "266",
+      "data_distrato": "2026-02-08",
+      "status_atual": "pendente",
+      "criterio": "unidade única"
+    },
+    {
+      "venda_id": "d77a7a35-7c36-450a-b4af-9648bc44adc7",
+      "contrato": "384",
+      "unidade": "604 D",
+      "cliente_banco": "CRISTINA DOS SANTOS",
+      "cliente_xlsx": "617 - CRISTINA DOS SANTOS",
+      "rel_contrato": "270",
+      "data_distrato": "2026-03-17",
+      "status_atual": "pendente",
+      "criterio": "unidade ×2 desambiguada por cliente"
+    },
+    {
+      "venda_id": "64aa2405-0068-4c20-8d15-736e1a1d6b1b",
+      "contrato": "168",
+      "unidade": "1702 A",
+      "cliente_banco": "VALDENILSON RIBEIRO DE SOUSA",
+      "cliente_xlsx": "490 - VALDENILSON RIBEIRO DE SOUSA",
+      "rel_contrato": "78",
+      "data_distrato": "2025-11-17",
+      "status_atual": "pendente",
+      "criterio": "unidade única"
+    },
+    {
+      "venda_id": "eb4ac0bc-7de5-49fd-a933-3ab7de549dac",
+      "contrato": "181",
+      "unidade": "603 B",
+      "cliente_banco": "JENNIFER JACYARA LUIS MARTINS",
+      "cliente_xlsx": "494 - JENNIFER JACYARA LUIS MARTINS",
+      "rel_contrato": "91",
+      "data_distrato": "2026-02-02",
+      "status_atual": "pendente",
+      "criterio": "unidade única"
+    },
+    {
+      "venda_id": "11728f4d-67d3-4629-a6b2-d93ec06dbea0",
+      "contrato": "25",
+      "unidade": "508 A",
+      "cliente_banco": "JOÃO VICTOR ACAMPORA DE ABREU",
+      "cliente_xlsx": "17 - JOÒO VICTOR ACAMPORA DE ABREU",
+      "rel_contrato": "18",
+      "data_distrato": "2025-09-23",
+      "status_atual": "pendente",
+      "criterio": "unidade única"
+    },
+    {
+      "venda_id": "1ed61c21-97b9-4409-bf45-403cb41e3889",
+      "contrato": "186",
+      "unidade": "803 B",
+      "cliente_banco": "DANIEL JONATHAN DOS SANTOS",
+      "cliente_xlsx": "498 - DANIEL JONATHAN DOS SANTOS",
+      "rel_contrato": "96",
+      "data_distrato": "2026-01-14",
+      "status_atual": "pendente",
+      "criterio": "unidade única"
+    },
+    {
+      "venda_id": "84b74c27-fa97-4cb0-9e22-be95f88237d2",
+      "contrato": "255",
+      "unidade": "1405 C",
+      "cliente_banco": "ANDREY LUIZ MESSIAS SANTOS ",
+      "cliente_xlsx": "151 - ANDREY LUIZ MESSIAS SANTOS ",
+      "rel_contrato": "163",
+      "data_distrato": "2025-12-29",
+      "status_atual": "pendente",
+      "criterio": "unidade única"
+    },
+    {
+      "venda_id": "335e0f43-2a77-4399-ae27-eb4af0a56a68",
+      "contrato": "268",
+      "unidade": "604 D",
+      "cliente_banco": "HELENA ODILHA VITORIA DA SILVA ",
+      "cliente_xlsx": "160 - HELENA ODILHA VITORIA DA SILVA ",
+      "rel_contrato": "176",
+      "data_distrato": "2026-01-06",
+      "status_atual": "pendente",
+      "criterio": "unidade única"
+    },
+    {
+      "venda_id": "8b74adf9-e6dc-404b-8144-d026dbb256ed",
+      "contrato": "209",
+      "unidade": "403 C",
+      "cliente_banco": "NILCEIA DE SOUZA VARGAS",
+      "cliente_xlsx": "114 - NILCEIA DE SOUZA VARGAS",
+      "rel_contrato": "117",
+      "data_distrato": "2026-01-13",
+      "status_atual": "pendente",
+      "criterio": "unidade única"
+    },
+    {
+      "venda_id": "ac19aefe-53c9-4f4c-a519-e603fc6aa05e",
+      "contrato": "278",
+      "unidade": "901 D",
+      "cliente_banco": "JOSÉ SILAS BARBOSA DA SILVA",
+      "cliente_xlsx": "168 - JOSÃ‰ SILAS BARBOSA DA SILVA",
+      "rel_contrato": "186",
+      "data_distrato": "2025-12-15",
+      "status_atual": "pendente",
+      "criterio": "unidade única"
+    },
+    {
+      "venda_id": "64ffc2fb-b265-41d3-b7d5-cc101d813220",
+      "contrato": "284",
+      "unidade": "1001 D",
+      "cliente_banco": "JERONIMO JOSÉ DOS SANTOS JUNIOR",
+      "cliente_xlsx": "534 - JERONIMO JOSÃ‰ DOS SANTOS JUNIOR",
+      "rel_contrato": "192",
+      "data_distrato": "2025-12-09",
+      "status_atual": "pendente",
+      "criterio": "unidade única"
+    },
+    {
+      "venda_id": "67240a63-fd0f-4d21-8dd6-5ea34e4c0c76",
+      "contrato": "290",
+      "unidade": "1008 D",
+      "cliente_banco": "SIDNEY DE JESUS JUNIOR",
+      "cliente_xlsx": "174 - SIDNEY DE JESUS JUNIOR",
+      "rel_contrato": "198",
+      "data_distrato": "2025-11-17",
+      "status_atual": "pendente",
+      "criterio": "unidade única"
+    },
+    {
+      "venda_id": "6065c4ff-1bb2-42ab-85f5-b769f7f97253",
+      "contrato": "307",
+      "unidade": "1707 A",
+      "cliente_banco": "ISABEL CRISTINA MAÇANEIRO",
+      "cliente_xlsx": "485 - ISABEL CRISTINA MAÃ‡ANEIRO",
+      "rel_contrato": "215",
+      "data_distrato": "2025-12-05",
+      "status_atual": "pendente",
+      "criterio": "override por data da baixa em massa (ground-truth income)"
+    },
+    {
+      "venda_id": "16f0a4fd-e669-49be-814d-76789ed6bb4c",
+      "contrato": "311",
+      "unidade": "803 A",
+      "cliente_banco": "VINICIUS MACIEL DE CARVALHO",
+      "cliente_xlsx": "541 - VINICIUS MACIEL DE CARVALHO",
+      "rel_contrato": "219",
+      "data_distrato": "2025-11-24",
+      "status_atual": "pendente",
+      "criterio": "unidade única"
+    },
+    {
+      "venda_id": "36965dcf-4d05-42f6-b066-ac480bb1a561",
+      "contrato": "315",
+      "unidade": "406 A",
+      "cliente_banco": "LUIS GUILHERME DIAS SOUSA",
+      "cliente_xlsx": "543 - LUIS GUILHERME DIAS SOUSA",
+      "rel_contrato": "223",
+      "data_distrato": "2026-04-09",
+      "status_atual": "pendente",
+      "criterio": "unidade única"
+    },
+    {
+      "venda_id": "9581a13a-5d34-44a0-b54d-62a841d757a7",
+      "contrato": "341",
+      "unidade": "503 B",
+      "cliente_banco": "CAROLINE PEREIRA GONSALVES",
+      "cliente_xlsx": "572 - CAROLINE PEREIRA GONSALVES",
+      "rel_contrato": "244",
+      "data_distrato": "2026-03-25",
+      "status_atual": "pendente",
+      "criterio": "unidade única"
+    },
+    {
+      "venda_id": "908fbcdb-ac7a-45f0-95c1-5e4f45e67736",
+      "contrato": "354",
+      "unidade": "510 C",
+      "cliente_banco": "VINÍCIUS LUIZ DA CRUZ",
+      "cliente_xlsx": "121 - VINÍCIUS LUIZ DA CRUZ",
+      "rel_contrato": "252",
+      "data_distrato": "2026-01-15",
+      "status_atual": "pendente",
+      "criterio": "unidade única"
+    },
+    {
+      "venda_id": "83b8f727-e9a9-4a88-846c-272f6970356a",
+      "contrato": "355",
+      "unidade": "1707 A",
+      "cliente_banco": "ISABEL CRISTINA MAÇANEIRO",
+      "cliente_xlsx": "485 - ISABEL CRISTINA MAÃ‡ANEIRO",
+      "rel_contrato": "253",
+      "data_distrato": "2025-12-04",
+      "status_atual": "pendente",
+      "criterio": "override por data da baixa em massa (ground-truth income)"
+    },
+    {
+      "venda_id": "7787a154-ec62-469f-b330-d9b3b6142dd2",
+      "contrato": "361",
+      "unidade": "1707 A",
+      "cliente_banco": "MATHEUS FERREIRA LEITE DE LIMA",
+      "cliente_xlsx": "591 - MATHEUS FERREIRA LEITE DE LIMA",
+      "rel_contrato": "258",
+      "data_distrato": "2026-01-29",
+      "status_atual": "pendente",
+      "criterio": "unidade única"
+    },
+    {
+      "venda_id": "5cbed8bd-36a1-4ec6-ace1-0aa9da2023b1",
+      "contrato": "362",
+      "unidade": "906 A",
+      "cliente_banco": "RENATA MIRANDA VALENTE",
+      "cliente_xlsx": "592 - RENATA MIRANDA VALENTE",
+      "rel_contrato": "259",
+      "data_distrato": "2026-01-15",
+      "status_atual": "pendente",
+      "criterio": "unidade única"
+    },
+    {
+      "venda_id": "5cfdabb1-25aa-4633-a6e0-b3c4651cf052",
+      "contrato": "42",
+      "unidade": "609 A",
+      "cliente_banco": "WALDIR SARMENTO JUNIOR",
+      "cliente_xlsx": "554 - WALDIR SARMENTO JUNIOR",
+      "rel_contrato": "21",
+      "data_distrato": "2026-02-06",
+      "status_atual": "pendente",
+      "criterio": "unidade única"
+    },
+    {
+      "venda_id": "39d7aad3-aa7b-459c-820a-17a00e1aa7f4",
+      "contrato": "79",
+      "unidade": "904 A",
+      "cliente_banco": "BRYAN LUCAS MACCALLI",
+      "cliente_xlsx": "40 - BRYAN LUCAS MACCALLI",
+      "rel_contrato": "37",
+      "data_distrato": "2026-02-24",
+      "status_atual": "pendente",
+      "criterio": "unidade única"
+    }
+  ],
+  "plano_limbo": [
+    {
+      "venda_id": "59ff9a4f-ef24-4e80-acab-502606e79741",
+      "contrato": "196",
+      "unidade": "908 B",
+      "data_distrato": "2026-04-23",
+      "status_atual": "pago",
+      "criterio": "limbo: REST /sales-contracts confirma Cancelado + cancellationDate"
+    },
+    {
+      "venda_id": "58657142-c9b7-4612-aa2e-ae6fa84d876f",
+      "contrato": "229",
+      "unidade": "904 C",
+      "data_distrato": "2026-04-29",
+      "status_atual": "pago",
+      "criterio": "limbo: REST /sales-contracts confirma Cancelado + cancellationDate"
+    },
+    {
+      "venda_id": "ac1c4423-44f2-4c1d-b09c-866fcf326fe3",
+      "contrato": "246",
+      "unidade": "1302 C",
+      "data_distrato": "2026-04-23",
+      "status_atual": "pago",
+      "criterio": "limbo: REST /sales-contracts confirma Cancelado + cancellationDate"
+    },
+    {
+      "venda_id": "e14ded4d-9161-4d65-bf6e-27d6518d199c",
+      "contrato": "259",
+      "unidade": "403 D",
+      "data_distrato": "2026-04-23",
+      "status_atual": "pago",
+      "criterio": "limbo: REST /sales-contracts confirma Cancelado + cancellationDate"
+    },
+    {
+      "venda_id": "090eb74d-8ff4-448a-9a52-03d95c9614c5",
+      "contrato": "266",
+      "unidade": "510 D",
+      "data_distrato": "2026-04-23",
+      "status_atual": "pago",
+      "criterio": "limbo: REST /sales-contracts confirma Cancelado + cancellationDate"
+    },
+    {
+      "venda_id": "a2879ab1-2f41-42e5-b054-61c6e92811ad",
+      "contrato": "357",
+      "unidade": "405 B",
+      "data_distrato": "2026-04-23",
+      "status_atual": "pago",
+      "criterio": "limbo: REST /sales-contracts confirma Cancelado + cancellationDate"
+    },
+    {
+      "venda_id": "d6cf726c-95eb-42f0-8397-b28d753d56ca",
+      "contrato": "195",
+      "unidade": "904 B",
+      "data_distrato": "2026-04-23",
+      "status_atual": "pago",
+      "criterio": "limbo: REST /sales-contracts confirma Cancelado + cancellationDate"
+    }
+  ],
+  "falhas": [],
+  "errors": []
+}

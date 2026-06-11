@@ -1,0 +1,304 @@
+{
+  "meta": {
+    "geradoEm": "2026-06-11T13:26:38.367Z",
+    "spec_ref": ".claude/rules/sincronizacao-sienge.md",
+    "doc_ref": "docs/contexto/2026-06-10-north-star-3-ancora-correta.md (F2)",
+    "script": "scripts/curar-distrato-apply.mjs",
+    "modo": "dry-run"
+  },
+  "counts": {
+    "vendas_distrato": 35,
+    "vendas_sem_data": 0,
+    "parcelas_a_cancelar": 0,
+    "pre_preservadas": 99,
+    "updated_excluir_baixa": 0,
+    "updated_cancelado": 0,
+    "updated_venda_status": 0,
+    "skipped_idempotent": 0,
+    "errors": 0
+  },
+  "comissao_falsa_removida": 0,
+  "por_venda": [
+    {
+      "contrato": "141",
+      "unidade": "1105 A",
+      "data_distrato": "2026-02-02",
+      "cancelar": 0,
+      "preservar": 8,
+      "comissao_falsa": 0
+    },
+    {
+      "contrato": "384",
+      "unidade": "604 D",
+      "data_distrato": "2026-03-17",
+      "cancelar": 0,
+      "preservar": 1,
+      "comissao_falsa": 0
+    },
+    {
+      "contrato": "380",
+      "unidade": "507 A",
+      "data_distrato": "2026-02-08",
+      "cancelar": 0,
+      "preservar": 1,
+      "comissao_falsa": 0
+    },
+    {
+      "contrato": "382",
+      "unidade": "1305 A",
+      "data_distrato": "2026-05-04",
+      "cancelar": 0,
+      "preservar": 4,
+      "comissao_falsa": 0
+    },
+    {
+      "contrato": "168",
+      "unidade": "1702 A",
+      "data_distrato": "2025-11-17",
+      "cancelar": 0,
+      "preservar": 0,
+      "comissao_falsa": 0
+    },
+    {
+      "contrato": "181",
+      "unidade": "603 B",
+      "data_distrato": "2026-02-02",
+      "cancelar": 0,
+      "preservar": 5,
+      "comissao_falsa": 0
+    },
+    {
+      "contrato": "196",
+      "unidade": "908 B",
+      "data_distrato": "2026-04-23",
+      "cancelar": 0,
+      "preservar": 5,
+      "comissao_falsa": 0
+    },
+    {
+      "contrato": "195",
+      "unidade": "904 B",
+      "data_distrato": "2026-04-23",
+      "cancelar": 0,
+      "preservar": 8,
+      "comissao_falsa": 0
+    },
+    {
+      "contrato": "149",
+      "unidade": "1304 A",
+      "data_distrato": "2026-02-04",
+      "cancelar": 0,
+      "preservar": 5,
+      "comissao_falsa": 0
+    },
+    {
+      "contrato": "229",
+      "unidade": "904 C",
+      "data_distrato": "2026-04-29",
+      "cancelar": 0,
+      "preservar": 0,
+      "comissao_falsa": 0
+    },
+    {
+      "contrato": "25",
+      "unidade": "508 A",
+      "data_distrato": "2025-09-23",
+      "cancelar": 0,
+      "preservar": 0,
+      "comissao_falsa": 0
+    },
+    {
+      "contrato": "246",
+      "unidade": "1302 C",
+      "data_distrato": "2026-04-23",
+      "cancelar": 0,
+      "preservar": 6,
+      "comissao_falsa": 0
+    },
+    {
+      "contrato": "186",
+      "unidade": "803 B",
+      "data_distrato": "2026-01-14",
+      "cancelar": 0,
+      "preservar": 0,
+      "comissao_falsa": 0
+    },
+    {
+      "contrato": "255",
+      "unidade": "1405 C",
+      "data_distrato": "2025-12-29",
+      "cancelar": 0,
+      "preservar": 0,
+      "comissao_falsa": 0
+    },
+    {
+      "contrato": "268",
+      "unidade": "604 D",
+      "data_distrato": "2026-01-06",
+      "cancelar": 0,
+      "preservar": 6,
+      "comissao_falsa": 0
+    },
+    {
+      "contrato": "266",
+      "unidade": "510 D",
+      "data_distrato": "2026-04-23",
+      "cancelar": 0,
+      "preservar": 2,
+      "comissao_falsa": 0
+    },
+    {
+      "contrato": "209",
+      "unidade": "403 C",
+      "data_distrato": "2026-01-13",
+      "cancelar": 0,
+      "preservar": 5,
+      "comissao_falsa": 0
+    },
+    {
+      "contrato": "145",
+      "unidade": "1103 A",
+      "data_distrato": "2026-01-06",
+      "cancelar": 0,
+      "preservar": 4,
+      "comissao_falsa": 0
+    },
+    {
+      "contrato": "278",
+      "unidade": "901 D",
+      "data_distrato": "2025-12-15",
+      "cancelar": 0,
+      "preservar": 7,
+      "comissao_falsa": 0
+    },
+    {
+      "contrato": "284",
+      "unidade": "1001 D",
+      "data_distrato": "2025-12-09",
+      "cancelar": 0,
+      "preservar": 2,
+      "comissao_falsa": 0
+    },
+    {
+      "contrato": "290",
+      "unidade": "1008 D",
+      "data_distrato": "2025-11-17",
+      "cancelar": 0,
+      "preservar": 0,
+      "comissao_falsa": 0
+    },
+    {
+      "contrato": "279",
+      "unidade": "903 D",
+      "data_distrato": "2026-05-21",
+      "cancelar": 0,
+      "preservar": 5,
+      "comissao_falsa": 0
+    },
+    {
+      "contrato": "259",
+      "unidade": "403 D",
+      "data_distrato": "2026-04-23",
+      "cancelar": 0,
+      "preservar": 2,
+      "comissao_falsa": 0
+    },
+    {
+      "contrato": "307",
+      "unidade": "1707 A",
+      "data_distrato": "2025-12-05",
+      "cancelar": 0,
+      "preservar": 0,
+      "comissao_falsa": 0
+    },
+    {
+      "contrato": "311",
+      "unidade": "803 A",
+      "data_distrato": "2025-11-24",
+      "cancelar": 0,
+      "preservar": 0,
+      "comissao_falsa": 0
+    },
+    {
+      "contrato": "315",
+      "unidade": "406 A",
+      "data_distrato": "2026-04-09",
+      "cancelar": 0,
+      "preservar": 4,
+      "comissao_falsa": 0
+    },
+    {
+      "contrato": "302",
+      "unidade": "1403 D",
+      "data_distrato": "2026-05-28",
+      "cancelar": 0,
+      "preservar": 8,
+      "comissao_falsa": 0
+    },
+    {
+      "contrato": "341",
+      "unidade": "503 B",
+      "data_distrato": "2026-03-25",
+      "cancelar": 0,
+      "preservar": 0,
+      "comissao_falsa": 0
+    },
+    {
+      "contrato": "354",
+      "unidade": "510 C",
+      "data_distrato": "2026-01-15",
+      "cancelar": 0,
+      "preservar": 1,
+      "comissao_falsa": 0
+    },
+    {
+      "contrato": "355",
+      "unidade": "1707 A",
+      "data_distrato": "2025-12-04",
+      "cancelar": 0,
+      "preservar": 1,
+      "comissao_falsa": 0
+    },
+    {
+      "contrato": "361",
+      "unidade": "1707 A",
+      "data_distrato": "2026-01-29",
+      "cancelar": 0,
+      "preservar": 0,
+      "comissao_falsa": 0
+    },
+    {
+      "contrato": "362",
+      "unidade": "906 A",
+      "data_distrato": "2026-01-15",
+      "cancelar": 0,
+      "preservar": 0,
+      "comissao_falsa": 0
+    },
+    {
+      "contrato": "357",
+      "unidade": "405 B",
+      "data_distrato": "2026-04-23",
+      "cancelar": 0,
+      "preservar": 1,
+      "comissao_falsa": 0
+    },
+    {
+      "contrato": "42",
+      "unidade": "609 A",
+      "data_distrato": "2026-02-06",
+      "cancelar": 0,
+      "preservar": 3,
+      "comissao_falsa": 0
+    },
+    {
+      "contrato": "79",
+      "unidade": "904 A",
+      "data_distrato": "2026-02-24",
+      "cancelar": 0,
+      "preservar": 5,
+      "comissao_falsa": 0
+    }
+  ],
+  "errors": []
+}

@@ -1,0 +1,49 @@
+# Exporta o .sienge-cache (income do dia, baixado pelo cron das ~05:11 UTC) como artifact.
+#
+# POR QUÊ: o bulk-data do Sienge tem budget de ~1 pull cheio por ~23h POR CONTA — o cron
+# diário consome a janela e qualquer análise local no mesmo dia toma 429. O dado fresco
+# fica preso no Actions cache (GitHub não permite download de cache de fora de um run).
+# Este workflow é a porta: restaura o cache e publica como artifact baixável.
+#
+# READ-ONLY: não toca banco, não chama Sienge, não roda reconciliação.
+#
+# Uso: gh workflow run sienge-cache-export.yml --ref <branch>
+#      gh run download <run-id> -n sienge-cache -D .sienge-cache
+
+name: Exportar cache Sienge (artifact)
+
+on:
+  workflow_dispatch: # disparo manual
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Restaurar cache Sienge mais recente
+        uses: actions/cache/restore@v4
+        with:
+          path: .sienge-cache
+          key: sienge-cache-export-${{ github.run_id }} # nunca bate — força restore-keys
+          restore-keys: |
+            sienge-cache-
+
+      - name: Conferir conteúdo
+        run: |
+          if [ ! -d .sienge-cache ] || [ -z "$(ls -A .sienge-cache 2>/dev/null)" ]; then
+            echo "::error::cache vazio — nenhum sienge-cache-* disponível"
+            exit 1
+          fi
+          ls -la .sienge-cache
+          du -sh .sienge-cache
+
+      - name: Publicar artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sienge-cache
+          path: .sienge-cache
+          retention-days: 2
