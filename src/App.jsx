@@ -9,6 +9,7 @@ import AdminDashboard from './pages/AdminDashboard'
 import CorretorDashboard from './pages/CorretorDashboard'
 import ClienteDashboard from './pages/ClienteDashboard'
 import HomeDashboard from './pages/HomeDashboard'
+import CadastroFigueira from './pages/CadastroFigueira'
 import './App.css'
 
 // Componente de Loading com botão de sair
@@ -385,6 +386,7 @@ function AppRoutes() {
           </ProtectedRoute>
         } 
       />
+      <Route path="/cadastro-figueira" element={<CadastroFigueira />} />
       <Route path="/" element={<Navigate to="/login" replace />} />
       <Route path="*" element={<Navigate to="/login" replace />} />
     </Routes>
