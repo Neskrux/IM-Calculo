@@ -18,6 +18,8 @@ import { jsPDF } from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import logo from '../imgs/logo.png'
 import Ticker from '../components/Ticker'
+import Autocomplete from '../components/Autocomplete'
+import { casaBusca } from '../utils/searchUtils'
 import ProfilePhotoModal from '../components/ProfilePhotoModal'
 import '../styles/Dashboard.css'
 import '../styles/CorretorDashboard.css'
@@ -912,19 +914,14 @@ const CorretorDashboard = () => {
     return dataB.localeCompare(dataA)
   })
 
+  // Campos de busca do cliente — reusados pelo grid E pelo <Autocomplete> (normaliza acento + CPF/telefone)
+  const CLIENTE_SEARCH_FIELDS = ['nome_completo', { key: 'cpf', tipo: 'numero' }, { key: 'telefone', tipo: 'numero' }, 'email']
   // Filtrar e ordenar clientes
   const filteredMeusClientes = meusClientes
     .filter(cliente => {
-      // Filtro por busca
-      if (filtrosClientes.busca) {
-        const busca = filtrosClientes.busca.toLowerCase()
-        const matchNome = cliente.nome_completo?.toLowerCase().includes(busca)
-        const matchCpf = cliente.cpf?.toLowerCase().includes(busca)
-        const matchTelefone = cliente.telefone?.toLowerCase().includes(busca)
-        const matchEmail = cliente.email?.toLowerCase().includes(busca)
-        if (!matchNome && !matchCpf && !matchTelefone && !matchEmail) {
-          return false
-        }
+      // Filtro por busca (normalizado: ignora acento e formatação de CPF/telefone)
+      if (filtrosClientes.busca && !casaBusca(cliente, filtrosClientes.busca, CLIENTE_SEARCH_FIELDS)) {
+        return false
       }
       // Filtro por empreendimento
       if (filtrosClientes.empreendimento) {
@@ -2724,15 +2721,16 @@ const CorretorDashboard = () => {
             <div className="content-section">
               {/* Filtros */}
               <div className="filters-section">
-                <div className="search-box">
-                  <Search size={20} />
-                  <input 
-                    type="text" 
-                    placeholder="Buscar por nome, CPF, telefone ou email..."
-                    value={filtrosClientes.busca}
-                    onChange={(e) => setFiltrosClientes({...filtrosClientes, busca: e.target.value})}
-                  />
-                </div>
+                <Autocomplete
+                  items={meusClientes}
+                  fields={CLIENTE_SEARCH_FIELDS}
+                  value={filtrosClientes.busca}
+                  onQueryChange={(q) => setFiltrosClientes({ ...filtrosClientes, busca: q })}
+                  onSelect={(c) => setFiltrosClientes({ ...filtrosClientes, busca: c.nome_completo })}
+                  getLabel={(c) => c.nome_completo}
+                  getSub={(c) => [c.cpf, c.telefone].filter(Boolean).join(' · ')}
+                  placeholder="Buscar por nome, CPF, telefone ou email..."
+                />
                 
                 {/* Filtros em Grid */}
                 <div className="filters-grid">

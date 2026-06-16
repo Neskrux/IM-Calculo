@@ -1,0 +1,59 @@
+/* Combobox de busca reutilizável — tema escuro/dourado do app */
+.im-autocomplete { position: relative; width: 100%; }
+
+.im-autocomplete-input {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 11px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(255, 255, 255, 0.92);
+  transition: border-color 0.15s ease;
+}
+.im-autocomplete-input:focus-within { border-color: #c9a962; }
+.im-autocomplete-input > svg { color: rgba(255, 255, 255, 0.4); flex: none; }
+.im-autocomplete-input input {
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: inherit;
+  font-size: 14px;
+}
+.im-autocomplete-input input::placeholder { color: rgba(255, 255, 255, 0.4); }
+
+.im-autocomplete-clear {
+  background: none; border: none; padding: 0;
+  color: rgba(255, 255, 255, 0.4);
+  cursor: pointer; display: flex;
+}
+.im-autocomplete-clear:hover { color: #c9a962; }
+
+.im-autocomplete-list {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0; right: 0;
+  z-index: 50;
+  margin: 0; padding: 4px;
+  list-style: none;
+  max-height: 280px;
+  overflow-y: auto;
+  background: #141414;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+}
+.im-autocomplete-list li {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 9px 11px;
+  border-radius: 7px;
+  cursor: pointer;
+}
+.im-autocomplete-list li.ativo { background: rgba(201, 169, 98, 0.14); }
+.im-ac-label { color: rgba(255, 255, 255, 0.92); font-size: 14px; }
+.im-ac-sub { color: rgba(255, 255, 255, 0.5); font-size: 12px; }
