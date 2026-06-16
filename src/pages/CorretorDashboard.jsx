@@ -375,6 +375,7 @@ const CorretorDashboard = () => {
       .from('vendas')
       .select('*')
       .eq('corretor_id', user.id)
+      .not('excluido', 'is', true)   // nao mostrar vendas soft-deletadas (duplicatas removidas) pro corretor
       .order('data_venda', { ascending: false })
 
       if (error) {
