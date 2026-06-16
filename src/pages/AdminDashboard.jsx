@@ -2,13 +2,14 @@ import { useState, useEffect, useRef, useMemo } from 'react'
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { supabase } from '../lib/supabase'
+import { fetchAllPaginated } from '../utils/supabaseQuery'
 import { deleteCliente } from '../services/adminClientes'
 import { jsPDF } from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import { 
   Users, DollarSign, TrendingUp, Plus, Edit2, Trash2, 
   Search, Filter, LogOut, Menu, X, ChevronDown, Save, Eye,
-  Calculator, Calendar, User, Briefcase, CheckCircle, Clock, UserPlus, Mail, Lock, Percent, Building, PlusCircle, CreditCard, Check, Upload, FileText, Trash, UserCircle, Phone, MapPin, Camera, Download, FileDown, LayoutDashboard, ChevronLeft, ChevronRight, PanelLeftClose, PanelLeft, AlertCircle, RefreshCw, ClipboardList, CheckCircle2, XCircle, MessageSquare, ShieldAlert, Radar, ArrowRight, ListChecks
+  Calculator, Calendar, User, Briefcase, CheckCircle, Clock, UserPlus, Mail, Lock, Percent, Building, PlusCircle, CreditCard, Check, Upload, FileText, Trash, UserCircle, Phone, MapPin, Camera, Download, FileDown, LayoutDashboard, ChevronLeft, ChevronRight, PanelLeftClose, PanelLeft, AlertCircle, RefreshCw, ClipboardList, CheckCircle2, XCircle, MessageSquare, Undo2, ShieldAlert, Radar, ArrowRight, ListChecks
 } from 'lucide-react'
 import logo from '../imgs/logo.png'
 import Ticker from '../components/Ticker'
@@ -1000,6 +1001,8 @@ const AdminDashboard = () => {
   const [abaVisualizarVenda, setAbaVisualizarVenda] = useState('detalhes')
   const [pagamentosVisualizacao, setPagamentosVisualizacao] = useState([])
   const [visaoParcelas, setVisaoParcelas] = useState('contrato')
+  // Distratos são visão segregada (spec 2026-06-11): nunca misturam na lista padrão
+  const [mostrarDistratos, setMostrarDistratos] = useState(false)
 
   // Estados para solicitações
   const [solicitacoes, setSolicitacoes] = useState([])
@@ -1549,32 +1552,17 @@ const AdminDashboard = () => {
         .from('coordenadoras').select('*').eq('ativo', true).order('nome')
       setCoordenadoras(coordenadorasData || [])
 
-      // Buscar pagamentos pro-soluto (sem JOINs) - buscar todos sem limite
-      // O Supabase tem limite padrão de 1000, então precisamos buscar em lotes ou aumentar o limite
-      let pagamentosData = []
-      let hasMore = true
-      let page = 0
-      const pageSize = 1000
-      
-      while (hasMore) {
-        const { data: pageData, error: pagamentosError } = await supabase
+      // Buscar pagamentos pro-soluto (sem JOINs) — paginado com ordenação total.
+      // ver .claude/rules/leitura-de-listas-e-refetch.md: o loop antigo paginava sem
+      // ORDER BY (ordem instável entre páginas) e fazia break silencioso em erro
+      // (dado parcial apresentado como completo).
+      const pagamentosData = await fetchAllPaginated((from, to) =>
+        supabase
           .from('pagamentos_prosoluto')
           .select('*')
-          .range(page * pageSize, (page + 1) * pageSize - 1)
-        
-        if (pagamentosError) {
-          console.error('Erro ao buscar pagamentos:', pagamentosError)
-          break
-        }
-        
-        if (pageData && pageData.length > 0) {
-          pagamentosData = [...pagamentosData, ...pageData]
-          hasMore = pageData.length === pageSize
-          page++
-        } else {
-          hasMore = false
-        }
-      }
+          .order('id', { ascending: true })
+          .range(from, to)
+      )
       
      // console.log('Pagamentos do banco:', pagamentosData.length, 'registros')
       
@@ -1732,6 +1720,66 @@ const AdminDashboard = () => {
       setLoading(false)
      // console.log('🏁 fetchData finalizado')
     }
+  }
+
+  // ── Refetch cirúrgico pós-mutação (ver .claude/rules/leitura-de-listas-e-refetch.md) ──
+  // Mutação NÃO re-dispara fetchData() (~26 queries, 19k linhas): re-lê só o que mudou e
+  // faz merge imutável no estado. O retorno do banco é a verdade (triggers 017/020/026
+  // podem ajustar o write), nunca o payload local.
+
+  // Merge de UMA parcela retornada por update().select().single(); preserva pag.venda
+  // (objeto aninhado do enriquecimento — proibido mutar).
+  const aplicarPagamentoNoEstado = (row) => {
+    setPagamentos(prev => prev.map(p => (p.id === row.id ? { ...p, ...row, venda: p.venda } : p)))
+  }
+
+  // Re-lê venda + parcelas de UMA venda e substitui no estado (mesmo shape do fetchData).
+  const refetchVendaEPagamentos = async (vendaId) => {
+    const [vendaRes, pagsRes] = await Promise.all([
+      supabase.from('vendas').select('*').eq('id', vendaId).maybeSingle(),
+      supabase
+        .from('pagamentos_prosoluto')
+        .select('*')
+        .eq('venda_id', vendaId)
+        .order('data_prevista', { ascending: true })
+        .order('id', { ascending: true })
+    ])
+    if (vendaRes.error) throw vendaRes.error
+    if (pagsRes.error) throw pagsRes.error
+    const venda = vendaRes.data
+    // Sob RLS futuro, linha negada vem como ausência silenciosa — erro explícito aqui.
+    if (!venda) throw new Error(`Venda ${vendaId} não encontrada — verifique permissão/RLS`)
+
+    const corretor = corretores.find(c => String(c.id) === String(venda.corretor_id)) || null
+    const empreendimento = empreendimentos.find(e => String(e.id) === String(venda.empreendimento_id)) || null
+    const cliente = clientes.find(c => String(c.id) === String(venda.cliente_id)) || null
+
+    const vendaEnriquecida = {
+      ...venda,
+      corretor: corretor ? { id: corretor.id, nome: corretor.nome, email: corretor.email, tipo_corretor: corretor.tipo_corretor, percentual_corretor: corretor.percentual_corretor } : null,
+      empreendimento: empreendimento ? { id: empreendimento.id, nome: empreendimento.nome } : null,
+      cliente: cliente ? { id: cliente.id, nome: cliente.nome_completo, cpf: cliente.cpf, cnpj: cliente.cnpj, email: cliente.email, telefone: cliente.telefone } : null
+    }
+
+    // Shape do aninhado de pagamentos (subset de campos do corretor/cliente, como no fetchData)
+    const vendaAninhada = {
+      ...vendaEnriquecida,
+      corretor: corretor ? { id: corretor.id, nome: corretor.nome, percentual_corretor: corretor.percentual_corretor } : null,
+      cliente: cliente ? { id: cliente.id, nome: cliente.nome_completo, cpf: cliente.cpf, cnpj: cliente.cnpj } : null
+    }
+
+    const pagamentosEnriquecidos = (pagsRes.data || []).map(pag => ({ ...pag, venda: vendaAninhada }))
+
+    setVendas(prev => {
+      const existe = prev.some(v => String(v.id) === String(vendaId))
+      return existe
+        ? prev.map(v => (String(v.id) === String(vendaId) ? vendaEnriquecida : v))
+        : [...prev, vendaEnriquecida]
+    })
+    setPagamentos(prev => [
+      ...prev.filter(p => String(p.venda_id) !== String(vendaId)),
+      ...pagamentosEnriquecidos
+    ])
   }
 
   // Função para buscar solicitações
@@ -3227,10 +3275,12 @@ const AdminDashboard = () => {
     if (!pagamentoParaExcluir || excluindoBaixa) return
     setExcluindoBaixa(true)
     try {
-      const { error } = await supabase
+      const { data: row, error } = await supabase
         .from('pagamentos_prosoluto')
         .update({ status: 'pendente', data_pagamento: null })
         .eq('id', pagamentoParaExcluir.id)
+        .select()
+        .single()
       if (error) {
         setMessage({ type: 'error', text: 'Erro ao reverter baixa: ' + error.message })
         setExcluindoBaixa(false)
@@ -3239,7 +3289,8 @@ const AdminDashboard = () => {
       setShowModalExcluirBaixa(false)
       setPagamentoParaExcluir(null)
       setExcluindoBaixa(false)
-      fetchData()
+      // Refetch cirúrgico: merge da linha pós-trigger (020 valida o par status+data)
+      aplicarPagamentoNoEstado(row)
       setMessage({ type: 'success', text: 'Baixa revertida. Parcela voltou a Pendente.' })
       clearMessageAfter(3000)
     } catch (err) {
@@ -3273,10 +3324,12 @@ const AdminDashboard = () => {
         updateData.comissao_gerada = valorComissao
       }
 
-      const { error } = await supabase
+      const { data: row, error } = await supabase
         .from('pagamentos_prosoluto')
         .update(updateData)
         .eq('id', pagamentoParaConfirmar.id)
+        .select()
+        .single()
 
       if (error) {
         setMessage({ type: 'error', text: 'Erro ao confirmar: ' + error.message })
@@ -3287,7 +3340,8 @@ const AdminDashboard = () => {
       setShowModalConfirmarPagamento(false)
       setPagamentoParaConfirmar(null)
       setConfirmandoPagamento(false)
-      fetchData()
+      // Refetch cirúrgico: merge da linha pós-trigger, sem recarregar o banco inteiro
+      aplicarPagamentoNoEstado(row)
       setMessage({ type: 'success', text: pagamentoParaConfirmar.status === 'pago' ? 'Baixa atualizada!' : 'Pagamento confirmado!' })
       clearMessageAfter(3000)
     } catch (error) {
@@ -3530,7 +3584,8 @@ const AdminDashboard = () => {
           } else {
             const msgExtra = aplicarComissaoIntegral ? ' (Comissão integral - entrada ≥ 20% no ato)' : ''
             setMessage({ type: 'success', text: `${aInserir.length} pagamentos gerados!${msgExtra}` })
-            fetchData()
+            // Refetch cirúrgico: só a venda tocada e suas parcelas
+            await refetchVendaEPagamentos(venda.id)
           }
         }
       }
@@ -3551,9 +3606,9 @@ const AdminDashboard = () => {
       await gerarPagamentosVenda(venda)
       totalGerados++
     }
-    
+
     setSaving(false)
-    fetchData()
+    // Sem fetchData: cada gerarPagamentosVenda já fez o refetch cirúrgico da própria venda
     setMessage({ type: 'success', text: `Pagamentos gerados para ${totalGerados} vendas!` })
     clearMessageAfter(3000)
   }
@@ -4256,8 +4311,15 @@ const AdminDashboard = () => {
 
   // Helper: verificar se totais batem
   const totalDistribuicaoAtual = calcularTotalDistribuicao(renegociacaoForm.distribuicoesNovas)
-  const totalsFechados = Math.abs(totalDistribuicaoAtual - renegociacaoForm.totalSelecionado) <= 0.01
   const diferenca = totalDistribuicaoAtual - renegociacaoForm.totalSelecionado
+  // Nº total de parcelas que serão geradas (soma das qtds). Um residual de
+  // arredondamento é distribuível em ±1 centavo por parcela, então uma diferença
+  // de até (nº parcelas × 1¢) é só ruído de arredondamento — não deve bloquear.
+  const totalParcelasDistribuicao = renegociacaoForm.distribuicoesNovas.reduce((s, d) => s + (parseInt(d.qtd) || 0), 0)
+  const toleranciaArredondamento = Math.max(0.01, totalParcelasDistribuicao * 0.01)
+  const totalsFechados = Math.abs(diferenca) <= toleranciaArredondamento + 1e-6
+  // Há diferença, mas dentro da tolerância → os centavos serão ajustados ao salvar
+  const precisaAjusteCentavos = totalsFechados && Math.abs(diferenca) > 0.005
 
   const abrirModalRenegociacao = () => {
     // Calcular totais consolidados
@@ -4328,7 +4390,11 @@ const AdminDashboard = () => {
       return s + (parseInt(d.qtd) || 1) * (parseFloat(d.valor) || 0)
     }, 0)
 
-    if (Math.abs(totalNovaDistribuicao - renegociacaoForm.totalSelecionado) > 0.01) {
+    // Tolerância = nº de parcelas × 1¢ (residual de arredondamento distribuível ±1¢/parcela).
+    // O ajuste fino de centavos é feito mais abaixo, ao montar as novas parcelas.
+    const totalParcelasNovas = renegociacaoForm.distribuicoesNovas.reduce((s, d) => s + (parseInt(d.qtd) || 0), 0)
+    const toleranciaCentavos = Math.max(0.01, totalParcelasNovas * 0.01)
+    if (Math.abs(totalNovaDistribuicao - renegociacaoForm.totalSelecionado) > toleranciaCentavos + 1e-6) {
       setMessage({
         type: 'error',
         text: `Total da nova distribuição (R$${totalNovaDistribuicao.toFixed(2)}) não corresponde ao total selecionado (R$${renegociacaoForm.totalSelecionado.toFixed(2)})`
@@ -4376,6 +4442,30 @@ const AdminDashboard = () => {
           })
         }
       })
+
+      // ✨ Ajuste de centavos: garante que a soma das novas parcelas bata EXATAMENTE
+      // com o total selecionado. O residual de arredondamento (poucos centavos, ex.:
+      // 25×237,39 = 5.934,75 vs 5.934,78) é distribuído ±1¢ por parcela, começando
+      // pelas primeiras. Nenhum centavo é perdido ou criado.
+      if (novasParcelas.length > 0) {
+        const alvoCents = Math.round(renegociacaoForm.totalSelecionado * 100)
+        const somaCents = novasParcelas.reduce((s, p) => s + Math.round(p.valor * 100), 0)
+        let residualCents = alvoCents - somaCents
+        const passo = residualCents > 0 ? 1 : -1
+        let i = 0
+        let voltas = 0
+        while (residualCents !== 0 && voltas < novasParcelas.length * 2) {
+          const idx = i % novasParcelas.length
+          const novoValorCents = Math.round(novasParcelas[idx].valor * 100) + passo
+          if (novoValorCents > 0) {
+            novasParcelas[idx].valor = novoValorCents / 100
+            novasParcelas[idx].comissao_gerada = calcularComissaoPagamento(novasParcelas[idx].valor, fator)
+            residualCents -= passo
+          }
+          i++
+          if (i % novasParcelas.length === 0) voltas++
+        }
+      }
 
       console.log('💾 Processando renegociação agrupada:', {
         parcelasOriginais: parcelasOriginais.length,
@@ -4443,7 +4533,8 @@ const AdminDashboard = () => {
       setShowModalRenegociacao(false)
       setParcelasSelecionadas([])
       setShowModal(false)
-      fetchData()
+      // Refetch cirúrgico: renegociação só toca esta venda e suas parcelas
+      await refetchVendaEPagamentos(venda.id)
       setMessage({ type: 'success', text: 'Renegociação salva com sucesso!' })
       clearMessageAfter(4000)
     } catch (err) {
@@ -5462,7 +5553,12 @@ const AdminDashboard = () => {
     .filter(grupo => {
       // Agora filtrar os grupos que não têm pagamentos após o filtro de data
       if (grupo.pagamentos.length === 0) return false
-      
+
+      // Distrato é visão segregada: só aparece com o botão "Distratos" ativo,
+      // e a lista padrão nunca mistura distratadas (spec 2026-06-11)
+      const ehDistrato = grupo.venda?.status === 'distrato'
+      if (mostrarDistratos ? !ehDistrato : ehDistrato) return false
+
       // Filtro por corretor
       const matchCorretor = !filtrosPagamentos.corretor || grupo.venda?.corretor_id === filtrosPagamentos.corretor
       
@@ -7462,8 +7558,26 @@ const AdminDashboard = () => {
                   </div>
                 </div>
 
-                {/* Toggle Visão: Contrato / Calendário */}
+                {/* Toggle Visão: Distratos / Contrato / Calendário */}
                 <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '12px', gap: '4px' }}>
+                  <button
+                    onClick={() => setMostrarDistratos(v => !v)}
+                    title="Vendas distratadas ficam fora da lista padrão; este botão mostra SÓ elas"
+                    style={{
+                      padding: '5px 14px',
+                      fontSize: '12px',
+                      borderRadius: '6px',
+                      cursor: 'pointer',
+                      border: mostrarDistratos ? '1px solid #dc2626' : '1px solid rgba(255,255,255,0.15)',
+                      background: mostrarDistratos ? 'rgba(220, 38, 38, 0.85)' : 'transparent',
+                      color: mostrarDistratos ? '#fff' : 'rgba(255,255,255,0.7)',
+                      fontWeight: mostrarDistratos ? 600 : 400,
+                      transition: 'all 0.2s'
+                    }}
+                  >
+                    <XCircle size={12} style={{ marginRight: '4px', verticalAlign: 'middle' }} />
+                    Distratos
+                  </button>
                   <button
                     onClick={() => setVisaoParcelas('contrato')}
                     style={{
@@ -7519,6 +7633,12 @@ const AdminDashboard = () => {
                           <div className="venda-titulo">
                             <Building size={18} />
                             <strong>{grupo.venda?.empreendimento?.nome || 'Empreendimento'}</strong>
+                            {grupo.venda?.status === 'distrato' && (
+                              <span className="status-badge distrato" style={{ marginLeft: '8px' }}>
+                                <XCircle size={12} style={{ marginRight: '4px', verticalAlign: 'middle' }} />
+                                DISTRATO{grupo.venda?.data_distrato ? ` • ${formatDataBR(grupo.venda.data_distrato)}` : ''}
+                              </span>
+                            )}
                           </div>
                           <div className="venda-subtitulo">
                             <User size={14} />
@@ -7646,14 +7766,19 @@ const AdminDashboard = () => {
                                         Editar
                                       </button>
                                       <button
-                                        className="btn-small-danger"
+                                        className="btn-small-reverter"
                                         onClick={(e) => { e.stopPropagation(); excluirBaixa(pag); }}
-                                        title="Reverter baixa"
+                                        title="Reverter baixa — volta a Pendente (não exclui a parcela)"
                                       >
-                                        <Trash2 size={14} />
-                                        Excluir
+                                        <Undo2 size={14} />
+                                        Reverter
                                       </button>
                                     </>
+                                  )}
+                                  {pag.renegociacao_id && (
+                                    <span className="pill-aditivo" title="Parcela de grade renegociada por aditivo (reparcelamento)">
+                                      Aditivo
+                                    </span>
                                   )}
                                 </div>
                               </div>
@@ -7914,6 +8039,9 @@ const AdminDashboard = () => {
                         <p>
                           Tem certeza que deseja reverter esta baixa? A parcela voltará ao status <strong>Pendente</strong> e a data de pagamento será removida.
                         </p>
+                        <p className="modal-hint-reverter">
+                          A parcela <strong>não é excluída</strong> — ela apenas deixa de constar como paga e pode ser confirmada novamente depois.
+                        </p>
                         <div className="modal-actions">
                           <button
                             className="btn-secondary"
@@ -7923,7 +8051,7 @@ const AdminDashboard = () => {
                             Cancelar
                           </button>
                           <button
-                            className="btn-danger"
+                            className="btn-reverter"
                             onClick={processarExcluirBaixa}
                             disabled={excluindoBaixa}
                           >
@@ -7933,7 +8061,10 @@ const AdminDashboard = () => {
                                 Revertendo...
                               </>
                             ) : (
-                              'Reverter Baixa'
+                              <>
+                                <Undo2 size={16} />
+                                Reverter para Pendente
+                              </>
                             )}
                           </button>
                         </div>
@@ -12268,7 +12399,16 @@ const AdminDashboard = () => {
                   </div>
                 )}
 
-                {totalsFechados && (
+                {totalsFechados && precisaAjusteCentavos && (
+                  <div className="renego-ajuste-centavos">
+                    <AlertCircle size={16} />
+                    <span>
+                      Diferença de <strong>{formatCurrency(Math.abs(diferenca))}</strong> (arredondamento) — os centavos serão ajustados automaticamente nas parcelas ao salvar.
+                    </span>
+                  </div>
+                )}
+
+                {totalsFechados && !precisaAjusteCentavos && (
                   <div className="renego-confirmacao-total">
                     <Check size={16} />
                     <span>Os totais batem corretamente ✓</span>

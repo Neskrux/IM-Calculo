@@ -17,6 +17,7 @@ Regras de negócio críticas que **SEMPRE** devem ser respeitadas ao alterar có
 ## Regras de visualização e processo (carregadas automaticamente)
 
 @.claude/rules/visualizacao-totais.md
+@.claude/rules/leitura-de-listas-e-refetch.md
 @.claude/rules/rodadas-b.md
 
 ---
@@ -112,3 +113,11 @@ Regras de negócio críticas que **SEMPRE** devem ser respeitadas ao alterar có
 - **c312 np3 curado cirurgicamente:** over-pay de âncora errada (backfill antigo gravou a baixa do balão B1 no row do B3/2028 não-pago) → Excluir Baixa + ancorado no inst 36 real. Lição no matcher do F4: fallback "pago na data do aditivo" **removido** (morde gêmeos mis-matched; só prevista==dueDate decide).
 - **F3 FECHADO no mesmo dia (income de 05:11 via artifact):** o budget do bulk-data é ~1 pull/23h POR CONTA — fix estrutural: cron publica `.sienge-cache` como artifact (+ `sienge-cache-export.yml` sob demanda; `include-hidden-files: true` obrigatório). Dispatch do cron no branch aplicou a reconciliação aditivo-aware em produção: **+553 âncoras, 9 pagos da GRADE NOVA dos aditivos marcados (c150 62-65, c12 67-69, c351 67 — o dinheiro invisível do b10), reativar=0**. Re-medição com income do dia: **limpo 97,91%**, órfãs 0, **baixa de distrato no over-pay = 0** (era R$886k), sem-âncora 331→187. Resíduo final → **[rodada b11](docs/rodadas/b11/b11-texto-para-usuaria.md)**: 30 over-pay real (R$20.252,42, Excluir Baixa) + 13 âncoras ambíguas (R$15.654,48). PR pra main: #31.
 - **Pendências pequenas:** 17 data-diverge no limpo (R$11k de comissão, só datas — correção spec-permitida, aplicar num passo do cron); 1 paga real "antes do aditivo" (c150 inst 6, 2025-12-05) conferir; c228+c351 seguem parqueadas (revisão humana); decisão D1 (detector vira passo diário read-only do cron) em aberto.
+
+### Sessão 2026-06-11 — cap-1000, refetch cirúrgico e visual distrato/aditivo (branch melhorias)
+
+- **Auditoria de capacidade** (49 corretores + 6 internos simultâneos): infra aguenta com folga ~10× (Supabase PRO, queries ≤21ms, 13/60 conexões). Limite não se conta em usuários — conta-se em admins×mutações e linhas. Doc: `IM-demandas-futuras/docs/discovery/capacidade/2026-06-11-capacidade-e-north-star.md`.
+- **Bug cap-1000 CORRIGIDO** ([supabaseQuery.js](src/utils/supabaseQuery.js) + nova regra [leitura-de-listas-e-refetch.md](.claude/rules/leitura-de-listas-e-refetch.md)): PostgREST corta em 1000 linhas silenciosamente; 4 corretores viam totais truncados (MATHEUS 2.930 parcelas → ~34%). `fetchMeusPagamentos` e `fetchTodosClientes` paginados. Explica o Ponto 1 da coleta spec-driven (conta Carlos Bruno = 2.559 parcelas).
+- **Refetch cirúrgico no Admin**: `fetchData()` (26 queries/19k linhas) saiu dos fluxos quentes — baixa/excluir baixa fazem `update().select().single()` + merge; gerar pagamentos/renegociação re-leem só a venda (`refetchVendaEPagamentos`). Mount paginado com `.order('id')` (corrige ordem instável + break silencioso). **Sequência pro RLS: refetch escopado primeiro (feito), RLS depois — nunca o contrário.**
+- **Visual distrato/aditivo (spec aprovado pelo owner)**: distrato é **visão segregada** — lista padrão NUNCA mistura; botão "Distratos" no Admin/Pagamentos e opção no filtro do Corretor/Minhas Vendas mostram SÓ elas (badge vermelho + data). Parcela com `renegociacao_id` ganha pill **"Aditivo"** roxa (admin + corretor). Comissão paga de distratada segue nos totais.
+- **Pendente (gate de liberação pros corretores):** ligar RLS (agora destravado pela ordem certa) + re-validar Ponto 1 com a conta do Carlos pós-deploy.

@@ -3014,6 +3014,7 @@
 
 .stat-card-content {
   flex: 1;
+  min-width: 0; /* permite o conteúdo encolher dentro do card (evita forçar quebra do valor) */
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -3029,13 +3030,14 @@
 }
 
 .stat-card-value {
-  font-size: 24px;
+  /* encolhe pra caber números grandes (ex.: R$ 19.596.783,71) sem quebrar linha */
+  font-size: clamp(16px, 1.45vw, 24px);
   font-weight: 600;
   color: var(--text-primary, #f0f4f8);
   font-family: 'Montserrat', sans-serif;
   white-space: nowrap;
-  overflow: visible;
-  text-overflow: clip;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .stat-card-decoration {
@@ -3277,6 +3279,29 @@
   background: rgba(59, 130, 246, 0.15);
   color: #3b82f6;
   border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.status-tag.distrato {
+  background: rgba(220, 38, 38, 0.12);
+  color: #dc2626;
+  border: 1px solid rgba(220, 38, 38, 0.3);
+  font-weight: 700;
+}
+
+/* Pill pequena pra parcela de grade renegociada (aditivo) */
+.pill-aditivo {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  margin-left: 6px;
+  border-radius: 10px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  background: rgba(139, 92, 246, 0.14);
+  color: #8b5cf6;
+  border: 1px solid rgba(139, 92, 246, 0.32);
 }
 
 .venda-values {

@@ -3,6 +3,7 @@ import { safeGet, safeSet } from '../utils/storage'
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { supabase } from '../lib/supabase'
+import { fetchAllPaginated } from '../utils/supabaseQuery'
 import { 
   DollarSign, TrendingUp, LogOut, 
   Calendar, User, CheckCircle, Clock, 
@@ -27,6 +28,7 @@ import {
   calcularComissaoPagamentoCompleto,
   isPago,
   isPendente,
+  isAtivo,
   dataEfetiva,
 } from '../utils/comissaoCalculator'
 import { parseDataLocal, formatDataBR } from '../utils/datas'
@@ -114,7 +116,14 @@ const CorretorDashboard = () => {
   const [perfilForm, setPerfilForm] = useState({
     nome: '',
     telefone: '',
-    email: ''
+    email: '',
+    // Dados para repasse de comissão
+    banco: '',
+    agencia: '',
+    conta: '',
+    tipo_conta: '',
+    chave_pix: '',
+    tipo_chave_pix: ''
   })
   const [salvandoPerfil, setSalvandoPerfil] = useState(false)
 
@@ -231,13 +240,17 @@ const CorretorDashboard = () => {
         return
       }
 
-      const { data, error } = await supabase
-        .from('pagamentos_prosoluto')
-        .select('*')
-        .in('venda_id', vendaIds)
-        .order('data_prevista', { ascending: true })
-
-      if (error) throw error
+      // Paginado: PostgREST corta em 1000 linhas silenciosamente e corretores
+      // grandes passam de 2.900 parcelas (ver .claude/rules/leitura-de-listas-e-refetch.md)
+      const data = await fetchAllPaginated((from, to) =>
+        supabase
+          .from('pagamentos_prosoluto')
+          .select('*')
+          .in('venda_id', vendaIds)
+          .order('data_prevista', { ascending: true })
+          .order('id', { ascending: true })
+          .range(from, to)
+      )
 
       // Associar nome do cliente e empreendimento a cada pagamento
       const pagamentosEnriquecidos = (data || []).map(pag => {
@@ -457,12 +470,15 @@ const CorretorDashboard = () => {
   // Função para buscar todos os clientes (para o select de nova venda)
   const fetchTodosClientes = async () => {
     try {
-      const { data, error } = await supabase
-        .from('clientes')
-        .select('id, nome_completo, cpf')
-        .order('nome_completo')
-      
-      if (error) throw error
+      // Paginado: tabela inteira sem filtro cresce com a base (cap-1000 do PostgREST)
+      const data = await fetchAllPaginated((from, to) =>
+        supabase
+          .from('clientes')
+          .select('id, nome_completo, cpf')
+          .order('nome_completo')
+          .order('id', { ascending: true })
+          .range(from, to)
+      )
       setTodosClientes(data || [])
     } catch (error) {
       console.error('Erro ao buscar clientes:', error)
@@ -594,14 +610,22 @@ const CorretorDashboard = () => {
       setPerfilForm({
         nome: userProfile.nome || '',
         telefone: userProfile.telefone || '',
-        email: userProfile.email || ''
+        email: userProfile.email || '',
+        banco: userProfile.banco || '',
+        agencia: userProfile.agencia || '',
+        conta: userProfile.conta || '',
+        tipo_conta: userProfile.tipo_conta || '',
+        chave_pix: userProfile.chave_pix || '',
+        tipo_chave_pix: userProfile.tipo_chave_pix || ''
       })
     }
   }, [userProfile, activeTab])
 
-  // Forçar modal de foto no primeiro acesso (sem foto cadastrada)
+  // Desligado: visão do corretor ainda não foi liberada, então não faz sentido
+  // bloquear o primeiro acesso com o modal de foto. Ligar (true) quando liberar.
+  const FORCAR_FOTO_PRIMEIRO_ACESSO = false
   useEffect(() => {
-    if (userProfile && !userProfile.foto_url) {
+    if (FORCAR_FOTO_PRIMEIRO_ACESSO && userProfile && !userProfile.foto_url) {
       setPhotoModalOpen(true)
       setPhotoModalForced(true)
     } else if (userProfile?.foto_url && photoModalForced) {
@@ -626,6 +650,12 @@ const CorretorDashboard = () => {
         .update({
           nome: perfilForm.nome.trim(),
           telefone: perfilForm.telefone.trim() || null,
+          banco: perfilForm.banco.trim() || null,
+          agencia: perfilForm.agencia.trim() || null,
+          conta: perfilForm.conta.trim() || null,
+          tipo_conta: perfilForm.tipo_conta || null,
+          chave_pix: perfilForm.chave_pix.trim() || null,
+          tipo_chave_pix: perfilForm.tipo_chave_pix || null,
           updated_at: new Date().toISOString()
         })
         .eq('id', user.id)
@@ -855,8 +885,10 @@ const CorretorDashboard = () => {
   })
 
   // Agrupar pagamentos por venda
+  // Ignora canceladas: contrato 100% cancelado não gera grupo (some da lista)
+  // e os totais por-contrato deixam de contar parcelas canceladas.
   const filteredPagamentosAgrupados = Object.values(
-    filteredMeusPagamentos.reduce((acc, pag) => {
+    filteredMeusPagamentos.filter(isAtivo).reduce((acc, pag) => {
       const vendaId = pag.venda_id
       if (!acc[vendaId]) {
         acc[vendaId] = {
@@ -929,9 +961,17 @@ const CorretorDashboard = () => {
         return false
       }
     }
-    // Filtro por status
-    if (filtrosVendas.status !== 'todos' && venda.status !== filtrosVendas.status) {
-      return false
+    // Distrato é visão segregada (spec 2026-06-11): a lista padrão NUNCA mistura
+    // distratadas; o filtro Status="Distratos" mostra SÓ elas
+    const ehDistrato = venda.status === 'distrato'
+    if (filtrosVendas.status === 'distrato') {
+      if (!ehDistrato) return false
+    } else {
+      if (ehDistrato) return false
+      // Filtro por status (demais)
+      if (filtrosVendas.status !== 'todos' && venda.status !== filtrosVendas.status) {
+        return false
+      }
     }
     // Filtro por empreendimento
     if (filtrosVendas.empreendimento && venda.empreendimento_nome !== filtrosVendas.empreendimento) {
@@ -1956,13 +1996,14 @@ const CorretorDashboard = () => {
                   <div className="filter-item">
                     <label className="filter-label">Status</label>
                     <select 
-                      value={filtrosVendas.status} 
+                      value={filtrosVendas.status}
                       onChange={(e) => setFiltrosVendas({...filtrosVendas, status: e.target.value})}
                       className="filter-select"
                     >
                       <option value="todos">Todos</option>
                       <option value="pendente">Pendente</option>
                       <option value="pago">Pago</option>
+                      <option value="distrato">Distratos</option>
                     </select>
                   </div>
                   
@@ -2064,7 +2105,11 @@ const CorretorDashboard = () => {
                     <div className="empty-state-box">
             <DollarSign size={48} />
             <h3>Nenhuma venda encontrada</h3>
-                      <p>Não há vendas que correspondam aos filtros selecionados</p>
+                      <p>
+                        {(filtrosVendas.periodo !== 'todos' || filtrosVendas.dataInicio || filtrosVendas.dataFim)
+                          ? 'Nenhuma venda fechada neste período — o filtro considera a data da venda (fechamento), não a data das parcelas.'
+                          : 'Não há vendas que correspondam aos filtros selecionados'}
+                      </p>
           </div>
         ) : (
           <div className="vendas-list">
@@ -2076,11 +2121,15 @@ const CorretorDashboard = () => {
                           .filter(p => p.status === 'pago')
                           .reduce((acc, pag) => acc + calcularComissaoPagamento(pag), 0)
                         
-                        // Status baseado nos pagamentos
+                        // Status baseado nos pagamentos; distrato sobrepõe (decisão de negócio:
+                        // venda distratada aparece em vermelho, não some — comissão paga é mantida)
                         const percentPago = comissaoVenda > 0 ? (comissaoPagaVenda / comissaoVenda) * 100 : 0
                         let statusClass = 'pendente'
                         let statusLabel = 'Pendente'
-                        if (percentPago >= 100) {
+                        if (venda.status === 'distrato') {
+                          statusClass = 'distrato'
+                          statusLabel = venda.data_distrato ? `Distrato • ${formatDataBR(venda.data_distrato)}` : 'Distrato'
+                        } else if (percentPago >= 100) {
                           statusClass = 'pago'
                           statusLabel = 'Pago'
                         } else if (percentPago > 0) {
@@ -2145,6 +2194,11 @@ const CorretorDashboard = () => {
                         {statusClass === 'pago' ? (
                           <>
                             <CheckCircle size={12} />
+                            {statusLabel}
+                          </>
+                        ) : statusClass === 'distrato' ? (
+                          <>
+                            <XCircle size={12} />
                             {statusLabel}
                           </>
                         ) : statusClass === 'parcial' ? (
@@ -2253,6 +2307,11 @@ const CorretorDashboard = () => {
                                               <span className={`status-pill ${pagamento.status}`}>
                                                 {pagamento.status === 'pago' ? 'Pago' : pagamento.status === 'cancelado' ? 'Cancelado' : 'Pendente'}
                                               </span>
+                                              {pagamento.renegociacao_id && (
+                                                <span className="pill-aditivo" title="Parcela de grade renegociada por aditivo (reparcelamento)">
+                                                  Aditivo
+                                                </span>
+                                              )}
                                             </div>
                                           </div>
                                         )
@@ -2320,6 +2379,11 @@ const CorretorDashboard = () => {
                                                     <span className={`status-pill ${pagamento.status}`}>
                                                       {pagamento.status === 'pago' ? 'Pago' : pagamento.status === 'cancelado' ? 'Cancelado' : 'Pendente'}
                                                     </span>
+                                                    {pagamento.renegociacao_id && (
+                                                      <span className="pill-aditivo" title="Parcela de grade renegociada por aditivo (reparcelamento)">
+                                                        Aditivo
+                                                      </span>
+                                                    )}
                                                   </div>
                                                 </div>
                                               )
@@ -2484,31 +2548,20 @@ const CorretorDashboard = () => {
                     <div className="resumo-card">
                       <span className="resumo-label">Comissão Pendente</span>
                       <span className="resumo-valor pendente">
-                        {formatCurrency(filteredMeusPagamentos.filter(p => p.status === 'pendente').reduce((acc, p) => {
-                          const venda = vendas.find(v => v.id === p.venda_id)
-                          if (!venda) return acc
-                          return acc + calcularComissaoPagamento(p)
-                        }, 0))}
+                        {formatCurrency(somarMinhaComissao(filteredMeusPagamentos, isPendente))}
                       </span>
                     </div>
                     <div className="resumo-card">
                       <span className="resumo-label">Comissão Paga</span>
                       <span className="resumo-valor pago">
-                        {formatCurrency(filteredMeusPagamentos.filter(p => p.status === 'pago').reduce((acc, p) => {
-                          const venda = vendas.find(v => v.id === p.venda_id)
-                          if (!venda) return acc
-                          return acc + calcularComissaoPagamento(p)
-                        }, 0))}
+                        {formatCurrency(somarMinhaComissao(filteredMeusPagamentos, isPago))}
                       </span>
                     </div>
                     <div className="resumo-card">
                       <span className="resumo-label">Comissão Total</span>
                       <span className="resumo-valor">
-                        {formatCurrency(filteredMeusPagamentos.reduce((acc, p) => {
-                          const venda = vendas.find(v => v.id === p.venda_id)
-                          if (!venda) return acc
-                          return acc + calcularComissaoPagamento(p)
-                        }, 0))}
+                        {/* Total ignora canceladas (default de somarMinhaComissao) → Total = Pendente + Paga */}
+                        {formatCurrency(somarMinhaComissao(filteredMeusPagamentos))}
                       </span>
                     </div>
                   </div>
@@ -2643,6 +2696,11 @@ const CorretorDashboard = () => {
                                             <span className={`status-pill ${pag.status}`}>
                                               {pag.status === 'pago' ? 'Pago' : pag.status === 'cancelado' ? 'Cancelado' : 'Pendente'}
                                             </span>
+                                            {pag.renegociacao_id && (
+                                              <span className="pill-aditivo" title="Parcela de grade renegociada por aditivo (reparcelamento)">
+                                                Aditivo
+                                              </span>
+                                            )}
                                           </div>
                                         </div>
                                       </div>
@@ -3414,6 +3472,72 @@ const CorretorDashboard = () => {
                         />
                         <small>O e-mail não pode ser alterado</small>
                       </div>
+
+                      <h3 style={{ marginTop: '8px' }}>Dados para repasse</h3>
+                      <small style={{ display: 'block', marginBottom: '8px', opacity: 0.7 }}>
+                        Usados para o repasse da sua comissão.
+                      </small>
+                      <div className="form-group">
+                        <label>Banco</label>
+                        <input
+                          type="text"
+                          value={perfilForm.banco}
+                          onChange={(e) => setPerfilForm({...perfilForm, banco: e.target.value})}
+                          placeholder="Ex.: 341 - Itaú"
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label>Agência</label>
+                        <input
+                          type="text"
+                          value={perfilForm.agencia}
+                          onChange={(e) => setPerfilForm({...perfilForm, agencia: e.target.value})}
+                          placeholder="0000"
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label>Conta</label>
+                        <input
+                          type="text"
+                          value={perfilForm.conta}
+                          onChange={(e) => setPerfilForm({...perfilForm, conta: e.target.value})}
+                          placeholder="00000-0"
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label>Tipo de conta</label>
+                        <select
+                          value={perfilForm.tipo_conta}
+                          onChange={(e) => setPerfilForm({...perfilForm, tipo_conta: e.target.value})}
+                        >
+                          <option value="">Selecione...</option>
+                          <option value="corrente">Conta corrente</option>
+                          <option value="poupanca">Poupança</option>
+                        </select>
+                      </div>
+                      <div className="form-group">
+                        <label>Tipo de chave PIX</label>
+                        <select
+                          value={perfilForm.tipo_chave_pix}
+                          onChange={(e) => setPerfilForm({...perfilForm, tipo_chave_pix: e.target.value})}
+                        >
+                          <option value="">Selecione...</option>
+                          <option value="cpf">CPF</option>
+                          <option value="cnpj">CNPJ</option>
+                          <option value="email">E-mail</option>
+                          <option value="celular">Celular</option>
+                          <option value="aleatoria">Aleatória</option>
+                        </select>
+                      </div>
+                      <div className="form-group">
+                        <label>Chave PIX</label>
+                        <input
+                          type="text"
+                          value={perfilForm.chave_pix}
+                          onChange={(e) => setPerfilForm({...perfilForm, chave_pix: e.target.value})}
+                          placeholder="Sua chave PIX"
+                        />
+                      </div>
                       <div className="perfil-edit-actions">
                         <button 
                           className="btn-secondary"
@@ -3422,7 +3546,13 @@ const CorretorDashboard = () => {
                             setPerfilForm({
                               nome: userProfile?.nome || '',
                               telefone: userProfile?.telefone || '',
-                              email: userProfile?.email || ''
+                              email: userProfile?.email || '',
+                              banco: userProfile?.banco || '',
+                              agencia: userProfile?.agencia || '',
+                              conta: userProfile?.conta || '',
+                              tipo_conta: userProfile?.tipo_conta || '',
+                              chave_pix: userProfile?.chave_pix || '',
+                              tipo_chave_pix: userProfile?.tipo_chave_pix || ''
                             })
                           }}
                         >
@@ -3463,15 +3593,22 @@ const CorretorDashboard = () => {
                       {userProfile?.ativo ? 'Ativa' : 'Inativa'}
                     </span>
                   </div>
-                  <div className="account-info-item">
-                    <span className="info-label">Membro desde</span>
-                    <span className="info-value">
-                      {userProfile?.created_at 
-                        ? new Date(userProfile.created_at).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })
-                        : 'N/A'
-                      }
-                    </span>
-                  </div>
+                  {(() => {
+                    // "Atuando desde" = 1ª venda do corretor (MIN data_venda).
+                    // created_at é data de import (não significa nada). Esconde se sem vendas.
+                    const primeiraVenda = vendas
+                      .map(v => v.data_venda)
+                      .filter(Boolean)
+                      .sort()[0]
+                    if (!primeiraVenda) return null
+                    const dataFmt = parseDataLocal(primeiraVenda)?.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })
+                    return (
+                      <div className="account-info-item">
+                        <span className="info-label">Atuando desde</span>
+                        <span className="info-value">{dataFmt || '—'}</span>
+                      </div>
+                    )
+                  })()}
                 </div>
               </div>
 

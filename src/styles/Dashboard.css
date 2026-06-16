@@ -1561,6 +1561,21 @@ button.user-avatar:focus-visible {
   font-weight: 700;
 }
 
+/* Pill pequena pra parcela de grade renegociada (aditivo/reparcelamento) */
+.pill-aditivo {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  background: rgba(139, 92, 246, 0.14);
+  color: #8b5cf6;
+  border: 1px solid rgba(139, 92, 246, 0.32);
+}
+
 .action-buttons {
   display: flex;
   gap: 8px;
@@ -3889,6 +3904,68 @@ button.user-avatar:focus-visible {
 
 .btn-small-danger:active {
   transform: translateY(0);
+}
+
+/* Reverter baixa — ação reversível (âmbar), não destrutiva como o danger vermelho */
+.btn-small-reverter {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 12px;
+  background: #b45309;
+  border: none;
+  border-radius: 4px;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+
+.btn-small-reverter:hover {
+  background: #92400e;
+  transform: translateY(-1px);
+}
+
+.btn-small-reverter:active {
+  transform: translateY(0);
+}
+
+/* Botão de confirmação no modal de reverter baixa */
+.btn-reverter {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0.5rem 1rem;
+  background: #b45309;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-reverter:hover {
+  background: #92400e;
+}
+
+.btn-reverter:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Nota de reforço no modal de reverter baixa */
+.modal-hint-reverter {
+  margin-top: 8px;
+  padding: 10px 12px;
+  background: rgba(180, 83, 9, 0.1);
+  border-left: 3px solid #b45309;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  color: var(--im-text-secondary, #94a3b8);
 }
 
 .btn-danger {
@@ -7412,6 +7489,31 @@ button.user-avatar:focus-visible {
 .renego-confirmacao-total svg {
   flex-shrink: 0;
   color: var(--im-success);
+}
+
+/* Aviso de ajuste de centavos (arredondamento) — âmbar, não bloqueia o salvar */
+.renego-ajuste-centavos {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  background: rgba(180, 83, 9, 0.1);
+  border: 1px solid rgba(180, 83, 9, 0.3);
+  border-radius: 8px;
+  color: #d97706;
+  font-size: 13px;
+  margin-top: 8px;
+  font-weight: 500;
+}
+
+.renego-ajuste-centavos svg {
+  flex-shrink: 0;
+  color: #d97706;
+}
+
+.renego-ajuste-centavos strong {
+  font-weight: 700;
+  color: #d97706;
 }
 
 /* ============================================
