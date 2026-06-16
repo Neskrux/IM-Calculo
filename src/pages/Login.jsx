@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useLayoutEffect, useRef } from 'react
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { supabase } from '../lib/supabase'
-import { Mail, Lock, ArrowRight, AlertCircle, ChevronLeft, ChevronRight, Building2, Palette } from 'lucide-react'
+import { Mail, Lock, ArrowRight, AlertCircle, ChevronLeft, ChevronRight, Building2 } from 'lucide-react'
 import brandLogo from '../imgs/brasao.png'
 import LoginTransition from '../components/LoginTransition'
 import '../styles/Login.css'
@@ -26,8 +26,6 @@ const Login = () => {
   const { signIn } = useAuth()
   const navigate = useNavigate()
 
-  // Tema de cores (gold ou blue)
-  const [theme, setTheme] = useState('gold')
 
   // Intro: mede o slot da marca dentro do form para a logo flutuante
   // viajar do centro da tela ate a posicao exata, em qualquer viewport.
@@ -309,10 +307,6 @@ const Login = () => {
 
   const currentEmpreendimento = empreendimentos[currentSlide]
 
-  const toggleTheme = () => {
-    setTheme(prev => prev === 'gold' ? 'blue' : 'gold')
-  }
-
   const openForgot = () => {
     setForgotEmail(email)
     setForgotMessage(null)
@@ -380,7 +374,7 @@ const Login = () => {
   }
 
   return (
-    <div className={`premium-login login-with-intro theme-${theme} ${introReady ? 'intro-ready' : ''}`}>
+    <div className={`premium-login login-with-intro theme-gold ${introReady ? 'intro-ready' : ''}`}>
       {/* Intro: cortina preta que dissolve */}
       <div className="login-intro" aria-hidden="true" />
 
@@ -548,16 +542,6 @@ const Login = () => {
           <span>Desenvolvido por IM Tecnologia @ 2025</span>
         </div>
       </div>
-
-      {/* Botão de Troca de Tema */}
-      <button
-        className="theme-toggle"
-        onClick={toggleTheme}
-        title={`Mudar para tema ${theme === 'gold' ? 'Azul' : 'Dourado'}`}
-      >
-        <Palette size={20} />
-        <span>{theme === 'gold' ? 'Azul' : 'Dourado'}</span>
-      </button>
 
       {showForgot && (
         <div className="forgot-modal-backdrop" onClick={closeForgot}>
