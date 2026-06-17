@@ -3413,10 +3413,85 @@
   font-family: 'Montserrat', sans-serif;
 }
 
-.parcelas-list {
+/* Containers das listas de ParcelaCard (Vendas e Pagamentos) — empilham
+   os cards com respiro. O card em si é comissão-first (ver ParcelaCard.css). */
+.parcelas-list,
+.venda-pagamento-body {
   display: flex;
   flex-direction: column;
   gap: 8px;
+}
+
+/* Cruzamento Vendas <-> Pagamentos
+   Vendas = resumo (botão "Ver recebimentos" pula pro detalhe);
+   Pagamentos = detalhe (botão "Ver venda" volta pro resumo, destacando o card). */
+.header-actions-pagamento {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* "Ver pagamentos" é a ação PREDOMINANTE do card (abrir o detalhe das parcelas).
+   "Ver venda" fica secundária (outline). */
+.btn-ver-pagamentos {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 9px 16px;
+  border-radius: 8px;
+  border: none;
+  background: linear-gradient(135deg, #c9a962, #8b7355);
+  color: #0f0f0f;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: filter 0.15s ease;
+}
+.btn-ver-pagamentos:hover { filter: brightness(1.06); }
+.btn-ver-pagamentos svg { transition: transform 0.2s ease; }
+.btn-ver-pagamentos .rotated { transform: rotate(180deg); }
+
+/* Foco do acordeão (mobile): ao expandir, o card rola pro topo; o scroll-margin
+   compensa o .main-header sticky (--header-height) pra não ficar escondido. */
+.venda-pagamento-card {
+  scroll-margin-top: calc(var(--header-height, 60px) + 16px);
+}
+
+@media (max-width: 560px) {
+  .header-actions-pagamento { width: 100%; }
+  .btn-ver-pagamentos { flex: 1; }      /* predominante: ocupa a faixa */
+  .btn-ver-venda { flex: 0 0 auto; }
+}
+
+.btn-ver-venda {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(201, 169, 98, 0.3);
+  background: rgba(201, 169, 98, 0.08);
+  color: var(--accent-primary, #c9a962);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.btn-ver-venda:hover {
+  background: rgba(201, 169, 98, 0.16);
+  border-color: var(--accent-primary, #c9a962);
+}
+
+.venda-card-destaque {
+  outline: 2px solid var(--accent-primary, #c9a962);
+  outline-offset: 2px;
+  animation: vendaDestaquePulse 3s ease;
+}
+@keyframes vendaDestaquePulse {
+  0% { background: rgba(201, 169, 98, 0.18); }
+  100% { background: transparent; }
 }
 
 .corretor-parcela-row {
@@ -3514,6 +3589,7 @@
   color: var(--text-secondary, #94a3b8);
   font-size: 13px;
 }
+
 
 /* Grupos de Pagamentos */
 .pagamento-grupo {
@@ -3722,24 +3798,7 @@
     justify-content: space-between;
   }
 
-  .corretor-parcela-row {
-    flex-wrap: wrap;
-    gap: 8px;
-  }
-
-  .corretor-parcela-tipo,
-  .corretor-parcela-data,
-  .corretor-parcela-valor,
-  .corretor-parcela-comissao {
-    flex: 1 1 calc(50% - 8px);
-    min-width: 100px;
-  }
-
-  .corretor-parcela-status {
-    flex: 1 1 100%;
-    justify-content: flex-start;
-    margin-top: 8px;
-  }
+  /* .corretor-parcela-row: reflow movido pra @container (ver bloco "parcelas") */
 
   .section-header-corretor {
     flex-direction: column;
@@ -4122,8 +4181,9 @@
 }
 
 .cliente-stats {
-  display: flex;
-  gap: 24px;
+  display: grid;
+  grid-template-columns: auto 1fr 1fr; /* Vendas estreito, Volume/Comissão dividem o resto */
+  gap: 6px 16px;
   margin-bottom: 16px;
 }
 
@@ -4131,6 +4191,7 @@
   display: flex;
   flex-direction: column;
   gap: 2px;
+  min-width: 0; /* deixa a coluna encolher pra não estourar o card */
 }
 
 .stat-mini-label {
@@ -4144,6 +4205,7 @@
   font-size: 18px;
   font-weight: 600;
   color: var(--text-primary);
+  overflow-wrap: anywhere; /* valor longo quebra na coluna em vez de cortar */
 }
 
 .stat-mini-value.success {
@@ -4152,6 +4214,12 @@
 
 .stat-mini-value.gold {
   color: #c9a962;
+}
+
+/* Mobile: reduz o valor pra Volume/Comissão caberem lado a lado sem estourar */
+@media (max-width: 560px) {
+  .cliente-stats { gap: 6px 12px; }
+  .stat-mini-value { font-size: 15px; }
 }
 
 .btn-ver-detalhes {

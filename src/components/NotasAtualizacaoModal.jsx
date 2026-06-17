@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { Sparkles, X, CheckCircle2, ChevronLeft, ChevronRight, Wrench, AlertTriangle, Bug } from 'lucide-react'
 import { NOTAS } from '../config/notas'
+import './NotasAtualizacaoModal.css'
 
 // Modal de notas de atualizacao — admin-only.
 // Abre automaticamente quando houver pelo menos uma nota nao lida.
@@ -177,90 +178,89 @@ const NotasAtualizacaoModal = ({ forceOpen = false, onClose }) => {
           </ul>
         </div>
 
-        <div style={{
-          padding: '14px 24px',
-          borderTop: '1px solid var(--im-border)',
-          display: 'flex',
-          alignItems: 'center',
-          gap: 12,
-        }}>
-          <button
-            onClick={anterior}
-            disabled={indice === 0}
-            style={{
-              width: 36, height: 36, borderRadius: 8,
-              background: 'var(--im-bg-tertiary)',
-              border: '1px solid var(--im-border)',
-              color: indice === 0 ? 'rgba(255,255,255,0.2)' : 'var(--im-text-secondary)',
-              cursor: indice === 0 ? 'not-allowed' : 'pointer',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-            }}
-            aria-label="Anterior"
-          >
-            <ChevronLeft size={18} />
-          </button>
+        <div className="notas-modal-footer">
+          <div className="notas-modal-nav">
+            <button
+              onClick={anterior}
+              disabled={indice === 0}
+              style={{
+                width: 36, height: 36, borderRadius: 8,
+                background: 'var(--im-bg-tertiary)',
+                border: '1px solid var(--im-border)',
+                color: indice === 0 ? 'rgba(255,255,255,0.2)' : 'var(--im-text-secondary)',
+                cursor: indice === 0 ? 'not-allowed' : 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                flexShrink: 0,
+              }}
+              aria-label="Anterior"
+            >
+              <ChevronLeft size={18} />
+            </button>
 
-          <div style={{ fontSize: 12, color: 'var(--im-text-secondary)', minWidth: 70, textAlign: 'center' }}>
-            {indice + 1} de {totalNotas}
-            {totalNaoLidas > 0 && (
-              <div style={{ fontSize: 10, color: '#c9a962', marginTop: 2 }}>
-                {totalNaoLidas} não {totalNaoLidas === 1 ? 'lida' : 'lidas'}
-              </div>
-            )}
+            <div style={{ fontSize: 12, color: 'var(--im-text-secondary)', minWidth: 70, textAlign: 'center' }}>
+              {indice + 1} de {totalNotas}
+              {totalNaoLidas > 0 && (
+                <div style={{ fontSize: 10, color: '#c9a962', marginTop: 2 }}>
+                  {totalNaoLidas} não {totalNaoLidas === 1 ? 'lida' : 'lidas'}
+                </div>
+              )}
+            </div>
+
+            <button
+              onClick={proxima}
+              disabled={indice >= totalNotas - 1}
+              style={{
+                width: 36, height: 36, borderRadius: 8,
+                background: 'var(--im-bg-tertiary)',
+                border: '1px solid var(--im-border)',
+                color: indice >= totalNotas - 1 ? 'rgba(255,255,255,0.2)' : 'var(--im-text-secondary)',
+                cursor: indice >= totalNotas - 1 ? 'not-allowed' : 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                flexShrink: 0,
+              }}
+              aria-label="Próxima"
+            >
+              <ChevronRight size={18} />
+            </button>
           </div>
 
-          <button
-            onClick={proxima}
-            disabled={indice >= totalNotas - 1}
-            style={{
-              width: 36, height: 36, borderRadius: 8,
-              background: 'var(--im-bg-tertiary)',
-              border: '1px solid var(--im-border)',
-              color: indice >= totalNotas - 1 ? 'rgba(255,255,255,0.2)' : 'var(--im-text-secondary)',
-              cursor: indice >= totalNotas - 1 ? 'not-allowed' : 'pointer',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-            }}
-            aria-label="Próxima"
-          >
-            <ChevronRight size={18} />
-          </button>
+          <div className="notas-modal-acoes">
+            {totalNaoLidas > 0 && (
+              <button
+                onClick={marcarTodasComoLidas}
+                style={{
+                  padding: '8px 14px',
+                  background: 'transparent',
+                  color: 'var(--im-text-secondary)',
+                  border: '1px solid var(--im-border)',
+                  borderRadius: 8,
+                  fontSize: 13,
+                  cursor: 'pointer',
+                }}
+              >
+                Marcar todas como lidas
+              </button>
+            )}
 
-          <div style={{ flex: 1 }} />
-
-          {totalNaoLidas > 0 && (
             <button
-              onClick={marcarTodasComoLidas}
+              onClick={fecharAtual}
               style={{
-                padding: '8px 14px',
-                background: 'transparent',
-                color: 'var(--im-text-secondary)',
-                border: '1px solid var(--im-border)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                padding: '8px 18px',
+                background: 'linear-gradient(135deg, #c9a962, #8b7355)',
+                color: '#0f0f0f',
+                border: 'none',
                 borderRadius: 8,
                 fontSize: 13,
+                fontWeight: 600,
                 cursor: 'pointer',
+                whiteSpace: 'nowrap',
               }}
             >
-              Marcar todas como lidas
+              <CheckCircle2 size={14} />
+              Entendi
             </button>
-          )}
-
-          <button
-            onClick={fecharAtual}
-            style={{
-              display: 'flex', alignItems: 'center', gap: 6,
-              padding: '8px 18px',
-              background: 'linear-gradient(135deg, #c9a962, #8b7355)',
-              color: '#0f0f0f',
-              border: 'none',
-              borderRadius: 8,
-              fontSize: 13,
-              fontWeight: 600,
-              cursor: 'pointer',
-            }}
-          >
-            <CheckCircle2 size={14} />
-            Entendi
-          </button>
+          </div>
         </div>
       </div>
     </div>

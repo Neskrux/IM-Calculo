@@ -97,7 +97,7 @@
 
 .emp-search-box input {
   width: 100%;
-  padding: 14px 18px 14px 48px;
+  padding: 14px 44px 14px 48px;
   background: transparent;
   border: 1px solid var(--emp-border);
   border-radius: 8px;
@@ -128,6 +128,54 @@
   width: 18px;
   height: 18px;
 }
+
+/* Botão de limpar a busca (X à direita). Reseta o posicionamento absoluto que
+   a regra acima aplicaria também ao ícone deste botão. */
+.emp-search-clear {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  background: none;
+  border: none;
+  color: var(--emp-text-subtle);
+  cursor: pointer;
+}
+.emp-search-clear:hover { color: var(--emp-gold); }
+.emp-search-box .emp-search-clear svg {
+  position: static;
+  left: auto;
+  top: auto;
+  transform: none;
+  color: inherit;
+  width: 16px;
+  height: 16px;
+}
+
+/* Botão de fechar a visualização do empreendimento (sobre a imagem do header) */
+.emp-view-close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  z-index: 5;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  backdrop-filter: blur(4px);
+  transition: background 0.15s ease;
+}
+.emp-view-close:hover { background: rgba(0, 0, 0, 0.8); }
 
 .emp-view-toggle {
   display: flex;

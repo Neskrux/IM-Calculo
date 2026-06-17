@@ -1,0 +1,70 @@
+/* Card de parcela do corretor — comissão-first.
+   Mesma paleta/tokens do app (dourado/dark). Layout vertical: lê de cima pra
+   baixo "o que é → quanto EU ganho → quando/contexto". */
+
+.parcela-card {
+  border: 1px solid rgba(201, 169, 98, 0.1);
+  background: rgba(13, 31, 60, 0.3);
+  border-radius: 12px;
+  padding: 14px 16px;
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.parcela-card.pago {
+  background: rgba(16, 185, 129, 0.08);
+  border-color: rgba(16, 185, 129, 0.22);
+}
+
+.parcela-card.cancelado {
+  opacity: 0.45;
+  border-style: dashed;
+}
+
+.parcela-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.parcela-card-tipo {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary, #f0f4f8);
+  font-family: 'Montserrat', sans-serif;
+  min-width: 0;
+}
+
+.parcela-card-badges {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: none;
+}
+
+.parcela-card-comissao-label {
+  margin-top: 10px;
+  font-size: 11px;
+  color: var(--text-secondary, #9a9a9a);
+}
+
+.parcela-card-comissao {
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1.1;
+  color: var(--accent-primary, #c9a962);
+  font-family: 'Montserrat', sans-serif;
+}
+
+.parcela-card-rodape {
+  margin-top: 8px;
+  font-size: 11px;
+  color: var(--text-muted, #6f6f6f);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 6px;
+}
+
+.parcela-card-sep {
+  opacity: 0.6;
+}
