@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { safeGet, safeSet } from '../utils/storage'
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
@@ -1489,25 +1489,15 @@ const CorretorDashboard = () => {
     return () => clearTimeout(t)
   }, [vendaDestaque])
 
-  // Foco no acordeão (mobile): ao expandir uma venda em Pagamentos, rola o card
-  // pro topo pra não obrigar o usuário a descer atrás das parcelas. scroll-margin-top
-  // no CSS compensa o header sticky (60px). rAF garante que o conteúdo já renderizou.
-  const pagamentoCardRefs = useRef({})
-  useEffect(() => {
-    if (!pagamentoVendaExpandida) return
-    const el = pagamentoCardRefs.current[pagamentoVendaExpandida]
-    if (el) {
-      requestAnimationFrame(() => el.scrollIntoView({ behavior: 'smooth', block: 'start' }))
-    }
-  }, [pagamentoVendaExpandida])
-
-  // Trocar de aba reseta a rolagem pro topo — o SPA (React Router) não faz isso
-  // sozinho, então no celular a aba nova abria rolada (faltando a parte de cima).
-  // Pula quando há foco de cross-nav: "Ver venda" destaca a venda (scroll no ref)
-  // e "Ver recebimentos" rola até ela via rAF logo após este efeito.
+  // Trocar de aba reseta a rolagem pro topo. O scroller real é o .content-section
+  // (a JANELA não rola — .dashboard-container é overflow:hidden), então só window
+  // não bastava. NÃO há mais auto-scroll ao expandir pagamento: o scrollIntoView
+  // rolava ancestrais e, no iOS Safari, tirava o header sticky da tela. Com o cap
+  // de 10 parcelas, expandir já é contido e o botão "Ocultar" fica no topo do card.
   useEffect(() => {
     if (vendaDestaque) return
-    window.scrollTo({ top: 0, behavior: 'auto' })
+    document.querySelector('.main-content')?.scrollTo({ top: 0 })
+    document.querySelector('.content-section')?.scrollTo({ top: 0 })
   }, [activeTab])
 
   const mobileNavItems = [
@@ -2405,11 +2395,7 @@ const CorretorDashboard = () => {
                         const comissaoPendente = totalComissao - comissaoPaga
 
                         return (
-                          <div
-                            key={grupo.venda_id}
-                            className="venda-pagamento-card"
-                            ref={(el) => { if (el) pagamentoCardRefs.current[grupo.venda_id] = el }}
-                          >
+                          <div key={grupo.venda_id} className="venda-pagamento-card">
                             {/* Header da Venda - Clicável */}
                             <div
                               className={`venda-pagamento-header ${pagamentoVendaExpandida === grupo.venda_id ? 'expanded' : ''}`}
