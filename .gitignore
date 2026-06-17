@@ -3,6 +3,11 @@ node_modules/
 dist/
 build/
 
+# Playwright (dev-only e2e)
+test-results/
+playwright-report/
+.playwright/
+
 # Environment variables
 .env
 .env.local
