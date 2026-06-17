@@ -1,10 +1,143 @@
-# Estratégia Mobile — Corretor (Rodada 1)
+# Estratégia Mobile — Corretor (Rodada 1) · SPEC VIVA
 
-> **Gerado em:** 2026-06-16 · **Método:** análise multi-agente (8 agentes, 1 advogado por direção + síntese spec-driven, status 2026 na web, varredura real do repo).
-> **Premissa de tempo:** pareando com IA, **codar é rápido**; o **gargalo é validar em device físico** (não acelera com IA). Toda estimativa separa os dois.
-> **A decisão de direção é do owner.** Este doc entrega as 7 direções *neutras*, os requisitos reais, o framework SE→ENTÃO e as fases. Não crava vencedor.
+> **Gerado em:** 2026-06-16 · **Atualizado em:** 2026-06-16 (vira spec viva, decisão travada).
+> **Método:** análise multi-agente (8 agentes neutros) → decisão do owner → spec-driven com BDD e2e.
+> **Premissa de tempo:** pareando com IA, **codar é rápido**; o **gargalo é validar em device físico** (não acelera com IA).
+> **Status:** ✅ direção **decidida** (ver abaixo). A análise neutra das 7 direções foi preservada no **Apêndice A** (não perder histórico).
 
 ---
+
+## ✅ Decisão travada (2026-06-16)
+
+**Base = Opção 1 (Refino in-place: `@container` + token único)** · **+ table→cards pontual** (só Pagamentos/Relatórios) · **+ Radix por baixo dos modais** (onda 2, quando o comportamento doer).
+
+**Por que essa releitura (e não a recomendação original do doc, que era Opção 2):**
+- As dores reais observadas hoje — **login rodapé** e **card de parcela apertado** — são de **layout que quebra/aperta**, não de "reestruturar info densa". Isso é exatamente o território da **Opção 1**.
+- "Harmonizar o card de parcela" card-a-card = **gambiarra**. Fazer **`@container` de uma vez** = cada card responde à **própria largura** e **todos** ficam harmoniosos numa passada — jeito **sistemático**, **zero dep nova**, **menor risco**, sem tocar breakpoint global.
+- Opção 1 ainda conserta a **incoerência visual** (os 5 `:root` divergentes → "cada tela um cinza diferente").
+- A **única** coisa que `@container` não resolve é a `<table data-table>` (tabela é tabela) → para ISSO, e só isso, uma conversão **pontual** tabela→cards (fatia da Opção 2, **não** a árvore inteira). Evita o contra da Opção 2: **duas árvores de UI**.
+- **Radix** (Opção 5) entra por baixo dos modais quando ESC/scroll-lock/foco virar dor — barato, não mexe em visual.
+
+**Restrição inviolável:** não regredir o **admin desktop** (`Dashboard.css` é compartilhado). **Premissa visual:** o look atual do corretor "está lindo" — consolidação de token é **aditiva** (alias→canônico = valores atuais do corretor), **nunca** um re-tema.
+
+---
+
+## 🗺️ O que mudou hoje (mapeamento que fundamenta a decisão)
+
+**Já entregue e que segue por cima de qualquer direção (NÃO é gambiarra):**
+- **Filtros reusáveis:** `src/utils/searchUtils.js` (`normalizar`/`soDigitos`/`casaBusca`/`filtrarBusca`) + `src/components/Autocomplete.jsx`. Resolvem as 2 dores históricas de busca: **acento** ("jo"→"João") e **CPF/telefone com ou sem máscara**. Já aplicados no corretor (Clientes/Vendas/Pagamentos/Nova Venda) e iniciados no admin.
+- **cap-1000 do PostgREST** resolvido (`fetchAllPaginated`) — totais não truncam mais.
+
+**Achados-âncora do repo (varredura real, linhas conferidas):**
+- **Embrião mobile já existe** — não nasce do zero: `corretor-shell` (`CorretorDashboard.jsx:1560`), `mobile-broker-nav` (bottom-nav, `:4146`), `broker-mobile-home-panel` (`:1716`), `mobileNavItems`/`mobileQuickActions` (`:1542`/`:1550`).
+- **Tabela densa:** `<table className="data-table">` em `CorretorDashboard.jsx:3188` (Meus Pagamentos / Relatórios) — ilegível no polegar.
+- **Breakpoint:** JS bifurca em **1024px** (`window.innerWidth > 1024` em `:1516`; `<= 1024` em `:1537`). Layout mobile assume ~768. **Reconciliar.**
+- **5 blocos `:root` divergentes:** `src/App.css:8`, `src/styles/Dashboard.css:8`, `src/styles/Login.css:8`, `src/styles/EmpreendimentosPage.css:5`, `src/styles/CorretorDashboard.css:5`. O corretor importa **3** deles (Dashboard + CorretorDashboard + EmpreendimentosPage) → colidem.
+- **Card de parcela** (caso-piloto): `.corretor-parcela-row` + filhos em `src/styles/CorretorDashboard.css` (~3422; media mobile ~3725).
+- **Test stack:** Vitest 2.1.6 + Testing Library + jsdom (`npm test`); 1 teste real (`src/utils/supabaseQuery.test.js`). **jsdom não tem motor de layout.**
+
+---
+
+## 🧪 Camada de testes (decisão do owner: **Playwright + Vitest**)
+
+Playwright é **dev-only** — NUNCA entra no runtime financeiro.
+- **Vitest (comportamento/invariante):** o que jsdom cobre — totais via `somarComissao` (nunca snapshot stale), `cancelado` fora do total, normalização de busca (acento/CPF).
+- **Playwright (e2e BDD, layout real):** viewport mobile emulado — tabela→cards, ausência de scroll horizontal 360–768px, bottom-nav fixa (alvos ≥44px), `@container` refluindo o card de parcela, scroll-lock de modal.
+
+### Cenários BDD (Dado/Quando/Então) — fonte da verdade dos testes
+
+```gherkin
+Funcionalidade: Visão mobile do corretor — listas legíveis no polegar
+
+  Cenário: Meus Pagamentos não usa tabela espremida no celular
+    Dado que estou logado como corretor com parcelas
+    E que estou num viewport de 390x844 (iPhone)
+    Quando abro a aba "Receber" (pagamentos)
+    Então cada parcela aparece como card (valor, vencimento, status)
+    E não há rolagem horizontal na página
+    E não existe <table> visível na área de conteúdo
+
+  Cenário: Card de parcela reflui pela própria largura (@container)
+    Dado a aba "Vendas" aberta com o detalhe de uma venda
+    Quando o container do card tem largura estreita (360px)
+    Então tipo/data/valor/comissão/status empilham sem overflow
+    E quando o container é largo (>=520px) eles voltam pra linha única
+
+  Cenário: Os 3 números em <=2 toques e batendo com as parcelas
+    Dado a aba "Início" do corretor
+    Então vejo "a receber", "pago" e "pendente"
+    E "pago" == soma de somarComissao(parcelas pagas)
+    E "pendente" == soma de somarComissao(parcelas pendentes)
+    E parcelas canceladas NÃO entram em nenhum dos três
+
+  Cenário: Bottom-nav fixa e tocável
+    Dado qualquer aba do corretor no mobile
+    Então a mobile-broker-nav está fixa no rodapé
+    E cada item tem alvo de toque >= 44px
+    E a aba ativa está visualmente destacada
+
+  Cenário: Modal usável no toque (onda Radix)
+    Dado um modal do corretor aberto no mobile
+    Quando pressiono ESC
+    Então o modal fecha
+    E enquanto aberto o fundo NÃO rola (scroll-lock)
+```
+
+---
+
+## 🔁 PIVÔ (2026-06-16, pós-feedback do owner): geometria → informação
+
+O owner comparou o card novo (só `@container`) vs o legado e foi direto: **não fez milagre, não vi uso real**, e — como corretor — **não dá pra entender o que é meu pagamento vs o da venda**. Diagnóstico aceito:
+
+- O problema **não era geometria** (colunas apertadas), era **semântica/hierarquia**: o card mostrava `R$ 1.962,39` (valor que o cliente paga à IM) como número grande/branco e a **comissão do corretor** (`R$ 392,48`) como número pequeno, dourado e **sem rótulo**. Prioridade invertida + zero rótulo = confusão.
+- `@container`/CSS é só o **transporte**. O que dá "uso real" é **qual informação, com qual rótulo, em qual hierarquia**.
+
+**Decisão (owner): card comissão-first + aplicar em Pagamentos e Vendas.**
+
+**Feito:**
+- Novo componente único **`src/components/corretor/ParcelaCard.jsx`** (+ `.css`) — comissão-first: lidera com **"Minha comissão"** (rotulada, dourada, herói); status no topo; **valor da parcela** vira rodapé rotulado discreto ("valor da parcela R$ …"); "pago em" vs "vence" conforme status.
+- **Unifica os 2 cards divergentes** que existiam: Vendas (`.corretor-parcela-row`, sem rótulo) e Pagamentos (`.parcela-row`) → ambos agora usam `ParcelaCard`. Coerência + fim da duplicação (3 call-sites).
+- Testes: render (Vitest/Testing-Library, 6) + contrato de layout comissão-first (Playwright, 2). Build verde.
+- CSS morto do `@container` antigo removido; `.corretor-parcela-row`/`.parcela-row` ficam como legado inerte (este último é compartilhado no `Dashboard.css`, **não** deletar).
+
+**Lição:** começar pela **informação** (o que o corretor precisa entender) antes da técnica de layout. O `@container` segue válido como ferramenta, mas é secundário.
+
+**Pendente (mesma direção):** header dos grupos (Vendas `grupo-resumo`) liderar com comissão rotulada; os **3 números do topo**; depois Radix (modais).
+
+## 🔗 Vendas × Pagamentos: resumo × detalhe + cruzamento (2026-06-16)
+
+Depois da unificação do card, **Vendas e Pagamentos ficaram redundantes** (mesma lista de parcelas). Espelhando a lógica do admin (Vendas = *registro/negócio*; Pagamentos = *acompanhamento*), o owner decidiu **diferenciar por altitude + cruzar**:
+
+- **Vendas = resumo do negócio.** Removido o `venda-pagamentos-detalhes` (toggle Contrato/Calendário + parcelas). O card de venda fica só com o resumo (título, empreendimento/unidade, data, status, **Valor da Venda**, **Sua Comissão**). O antigo "Ver mais" virou **"Ver recebimentos"** → pula pra aba Pagamentos **já expandindo** aquela venda (`setPagamentoVendaExpandida` + navega).
+- **Pagamentos = detalhe das parcelas.** É o lar do detalhe (cards comissão-first + "ver mais"). Cada grupo de venda ganhou **"Ver venda"** → volta pra aba Vendas **destacando/rolando** até o card (`vendaDestaque`, outline dourado que some em 3s).
+- **Sidebar + bottom-nav:** ordem agora **Dashboard → Pagamentos (Receber) → Vendas → …** (pagamentos é o foco do corretor).
+- **Limpeza:** removido o código morto que sobrou (`fetchPagamentosVenda`, `agruparPagamentosPorTipo`, `getGrupoLabel`, `toggleVendaExpandida`, estados `vendaExpandida`/`pagamentosVenda`). `toggleGrupoExpandido`/`isGrupoExpandido` seguem (usados no "ver mais" de Pagamentos).
+
+Resultado: *Vendas responde "o que vendi e quanto no total"; Pagamentos responde "quando cai, parcela a parcela"* — sem redundância, com ida-e-volta entre as duas.
+
+## ❄️ Decisão de escopo durante o mobile (2026-06-16)
+
+- **"Solicitar Registro de Venda" E "Cadastrar Cliente" CONGELADAS.** Decisão do owner: esses fluxos serão **substituídos pela integração com o formulário público** (rodada de FEATURE futura, fora do escopo do polimento mobile). Em vez de polir algo condenado, **congelamos**: flags `REGISTRO_VENDA_CONGELADO` / `REGISTRO_CLIENTE_CONGELADO` (`=true`) em [CorretorDashboard.jsx](../src/pages/CorretorDashboard.jsx) escondem os botões e travam as modais; o cabeçalho "Registrar Nova Solicitação" some quando não há nenhuma ação ativa. Código mantido intacto → reativar/substituir = trocar pra `false`. Como não sobrou nada pra criar, a aba **Solicitações** foi **removida da sidebar** (`SOLICITACOES_OCULTA`, derivada das duas flags — volta sozinha se alguma criação reativar); rota/conteúdo preservados.
+- **Princípio reforçado:** "mobile 100%" = **cobertura + polimento** das telas alcançáveis, **não** redesenho de fluxo. Integração form-público↔solicitação é feature, vem **depois** de entregar o mobile.
+- **Dropdown de empreendimento** (na solicitação, hoje congelada) já filtrado só pra **Figueira** (único ativo).
+
+## 📐 Plano de implementação (passos) — estado
+
+- **Passo 1 — Fundação:**
+  - **Token merge global → DEFERIDO** (decisão de risco). Motivo: `App.css` nem é importado por `main.jsx` (só `index.css`), e o valor "vencedor" de tokens conflitantes (`--im-bg-card`, `--im-bg-hover`, `--im-info`) depende da ordem de import — reescrever os `:root` arrisca o admin (CSS compartilhado) com ganho visual baixo e **difícil de validar no headless**. Em vez de merge global, a coerência do corretor sai **escopada sob `.corretor-shell`** quando necessário (admin intocado por construção).
+  - **Breakpoint:** o `1024` em JS (`:1516/:1537`) é **comportamento de sidebar** (auto-abrir), ortogonal ao layout (CSS usa `768`/`480`). Não é bug; o `@container` reduz a dependência de breakpoint de viewport. Canon de layout documentado: **768/480** (viewport) + `@container` (componente).
+- **Passo 2 — `@container`:** ✅ **piloto feito + testado** — `.parcelas-list` virou container (`container-type: inline-size; container-name: parcelas`) e o card de parcela `.corretor-parcela-row` reflui em 3 linhas limpas abaixo de 480px de **largura do container** (não da viewport). Regra `@media` antiga do card removida. **Próxima onda:** estender a stats-grid (3 números) e cards de venda/cliente.
+- **Passo 3 — table→cards:** `<table data-table>` (`:3188`) vira lista de cards no mobile; desktop preservado; totais sempre de `somarComissao`. **Pendente** (mudança estrutural de JSX — validar com owner).
+- **Passo 4 — testes:** ✅ **feito** — Vitest 21 testes (`searchUtils` 13 + invariante de totais 8) + Playwright 3 testes de contrato `@container` lendo o CSS real. Scripts: `npm run test:run` / `npm run test:e2e`.
+- **Passo 5 — Radix:** `@radix-ui/react-dialog` nos Dialog/Sheet do corretor (ESC/focus-trap/scroll-lock/portal), CSS atual via `className`. **Pendente** (onda 2).
+
+**Guarda-corpos:** mudança de token aditiva/reversível + smoke admin obrigatório; nada de commit sem o owner pedir; trabalho e spec nesta branch (não na main).
+
+---
+
+# Apêndice A — Análise neutra das 7 direções (preservada do doc original)
+
+> Mantida íntegra para histórico. A decisão acima saiu daqui.
 
 ## 🎯 Objetivo
 
