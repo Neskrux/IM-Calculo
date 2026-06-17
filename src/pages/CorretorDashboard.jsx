@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { safeGet, safeSet } from '../utils/storage'
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
@@ -19,6 +19,7 @@ import autoTable from 'jspdf-autotable'
 import logo from '../imgs/logo.png'
 import Ticker from '../components/Ticker'
 import Autocomplete from '../components/Autocomplete'
+import ParcelaCard from '../components/corretor/ParcelaCard'
 import { casaBusca } from '../utils/searchUtils'
 import ProfilePhotoModal from '../components/ProfilePhotoModal'
 import '../styles/Dashboard.css'
@@ -61,8 +62,6 @@ const CorretorDashboard = () => {
   })
   const [cargoInfo, setCargoInfo] = useState(null)
   const [empreendimentoInfo, setEmpreendimentoInfo] = useState(null)
-  const [vendaExpandida, setVendaExpandida] = useState(null)
-  const [pagamentosVenda, setPagamentosVenda] = useState({}) // Cache de pagamentos por venda
   const [gruposExpandidos, setGruposExpandidos] = useState({}) // Controla quais grupos estão expandidos: { "vendaId-tipo": true }
   
   // Novos estados para as abas adicionais
@@ -76,6 +75,8 @@ const CorretorDashboard = () => {
   const [selectedCliente, setSelectedCliente] = useState(null)
   const [buscaEmpreendimento, setBuscaEmpreendimento] = useState('')
   const [pagamentoVendaExpandida, setPagamentoVendaExpandida] = useState(null)
+  // Cruzamento Vendas <-> Pagamentos: destaca/rola até a venda alvo ao pular de aba.
+  const [vendaDestaque, setVendaDestaque] = useState(null)
   const [filtrosPagamentos, setFiltrosPagamentos] = useState({
     status: 'todos',
     tipo: 'todos',
@@ -109,6 +110,14 @@ const CorretorDashboard = () => {
   const [minhasSolicitacoes, setMinhasSolicitacoes] = useState([])
   const [loadingSolicitacoes, setLoadingSolicitacoes] = useState(false)
   const [showNovaVendaModal, setShowNovaVendaModal] = useState(false)
+  // CONGELADO (2026-06-16): "Solicitar Registro de Venda" e "Cadastrar Cliente"
+  // serão substituídas pelo fluxo do formulário público. Código mantido; só o
+  // acesso fica escondido. Pra reativar (ou ao fazer a integração): trocar pra false.
+  const REGISTRO_VENDA_CONGELADO = true
+  const REGISTRO_CLIENTE_CONGELADO = true
+  // Sem nada pra criar, a aba "Solicitações" (só histórico) sai da navegação.
+  // Volta sozinha se qualquer criação acima for reativada.
+  const SOLICITACOES_OCULTA = REGISTRO_VENDA_CONGELADO && REGISTRO_CLIENTE_CONGELADO
   const [showNovoClienteModal, setShowNovoClienteModal] = useState(false)
   const [message, setMessage] = useState({ type: '', text: '' })
   const [todosClientes, setTodosClientes] = useState([])
@@ -849,6 +858,11 @@ const CorretorDashboard = () => {
     return true
   })
   
+  // Campos de busca por lista — reusados pelos filtros e pelos <Autocomplete> (normaliza acento + CPF/telefone)
+  const CLIENTE_SEARCH_FIELDS = ['nome_completo', { key: 'cpf', tipo: 'numero' }, { key: 'telefone', tipo: 'numero' }, 'email']
+  const VENDA_SEARCH_FIELDS = ['cliente_nome', 'empreendimento_nome', 'unidade', 'bloco']
+  const PAGAMENTO_SEARCH_FIELDS = ['cliente_nome', 'empreendimento_nome']
+
   // Filtrar pagamentos
   const filteredMeusPagamentos = meusPagamentos.filter(pag => {
     // Filtro por status
@@ -875,14 +889,9 @@ const CorretorDashboard = () => {
         return false
       }
     }
-    // Filtro por busca
-    if (filtrosPagamentos.busca) {
-      const busca = filtrosPagamentos.busca.toLowerCase()
-      const matchCliente = pag.cliente_nome?.toLowerCase().includes(busca)
-      const matchEmpreendimento = pag.empreendimento_nome?.toLowerCase().includes(busca)
-      if (!matchCliente && !matchEmpreendimento) {
-        return false
-      }
+    // Filtro por busca (normalizado: acento + CPF/telefone)
+    if (filtrosPagamentos.busca && !casaBusca(pag, filtrosPagamentos.busca, PAGAMENTO_SEARCH_FIELDS)) {
+      return false
     }
     return true
   })
@@ -914,8 +923,6 @@ const CorretorDashboard = () => {
     return dataB.localeCompare(dataA)
   })
 
-  // Campos de busca do cliente — reusados pelo grid E pelo <Autocomplete> (normaliza acento + CPF/telefone)
-  const CLIENTE_SEARCH_FIELDS = ['nome_completo', { key: 'cpf', tipo: 'numero' }, { key: 'telefone', tipo: 'numero' }, 'email']
   // Filtrar e ordenar clientes
   const filteredMeusClientes = meusClientes
     .filter(cliente => {
@@ -949,15 +956,8 @@ const CorretorDashboard = () => {
   // Filtrar vendas
   const filteredMinhasVendas = vendas.filter(venda => {
     // Filtro por busca
-    if (filtrosVendas.busca) {
-      const busca = filtrosVendas.busca.toLowerCase()
-      const matchCliente = venda.cliente_nome?.toLowerCase().includes(busca)
-      const matchEmpreendimento = venda.empreendimento_nome?.toLowerCase().includes(busca)
-      const matchUnidade = venda.unidade?.toLowerCase().includes(busca)
-      const matchBloco = venda.bloco?.toLowerCase().includes(busca)
-      if (!matchCliente && !matchEmpreendimento && !matchUnidade && !matchBloco) {
-        return false
-      }
+    if (filtrosVendas.busca && !casaBusca(venda, filtrosVendas.busca, VENDA_SEARCH_FIELDS)) {
+      return false
     }
     // Distrato é visão segregada (spec 2026-06-11): a lista padrão NUNCA mistura
     // distratadas; o filtro Status="Distratos" mostra SÓ elas
@@ -1315,71 +1315,6 @@ const CorretorDashboard = () => {
 
   const percentualCorretor = percentualFallback
 
-  // Buscar pagamentos de uma venda específica
-  const fetchPagamentosVenda = async (vendaId) => {
-    if (pagamentosVenda[vendaId]) {
-      return pagamentosVenda[vendaId] // Retornar do cache se já foi buscado
-    }
-
-    try {
-      const { data, error } = await supabase
-        .from('pagamentos_prosoluto')
-        .select('*')
-        .eq('venda_id', vendaId)
-        .order('data_prevista', { ascending: true })
-
-      if (error) {
-        console.error('Erro ao buscar pagamentos:', error)
-        return []
-      }
-
-      // Salvar no cache
-      setPagamentosVenda(prev => ({
-        ...prev,
-        [vendaId]: data || []
-      }))
-
-      return data || []
-    } catch (error) {
-      console.error('Erro ao buscar pagamentos:', error)
-      return []
-    }
-  }
-
-  // Agrupar pagamentos por tipo
-  const agruparPagamentosPorTipo = (pagamentos) => {
-    const grupos = {
-      sinal: [],
-      entrada: [],
-      parcela_entrada: [],
-      balao: []
-    }
-
-    pagamentos.forEach(pagamento => {
-      const tipo = pagamento.tipo
-      if (grupos[tipo]) {
-        grupos[tipo].push(pagamento)
-      }
-    })
-
-    // Ordenar cada grupo por número de parcela
-    grupos.parcela_entrada.sort((a, b) => (a.numero_parcela || 0) - (b.numero_parcela || 0))
-    grupos.balao.sort((a, b) => (a.numero_parcela || 0) - (b.numero_parcela || 0))
-
-    return grupos
-  }
-
-  // Obter label do grupo
-  const getGrupoLabel = (tipo) => {
-    const labels = {
-      sinal: 'Sinal',
-      entrada: 'Entrada',
-      parcela_entrada: 'Parcelas de Entrada',
-      balao: 'Balões'
-    }
-    return labels[tipo] || tipo
-  }
-
   // Toggle expansão de grupo (quando tem mais de 10 itens)
   const toggleGrupoExpandido = (vendaId, tipo) => {
     const key = `${vendaId}-${tipo}`
@@ -1393,19 +1328,6 @@ const CorretorDashboard = () => {
   const isGrupoExpandido = (vendaId, tipo) => {
     const key = `${vendaId}-${tipo}`
     return gruposExpandidos[key] || false
-  }
-
-  // Handler para expandir/colapsar venda
-  const toggleVendaExpandida = async (vendaId) => {
-    if (vendaExpandida === vendaId) {
-      setVendaExpandida(null)
-    } else {
-      setVendaExpandida(vendaId)
-      // Buscar pagamentos se ainda não foram buscados
-      if (!pagamentosVenda[vendaId]) {
-        await fetchPagamentosVenda(vendaId)
-      }
-    }
   }
 
   // Função para gerar título dinâmico do dashboard
@@ -1548,10 +1470,41 @@ const CorretorDashboard = () => {
     }
   }
 
+  // Vendas (resumo) -> Pagamentos (detalhe): abre a aba Receber já com a venda expandida.
+  const verRecebimentos = (vendaId) => {
+    setPagamentoVendaExpandida(vendaId)
+    goTo('/corretor/pagamentos')
+  }
+
+  // Pagamentos (detalhe) -> Vendas (resumo): volta pra aba Vendas destacando a venda.
+  const verVenda = (vendaId) => {
+    setVendaDestaque(vendaId)
+    goTo('/corretor/vendas')
+  }
+
+  // Limpa o destaque depois de alguns segundos (some sozinho).
+  useEffect(() => {
+    if (!vendaDestaque) return
+    const t = setTimeout(() => setVendaDestaque(null), 3000)
+    return () => clearTimeout(t)
+  }, [vendaDestaque])
+
+  // Foco no acordeão (mobile): ao expandir uma venda em Pagamentos, rola o card
+  // pro topo pra não obrigar o usuário a descer atrás das parcelas. scroll-margin-top
+  // no CSS compensa o header sticky (60px). rAF garante que o conteúdo já renderizou.
+  const pagamentoCardRefs = useRef({})
+  useEffect(() => {
+    if (!pagamentoVendaExpandida) return
+    const el = pagamentoCardRefs.current[pagamentoVendaExpandida]
+    if (el) {
+      requestAnimationFrame(() => el.scrollIntoView({ behavior: 'smooth', block: 'start' }))
+    }
+  }, [pagamentoVendaExpandida])
+
   const mobileNavItems = [
     { tab: 'dashboard', path: '/corretor/dashboard', label: 'Início', icon: LayoutDashboard },
-    { tab: 'vendas', path: '/corretor/vendas', label: 'Vendas', icon: DollarSign },
     { tab: 'pagamentos', path: '/corretor/pagamentos', label: 'Receber', icon: CreditCard },
+    { tab: 'vendas', path: '/corretor/vendas', label: 'Vendas', icon: DollarSign },
     { tab: 'clientes', path: '/corretor/clientes', label: 'Clientes', icon: Users },
     { tab: 'perfil', path: '/corretor/perfil', label: 'Perfil', icon: User },
   ]
@@ -1586,7 +1539,7 @@ const CorretorDashboard = () => {
         </div>
 
         <nav className="sidebar-nav">
-          <button 
+          <button
             className={`nav-item ${activeTab === 'dashboard' ? 'active' : ''}`}
             onClick={() => goTo('/corretor/dashboard')}
             title="Dashboard"
@@ -1594,15 +1547,7 @@ const CorretorDashboard = () => {
             <LayoutDashboard size={20} />
             <span>Dashboard</span>
           </button>
-          <button 
-            className={`nav-item ${activeTab === 'vendas' ? 'active' : ''}`}
-            onClick={() => goTo('/corretor/vendas')}
-            title="Minhas Vendas"
-          >
-            <DollarSign size={20} />
-            <span>Minhas Vendas</span>
-          </button>
-          <button 
+          <button
             className={`nav-item ${activeTab === 'pagamentos' ? 'active' : ''}`}
             onClick={() => goTo('/corretor/pagamentos')}
             title="Meus Pagamentos"
@@ -1610,23 +1555,7 @@ const CorretorDashboard = () => {
             <CreditCard size={20} />
             <span>Meus Pagamentos</span>
           </button>
-          <button 
-            className={`nav-item ${activeTab === 'clientes' ? 'active' : ''}`}
-            onClick={() => goTo('/corretor/clientes')}
-            title="Meus Clientes"
-          >
-            <Users size={20} />
-            <span>Meus Clientes</span>
-          </button>
-          <button 
-            className={`nav-item ${activeTab === 'empreendimentos' ? 'active' : ''}`}
-            onClick={() => goTo('/corretor/empreendimentos')}
-            title="Empreendimentos"
-          >
-            <Building size={20} />
-            <span>Empreendimentos</span>
-          </button>
-          <button 
+          <button
             className={`nav-item ${activeTab === 'relatorios' ? 'active' : ''}`}
             onClick={() => goTo('/corretor/relatorios')}
             title="Relatórios"
@@ -1634,13 +1563,39 @@ const CorretorDashboard = () => {
             <FileText size={20} />
             <span>Relatórios</span>
           </button>
-          <button 
-            className={`nav-item ${activeTab === 'solicitacoes' ? 'active' : ''}`}
-            onClick={() => goTo('/corretor/solicitacoes')}
-            title="Solicitações"
+          <button
+            className={`nav-item ${activeTab === 'vendas' ? 'active' : ''}`}
+            onClick={() => goTo('/corretor/vendas')}
+            title="Minhas Vendas"
           >
-            <ClipboardList size={20} />
-            <span>Solicitações</span>
+            <DollarSign size={20} />
+            <span>Minhas Vendas</span>
+          </button>
+          <button
+            className={`nav-item ${activeTab === 'clientes' ? 'active' : ''}`}
+            onClick={() => goTo('/corretor/clientes')}
+            title="Meus Clientes"
+          >
+            <Users size={20} />
+            <span>Meus Clientes</span>
+          </button>
+          {!SOLICITACOES_OCULTA && (
+            <button
+              className={`nav-item ${activeTab === 'solicitacoes' ? 'active' : ''}`}
+              onClick={() => goTo('/corretor/solicitacoes')}
+              title="Solicitações"
+            >
+              <ClipboardList size={20} />
+              <span>Solicitações</span>
+            </button>
+          )}
+          <button
+            className={`nav-item ${activeTab === 'empreendimentos' ? 'active' : ''}`}
+            onClick={() => goTo('/corretor/empreendimentos')}
+            title="Empreendimentos"
+          >
+            <Building size={20} />
+            <span>Empreendimentos</span>
           </button>
           <button 
             className={`nav-item ${activeTab === 'perfil' ? 'active' : ''}`}
@@ -1979,15 +1934,16 @@ const CorretorDashboard = () => {
             <div className="content-section">
               {/* Filtros */}
               <div className="filters-section">
-                <div className="search-box">
-                  <Search size={20} />
-                  <input 
-                    type="text" 
-                    placeholder="Buscar por cliente, empreendimento, unidade..."
-                    value={filtrosVendas.busca}
-                    onChange={(e) => setFiltrosVendas({...filtrosVendas, busca: e.target.value})}
-                  />
-                </div>
+                <Autocomplete
+                  items={vendas}
+                  fields={VENDA_SEARCH_FIELDS}
+                  value={filtrosVendas.busca}
+                  onQueryChange={(q) => setFiltrosVendas({ ...filtrosVendas, busca: q })}
+                  onSelect={(v) => setFiltrosVendas({ ...filtrosVendas, busca: v.cliente_nome || v.unidade || '' })}
+                  getLabel={(v) => v.cliente_nome || ('Unidade ' + (v.unidade || ''))}
+                  getSub={(v) => [v.empreendimento_nome, [v.unidade, v.bloco].filter(Boolean).join(' ')].filter(Boolean).join(' · ')}
+                  placeholder="Buscar venda…"
+                />
                 
                 {/* Filtros em Grid */}
                 <div className="filters-grid">
@@ -2136,7 +2092,11 @@ const CorretorDashboard = () => {
                         }
                         
                         return (
-              <div key={venda.id} className="venda-card">
+              <div
+                key={venda.id}
+                className={`venda-card ${vendaDestaque === venda.id ? 'venda-card-destaque' : ''}`}
+                ref={vendaDestaque === venda.id ? (el) => { if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' }) } : undefined}
+              >
                 <div className="venda-main">
                   <div className="venda-info">
                               <h4>
@@ -2214,17 +2174,16 @@ const CorretorDashboard = () => {
                     </div>
                   </div>
                             
-                            {/* Botão Ver mais */}
+                            {/* Cruzamento -> Pagamentos (detalhe das parcelas) */}
                             <div className="venda-expand-btn-wrapper">
-                              <button 
+                              <button
                                 className="venda-expand-btn"
-                                onClick={() => toggleVendaExpandida(venda.id)}
+                                onClick={() => verRecebimentos(venda.id)}
+                                title="Ver recebimentos desta venda"
                               >
-                                <ChevronDown 
-                                  size={18} 
-                                  className={vendaExpandida === venda.id ? 'rotated' : ''} 
-                                />
-                                <span>Ver mais</span>
+                                <CreditCard size={16} />
+                                <span>Ver recebimentos</span>
+                                <ChevronRight size={16} />
                               </button>
                             </div>
 
@@ -2240,186 +2199,6 @@ const CorretorDashboard = () => {
                   </div>
                 </div>
 
-                          {/* Seção expandida com detalhes dos pagamentos */}
-                          {vendaExpandida === venda.id && (
-                            <div className="venda-pagamentos-detalhes">
-                              {pagamentosVenda[venda.id] && pagamentosVenda[venda.id].length > 0 ? (
-                                <>
-                                  <div className="parcelas-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                    <h5>Detalhamento de Pagamentos</h5>
-                                    <div style={{ display: 'flex', gap: '4px' }}>
-                                      <button
-                                        onClick={() => setVisaoParcelas('contrato')}
-                                        style={{
-                                          padding: '4px 10px', fontSize: '11px', borderRadius: '5px', cursor: 'pointer',
-                                          border: visaoParcelas === 'contrato' ? '1px solid #c9a962' : '1px solid rgba(255,255,255,0.15)',
-                                          background: visaoParcelas === 'contrato' ? '#c9a962' : 'transparent',
-                                          color: visaoParcelas === 'contrato' ? '#000' : 'rgba(255,255,255,0.7)',
-                                          fontWeight: visaoParcelas === 'contrato' ? 600 : 400
-                                        }}
-                                      >Contrato</button>
-                                      <button
-                                        onClick={() => setVisaoParcelas('calendario')}
-                                        style={{
-                                          padding: '4px 10px', fontSize: '11px', borderRadius: '5px', cursor: 'pointer',
-                                          border: visaoParcelas === 'calendario' ? '1px solid #c9a962' : '1px solid rgba(255,255,255,0.15)',
-                                          background: visaoParcelas === 'calendario' ? '#c9a962' : 'transparent',
-                                          color: visaoParcelas === 'calendario' ? '#000' : 'rgba(255,255,255,0.7)',
-                                          fontWeight: visaoParcelas === 'calendario' ? 600 : 400
-                                        }}
-                                      >
-                                        <Calendar size={11} style={{ marginRight: '3px', verticalAlign: 'middle' }} />
-                                        Calendário
-                                      </button>
-                                    </div>
-                                  </div>
-                                  
-                                  {visaoParcelas === 'calendario' ? (
-                                    <div className="parcelas-list">
-                                      {sortParcelas(pagamentosVenda[venda.id], 'calendario')
-                                        .filter((pagamento) => pagamento.status !== 'cancelado')
-                                        .map((pagamento) => {
-                                        const comissaoParcela = calcularComissaoPagamento(pagamento)
-                                        return (
-                                          <div 
-                                            key={pagamento.id} 
-                                            className={`corretor-parcela-row ${pagamento.status === 'pago' ? 'pago' : pagamento.status === 'cancelado' ? 'cancelado' : ''}`}
-                                          >
-                                            <div className="corretor-parcela-tipo">
-                                              {pagamento.tipo === 'sinal' && 'Sinal'}
-                                              {pagamento.tipo === 'entrada' && 'Entrada'}
-                                              {pagamento.tipo === 'parcela_entrada' && `Parcela ${pagamento.numero_parcela || ''}`}
-                                              {pagamento.tipo === 'balao' && `Balão ${pagamento.numero_parcela || ''}`}
-                                              {pagamento.tipo === 'comissao_integral' && '✨ Comissão Integral'}
-                                            </div>
-                                            <div className="corretor-parcela-data">
-                                              {formatDataBR(pagamento.data_prevista)}
-                                            </div>
-                                            <div className="corretor-parcela-valor">
-                                              {formatCurrency(pagamento.valor)}
-                                            </div>
-                                            <div className="corretor-parcela-comissao">
-                                              {formatCurrency(comissaoParcela)}
-                                            </div>
-                                            <div className="corretor-parcela-status">
-                                              <span className={`status-pill ${pagamento.status}`}>
-                                                {pagamento.status === 'pago' ? 'Pago' : pagamento.status === 'cancelado' ? 'Cancelado' : 'Pendente'}
-                                              </span>
-                                              {pagamento.renegociacao_id && (
-                                                <span className="pill-aditivo" title="Parcela de grade renegociada por aditivo (reparcelamento)">
-                                                  Aditivo
-                                                </span>
-                                              )}
-                                            </div>
-                                          </div>
-                                        )
-                                      })}
-                                    </div>
-                                  ) : (
-                                    (() => {
-                                    const pagamentosAtivosVenda = (pagamentosVenda[venda.id] || []).filter((pagamento) => pagamento.status !== 'cancelado')
-                                    const grupos = agruparPagamentosPorTipo(pagamentosAtivosVenda)
-                                    const tiposOrdem = ['sinal', 'entrada', 'parcela_entrada', 'balao']
-                                    
-                                    return tiposOrdem.map(tipo => {
-                                      const pagamentosGrupo = grupos[tipo]
-                                      if (!pagamentosGrupo || pagamentosGrupo.length === 0) return null
-                                      
-                                      const totalValor = pagamentosGrupo.reduce((acc, p) => acc + (parseFloat(p.valor) || 0), 0)
-                                      const totalComissao = pagamentosGrupo.reduce((acc, p) => acc + calcularComissaoPagamento(p), 0)
-                                      const pagos = pagamentosGrupo.filter(p => p.status === 'pago').length
-                                      const pendentes = pagamentosGrupo.filter(p => p.status === 'pendente').length
-                                      
-                                      const temMaisDe10 = pagamentosGrupo.length > 10
-                                      const estaExpandido = isGrupoExpandido(venda.id, tipo)
-                                      const itensParaMostrar = temMaisDe10 && !estaExpandido ? 10 : pagamentosGrupo.length
-                                      const pagamentosExibidos = pagamentosGrupo.slice(0, itensParaMostrar)
-                                      
-                                      return (
-                                        <div key={tipo} className="pagamento-grupo">
-                                          <div className="grupo-header">
-                                            <h6 className="grupo-titulo">{getGrupoLabel(tipo)}</h6>
-                                            <div className="grupo-resumo">
-                                              <span className="grupo-total-valor">{formatCurrency(totalValor)}</span>
-                                              <span className="grupo-total-comissao">{formatCurrency(totalComissao)}</span>
-                                              <span className="grupo-contador">
-                                                {pagamentosGrupo.length} {pagamentosGrupo.length === 1 ? 'item' : 'itens'}
-                                                {pagos > 0 && ` • ${pagos} pago${pagos > 1 ? 's' : ''}`}
-                                                {pendentes > 0 && ` • ${pendentes} pendente${pendentes > 1 ? 's' : ''}`}
-                                              </span>
-                                            </div>
-                                          </div>
-                                          <div className="parcelas-list">
-                                            {pagamentosExibidos.map((pagamento) => {
-                                              const comissaoParcela = calcularComissaoPagamento(pagamento)
-                                              return (
-                                                <div 
-                                                  key={pagamento.id} 
-                                                  className={`corretor-parcela-row ${pagamento.status === 'pago' ? 'pago' : pagamento.status === 'cancelado' ? 'cancelado' : ''}`}
-                                                >
-                                                  <div className="corretor-parcela-tipo">
-                                                    {pagamento.tipo === 'sinal' && 'Sinal'}
-                                                    {pagamento.tipo === 'entrada' && 'Entrada'}
-                                                    {pagamento.tipo === 'parcela_entrada' && `Parcela ${pagamento.numero_parcela || ''}`}
-                                                    {pagamento.tipo === 'balao' && `Balão ${pagamento.numero_parcela || ''}`}
-                                                    {pagamento.tipo === 'comissao_integral' && '✨ Comissão Integral'}
-                                                  </div>
-                                                  <div className="corretor-parcela-data">
-                                                    {formatDataBR(pagamento.data_prevista)}
-                                                  </div>
-                                                  <div className="corretor-parcela-valor">
-                                                    {formatCurrency(pagamento.valor)}
-                                                  </div>
-                                                  <div className="corretor-parcela-comissao">
-                                                    {formatCurrency(comissaoParcela)}
-                                                  </div>
-                                                  <div className="corretor-parcela-status">
-                                                    <span className={`status-pill ${pagamento.status}`}>
-                                                      {pagamento.status === 'pago' ? 'Pago' : pagamento.status === 'cancelado' ? 'Cancelado' : 'Pendente'}
-                                                    </span>
-                                                    {pagamento.renegociacao_id && (
-                                                      <span className="pill-aditivo" title="Parcela de grade renegociada por aditivo (reparcelamento)">
-                                                        Aditivo
-                                                      </span>
-                                                    )}
-                                                  </div>
-                                                </div>
-                                              )
-                                            })}
-                                          </div>
-                                          {temMaisDe10 && (
-                                            <div className="grupo-expand-btn-wrapper">
-                                              <button 
-                                                className="grupo-expand-btn"
-                                                onClick={() => toggleGrupoExpandido(venda.id, tipo)}
-                                              >
-                                                {estaExpandido ? (
-                                                  <>
-                                                    <ChevronDown size={16} className="rotated" />
-                                                    <span>Ver menos ({pagamentosGrupo.length - 10} itens ocultos)</span>
-                                                  </>
-                                                ) : (
-                                                  <>
-                                                    <ChevronDown size={16} />
-                                                    <span>Ver mais ({pagamentosGrupo.length - 10} itens restantes)</span>
-                                                  </>
-                                                )}
-                                              </button>
-                                            </div>
-                                          )}
-                                        </div>
-                                      )
-                                    })
-                                  })()
-                                  )}
-                                </>
-                              ) : (
-                                <div className="parcelas-empty">
-                                  <p>Nenhum pagamento cadastrado para esta venda</p>
-                                </div>
-                              )}
-                            </div>
-                          )}
               </div>
                         )
                       })}
@@ -2435,15 +2214,11 @@ const CorretorDashboard = () => {
             <div className="content-section">
               {/* Filtros de Pagamentos */}
               <div className="filters-section">
-                <div className="search-box">
-                  <Search size={20} />
-                  <input 
-                    type="text" 
-                    placeholder="Buscar por cliente, empreendimento..."
-                    value={filtrosPagamentos.busca}
-                    onChange={(e) => setFiltrosPagamentos({...filtrosPagamentos, busca: e.target.value})}
-                  />
-                </div>
+                <Autocomplete
+                  value={filtrosPagamentos.busca}
+                  onQueryChange={(q) => setFiltrosPagamentos({ ...filtrosPagamentos, busca: q })}
+                  placeholder="Buscar pagamento…"
+                />
                 
                 {/* Filtros em Grid */}
                 <div className="filters-grid">
@@ -2621,9 +2396,13 @@ const CorretorDashboard = () => {
                         const comissaoPendente = totalComissao - comissaoPaga
 
                         return (
-                          <div key={grupo.venda_id} className="venda-pagamento-card">
+                          <div
+                            key={grupo.venda_id}
+                            className="venda-pagamento-card"
+                            ref={(el) => { if (el) pagamentoCardRefs.current[grupo.venda_id] = el }}
+                          >
                             {/* Header da Venda - Clicável */}
-                            <div 
+                            <div
                               className={`venda-pagamento-header ${pagamentoVendaExpandida === grupo.venda_id ? 'expanded' : ''}`}
                               onClick={() => setPagamentoVendaExpandida(pagamentoVendaExpandida === grupo.venda_id ? null : grupo.venda_id)}
                             >
@@ -2660,52 +2439,68 @@ const CorretorDashboard = () => {
                                 </div>
                               </div>
                               <div className="header-actions-pagamento">
-                                <div className="expand-icon">
-                                  <ChevronDown size={20} className={pagamentoVendaExpandida === grupo.venda_id ? 'rotated' : ''} />
-                                </div>
+                                <button
+                                  className="btn-ver-venda"
+                                  onClick={(e) => { e.stopPropagation(); verVenda(grupo.venda_id) }}
+                                  title="Ver esta venda"
+                                >
+                                  <DollarSign size={14} />
+                                  <span>Ver venda</span>
+                                </button>
+                                <button
+                                  className={`btn-ver-pagamentos ${pagamentoVendaExpandida === grupo.venda_id ? 'aberto' : ''}`}
+                                  onClick={(e) => { e.stopPropagation(); setPagamentoVendaExpandida(pagamentoVendaExpandida === grupo.venda_id ? null : grupo.venda_id) }}
+                                >
+                                  <CreditCard size={16} />
+                                  <span>{pagamentoVendaExpandida === grupo.venda_id ? 'Ocultar pagamentos' : 'Ver pagamentos'}</span>
+                                  <ChevronDown size={16} className={pagamentoVendaExpandida === grupo.venda_id ? 'rotated' : ''} />
+                                </button>
                               </div>
                             </div>
 
                             {/* Lista de Parcelas - Expandível */}
-                            {pagamentoVendaExpandida === grupo.venda_id && (
-                              <div className="venda-pagamento-body">
-                                {sortParcelas(grupo.pagamentos, visaoParcelas)
-                                  .filter((pag) => pag.status !== 'cancelado')
-                                  .map((pag) => {
+                            {pagamentoVendaExpandida === grupo.venda_id && (() => {
+                              const parcelasPg = sortParcelas(grupo.pagamentos, visaoParcelas)
+                                .filter((pag) => pag.status !== 'cancelado')
+                              const temMaisDe10 = parcelasPg.length > 10
+                              const estaExpandido = isGrupoExpandido(grupo.venda_id, 'pagamentos')
+                              const exibidas = temMaisDe10 && !estaExpandido ? parcelasPg.slice(0, 10) : parcelasPg
+                              return (
+                                <div className="venda-pagamento-body">
+                                  {exibidas.map((pag) => {
                                     const minhaComissao = venda ? calcularComissaoPagamento(pag) : 0
-                                    
+
                                     return (
-                                      <div key={pag.id} className={`parcela-row ${pag.status === 'pago' ? 'pago' : pag.status === 'cancelado' ? 'cancelado' : ''}`}>
-                                        <div className="parcela-main">
-                                          <div className="parcela-tipo">
-                                            {pag.tipo === 'sinal' && 'Sinal'}
-                                            {pag.tipo === 'entrada' && 'Entrada'}
-                                            {pag.tipo === 'parcela_entrada' && `Parcela ${pag.numero_parcela}`}
-                                            {pag.tipo === 'balao' && `Balão ${pag.numero_parcela || ''}`}
-                                            {pag.tipo === 'comissao_integral' && '✨ Comissão Integral'}
-                                          </div>
-                                          <div className="parcela-data">{formatDataBR(pag.data_prevista)}</div>
-                                          <div className="parcela-valor">{formatCurrency(pag.valor)}</div>
-                                          <div className="parcela-comissao-corretor">
-                                            <span className="comissao-label">Minha Comissão:</span>
-                                            <span className="comissao-valor">{formatCurrency(minhaComissao)}</span>
-                                          </div>
-                                          <div className="parcela-status">
-                                            <span className={`status-pill ${pag.status}`}>
-                                              {pag.status === 'pago' ? 'Pago' : pag.status === 'cancelado' ? 'Cancelado' : 'Pendente'}
-                                            </span>
-                                            {pag.renegociacao_id && (
-                                              <span className="pill-aditivo" title="Parcela de grade renegociada por aditivo (reparcelamento)">
-                                                Aditivo
-                                              </span>
-                                            )}
-                                          </div>
-                                        </div>
-                                      </div>
+                                      <ParcelaCard
+                                        key={pag.id}
+                                        pagamento={pag}
+                                        comissao={minhaComissao}
+                                      />
                                     )
                                   })}
-          </div>
-        )}
+                                  {temMaisDe10 && (
+                                    <div className="grupo-expand-btn-wrapper">
+                                      <button
+                                        className="grupo-expand-btn"
+                                        onClick={() => toggleGrupoExpandido(grupo.venda_id, 'pagamentos')}
+                                      >
+                                        {estaExpandido ? (
+                                          <>
+                                            <ChevronDown size={16} className="rotated" />
+                                            <span>Ver menos ({parcelasPg.length - 10} itens ocultos)</span>
+                                          </>
+                                        ) : (
+                                          <>
+                                            <ChevronDown size={16} />
+                                            <span>Ver mais ({parcelasPg.length - 10} itens restantes)</span>
+                                          </>
+                                        )}
+                                      </button>
+                                    </div>
+                                  )}
+                                </div>
+                              )
+                            })()}
                           </div>
                         )
                       })
@@ -2840,7 +2635,7 @@ const CorretorDashboard = () => {
                             </div>
                             <div className="cliente-info">
                               <h3>{capitalizeName(cliente.nome_completo)}</h3>
-                              <span className="cliente-cpf">{cliente.cpf || 'CPF não informado'}</span>
+                              <span className="cliente-cpf">{cliente.cpf ? formatarCPF(cliente.cpf) : 'CPF não informado'}</span>
                             </div>
                           </div>
                           
@@ -2920,12 +2715,22 @@ const CorretorDashboard = () => {
               <div className="empreendimentos-filters">
                 <div className="emp-search-box">
                   <Search size={20} />
-                  <input 
-                    type="text" 
+                  <input
+                    type="text"
                     placeholder="Buscar empreendimento..."
                     value={buscaEmpreendimento}
                     onChange={(e) => setBuscaEmpreendimento(e.target.value)}
                   />
+                  {buscaEmpreendimento && (
+                    <button
+                      type="button"
+                      className="emp-search-clear"
+                      onClick={() => setBuscaEmpreendimento('')}
+                      aria-label="Limpar busca"
+                    >
+                      <X size={16} />
+                    </button>
+                  )}
                 </div>
               </div>
 
@@ -3274,26 +3079,33 @@ const CorretorDashboard = () => {
                 </div>
               )}
               
-              {/* Ações */}
-              <div className="solicitacoes-acoes-header">
-                <h3>Registrar Nova Solicitação</h3>
-                <div className="acoes-btns">
-                  <button 
-                    className="btn-nova-solicitacao venda"
-                    onClick={() => setShowNovaVendaModal(true)}
-                  >
-                    <DollarSign size={18} />
-                    Registrar Venda
-                  </button>
-                  <button 
-                    className="btn-nova-solicitacao cliente"
-                    onClick={() => setShowNovoClienteModal(true)}
-                  >
-                    <UserPlus size={18} />
-                    Cadastrar Cliente
-                  </button>
+              {/* Ações — só aparece se houver pelo menos uma ação de criação ativa.
+                  Hoje venda e cliente estão congeladas (form público vai substituir). */}
+              {(!REGISTRO_VENDA_CONGELADO || !REGISTRO_CLIENTE_CONGELADO) && (
+                <div className="solicitacoes-acoes-header">
+                  <h3>Registrar Nova Solicitação</h3>
+                  <div className="acoes-btns">
+                    {!REGISTRO_VENDA_CONGELADO && (
+                      <button
+                        className="btn-nova-solicitacao venda"
+                        onClick={() => setShowNovaVendaModal(true)}
+                      >
+                        <DollarSign size={18} />
+                        Registrar Venda
+                      </button>
+                    )}
+                    {!REGISTRO_CLIENTE_CONGELADO && (
+                      <button
+                        className="btn-nova-solicitacao cliente"
+                        onClick={() => setShowNovoClienteModal(true)}
+                      >
+                        <UserPlus size={18} />
+                        Cadastrar Cliente
+                      </button>
+                    )}
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* Lista de Minhas Solicitações */}
               <div className="minhas-solicitacoes">
@@ -3775,8 +3587,8 @@ const CorretorDashboard = () => {
           </div>
         )}
 
-        {/* Modal Nova Venda */}
-        {showNovaVendaModal && (
+        {/* Modal Nova Venda — CONGELADA (ver REGISTRO_VENDA_CONGELADO) */}
+        {showNovaVendaModal && !REGISTRO_VENDA_CONGELADO && (
           <div className="modal-overlay" onClick={() => setShowNovaVendaModal(false)}>
             <div className="modal-content" onClick={e => e.stopPropagation()}>
               <div className="modal-header">
@@ -3800,33 +3612,25 @@ const CorretorDashboard = () => {
                       required
                     >
                       <option value="">Selecione...</option>
-                      {empreendimentos.map(emp => (
-                        <option key={emp.id} value={emp.id}>{emp.nome}</option>
-                      ))}
+                      {/* Só Figueira é empreendimento ativo (ver .claude/rules/sincronizacao-sienge.md) */}
+                      {empreendimentos
+                        .filter(emp => (emp.nome || '').toLowerCase().includes('figueira'))
+                        .map(emp => (
+                          <option key={emp.id} value={emp.id}>{emp.nome}</option>
+                        ))}
                     </select>
                   </div>
                   
                   <div className="form-group">
                     <label>Cliente</label>
-                    <select
-                      value={novaVendaForm.cliente_id}
-                      onChange={(e) => {
-                        const clienteId = e.target.value
-                        const cliente = todosClientes.find(c => c.id === clienteId)
-                        setNovaVendaForm({
-                          ...novaVendaForm, 
-                          cliente_id: clienteId,
-                          nome_cliente: cliente ? cliente.nome_completo : ''
-                        })
-                      }}
-                    >
-                      <option value="">Selecione ou digite abaixo...</option>
-                      {todosClientes.map(cliente => (
-                        <option key={cliente.id} value={cliente.id}>
-                          {cliente.nome_completo} - {cliente.cpf}
-                        </option>
-                      ))}
-                    </select>
+                    <Autocomplete
+                      items={todosClientes}
+                      fields={CLIENTE_SEARCH_FIELDS}
+                      onSelect={(c) => setNovaVendaForm({ ...novaVendaForm, cliente_id: c.id, nome_cliente: c.nome_completo })}
+                      getLabel={(c) => c.nome_completo}
+                      getSub={(c) => c.cpf}
+                      placeholder="Buscar cliente por nome ou CPF…"
+                    />
                   </div>
                   
                   <div className="form-group">
@@ -3897,8 +3701,8 @@ const CorretorDashboard = () => {
           </div>
         )}
 
-        {/* Modal Novo Cliente */}
-        {showNovoClienteModal && (
+        {/* Modal Novo Cliente — CONGELADA (ver REGISTRO_CLIENTE_CONGELADO) */}
+        {showNovoClienteModal && !REGISTRO_CLIENTE_CONGELADO && (
           <div className="modal-overlay" onClick={() => setShowNovoClienteModal(false)}>
             <div className="modal-content" onClick={e => e.stopPropagation()}>
               <div className="modal-header">
@@ -4008,11 +3812,16 @@ const CorretorDashboard = () => {
                   </div>
                   <div>
                     <h3>{capitalizeName(selectedCliente.nome_completo)}</h3>
-                    <p>{selectedCliente.cpf || 'CPF não informado'}</p>
                   </div>
                 </div>
 
                 <div className="cliente-detalhe-info">
+                  {selectedCliente.cpf && (
+                    <div className="info-row">
+                      <FileText size={16} />
+                      <span>{formatarCPF(selectedCliente.cpf)}</span>
+                    </div>
+                  )}
                   {selectedCliente.telefone && (
                     <div className="info-row">
                       <Phone size={16} />
@@ -4063,6 +3872,13 @@ const CorretorDashboard = () => {
               <div className="modal-content modal-large emp-view-modal" onClick={e => e.stopPropagation()}>
                 {/* Header com Imagem */}
                 <div className="emp-view-header">
+                  <button
+                    className="emp-view-close"
+                    onClick={() => setSelectedEmpreendimento(null)}
+                    aria-label="Fechar"
+                  >
+                    <X size={20} />
+                  </button>
                   {selectedEmpreendimento.foto_fachada ? (
                     <img 
                       src={selectedEmpreendimento.foto_fachada} 

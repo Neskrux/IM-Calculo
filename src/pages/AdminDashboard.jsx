@@ -4,6 +4,8 @@ import { useAuth } from '../contexts/AuthContext'
 import { supabase } from '../lib/supabase'
 import { fetchAllPaginated } from '../utils/supabaseQuery'
 import { deleteCliente } from '../services/adminClientes'
+import Autocomplete from '../components/Autocomplete'
+import { casaBusca } from '../utils/searchUtils'
 import { jsPDF } from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import { 
@@ -5612,18 +5614,12 @@ const AdminDashboard = () => {
   })
 
   // Filtro de Clientes (excluídos = ativo false não aparecem)
+  const ADMIN_CLIENTE_SEARCH_FIELDS = ['nome_completo', { key: 'cpf', tipo: 'numero' }, 'email', { key: 'telefone', tipo: 'numero' }, 'profissao', 'empresa_trabalho', 'endereco']
   const filteredClientes = clientes.filter(cliente => {
     if (cliente.ativo === false) return false
-    // Busca por texto
-    const matchBusca = !filtrosClientes.busca ||
-      cliente.nome_completo?.toLowerCase().includes(filtrosClientes.busca.toLowerCase()) ||
-      cliente.cpf?.toLowerCase().includes(filtrosClientes.busca.toLowerCase()) ||
-      cliente.email?.toLowerCase().includes(filtrosClientes.busca.toLowerCase()) ||
-      cliente.telefone?.toLowerCase().includes(filtrosClientes.busca.toLowerCase()) ||
-      cliente.profissao?.toLowerCase().includes(filtrosClientes.busca.toLowerCase()) ||
-      cliente.empresa_trabalho?.toLowerCase().includes(filtrosClientes.busca.toLowerCase()) ||
-      cliente.endereco?.toLowerCase().includes(filtrosClientes.busca.toLowerCase())
-    
+    // Busca por texto (normalizado: acento + CPF/telefone)
+    const matchBusca = casaBusca(cliente, filtrosClientes.busca, ADMIN_CLIENTE_SEARCH_FIELDS)
+
     // Filtro por FGTS
     const matchFgts = filtrosClientes.possuiFgts === 'todos' ||
       (filtrosClientes.possuiFgts === 'sim' && cliente.possui_3_anos_fgts) ||
@@ -8309,15 +8305,16 @@ const AdminDashboard = () => {
           <div className="content-section">
             {/* Filtros de Clientes */}
             <div className="filters-section">
-              <div className="search-box">
-                <Search size={20} />
-                <input 
-                  type="text" 
-                  placeholder="Buscar por nome, CPF, email, telefone, profissão..."
-                  value={filtrosClientes.busca}
-                  onChange={(e) => setFiltrosClientes({...filtrosClientes, busca: e.target.value})}
-                />
-              </div>
+              <Autocomplete
+                items={clientes.filter(c => c.ativo !== false)}
+                fields={ADMIN_CLIENTE_SEARCH_FIELDS}
+                value={filtrosClientes.busca}
+                onQueryChange={(q) => setFiltrosClientes({ ...filtrosClientes, busca: q })}
+                onSelect={(c) => setFiltrosClientes({ ...filtrosClientes, busca: c.nome_completo })}
+                getLabel={(c) => c.nome_completo}
+                getSub={(c) => [c.cpf, c.telefone].filter(Boolean).join(' · ')}
+                placeholder="Buscar cliente…"
+              />
               
               {/* Filtros em Grid */}
               <div className="filters-grid">
