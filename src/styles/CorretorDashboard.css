@@ -3460,9 +3460,18 @@
 }
 
 @media (max-width: 560px) {
-  .header-actions-pagamento { width: 100%; }
-  .btn-ver-pagamentos { flex: 1; }      /* predominante: ocupa a faixa */
-  .btn-ver-venda { flex: 0 0 auto; }
+  /* Empilha as ações no estreito — "Ocultar pagamentos" (label longo) não cabe
+     lado a lado com "Ver venda" no iPhone 11 (~414px) e cortava. */
+  .header-actions-pagamento {
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .btn-ver-pagamentos,
+  .btn-ver-venda {
+    width: 100%;
+    justify-content: center;
+  }
 }
 
 .btn-ver-venda {

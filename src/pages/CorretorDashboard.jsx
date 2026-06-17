@@ -1501,6 +1501,15 @@ const CorretorDashboard = () => {
     }
   }, [pagamentoVendaExpandida])
 
+  // Trocar de aba reseta a rolagem pro topo — o SPA (React Router) não faz isso
+  // sozinho, então no celular a aba nova abria rolada (faltando a parte de cima).
+  // Pula quando há foco de cross-nav: "Ver venda" destaca a venda (scroll no ref)
+  // e "Ver recebimentos" rola até ela via rAF logo após este efeito.
+  useEffect(() => {
+    if (vendaDestaque) return
+    window.scrollTo({ top: 0, behavior: 'auto' })
+  }, [activeTab])
+
   const mobileNavItems = [
     { tab: 'dashboard', path: '/corretor/dashboard', label: 'Início', icon: LayoutDashboard },
     { tab: 'pagamentos', path: '/corretor/pagamentos', label: 'Receber', icon: CreditCard },
