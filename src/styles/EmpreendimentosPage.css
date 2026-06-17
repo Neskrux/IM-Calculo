@@ -38,6 +38,7 @@
   display: flex;
   flex-direction: column;
   gap: 6px;
+  min-width: 0; /* deixa a coluna do grid encolher (moeda longa não estoura) */
   padding: 20px;
   border: 1px solid var(--emp-border);
   border-radius: 10px;
@@ -63,6 +64,7 @@
 }
 
 .emp-stat-value {
+  overflow-wrap: anywhere;
   font-size: 26px;
   font-weight: 400;
   color: var(--emp-text);
@@ -782,6 +784,13 @@
   
   .empreendimentos-showcase {
     grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  }
+}
+
+/* Celular: 1 coluna nos stats — a moeda longa não cabe em 2 colunas a 414px (iPhone 11) */
+@media (max-width: 520px) {
+  .empreendimentos-stats-header {
+    grid-template-columns: 1fr;
   }
 }
 
