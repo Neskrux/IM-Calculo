@@ -16,6 +16,7 @@ import '../styles/Dashboard.css'
 import { parseDataLocal, formatDataBR } from '../utils/datas'
 import '../styles/ClienteDashboard.css'
 import { sortParcelas } from '../utils/parcelasSort'
+import ParcelaCard from '../components/corretor/ParcelaCard'
 
 const ClienteDashboard = () => {
   const { user, userProfile, signOut } = useAuth()
@@ -264,6 +265,32 @@ const ClienteDashboard = () => {
     const key = `${compraId}-${tipo}`
     return gruposExpandidos[key] || false
   }
+
+  // Título da compra na visão do CLIENTE: empreendimento + unidade (mundo dele),
+  // NUNCA o "Contrato N" (descricao) — que é id interno do Sienge.
+  const tituloCompra = (c) => {
+    const emp = c?.empreendimentos?.nome || c?.empreendimento?.nome || c?.empreendimento_nome
+    const uni = c?.unidade
+      ? `Unidade ${c.unidade}${c.bloco ? ` · Bloco ${c.bloco}` : ''}`
+      : null
+    return [emp, uni].filter(Boolean).join(' · ') || 'Minha compra'
+  }
+
+  // Dashboard -> abre a compra escolhida já expandida na aba Compras (cross-nav).
+  const verCompra = (compraId) => {
+    setCompraExpandida(compraId)
+    navigate('/cliente/compras')
+  }
+
+  // Os 6 documentos do cliente (mesma lista do contador de "documentos enviados").
+  const DOCS_CLIENTE = [
+    { campo: 'rg_frente_url', label: 'RG Frente' },
+    { campo: 'rg_verso_url', label: 'RG Verso' },
+    { campo: 'cpf_url', label: 'CPF' },
+    { campo: 'comprovante_residencia_url', label: 'Comp. Residência' },
+    { campo: 'comprovante_renda_url', label: 'Comp. Renda' },
+    { campo: 'certidao_casamento_url', label: 'Certidão Casamento' },
+  ]
 
   // Formatação para Ticker (valor completo)
   const formatTicker = (value) => {
@@ -706,9 +733,17 @@ const ClienteDashboard = () => {
                   </h2>
                   <div className="compras-list-mini">
                     {compras.slice(0, 3).map((compra) => (
-                      <div key={compra.id} className="compra-card-mini">
+                      <div
+                        key={compra.id}
+                        className="compra-card-mini compra-card-mini-clicavel"
+                        role="button"
+                        tabIndex={0}
+                        onClick={() => verCompra(compra.id)}
+                        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); verCompra(compra.id) } }}
+                        title="Ver detalhes desta compra"
+                      >
                         <div className="compra-info-mini">
-                          <h4>{compra.descricao || 'Compra de Imóvel'}</h4>
+                          <h4>{tituloCompra(compra)}</h4>
                           <div className="compra-meta-mini">
                             <span>
                               <Calendar size={14} />
@@ -732,6 +767,7 @@ const ClienteDashboard = () => {
                         <div className="compra-valor-mini">
                           {formatCurrency(compra.valor_venda)}
                         </div>
+                        <ChevronRight size={18} className="compra-card-mini-seta" />
                       </div>
                     ))}
                   </div>
@@ -743,6 +779,36 @@ const ClienteDashboard = () => {
                       Ver todas as compras
                     </button>
                   )}
+                </section>
+              )}
+
+              {/* Documentos — resumo + atalho pra aba */}
+              {cliente && (
+                <section className="ultimas-compras-section">
+                  <h2>
+                    <FileText size={24} />
+                    Meus Documentos
+                  </h2>
+                  <div className="docs-resumo-grid">
+                    {DOCS_CLIENTE.map((d) => {
+                      const enviado = !!cliente[d.campo]
+                      return (
+                        <div key={d.campo} className="doc-resumo-item">
+                          <span className={`doc-status-badge ${enviado ? 'success' : 'warning'}`}>
+                            {enviado ? <CheckCircle size={14} /> : <Clock size={14} />}
+                            {enviado ? 'Enviado' : 'Pendente'}
+                          </span>
+                          <span className="doc-resumo-label">{d.label}</span>
+                        </div>
+                      )
+                    })}
+                  </div>
+                  <button
+                    className="btn-ver-todas"
+                    onClick={() => navigate('/cliente/documentos')}
+                  >
+                    Ver / enviar documentos
+                  </button>
                 </section>
               )}
             </>
@@ -768,7 +834,7 @@ const ClienteDashboard = () => {
                     <div key={compra.id} className="compra-card">
                       <div className="compra-header">
                         <div className="compra-title">
-                          <h3>{compra.descricao || 'Compra de Imóvel'}</h3>
+                          <h3>{tituloCompra(compra)}</h3>
                           <span className={`status-tag ${compra.status}`}>
                             {compra.status === 'pago' ? (
                               <>
@@ -892,36 +958,42 @@ const ClienteDashboard = () => {
                                   </div>
                                 </div>
                                 
-                                {visaoParcelas === 'calendario' ? (
-                                  <div className="parcelas-list">
-                                    {sortParcelas(pagamentosCompra, 'calendario')
-                                      .filter((pagamento) => pagamento.status !== 'cancelado')
-                                      .map((pagamento) => (
-                                      <div 
-                                        key={pagamento.id} 
-                                        className={`cliente-parcela-row ${pagamento.status === 'pago' ? 'pago' : pagamento.status === 'cancelado' ? 'cancelado' : ''}`}
-                                      >
-                                        <div className="cliente-parcela-tipo">
-                                          {pagamento.tipo === 'sinal' && 'Sinal'}
-                                          {pagamento.tipo === 'entrada' && 'Entrada'}
-                                          {pagamento.tipo === 'parcela_entrada' && `Parcela ${pagamento.numero_parcela || ''}`}
-                                          {pagamento.tipo === 'balao' && `Balão ${pagamento.numero_parcela || ''}`}
-                                        </div>
-                                        <div className="cliente-parcela-data">
-                                          {formatDataBR(pagamento.data_prevista)}
-                                        </div>
-                                        <div className="cliente-parcela-valor">
-                                          {formatCurrency(pagamento.valor)}
-                                        </div>
-                                        <div className="cliente-parcela-status">
-                                          <span className={`status-pill ${pagamento.status}`}>
-                                            {pagamento.status === 'pago' ? 'Pago' : pagamento.status === 'cancelado' ? 'Cancelado' : 'Pendente'}
-                                          </span>
-                                        </div>
+                                {visaoParcelas === 'calendario' ? (() => {
+                                  const parcelasCal = sortParcelas(pagamentosCompra, 'calendario')
+                                    .filter((pagamento) => pagamento.status !== 'cancelado')
+                                  const temMaisDe10 = parcelasCal.length > 10
+                                  const estaExpandido = isGrupoExpandido(compra.id, 'calendario')
+                                  const exibidas = temMaisDe10 && !estaExpandido ? parcelasCal.slice(0, 10) : parcelasCal
+                                  return (
+                                    <>
+                                      <div className="parcelas-list">
+                                        {exibidas.map((pagamento) => (
+                                          <ParcelaCard key={pagamento.id} pagamento={pagamento} modo="cliente" />
+                                        ))}
                                       </div>
-                                    ))}
-                                  </div>
-                                ) : (
+                                      {temMaisDe10 && (
+                                        <div className="grupo-expand-btn-wrapper">
+                                          <button
+                                            className="grupo-expand-btn"
+                                            onClick={() => toggleGrupoExpandido(compra.id, 'calendario')}
+                                          >
+                                            {estaExpandido ? (
+                                              <>
+                                                <ChevronDown size={16} className="rotated" />
+                                                <span>Ver menos ({parcelasCal.length - 10} itens ocultos)</span>
+                                              </>
+                                            ) : (
+                                              <>
+                                                <ChevronDown size={16} />
+                                                <span>Ver mais ({parcelasCal.length - 10} itens restantes)</span>
+                                              </>
+                                            )}
+                                          </button>
+                                        </div>
+                                      )}
+                                    </>
+                                  )
+                                })() : (
                                   (() => {
                                     const pagamentosAtivosCompra = pagamentosCompra.filter((pagamento) => pagamento.status !== 'cancelado')
                                     const grupos = agruparPagamentosPorTipo(pagamentosAtivosCompra)
@@ -954,28 +1026,7 @@ const ClienteDashboard = () => {
                                           </div>
                                           <div className="parcelas-list">
                                             {pagamentosExibidos.map((pagamento) => (
-                                              <div 
-                                                key={pagamento.id} 
-                                                className={`cliente-parcela-row ${pagamento.status === 'pago' ? 'pago' : pagamento.status === 'cancelado' ? 'cancelado' : ''}`}
-                                              >
-                                                <div className="cliente-parcela-tipo">
-                                                  {pagamento.tipo === 'sinal' && 'Sinal'}
-                                                  {pagamento.tipo === 'entrada' && 'Entrada'}
-                                                  {pagamento.tipo === 'parcela_entrada' && `Parcela ${pagamento.numero_parcela || ''}`}
-                                                  {pagamento.tipo === 'balao' && `Balão ${pagamento.numero_parcela || ''}`}
-                                                </div>
-                                                <div className="cliente-parcela-data">
-                                                  {formatDataBR(pagamento.data_prevista)}
-                                                </div>
-                                                <div className="cliente-parcela-valor">
-                                                  {formatCurrency(pagamento.valor)}
-                                                </div>
-                                                <div className="cliente-parcela-status">
-                                                  <span className={`status-pill ${pagamento.status}`}>
-                                                    {pagamento.status === 'pago' ? 'Pago' : pagamento.status === 'cancelado' ? 'Cancelado' : 'Pendente'}
-                                                  </span>
-                                                </div>
-                                              </div>
+                                              <ParcelaCard key={pagamento.id} pagamento={pagamento} modo="cliente" />
                                             ))}
                                           </div>
                                           {temMaisDe10 && (

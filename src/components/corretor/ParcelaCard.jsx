@@ -29,8 +29,11 @@ export function labelTipoParcela(p) {
   return p.tipo || ''
 }
 
-export default function ParcelaCard({ pagamento, comissao }) {
+// modo: 'corretor' (default) = comissão-first (herói = comissão; rodapé = valor da parcela)
+//       'cliente'            = valor-first  (herói = valor da parcela; rodapé = só vencimento; sem comissão/aditivo)
+export default function ParcelaCard({ pagamento, comissao, modo = 'corretor' }) {
   if (!pagamento) return null
+  const cliente = modo === 'cliente'
   const status = pagamento.status || 'pendente'
   const pago = status === 'pago'
   const cancelado = status === 'cancelado'
@@ -42,7 +45,7 @@ export default function ParcelaCard({ pagamento, comissao }) {
         <span className="parcela-card-tipo">{labelTipoParcela(pagamento)}</span>
         <span className="parcela-card-badges">
           <span className={`status-pill ${status}`}>{STATUS_LABEL[status] || 'Pendente'}</span>
-          {pagamento.renegociacao_id && (
+          {!cliente && pagamento.renegociacao_id && (
             <span className="pill-aditivo" title="Parcela de grade renegociada por aditivo (reparcelamento)">
               Aditivo
             </span>
@@ -50,15 +53,19 @@ export default function ParcelaCard({ pagamento, comissao }) {
         </span>
       </div>
 
-      <div className="parcela-card-comissao-label">Minha comissão</div>
-      <div className="parcela-card-comissao">{fmtBRL(comissao)}</div>
+      <div className="parcela-card-comissao-label">{cliente ? 'Valor da parcela' : 'Minha comissão'}</div>
+      <div className="parcela-card-comissao">{fmtBRL(cliente ? pagamento.valor : comissao)}</div>
 
       <div className="parcela-card-rodape">
         <span>
           {pago ? 'pago em' : 'vence'} {formatDataBR(data)}
         </span>
-        <span className="parcela-card-sep">·</span>
-        <span className="parcela-card-valor">valor da parcela {fmtBRL(pagamento.valor)}</span>
+        {!cliente && (
+          <>
+            <span className="parcela-card-sep">·</span>
+            <span className="parcela-card-valor">valor da parcela {fmtBRL(pagamento.valor)}</span>
+          </>
+        )}
       </div>
     </div>
   )

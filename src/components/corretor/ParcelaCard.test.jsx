@@ -61,3 +61,23 @@ describe('ParcelaCard — comissão-first', () => {
     expect(screen.getByText('Aditivo')).toBeInTheDocument()
   })
 })
+
+describe('ParcelaCard — modo cliente (valor-first)', () => {
+  const pag = {
+    tipo: 'parcela_entrada', numero_parcela: 1, status: 'pago',
+    valor: 1962.39, data_pagamento: '2026-03-20', data_prevista: '2026-03-20',
+    renegociacao_id: 'r1',
+  }
+
+  it('herói = valor da parcela (rotulado); sem "Minha comissão"', () => {
+    render(<ParcelaCard pagamento={pag} modo="cliente" />)
+    expect(screen.getByText('Valor da parcela')).toBeInTheDocument()
+    expect(screen.getByText('R$ 1.962,39')).toBeInTheDocument()
+    expect(screen.queryByText('Minha comissão')).not.toBeInTheDocument()
+  })
+
+  it('cliente não vê pill Aditivo (jargão interno)', () => {
+    render(<ParcelaCard pagamento={pag} modo="cliente" />)
+    expect(screen.queryByText('Aditivo')).not.toBeInTheDocument()
+  })
+})

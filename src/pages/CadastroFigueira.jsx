@@ -4,6 +4,7 @@
 // Spec: docs/specs/2026-06-12-cadastro-publico-parceria-figueira-S1-spec.md
 import { useEffect, useRef, useState } from 'react'
 import { Upload, FileText, X } from 'lucide-react'
+import InputDataBR from "../components/InputDataBR"
 import '../styles/ClienteDashboard.css'
 
 const PROXY = import.meta.env.VITE_PARCERIA_PROXY_URL || ''
@@ -329,7 +330,7 @@ export default function CadastroFigueira() {
               <div className="form-row">
                 <div className="form-group"><label>CPF *</label><input type="text" {...noFill} value={form.cliente_cpf || ''} onChange={(e) => setForm((f) => ({ ...f, cliente_cpf: onlyDigits(e.target.value, 11) }))} inputMode="numeric" /></div>
                 <div className="form-group"><label>RG *</label><input type="text" {...noFill} value={form.cliente_rg || ''} onChange={set('cliente_rg')} maxLength={15} /></div>
-                <div className="form-group"><label>Data de nascimento *</label><input type="date" autoComplete="new-password" value={form.cliente_data_nascimento || ''} onChange={set('cliente_data_nascimento')} /></div>
+                <div className="form-group"><label>Data de nascimento *</label><InputDataBR type="date" autoComplete="new-password" value={form.cliente_data_nascimento || ''} onChange={set('cliente_data_nascimento')} /></div>
               </div>
               <div className="form-row">
                 <div className="form-group"><label>Nome do pai *</label><input type="text" {...noFill} value={form.cliente_nome_pai || ''} onChange={set('cliente_nome_pai')} onBlur={blurName('cliente_nome_pai')} /></div>
@@ -400,7 +401,7 @@ export default function CadastroFigueira() {
                   <div className="form-row">
                     <div className="form-group"><label>CPF</label><input type="text" {...noFill} value={form.conjuge_cpf || ''} onChange={(e) => setForm((f) => ({ ...f, conjuge_cpf: onlyDigits(e.target.value, 11) }))} inputMode="numeric" /></div>
                     <div className="form-group"><label>RG</label><input type="text" {...noFill} value={form.conjuge_rg || ''} onChange={set('conjuge_rg')} maxLength={15} /></div>
-                    <div className="form-group"><label>Data de nascimento</label><input type="date" autoComplete="new-password" value={form.conjuge_data_nascimento || ''} onChange={set('conjuge_data_nascimento')} /></div>
+                    <div className="form-group"><label>Data de nascimento</label><InputDataBR type="date" autoComplete="new-password" value={form.conjuge_data_nascimento || ''} onChange={set('conjuge_data_nascimento')} /></div>
                   </div>
                   <div className="form-row">
                     <div className="form-group"><label>Profissão</label><input type="text" {...noFill} value={form.conjuge_profissao || ''} onChange={set('conjuge_profissao')} onBlur={blurName('conjuge_profissao')} /></div>
