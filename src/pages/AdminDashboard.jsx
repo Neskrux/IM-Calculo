@@ -5,6 +5,7 @@ import { supabase } from '../lib/supabase'
 import { fetchAllPaginated } from '../utils/supabaseQuery'
 import { deleteCliente } from '../services/adminClientes'
 import Autocomplete from '../components/Autocomplete'
+import InputDataBR from "../components/InputDataBR"
 import { casaBusca } from '../utils/searchUtils'
 import { jsPDF } from 'jspdf'
 import autoTable from 'jspdf-autotable'
@@ -6326,7 +6327,7 @@ const AdminDashboard = () => {
                 
                 <div className="filter-item">
                   <label className="filter-label">Data Início</label>
-                  <input 
+                  <InputDataBR 
                     type="date"
                     value={filtrosVendas.dataInicio}
                     onChange={(e) => setFiltrosVendas({...filtrosVendas, dataInicio: e.target.value})}
@@ -6336,7 +6337,7 @@ const AdminDashboard = () => {
                 
                 <div className="filter-item">
                   <label className="filter-label">Data Fim</label>
-                  <input 
+                  <InputDataBR 
                     type="date"
                     value={filtrosVendas.dataFim}
                     onChange={(e) => setFiltrosVendas({...filtrosVendas, dataFim: e.target.value})}
@@ -7418,7 +7419,7 @@ const AdminDashboard = () => {
                 
                 <div className="filter-item">
                   <label className="filter-label">Data Início</label>
-                  <input 
+                  <InputDataBR 
                     type="date"
                     value={filtrosPagamentos.dataInicio}
                     onChange={(e) => setFiltrosPagamentos({...filtrosPagamentos, dataInicio: e.target.value})}
@@ -7428,7 +7429,7 @@ const AdminDashboard = () => {
                 
                 <div className="filter-item">
                   <label className="filter-label">Data Fim</label>
-                  <input 
+                  <InputDataBR 
                     type="date"
                     value={filtrosPagamentos.dataFim}
                     onChange={(e) => setFiltrosPagamentos({...filtrosPagamentos, dataFim: e.target.value})}
@@ -7945,7 +7946,7 @@ const AdminDashboard = () => {
                         <div className="form-section">
                           <label>
                             <span>Data em que o pagamento foi feito</span>
-                            <input
+                            <InputDataBR
                               type="date"
                               value={formConfirmarPagamento.dataPagamento}
                               onChange={(e) => setFormConfirmarPagamento({...formConfirmarPagamento, dataPagamento: e.target.value})}
@@ -8681,7 +8682,7 @@ const AdminDashboard = () => {
                 
                 <div className="filtro-grupo">
                   <label>Data Início</label>
-                  <input
+                  <InputDataBR
                     type="date"
                     value={relatorioFiltros.dataInicio}
                     onChange={(e) => setRelatorioFiltros({...relatorioFiltros, dataInicio: e.target.value})}
@@ -8690,7 +8691,7 @@ const AdminDashboard = () => {
                 
                 <div className="filtro-grupo">
                   <label>Data Fim</label>
-                  <input
+                  <InputDataBR
                     type="date"
                     value={relatorioFiltros.dataFim}
                     onChange={(e) => setRelatorioFiltros({...relatorioFiltros, dataFim: e.target.value})}
@@ -9752,7 +9753,7 @@ const AdminDashboard = () => {
                     </div>
                     <div className="form-group">
                       <label>Data da Venda</label>
-                      <input
+                      <InputDataBR
                         type="date"
                         value={vendaForm.data_venda}
                         onChange={(e) => setVendaForm({...vendaForm, data_venda: e.target.value})}
@@ -9760,7 +9761,7 @@ const AdminDashboard = () => {
                     </div>
                     <div className="form-group">
                       <label>Data da Entrada *</label>
-                      <input
+                      <InputDataBR
                         type="date"
                         value={vendaForm.data_entrada}
                         onChange={(e) => {
@@ -9925,7 +9926,7 @@ const AdminDashboard = () => {
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                           {editandoDataSinal ? (
                             <>
-                              <input
+                              <InputDataBR
                                 type="date"
                                 value={dataSinalTemp}
                                 onChange={(e) => setDataSinalTemp(e.target.value)}
@@ -10088,7 +10089,7 @@ const AdminDashboard = () => {
                               </span>
                               {editandoDataParcela === idx ? (
                                 <>
-                                  <input
+                                  <InputDataBR
                                     type="date"
                                     value={dataParcelaTemp}
                                     onChange={(e) => setDataParcelaTemp(e.target.value)}
@@ -10441,7 +10442,7 @@ const AdminDashboard = () => {
                               </span>
                               {editandoDataBalao === idx ? (
                                 <>
-                                  <input
+                                  <InputDataBR
                                     type="date"
                                     value={dataBalaoTemp}
                                     onChange={(e) => setDataBalaoTemp(e.target.value)}
@@ -11255,7 +11256,7 @@ const AdminDashboard = () => {
                   <div className="form-row">
                     <div className="form-group">
                       <label>Data de Nascimento</label>
-                      <input
+                      <InputDataBR
                         type="date"
                         value={clienteForm.data_nascimento}
                         onChange={(e) => setClienteForm({...clienteForm, data_nascimento: e.target.value})}
@@ -11708,7 +11709,7 @@ const AdminDashboard = () => {
                             </div>
                             <div className="form-group">
                               <label>Data Nascimento</label>
-                              <input
+                              <InputDataBR
                                 type="date"
                                 value={comp.data_nascimento}
                                 onChange={(e) => updateComplementador(index, 'data_nascimento', e.target.value)}
@@ -12323,7 +12324,7 @@ const AdminDashboard = () => {
 
                           <label className="input-wide">
                             <span>Data de vencimento</span>
-                            <input
+                            <InputDataBR
                               type="date"
                               value={dist.data_prevista}
                               onChange={e => {
@@ -12528,7 +12529,7 @@ const AdminDashboard = () => {
                   <div className="form-section modal-distrato-data">
                     <label>
                       <span>Data do Distrato</span>
-                      <input
+                      <InputDataBR
                         type="date"
                         value={dataDistrato}
                         onChange={e => setDataDistrato(e.target.value)}

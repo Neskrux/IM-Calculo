@@ -794,6 +794,42 @@
   transform: rotate(180deg);
 }
 
+/* Dashboard: mini card de compra clicável -> abre a compra na aba Compras */
+.compra-card-mini-clicavel {
+  cursor: pointer;
+  transition: border-color 0.15s ease, transform 0.15s ease;
+}
+.compra-card-mini-clicavel:hover {
+  border-color: rgba(201, 169, 98, 0.4);
+  transform: translateY(-1px);
+}
+.compra-card-mini-seta {
+  color: var(--im-text-muted, #888);
+  flex: none;
+  align-self: center;
+}
+
+/* Dashboard: resumo dos documentos + atalho pra aba Documentos */
+.docs-resumo-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.doc-resumo-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border: 1px solid var(--im-border, rgba(255, 255, 255, 0.08));
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.02);
+  font-size: 13px;
+}
+.doc-resumo-label {
+  color: var(--im-text-secondary, #cbd5e1);
+}
+
 /* Responsive para Detalhamento de Pagamentos */
 @media (max-width: 768px) {
   .cliente-parcela-row {

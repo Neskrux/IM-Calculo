@@ -20,6 +20,7 @@ import logo from '../imgs/logo.png'
 import Ticker from '../components/Ticker'
 import Autocomplete from '../components/Autocomplete'
 import ParcelaCard from '../components/corretor/ParcelaCard'
+import InputDataBR from "../components/InputDataBR"
 import { casaBusca } from '../utils/searchUtils'
 import ProfilePhotoModal from '../components/ProfilePhotoModal'
 import '../styles/Dashboard.css'
@@ -861,7 +862,7 @@ const CorretorDashboard = () => {
   // Campos de busca por lista — reusados pelos filtros e pelos <Autocomplete> (normaliza acento + CPF/telefone)
   const CLIENTE_SEARCH_FIELDS = ['nome_completo', { key: 'cpf', tipo: 'numero' }, { key: 'telefone', tipo: 'numero' }, 'email']
   const VENDA_SEARCH_FIELDS = ['cliente_nome', 'empreendimento_nome', 'unidade', 'bloco']
-  const PAGAMENTO_SEARCH_FIELDS = ['cliente_nome', 'empreendimento_nome']
+  const PAGAMENTO_SEARCH_FIELDS = ['cliente_nome', 'empreendimento_nome', 'unidade']
 
   // Filtrar pagamentos
   const filteredMeusPagamentos = meusPagamentos.filter(pag => {
@@ -1989,7 +1990,7 @@ const CorretorDashboard = () => {
                   
                   <div className="filter-item">
                     <label className="filter-label">Data Início</label>
-                    <input 
+                    <InputDataBR 
                       type="date"
                       value={filtrosVendas.dataInicio}
                       onChange={(e) => setFiltrosVendas({...filtrosVendas, dataInicio: e.target.value})}
@@ -1999,7 +2000,7 @@ const CorretorDashboard = () => {
                   
                   <div className="filter-item">
                     <label className="filter-label">Data Fim</label>
-                    <input 
+                    <InputDataBR 
                       type="date"
                       value={filtrosVendas.dataFim}
                       onChange={(e) => setFiltrosVendas({...filtrosVendas, dataFim: e.target.value})}
@@ -2265,7 +2266,7 @@ const CorretorDashboard = () => {
                   
                   <div className="filter-item">
                     <label className="filter-label">Data Início</label>
-                    <input 
+                    <InputDataBR 
                       type="date"
                       value={filtrosPagamentos.dataInicio}
                       onChange={(e) => setFiltrosPagamentos({...filtrosPagamentos, dataInicio: e.target.value})}
@@ -2275,7 +2276,7 @@ const CorretorDashboard = () => {
                   
                   <div className="filter-item">
                     <label className="filter-label">Data Fim</label>
-                    <input 
+                    <InputDataBR 
                       type="date"
                       value={filtrosPagamentos.dataFim}
                       onChange={(e) => setFiltrosPagamentos({...filtrosPagamentos, dataFim: e.target.value})}
@@ -2915,7 +2916,7 @@ const CorretorDashboard = () => {
                   
                   <div className="filtro-grupo">
                     <label>Data Início</label>
-                    <input
+                    <InputDataBR
                       type="date"
                       value={relatorioFiltros.dataInicio}
                       onChange={(e) => setRelatorioFiltros({...relatorioFiltros, dataInicio: e.target.value})}
@@ -2924,7 +2925,7 @@ const CorretorDashboard = () => {
                   
                   <div className="filtro-grupo">
                     <label>Data Fim</label>
-                    <input
+                    <InputDataBR
                       type="date"
                       value={relatorioFiltros.dataFim}
                       onChange={(e) => setRelatorioFiltros({...relatorioFiltros, dataFim: e.target.value})}
@@ -3673,7 +3674,7 @@ const CorretorDashboard = () => {
                     </div>
                     <div className="form-group">
                       <label>Data da Venda</label>
-                      <input
+                      <InputDataBR
                         type="date"
                         value={novaVendaForm.data_venda}
                         onChange={(e) => setNovaVendaForm({...novaVendaForm, data_venda: e.target.value})}
