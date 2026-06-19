@@ -42,6 +42,45 @@ maioria é **falso-positivo**: é **PM + balão caindo no mesmo dia** (normal). 
 | 1606 A | 165 | 83.839,80 | 11.178,64 | 71.263,83 | -1.397,33 (1 PM; Mariane c165, renegociação conhecida) |
 | 609 D | 269 | 124.200,00 | 20.800,00 | 54.600,00 | **-48.800,00 (buraco grande — investigar)** |
 
+## Adendo (2026-06-17): classe b9 — `numero_parcela` colidido (dinheiro-OK)
+
+Achado ao testar a **visão do CLIENTE** (Leandro, 908 A): a tela mostra "Parcela 1"
+duas vezes. Investigado: **não é over-grid nem aditivo** — é o **gerador antigo (b9)**
+que cravou `numero_parcela` repetido **no mesmo `tipo`** (ex.: 908 A tem 61 `parcela_entrada`
+mas só 57 números; nº 1/3/4/6 colidem). Dois fluxos complementares (~1.394 + ~1.000) somam o
+pro-soluto **exato** → dinheiro certo, **numeração suja**.
+
+Detector `(venda, tipo, numero_parcela)` duplicado (não-cancelado) → **10 vendas**:
+
+**b9 (dinheiro-OK — só renumerar; 0 impacto financeiro):**
+
+| Unidade | Contrato | Pro-soluto | Pago | Pendente | diff |
+|---|---|---:|---:|---:|---:|
+| 1204 B | 204 | 86.205,49 | 12.844,44 | 73.361,05 | 0,00 |
+| 1406 C | 256 | 86.298,50 | 5.127,91 | 81.170,59 | 0,00 |
+| 1607 A | 166 | 88.033,20 | 12.626,40 | 75.406,80 | 0,00 |
+| 506 A | 351 | 46.482,63 | 7.097,11 | 39.385,52 | 0,00 |
+| 508 A | 346 | 62.800,00 | 6.400,00 | 56.400,00 | 0,00 |
+| 908 A | 87 | 83.668,30 | 16.733,74 | 66.934,56 | 0,00 |
+
+**ABAIXO (colisão + falta dinheiro — já caem em casos conhecidos):**
+
+| Unidade | Contrato | diff | Nota |
+|---|---|---:|---|
+| 1305 A | 382 | -88.170,40 | distrato de maio (conhecido) |
+| 1302 C | 246 | -79.283,56 | pend=0 → provável distrato |
+| 609 D | 269 | -48.800,00 | já listado (buraco grande) |
+| 803 D | 275 | -39.300,00 | unidade em revisão (curativo maio) |
+
+**Ação b9:** renumerar/retipar os 2 fluxos pra `numero_parcela` único por tipo (sem tocar valor/
+status — dinheiro está certo). Nenhuma parcela a cancelar nesses 6.
+
+> ⚠️ **Ressalva de UI (pro nosso lado, não pra reconciliação):** dá pra rotular o card por
+> **ordem de data** em vez de confiar no `numero_parcela` colidido — limpa o visual onde o
+> dinheiro bate. **MAS** isso **NÃO pode rodar cego**: nos **7 over-grid** (excede pro-soluto)
+> relabel/dedup **esconderia a parcela extra real**. Logo: cosmético de UI só **depois** do dado,
+> e **guardado** por `excesso<=0`.
+
 ## Recipe pra reconciliação (worktree de reconciliação)
 1. Pra cada DUPLICATA: cruzar com Sienge (`/bulk-data/v1/income` + grade vigente) pra achar a
    parcela **sobrando** (a que não tem âncora `sienge_installment_id` real / fora da grade vigente).
