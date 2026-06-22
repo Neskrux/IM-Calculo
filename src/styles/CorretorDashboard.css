@@ -2434,10 +2434,17 @@
 }
 
 /* Modal de pagamentos (lista de parcelas do corretor) */
+.modal-content.modal-pagamentos {
+  /* dvh (não vh): no iOS o vh inclui a toolbar dinâmica e o conteúdo passa por baixo */
+  max-height: 90dvh;
+}
+
 .modal-pagamentos-body {
   display: flex;
   flex-direction: column;
   gap: 10px;
+  /* impede o scroll da lista de "vazar" pra página atrás (scroll-chaining no iOS) */
+  overscroll-behavior: contain;
 }
 
 .modal-pagamentos-contador {

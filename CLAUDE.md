@@ -19,6 +19,7 @@ Regras de negócio críticas que **SEMPRE** devem ser respeitadas ao alterar có
 @.claude/rules/visualizacao-totais.md
 @.claude/rules/leitura-de-listas-e-refetch.md
 @.claude/rules/rodadas-b.md
+@.claude/rules/ui-mobile-ios.md
 
 ---
 
