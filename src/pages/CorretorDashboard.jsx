@@ -153,7 +153,7 @@ const CorretorDashboard = () => {
   const [showSenhaModal, setShowSenhaModal] = useState(false)
   const [uploadingDoc, setUploadingDoc] = useState(false)
   const [uploadingDocType, setUploadingDocType] = useState(null)
-  const [visaoParcelas, setVisaoParcelas] = useState('contrato')
+  const [visaoParcelas, setVisaoParcelas] = useState('calendario')
   
   // Form de nova venda
   const [novaVendaForm, setNovaVendaForm] = useState({
