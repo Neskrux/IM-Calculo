@@ -3794,12 +3794,23 @@
 
   .venda-main {
     flex-direction: column;
+    gap: 16px;
   }
+
+  /* Ordem mobile: identidade da venda → números → ação (botão por último, ancorado) */
+  .venda-info { order: 1; }
+  .venda-values { order: 2; }
+  .venda-expand-btn-wrapper { order: 3; }
 
   .venda-expand-btn-wrapper {
     width: 100%;
+    justify-content: stretch;
+    padding: 0;
+  }
+
+  .venda-expand-btn {
+    width: 100%;
     justify-content: center;
-    padding: 12px 0;
   }
 
   .venda-values {
@@ -3943,7 +3954,7 @@
     flex-direction: column;
     gap: 12px;
     width: 100%;
-    margin-top: 16px;
+    margin-top: 0; /* o gap do .venda-main já separa; evita vão duplo */
   }
 
   .venda-valor,
