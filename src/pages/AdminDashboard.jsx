@@ -729,6 +729,14 @@ async function propagarCronogramaCirurgico({
 }
 // ─────────────────────────────────────────────────────────────────────────────
 
+// Campos de busca por filtro (normalização de acento + CPF/telefone via casaBusca).
+// Vendas/Pagamentos têm dados aninhados (corretor.nome, cliente.cpf) que casaBusca não
+// alcança direto — por isso projetamos esses campos pra chaves planas (_cli_cad etc).
+const VENDA_SEARCH_FIELDS = ['_cli_cad', '_cli_venda', '_corretor', '_emp', 'unidade', 'bloco', 'descricao', { key: '_cpf', tipo: 'numero' }, { key: '_cnpj', tipo: 'numero' }]
+const PAG_SEARCH_FIELDS = ['_cli_cad', '_cli_venda', '_corretor', '_emp', { key: '_cpf', tipo: 'numero' }]
+const CORRETOR_SEARCH_FIELDS = ['nome', 'email', { key: 'telefone', tipo: 'numero' }]
+const EMP_SEARCH_FIELDS = ['nome', 'descricao']
+
 const AdminDashboard = () => {
   const { userProfile, signOut, loading: authLoading } = useAuth()
   const { tab } = useParams()
@@ -5459,20 +5467,21 @@ const AdminDashboard = () => {
     setVendaForm({ ...vendaForm, contrato_url: '', contrato_nome: '' })
   }
 
-  const filteredVendas = vendas.filter(venda => {
-    const q = searchTerm?.toLowerCase() || ''
-    // Busca por texto (cliente: nome na venda OU cadastro clientes — mesmo critério da coluna CLIENTE na tabela)
-    const matchSearch = !searchTerm ||
-      venda.corretor?.nome?.toLowerCase().includes(q) ||
-      venda.descricao?.toLowerCase().includes(q) ||
-      venda.nome_cliente?.toLowerCase().includes(q) ||
-      venda.cliente?.nome?.toLowerCase().includes(q) ||
-      String(venda.cliente?.cpf || '').toLowerCase().includes(q) ||
-      String(venda.cliente?.cnpj || '').toLowerCase().includes(q) ||
-      venda.unidade?.toLowerCase().includes(q) ||
-      venda.bloco?.toLowerCase().includes(q) ||
-      venda.empreendimento?.nome?.toLowerCase().includes(q)
-    
+  // Projeção plana p/ busca normalizada + dropdown do Autocomplete (campos aninhados → chaves planas)
+  const vendasBusca = useMemo(() => vendas.map(v => ({
+    ...v,
+    _cli_cad: v.cliente?.nome || '',
+    _cli_venda: v.nome_cliente || '',
+    _corretor: v.corretor?.nome || '',
+    _emp: v.empreendimento?.nome || '',
+    _cpf: v.cliente?.cpf || '',
+    _cnpj: v.cliente?.cnpj || '',
+  })), [vendas])
+
+  const filteredVendas = vendasBusca.filter(venda => {
+    // Busca por texto normalizada (acento + CPF/CNPJ) sobre os campos planos projetados.
+    const matchSearch = casaBusca(venda, searchTerm, VENDA_SEARCH_FIELDS)
+
     // Filtro por tipo de corretor
     const matchTipo = filterTipo === 'todos' || venda.tipo_corretor === filterTipo
     
@@ -5522,6 +5531,20 @@ const AdminDashboard = () => {
     return dataB - dataA
   })
   
+  // Projeção plana dos grupos p/ o dropdown do Autocomplete de Pagamentos
+  const pagamentosBusca = useMemo(() => listaVendasComPagamentos.map(grupo => {
+    const cli = grupo.venda?.cliente_id ? clientes.find(c => c.id === grupo.venda.cliente_id) : null
+    return {
+      id: grupo.venda?.id ?? grupo.id,
+      _cli_cad: cli?.nome_completo || '',
+      _cli_venda: grupo.venda?.nome_cliente || '',
+      _corretor: grupo.venda?.corretor?.nome || '',
+      _emp: grupo.venda?.empreendimento?.nome || '',
+      _unidade: grupo.venda?.unidade || '',
+      _cpf: cli?.cpf || '',
+    }
+  }), [listaVendasComPagamentos, clientes])
+
   // Filtrar pagamentos
   const filteredPagamentos = listaVendasComPagamentos
     .map(grupo => {
@@ -5583,15 +5606,15 @@ const AdminDashboard = () => {
       const matchTipo = filtrosPagamentos.tipo === 'todos' || 
         grupo.pagamentos.some(p => p.tipo === filtrosPagamentos.tipo)
       
-      // Busca por venda (inclui cliente por nome ou nome_cliente)
-      const buscaLower = filtrosPagamentos.buscaVenda?.toLowerCase() || ''
+      // Busca por venda (normalizada: acento + CPF) — cliente por nome na venda OU cadastro
       const clienteDaVenda = grupo.venda?.cliente_id ? clientes.find(c => c.id === grupo.venda.cliente_id) : null
-      const matchBusca = !filtrosPagamentos.buscaVenda ||
-        grupo.venda?.corretor?.nome?.toLowerCase().includes(buscaLower) ||
-        grupo.venda?.empreendimento?.nome?.toLowerCase().includes(buscaLower) ||
-        grupo.venda?.nome_cliente?.toLowerCase().includes(buscaLower) ||
-        clienteDaVenda?.nome_completo?.toLowerCase().includes(buscaLower) ||
-        clienteDaVenda?.cpf?.toLowerCase().includes(buscaLower)
+      const matchBusca = casaBusca({
+        _cli_cad: clienteDaVenda?.nome_completo || '',
+        _cli_venda: grupo.venda?.nome_cliente || '',
+        _corretor: grupo.venda?.corretor?.nome || '',
+        _emp: grupo.venda?.empreendimento?.nome || '',
+        _cpf: clienteDaVenda?.cpf || '',
+      }, filtrosPagamentos.buscaVenda, PAG_SEARCH_FIELDS)
       
       return matchCorretor && matchEmpreendimento && matchCliente && matchUnidade && matchStatus && matchTipo && matchBusca
     })
@@ -5606,13 +5629,9 @@ const AdminDashboard = () => {
   })
 
   // Filtro de Empreendimentos
-  const filteredEmpreendimentos = empreendimentos.filter(emp => {
-    const matchBusca = !filtrosEmpreendimentos.busca ||
-      emp.nome?.toLowerCase().includes(filtrosEmpreendimentos.busca.toLowerCase()) ||
-      emp.descricao?.toLowerCase().includes(filtrosEmpreendimentos.busca.toLowerCase())
-    
-    return matchBusca
-  })
+  const filteredEmpreendimentos = empreendimentos.filter(emp =>
+    casaBusca(emp, filtrosEmpreendimentos.busca, EMP_SEARCH_FIELDS)
+  )
 
   // Filtro de Clientes (excluídos = ativo false não aparecem)
   const ADMIN_CLIENTE_SEARCH_FIELDS = ['nome_completo', { key: 'cpf', tipo: 'numero' }, 'email', { key: 'telefone', tipo: 'numero' }, 'profissao', 'empresa_trabalho', 'endereco']
@@ -6232,16 +6251,17 @@ const AdminDashboard = () => {
           <div className="content-section">
             {/* Busca */}
             <div className="filters-section">
-              <div className="search-box">
-                <Search size={20} />
-                <input 
-                  type="text" 
-                  placeholder="Buscar por corretor, cliente, unidade, empreendimento..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
-              </div>
-              
+              <Autocomplete
+                items={vendasBusca}
+                fields={VENDA_SEARCH_FIELDS}
+                value={searchTerm}
+                onQueryChange={setSearchTerm}
+                onSelect={(v) => setSearchTerm(v._cli_cad || v._cli_venda || '')}
+                getLabel={(v) => v._cli_cad || v._cli_venda || v.descricao || 'Venda'}
+                getSub={(v) => [v.unidade && `Unid. ${v.unidade}`, v._emp].filter(Boolean).join(' · ')}
+                placeholder="Buscar por corretor, cliente, unidade, empreendimento..."
+              />
+
               {/* Filtros em Grid */}
               <div className="filters-grid">
                 <div className="filter-item">
@@ -6495,16 +6515,17 @@ const AdminDashboard = () => {
           <div className="content-section">
             {/* Filtros de Corretores */}
             <div className="filters-section">
-              <div className="search-box">
-                <Search size={20} />
-                <input 
-                  type="text" 
-                  placeholder="Buscar por nome, email, telefone..."
-                  value={filtrosCorretores.busca}
-                  onChange={(e) => setFiltrosCorretores({...filtrosCorretores, busca: e.target.value})}
-                />
-              </div>
-              
+              <Autocomplete
+                items={corretores}
+                fields={CORRETOR_SEARCH_FIELDS}
+                value={filtrosCorretores.busca}
+                onQueryChange={(q) => setFiltrosCorretores({ ...filtrosCorretores, busca: q })}
+                onSelect={(c) => setFiltrosCorretores({ ...filtrosCorretores, busca: c.nome })}
+                getLabel={(c) => c.nome}
+                getSub={(c) => [c.email, c.telefone].filter(Boolean).join(' · ')}
+                placeholder="Buscar por nome, email, telefone..."
+              />
+
               {/* Filtros em Grid */}
               <div className="filters-grid">
                 <div className="filter-item">
@@ -6578,11 +6599,8 @@ const AdminDashboard = () => {
             ) : (() => {
               // Filtrar corretores
               const filteredCorretores = corretores.filter(corretor => {
-                // Busca por texto
-                const matchBusca = !filtrosCorretores.busca ||
-                  corretor.nome?.toLowerCase().includes(filtrosCorretores.busca.toLowerCase()) ||
-                  corretor.email?.toLowerCase().includes(filtrosCorretores.busca.toLowerCase()) ||
-                  corretor.telefone?.toLowerCase().includes(filtrosCorretores.busca.toLowerCase())
+                // Busca por texto normalizada (acento + telefone)
+                const matchBusca = casaBusca(corretor, filtrosCorretores.busca, CORRETOR_SEARCH_FIELDS)
                 
                 // Filtro por tipo
                 const matchTipo = filtrosCorretores.tipo === 'todos' || corretor.tipo_corretor === filtrosCorretores.tipo
@@ -6765,16 +6783,18 @@ const AdminDashboard = () => {
 
             {/* Filtros e Toggle de Visualização */}
             <div className="empreendimentos-filters">
-              <div className="emp-search-box">
-                <Search size={20} />
-                <input 
-                  type="text" 
-                  placeholder="Buscar empreendimento..."
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <Autocomplete
+                  items={empreendimentos}
+                  fields={EMP_SEARCH_FIELDS}
                   value={filtrosEmpreendimentos.busca}
-                  onChange={(e) => setFiltrosEmpreendimentos({...filtrosEmpreendimentos, busca: e.target.value})}
+                  onQueryChange={(q) => setFiltrosEmpreendimentos({ ...filtrosEmpreendimentos, busca: q })}
+                  onSelect={(emp) => setFiltrosEmpreendimentos({ ...filtrosEmpreendimentos, busca: emp.nome })}
+                  getLabel={(emp) => emp.nome}
+                  placeholder="Buscar empreendimento..."
                 />
               </div>
-              
+
               <div className="emp-view-toggle">
                 <button 
                   className={`emp-view-btn ${empViewMode === 'grid' ? 'active' : ''}`}
@@ -7323,16 +7343,17 @@ const AdminDashboard = () => {
           <div className="content-section">
             {/* Filtros de Pagamentos */}
             <div className="filters-section">
-              <div className="search-box">
-                <Search size={20} />
-                <input 
-                  type="text" 
-                  placeholder="Buscar por corretor, empreendimento, cliente..."
-                  value={filtrosPagamentos.buscaVenda}
-                  onChange={(e) => setFiltrosPagamentos({...filtrosPagamentos, buscaVenda: e.target.value})}
-                />
-              </div>
-              
+              <Autocomplete
+                items={pagamentosBusca}
+                fields={PAG_SEARCH_FIELDS}
+                value={filtrosPagamentos.buscaVenda}
+                onQueryChange={(q) => setFiltrosPagamentos({ ...filtrosPagamentos, buscaVenda: q })}
+                onSelect={(g) => setFiltrosPagamentos({ ...filtrosPagamentos, buscaVenda: g._cli_cad || g._cli_venda || '' })}
+                getLabel={(g) => g._cli_cad || g._cli_venda || g._corretor || 'Venda'}
+                getSub={(g) => [g._unidade && `Unid. ${g._unidade}`, g._emp].filter(Boolean).join(' · ')}
+                placeholder="Buscar por corretor, empreendimento, cliente..."
+              />
+
               {/* Filtros em Grid */}
               <div className="filters-grid">
                 <div className="filter-item">
@@ -8473,15 +8494,16 @@ const AdminDashboard = () => {
               
               {/* Busca de Corretor */}
               <div className="filters-section" style={{ marginBottom: '16px' }}>
-                <div className="search-box">
-                  <Search size={20} />
-                  <input 
-                    type="text" 
-                    placeholder="Buscar corretor por nome..."
-                    value={buscaCorretorRelatorio}
-                    onChange={(e) => setBuscaCorretorRelatorio(e.target.value)}
-                  />
-                </div>
+                <Autocomplete
+                  items={corretoresOrdenados}
+                  fields={['nome']}
+                  value={buscaCorretorRelatorio}
+                  onQueryChange={setBuscaCorretorRelatorio}
+                  onSelect={(c) => setBuscaCorretorRelatorio(c.nome)}
+                  getLabel={(c) => formatNome(c.nome)}
+                  getSub={(c) => c.tipo_corretor === 'interno' ? 'Interno' : 'Externo'}
+                  placeholder="Buscar corretor por nome..."
+                />
               </div>
 
               <div className="gerador-filtros">
@@ -8503,11 +8525,7 @@ const AdminDashboard = () => {
                   >
                     <option value="">Todos os corretores</option>
                     {corretoresOrdenados
-                      .filter(corretor => {
-                        if (!buscaCorretorRelatorio) return true
-                        const busca = buscaCorretorRelatorio.toLowerCase()
-                        return corretor.nome?.toLowerCase().includes(busca)
-                      })
+                      .filter(corretor => casaBusca(corretor, buscaCorretorRelatorio, ['nome']))
                       .map((corretor) => (
                         <option key={corretor.id} value={corretor.id}>
                           {formatNome(corretor.nome)} ({corretor.tipo_corretor === 'interno' ? 'Interno' : 'Externo'})
@@ -8516,7 +8534,7 @@ const AdminDashboard = () => {
                   </select>
                   {buscaCorretorRelatorio && (
                     <small style={{ color: '#10b981', marginTop: '4px', display: 'block' }}>
-                      {corretoresOrdenados.filter(c => c.nome?.toLowerCase().includes(buscaCorretorRelatorio.toLowerCase())).length} corretor(es) encontrado(s)
+                      {corretoresOrdenados.filter(c => casaBusca(c, buscaCorretorRelatorio, ['nome'])).length} corretor(es) encontrado(s)
                     </small>
                   )}
                 </div>
