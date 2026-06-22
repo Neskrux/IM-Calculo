@@ -1011,7 +1011,7 @@ const AdminDashboard = () => {
   const [loadingRenegociacoes, setLoadingRenegociacoes] = useState(false)
   const [abaVisualizarVenda, setAbaVisualizarVenda] = useState('detalhes')
   const [pagamentosVisualizacao, setPagamentosVisualizacao] = useState([])
-  const [visaoParcelas, setVisaoParcelas] = useState('contrato')
+  const [visaoParcelas, setVisaoParcelas] = useState('calendario')
   // Distratos são visão segregada (spec 2026-06-11): nunca misturam na lista padrão
   const [mostrarDistratos, setMostrarDistratos] = useState(false)
 
