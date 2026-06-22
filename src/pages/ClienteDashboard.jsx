@@ -43,7 +43,7 @@ const ClienteDashboard = () => {
   const [uploadingDocType, setUploadingDocType] = useState(null)
   const [compraExpandida, setCompraExpandida] = useState(null)
   const [gruposExpandidos, setGruposExpandidos] = useState({})
-  const [visaoParcelas, setVisaoParcelas] = useState('contrato')
+  const [visaoParcelas, setVisaoParcelas] = useState('calendario')
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
     const saved = safeGet('cliente-sidebar-collapsed')
     return saved === 'true'
