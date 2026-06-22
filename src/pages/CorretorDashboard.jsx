@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { safeGet, safeSet } from '../utils/storage'
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
@@ -2461,7 +2462,8 @@ const CorretorDashboard = () => {
                               const temMaisDe10 = parcelasPg.length > 10
                               const estaExpandido = isGrupoExpandido(grupo.venda_id, 'pagamentos')
                               const exibidas = temMaisDe10 && !estaExpandido ? parcelasPg.slice(0, 10) : parcelasPg
-                              return (
+                              return createPortal(
+                                <div className="corretor-shell">
                                 <div className="modal-overlay" onClick={() => setPagamentoVendaExpandida(null)}>
                                   <div className="modal-content modal-pagamentos" onClick={(e) => e.stopPropagation()}>
                                     <div className="modal-header">
@@ -2510,6 +2512,8 @@ const CorretorDashboard = () => {
                                     </div>
                                   </div>
                                 </div>
+                                </div>,
+                                document.body
                               )
                             })()}
                           </div>
