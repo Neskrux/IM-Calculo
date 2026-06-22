@@ -2444,17 +2444,17 @@ const CorretorDashboard = () => {
                                   <span>Ver venda</span>
                                 </button>
                                 <button
-                                  className={`btn-ver-pagamentos ${pagamentoVendaExpandida === grupo.venda_id ? 'aberto' : ''}`}
-                                  onClick={(e) => { e.stopPropagation(); setPagamentoVendaExpandida(pagamentoVendaExpandida === grupo.venda_id ? null : grupo.venda_id) }}
+                                  className="btn-ver-pagamentos"
+                                  onClick={(e) => { e.stopPropagation(); setPagamentoVendaExpandida(grupo.venda_id) }}
                                 >
                                   <CreditCard size={16} />
-                                  <span>{pagamentoVendaExpandida === grupo.venda_id ? 'Ocultar pagamentos' : 'Ver pagamentos'}</span>
-                                  <ChevronDown size={16} className={pagamentoVendaExpandida === grupo.venda_id ? 'rotated' : ''} />
+                                  <span>Ver pagamentos</span>
+                                  <ChevronRight size={16} />
                                 </button>
                               </div>
                             </div>
 
-                            {/* Lista de Parcelas - Expandível */}
+                            {/* Modal de Parcelas (abre ao tocar em "Ver pagamentos" ou no header) */}
                             {pagamentoVendaExpandida === grupo.venda_id && (() => {
                               const parcelasPg = sortParcelas(grupo.pagamentos, visaoParcelas)
                                 .filter((pag) => pag.status !== 'cancelado')
@@ -2462,38 +2462,53 @@ const CorretorDashboard = () => {
                               const estaExpandido = isGrupoExpandido(grupo.venda_id, 'pagamentos')
                               const exibidas = temMaisDe10 && !estaExpandido ? parcelasPg.slice(0, 10) : parcelasPg
                               return (
-                                <div className="venda-pagamento-body">
-                                  {exibidas.map((pag) => {
-                                    const minhaComissao = venda ? calcularComissaoPagamento(pag) : 0
-
-                                    return (
-                                      <ParcelaCard
-                                        key={pag.id}
-                                        pagamento={pag}
-                                        comissao={minhaComissao}
-                                      />
-                                    )
-                                  })}
-                                  {temMaisDe10 && (
-                                    <div className="grupo-expand-btn-wrapper">
-                                      <button
-                                        className="grupo-expand-btn"
-                                        onClick={() => toggleGrupoExpandido(grupo.venda_id, 'pagamentos')}
-                                      >
-                                        {estaExpandido ? (
-                                          <>
-                                            <ChevronDown size={16} className="rotated" />
-                                            <span>Ver menos ({parcelasPg.length - 10} itens ocultos)</span>
-                                          </>
-                                        ) : (
-                                          <>
-                                            <ChevronDown size={16} />
-                                            <span>Ver mais ({parcelasPg.length - 10} itens restantes)</span>
-                                          </>
-                                        )}
+                                <div className="modal-overlay" onClick={() => setPagamentoVendaExpandida(null)}>
+                                  <div className="modal-content modal-pagamentos" onClick={(e) => e.stopPropagation()}>
+                                    <div className="modal-header">
+                                      <h2>
+                                        <CreditCard size={20} />
+                                        {grupo.empreendimento_nome ? capitalizeName(grupo.empreendimento_nome) : 'Pagamentos'}
+                                        {grupo.unidade ? ` · ${grupo.unidade}` : ''}
+                                      </h2>
+                                      <button className="close-btn" onClick={() => setPagamentoVendaExpandida(null)} aria-label="Fechar">
+                                        <X size={20} />
                                       </button>
                                     </div>
-                                  )}
+                                    <div className="modal-body modal-pagamentos-body">
+                                      <p className="modal-pagamentos-contador">{parcelasPg.length} parcela{parcelasPg.length === 1 ? '' : 's'}</p>
+                                      {exibidas.map((pag) => {
+                                        const minhaComissao = venda ? calcularComissaoPagamento(pag) : 0
+
+                                        return (
+                                          <ParcelaCard
+                                            key={pag.id}
+                                            pagamento={pag}
+                                            comissao={minhaComissao}
+                                          />
+                                        )
+                                      })}
+                                      {temMaisDe10 && (
+                                        <div className="grupo-expand-btn-wrapper">
+                                          <button
+                                            className="grupo-expand-btn"
+                                            onClick={() => toggleGrupoExpandido(grupo.venda_id, 'pagamentos')}
+                                          >
+                                            {estaExpandido ? (
+                                              <>
+                                                <ChevronDown size={16} className="rotated" />
+                                                <span>Ver menos ({parcelasPg.length - 10} itens ocultos)</span>
+                                              </>
+                                            ) : (
+                                              <>
+                                                <ChevronDown size={16} />
+                                                <span>Ver mais ({parcelasPg.length - 10} itens restantes)</span>
+                                              </>
+                                            )}
+                                          </button>
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
                                 </div>
                               )
                             })()}
