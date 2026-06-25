@@ -7,6 +7,7 @@ import { deleteCliente } from '../services/adminClientes'
 import Autocomplete from '../components/Autocomplete'
 import InputDataBR from "../components/InputDataBR"
 import { casaBusca } from '../utils/searchUtils'
+import { gerarRelatorioCorretorPDF } from '../utils/relatorioCorretorPDF'
 import { jsPDF } from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import { 
@@ -4678,6 +4679,57 @@ const AdminDashboard = () => {
   }
 
   // Função para gerar PDF de relatório (options.paraPreview = true retorna blob para visualização na aba Preview)
+  // "Ver PDF do corretor": gera EXATAMENTE o PDF que o corretor vê no login dele,
+  // pelo MESMO módulo (src/utils/relatorioCorretorPDF.js) — controladoria valida o que
+  // o corretor de fato recebe. Replica o enriquecimento do CorretorDashboard (empreendimento_nome,
+  // cliente_nome=nome_completo, percentual_corretor por venda).
+  const gerarPDFComoCorretor = () => {
+    const corretor = relatorioFiltros.corretorId
+      ? corretores.find(c => String(c.id) === String(relatorioFiltros.corretorId))
+      : null
+    if (!corretor) {
+      setMessage({ type: 'error', text: 'Selecione um corretor para ver o PDF dele.' })
+      return
+    }
+    const empMap = {}
+    empreendimentos.forEach(e => { empMap[e.id] = e.nome })
+    const cliMap = {}
+    clientes.forEach(c => { cliMap[c.id] = c.nome_completo })
+
+    const vendasCorretor = vendas
+      .filter(v => String(v.corretor_id) === String(corretor.id))
+      .map(venda => {
+        const tipoCorretorVenda = venda.tipo_corretor || corretor.tipo_corretor || 'externo'
+        const percentualCorretor = parseFloat(corretor.percentual_corretor) || (tipoCorretorVenda === 'interno' ? 2.5 : 4)
+        return {
+          ...venda,
+          valor_venda: parseFloat(venda.valor_venda) || 0,
+          valor_pro_soluto: parseFloat(venda.valor_pro_soluto) || 0,
+          percentual_corretor: percentualCorretor,
+          empreendimento_nome: venda.empreendimento_id ? empMap[venda.empreendimento_id] : null,
+          cliente_nome: venda.cliente_id ? cliMap[venda.cliente_id] : null,
+        }
+      })
+    const vendaIds = new Set(vendasCorretor.map(v => v.id))
+    const pagamentosCorretor = pagamentos.filter(p => vendaIds.has(p.venda_id))
+
+    gerarRelatorioCorretorPDF({
+      corretorProfile: {
+        nome: corretor.nome,
+        tipo_corretor: corretor.tipo_corretor,
+        percentual_corretor: corretor.percentual_corretor,
+      },
+      vendas: vendasCorretor,
+      pagamentos: pagamentosCorretor,
+      filtros: {
+        empreendimento: '',
+        status: relatorioFiltros.status,
+        dataInicio: relatorioFiltros.dataInicio,
+        dataFim: relatorioFiltros.dataFim,
+      },
+    })
+  }
+
   const gerarRelatorioPDF = async (options = {}) => {
     setGerandoPdf(true)
     
@@ -8758,6 +8810,17 @@ const AdminDashboard = () => {
                     Gerar Relatório PDF
                   </>
                 )}
+              </button>
+
+              <button
+                type="button"
+                className="btn-gerar-pdf btn-ver-pdf-corretor"
+                onClick={gerarPDFComoCorretor}
+                disabled={!relatorioFiltros.corretorId}
+                title="Gera EXATAMENTE o PDF que o corretor vê no login dele (mesmo gerador)"
+              >
+                <Eye size={20} />
+                Ver PDF do corretor
               </button>
             </div>
             
