@@ -176,12 +176,12 @@ export function gerarRelatorioCorretorPDF({ corretorProfile, vendas = [], pagame
     startY: yPos + 10,
     head: [['Vencimento', 'Pagamento', 'Unidade', 'Cliente', 'Tipo', 'Valor', 'Comissao', 'Status']],
     body: tableData,
-    headStyles: { fillColor: cores.dourado, textColor: cores.preto, fontStyle: 'bold', fontSize: 9 },
+    headStyles: { fillColor: cores.dourado, textColor: cores.preto, fontStyle: 'bold', fontSize: 8 },
     bodyStyles: { textColor: cores.preto, fontSize: 8 },
     alternateRowStyles: { fillColor: cores.cinzaClaro },
     columnStyles: {
-      0: { cellWidth: 20 }, 1: { cellWidth: 20 }, 2: { cellWidth: 16 }, 3: { cellWidth: 34 },
-      4: { cellWidth: 22 }, 5: { cellWidth: 22 }, 6: { cellWidth: 24 }, 7: { cellWidth: 16 },
+      0: { cellWidth: 23 }, 1: { cellWidth: 23 }, 2: { cellWidth: 15 }, 3: { cellWidth: 33 },
+      4: { cellWidth: 20 }, 5: { cellWidth: 22 }, 6: { cellWidth: 24 }, 7: { cellWidth: 15 },
     },
   })
 
