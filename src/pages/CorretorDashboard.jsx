@@ -1036,19 +1036,14 @@ const CorretorDashboard = () => {
   }
 
   // Gerar relatório PDF do corretor
+  // Base: SÓ filtro de empreendimento. O recorte de PERÍODO é por parcela (data do
+  // pagamento), não por data da venda — senão "jan/2026" traz vendas fechadas em
+  // janeiro com TODAS as parcelas pagas (qualquer mês). Igual ao relatório do admin.
   const getRelatorioVendasBase = () => {
-    const dataInicio = parseDataLocal(relatorioFiltros.dataInicio)
-    const dataFim = parseDataLocal(relatorioFiltros.dataFim)
-
     return vendas.filter((venda) => {
       if (relatorioFiltros.empreendimento && venda.empreendimento_nome !== relatorioFiltros.empreendimento) {
         return false
       }
-
-      const dataVenda = parseDataLocal(venda.data_venda)
-      if (dataInicio && (!dataVenda || dataVenda < dataInicio)) return false
-      if (dataFim && (!dataVenda || dataVenda > dataFim)) return false
-
       return true
     })
   }
@@ -1057,17 +1052,27 @@ const CorretorDashboard = () => {
     const vendasBase = getRelatorioVendasBase()
     const vendaIds = new Set(vendasBase.map((venda) => venda.id))
 
+    const dataInicio = parseDataLocal(relatorioFiltros.dataInicio)
+    const dataFim = parseDataLocal(relatorioFiltros.dataFim)
+
     const pagamentosFiltrados = meusPagamentos.filter((pagamento) => {
       if (!vendaIds.has(pagamento.venda_id)) return false
       if (pagamento.status === 'cancelado') return false
       if (relatorioFiltros.status !== 'todos' && pagamento.status !== relatorioFiltros.status) return false
+      // Período pela data EFETIVA do pagamento (data_pagamento ?? data_prevista):
+      // comissão é por parcela, no período em que foi paga (regra comissao-corretor.md).
+      if (dataInicio || dataFim) {
+        const dataRef = parseDataLocal(pagamento.data_pagamento || pagamento.data_prevista)
+        if (!dataRef) return false
+        if (dataInicio && dataRef < dataInicio) return false
+        if (dataFim && dataRef > dataFim) return false
+      }
       return true
     })
 
     const vendasComPagamentoFiltrado = new Set(pagamentosFiltrados.map((pagamento) => pagamento.venda_id))
-    const vendasFiltradas = relatorioFiltros.status === 'todos'
-      ? vendasBase
-      : vendasBase.filter((venda) => vendasComPagamentoFiltrado.has(venda.id))
+    // Só lista as vendas que têm parcela no recorte (o detalhamento bate com o total).
+    const vendasFiltradas = vendasBase.filter((venda) => vendasComPagamentoFiltrado.has(venda.id))
 
     return { vendasFiltradas, pagamentosFiltrados }
   }
@@ -1176,41 +1181,46 @@ const CorretorDashboard = () => {
       doc.setFontSize(9)
       doc.text(`Pendente: ${formatCurrency(comissaoPendente)}`, 160, yPos + 30)
 
-      // Tabela de vendas
+      // Detalhamento POR PAGAMENTO (parcela), igual ao relatório do admin —
+      // cada linha é uma parcela, recortada pela data do pagamento (não por venda).
       yPos = 116
       doc.setTextColor(...cores.preto)
       doc.setFontSize(14)
       doc.setFont('helvetica', 'bold')
-      doc.text('Detalhamento das Vendas', 14, yPos)
+      doc.text('Detalhamento dos Pagamentos', 14, yPos)
 
-      const tableData = vendasFiltradas.map(v => {
-        // Calcular comissão baseado em pagamentos
-        const pagamentosVenda = pagamentosFiltrados.filter(p => p.venda_id === v.id)
-        const comissaoVenda = pagamentosVenda.reduce((acc, pag) => acc + calcularComissaoPagamento(pag), 0)
-        const comissaoPagaVenda = pagamentosVenda
-          .filter(p => p.status === 'pago')
-          .reduce((acc, pag) => acc + calcularComissaoPagamento(pag), 0)
-        
-        // Status baseado nos pagamentos
-        const percentPago = comissaoVenda > 0 ? (comissaoPagaVenda / comissaoVenda) * 100 : 0
-        let statusVenda = 'Pendente'
-        if (percentPago >= 100) statusVenda = 'Pago'
-        else if (percentPago > 0) statusVenda = `${Math.round(percentPago)}% Pago`
-        
-        return [
-          formatDataBR(v.data_venda),
-          v.empreendimento_nome || '-',
-          v.unidade || '-',
-          capitalizeName(v.cliente_nome) || '-',
-          formatCurrency(v.valor_venda),
-          formatCurrency(comissaoVenda),
-          statusVenda
-        ]
-      })
+      const rotuloParcela = (p) => {
+        if (p.tipo === 'sinal') return 'Sinal'
+        if (p.tipo === 'entrada') return 'Entrada'
+        if (p.tipo === 'comissao_integral') return 'Comissao integral'
+        if (p.tipo === 'bens') return 'Bens'
+        const base = p.tipo === 'balao' ? 'Balao' : 'Parcela'
+        return p.numero_parcela ? `${base} ${p.numero_parcela}` : base
+      }
+      const vendaPorId = new Map(vendasFiltradas.map(v => [v.id, v]))
+      const tableData = pagamentosFiltrados
+        .slice()
+        .sort((a, b) => {
+          const da = parseDataLocal(a.data_pagamento || a.data_prevista)?.getTime() || 0
+          const db = parseDataLocal(b.data_pagamento || b.data_prevista)?.getTime() || 0
+          return da - db
+        })
+        .map(p => {
+          const v = vendaPorId.get(p.venda_id) || {}
+          return [
+            formatDataBR(p.data_pagamento || p.data_prevista),
+            v.unidade || '-',
+            capitalizeName(v.cliente_nome) || '-',
+            rotuloParcela(p),
+            formatCurrency(p.valor),
+            formatCurrency(calcularComissaoPagamento(p)),
+            p.status === 'pago' ? 'Pago' : 'Pendente'
+          ]
+        })
 
       autoTable(doc, {
         startY: yPos + 10,
-        head: [['Data', 'Empreendimento', 'Unidade', 'Cliente', 'Valor', 'Comissao', 'Status']],
+        head: [['Data', 'Unidade', 'Cliente', 'Tipo', 'Valor', 'Comissao', 'Status']],
         body: tableData,
         headStyles: {
           fillColor: cores.dourado,
@@ -1226,13 +1236,13 @@ const CorretorDashboard = () => {
           fillColor: cores.cinzaClaro
         },
         columnStyles: {
-          0: { cellWidth: 22 },
-          1: { cellWidth: 35 },
-          2: { cellWidth: 18 },
-          3: { cellWidth: 35 },
-          4: { cellWidth: 25 },
-          5: { cellWidth: 25 },
-          6: { cellWidth: 20 }
+          0: { cellWidth: 20 },
+          1: { cellWidth: 18 },
+          2: { cellWidth: 40 },
+          3: { cellWidth: 28 },
+          4: { cellWidth: 24 },
+          5: { cellWidth: 26 },
+          6: { cellWidth: 18 }
         }
       })
 
