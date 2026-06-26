@@ -812,6 +812,12 @@
     padding: 0;
     align-items: stretch;
     justify-content: stretch;
+    /* Conteúdo (sheet) pode passar da viewport no XR/Safari com toolbar dinâmica;
+       sem scroll o fim do sheet (esqueci a senha / footer) fica cortado.
+       Libera rolagem vertical, mantém horizontal travado (preserva a intro da logo). */
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
   }
 
   /* Carrossel ocupa o topo da tela (~38% da viewport) */
