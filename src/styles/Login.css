@@ -809,30 +809,34 @@
    ============================================ */
 @media (max-width: 768px) {
   .premium-login {
-    /* Card de login centrado sobre a imagem do empreendimento (fundo cheio),
-       igual ao desktop. Centraliza vertical/horizontal; rola se a tela for baixa. */
-    padding: 24px 16px calc(24px + env(safe-area-inset-bottom, 0px));
-    align-items: center;
-    justify-content: center;
+    padding: 0;
+    align-items: stretch;
+    justify-content: stretch;
+    /* Conteúdo (sheet) pode passar da viewport no XR/Safari com toolbar dinâmica;
+       sem scroll o fim do sheet (esqueci a senha / footer) fica cortado.
+       Libera rolagem vertical, mantém horizontal travado (preserva a intro da logo). */
     overflow-y: auto;
     overflow-x: hidden;
     -webkit-overflow-scrolling: touch;
   }
 
-  /* Carrossel = fundo cheio (o empreendimento é a base visual, como no desktop) */
+  /* Carrossel ocupa o topo da tela. dvh (não vh) pra contar a barra do Safari. */
   .carousel-container {
     position: fixed;
-    inset: 0;
-    height: 100dvh;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: auto;
+    height: 32dvh;
   }
 
-  /* Escurece a imagem o suficiente pro card e os textos lerem em qualquer slide */
+  /* Overlay mais sutil: vinheta de cima pra baixo (a sheet cobre o resto) */
   .slide-overlay {
     background:
       linear-gradient(to bottom,
-        rgba(0, 0, 0, 0.4) 0%,
-        rgba(0, 0, 0, 0.3) 35%,
-        rgba(0, 0, 0, 0.6) 100%);
+        rgba(0, 0, 0, 0.1) 0%,
+        rgba(0, 0, 0, 0.35) 65%,
+        rgba(10, 10, 10, 0.85) 100%);
   }
 
   .fallback-slide .slide-overlay {
@@ -841,16 +845,15 @@
       linear-gradient(to bottom, rgba(10, 10, 10, 0.4), rgba(10, 10, 10, 0.9));
   }
 
-  /* Nome/logo do empreendimento no rodapé da imagem (como no desktop) */
+  /* Re-expor info do empreendimento no topo (em vez de esconder) */
   .empreendimento-info {
     display: block;
     position: fixed;
-    bottom: calc(env(safe-area-inset-bottom, 0px) + 44px);
-    left: 20px;
-    right: 20px;
-    top: auto;
+    top: calc(env(safe-area-inset-top, 0px) + 16px);
+    left: 18px;
+    right: 70px;  /* deixa espaço pro theme-toggle */
+    bottom: auto;
     z-index: 25;
-    text-align: left;
     animation: fade-in-soft 0.6s var(--transition-smooth);
   }
 
@@ -881,11 +884,11 @@
     filter: drop-shadow(0 2px 12px rgba(0, 0, 0, 0.7));
   }
 
-  /* Indicadores: bolinhas redondas no rodapé da imagem */
+  /* Indicadores: bolinhas redondas sobre a imagem, logo acima do sheet */
   .carousel-indicators {
     position: fixed;
-    bottom: calc(env(safe-area-inset-bottom, 0px) + 16px);
-    top: auto;
+    top: calc(32dvh - 22px);
+    bottom: auto;
     left: 50%;
     transform: translateX(-50%);
     gap: 8px;
@@ -930,33 +933,33 @@
     display: none;
   }
 
-  /* ============ Card de vidro centrado sobre a imagem ============ */
+  /* ============ Bottom Sheet ============ */
   .login-glass-container {
     position: relative;
-    width: min(430px, calc(100vw - 32px));
-    max-width: calc(100vw - 32px);
-    margin: auto;
-    min-height: 0;
-    padding: 30px 24px;
-    background: rgba(10, 10, 12, 0.66);
-    backdrop-filter: blur(24px) saturate(140%);
-    -webkit-backdrop-filter: blur(24px) saturate(140%);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 24px;
-    box-shadow: 0 24px 60px -12px rgba(0, 0, 0, 0.7);
+    width: min(430px, calc(100vw - 24px));
+    max-width: calc(100vw - 24px);
+    margin: 28dvh auto 0;
+    min-height: calc(100dvh - 28dvh);
+    padding: 28px 22px calc(24px + env(safe-area-inset-bottom, 0px));
+    background: rgba(8, 8, 8, 0.94);
+    backdrop-filter: blur(28px) saturate(140%);
+    -webkit-backdrop-filter: blur(28px) saturate(140%);
+    border: none;
+    border-radius: 28px 28px 0 0;
+    box-shadow: 0 -20px 60px -10px rgba(0, 0, 0, 0.6);
     z-index: 10;
-    animation: sheet-rise 1.0s cubic-bezier(0.22, 1, 0.36, 1) 1.6s both;
+    animation: sheet-rise 1.2s cubic-bezier(0.22, 1, 0.36, 1) 1.8s both;
   }
 
   @keyframes sheet-rise {
-    from { opacity: 0; transform: translateY(28px); }
+    from { opacity: 0; transform: translateY(40px); }
     to { opacity: 1; transform: translateY(0); }
   }
 
-  /* Borda gradiente sutil no topo do card */
+  /* Borda gradiente no topo (substitui o ::before do desktop) */
   .login-glass-container::before {
     inset: 0;
-    border-radius: 24px;
+    border-radius: 28px 28px 0 0;
     padding: 1px 0 0 0;
     background: linear-gradient(90deg,
       transparent 0%,
@@ -1086,9 +1089,14 @@
 
 /* Refinamentos pra telas pequenas */
 @media (max-width: 480px) {
+  .carousel-container {
+    height: 24dvh;
+  }
+
   .empreendimento-info {
+    top: calc(env(safe-area-inset-top, 0px) + 12px);
     left: 16px;
-    right: 16px;
+    right: 64px;
   }
 
   .info-nome {
@@ -1100,8 +1108,14 @@
     max-height: 44px;
   }
 
+  .carousel-indicators {
+    top: calc(24dvh - 22px);
+  }
+
   .login-glass-container {
-    padding: 26px 20px;
+    margin-top: 22dvh;
+    min-height: calc(100dvh - 22dvh);
+    padding: 22px 20px calc(20px + env(safe-area-inset-bottom, 0px));
   }
 
   .login-branding {
