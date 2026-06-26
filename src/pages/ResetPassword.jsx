@@ -98,8 +98,10 @@ const ResetPassword = () => {
         return
       }
       setSuccess(true)
+      // Encerra a sessão de recuperação, mas NÃO redireciona sozinho:
+      // a confirmação fica na tela e o usuário decide quando ir pro login
+      // (redirect automático some rápido demais, sobretudo no mobile).
       await supabase.auth.signOut()
-      setTimeout(() => navigate('/login', { replace: true }), 2500)
     } catch (err) {
       setError('Erro inesperado. Tente novamente.')
       setLoading(false)
@@ -178,12 +180,26 @@ const ResetPassword = () => {
         </div>
 
         {success ? (
-          <div
-            className="forgot-message forgot-message-success"
-            style={{ padding: '16px', fontSize: '14px', lineHeight: 1.5 }}
-          >
-            <CheckCircle2 size={18} />
-            <span>Senha alterada com sucesso. Redirecionando para o login...</span>
+          <div style={{ textAlign: 'center' }}>
+            <div
+              className="forgot-message forgot-message-success"
+              style={{ padding: '16px', fontSize: '14px', lineHeight: 1.5, marginBottom: 20 }}
+            >
+              <CheckCircle2 size={18} />
+              <div style={{ textAlign: 'left' }}>
+                <p style={{ margin: 0, fontWeight: 600 }}>Senha alterada com sucesso</p>
+                <p style={{ margin: '6px 0 0' }}>
+                  Já pode entrar no sistema com a sua nova senha.
+                </p>
+              </div>
+            </div>
+            <button
+              className="login-button"
+              onClick={() => navigate('/login', { replace: true })}
+            >
+              <span>Ir para o login</span>
+              <ArrowRight size={18} />
+            </button>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="login-form">
