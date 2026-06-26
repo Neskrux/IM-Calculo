@@ -906,7 +906,22 @@
     background: rgba(255, 255, 255, 0.85);
   }
 
-  /* Esconde setas (gesto/auto-play bastam no mobile) */
+  /* Área de toque maior (invisível) em volta de cada pontinho: dá pra trocar
+     o slide no tap sem aumentar o tamanho visual nem poluir a imagem. */
+  .carousel-indicators .indicator {
+    overflow: visible;
+  }
+
+  .carousel-indicators .indicator::before {
+    content: '';
+    position: absolute;
+    top: -14px;
+    bottom: -14px;
+    left: -6px;
+    right: -6px;
+  }
+
+  /* Esconde as setas grandes do desktop: no mobile o swipe + os pontinhos bastam */
   .carousel-btn {
     display: none;
   }
