@@ -820,14 +820,14 @@
     -webkit-overflow-scrolling: touch;
   }
 
-  /* Carrossel ocupa o topo da tela (~38% da viewport) */
+  /* Carrossel ocupa o topo da tela. dvh (não vh) pra contar a barra do Safari. */
   .carousel-container {
     position: fixed;
     top: 0;
     left: 0;
     right: 0;
     bottom: auto;
-    height: 38vh;
+    height: 32dvh;
   }
 
   /* Overlay mais sutil: vinheta de cima pra baixo (a sheet cobre o resto) */
@@ -884,26 +884,33 @@
     filter: drop-shadow(0 2px 12px rgba(0, 0, 0, 0.7));
   }
 
-  /* Indicadores do carrossel: linha de pontinhos logo abaixo do topo */
+  /* Indicadores: bolinhas redondas sobre a imagem, logo acima do sheet */
   .carousel-indicators {
     position: fixed;
-    top: calc(38vh - 20px);
+    top: calc(32dvh - 22px);
     bottom: auto;
     left: 50%;
     transform: translateX(-50%);
-    gap: 6px;
+    gap: 8px;
     z-index: 26;
   }
 
   .indicator {
-    width: 16px;
-    height: 3px;
-    border-radius: 2px;
-    background: rgba(255, 255, 255, 0.35);
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.45);
   }
 
   .indicator.active {
-    background: rgba(255, 255, 255, 0.85);
+    width: 8px;
+    height: 8px;
+    background: var(--accent);
+  }
+
+  /* Bolinha não usa a barra de preenchimento do desktop */
+  .carousel-indicators .indicator::after {
+    display: none;
   }
 
   /* Área de toque maior (invisível) em volta de cada pontinho: dá pra trocar
@@ -931,9 +938,9 @@
     position: relative;
     width: min(430px, calc(100vw - 24px));
     max-width: calc(100vw - 24px);
-    margin: 34vh auto 0;
-    min-height: 66vh;
-    padding: 32px 22px calc(28px + env(safe-area-inset-bottom, 0px));
+    margin: 28dvh auto 0;
+    min-height: calc(100dvh - 28dvh);
+    padding: 28px 22px calc(24px + env(safe-area-inset-bottom, 0px));
     background: rgba(8, 8, 8, 0.94);
     backdrop-filter: blur(28px) saturate(140%);
     -webkit-backdrop-filter: blur(28px) saturate(140%);
@@ -1083,7 +1090,7 @@
 /* Refinamentos pra telas pequenas */
 @media (max-width: 480px) {
   .carousel-container {
-    height: 34vh;
+    height: 24dvh;
   }
 
   .empreendimento-info {
@@ -1102,17 +1109,17 @@
   }
 
   .carousel-indicators {
-    top: calc(34vh - 18px);
+    top: calc(24dvh - 22px);
   }
 
   .login-glass-container {
-    margin-top: 30vh;
-    min-height: 70vh;
-    padding: 30px 20px calc(24px + env(safe-area-inset-bottom, 0px));
+    margin-top: 22dvh;
+    min-height: calc(100dvh - 22dvh);
+    padding: 22px 20px calc(20px + env(safe-area-inset-bottom, 0px));
   }
 
   .login-branding {
-    margin-bottom: 22px;
+    margin-bottom: 14px;
   }
 
   .login-logo {
