@@ -557,11 +557,6 @@ const Login = () => {
             Esqueci minha senha
           </button>
         </form>
-
-        {/* Footer */}
-        <div className="login-footer">
-          <span>Desenvolvido por IM Tecnologia @ 2025</span>
-        </div>
       </div>
 
       {showForgot && (
