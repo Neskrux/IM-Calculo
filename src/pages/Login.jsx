@@ -199,6 +199,30 @@ const Login = () => {
     setTimeout(() => setIsTransitioning(false), 800)
   }
 
+  // Swipe do carrossel (mobile): as setas ficam escondidas no mobile, então o
+  // gesto horizontal é o único jeito de trocar o slide manualmente.
+  const touchStartX = useRef(null)
+  const touchStartY = useRef(null)
+
+  const handleCarouselTouchStart = (e) => {
+    const t = e.changedTouches[0]
+    touchStartX.current = t.clientX
+    touchStartY.current = t.clientY
+  }
+
+  const handleCarouselTouchEnd = (e) => {
+    if (touchStartX.current == null) return
+    const t = e.changedTouches[0]
+    const dx = t.clientX - touchStartX.current
+    const dy = t.clientY - touchStartY.current
+    touchStartX.current = null
+    touchStartY.current = null
+    // ignora toques curtos e gestos predominantemente verticais (não atrapalha o scroll)
+    if (Math.abs(dx) < 40 || Math.abs(dx) <= Math.abs(dy)) return
+    if (dx < 0) nextSlide()
+    else prevSlide()
+  }
+
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError('')
@@ -382,7 +406,11 @@ const Login = () => {
       <img src={brandLogo} alt="" className="floating-logo" aria-hidden="true" />
 
       {/* Carrossel de Background */}
-      <div className="carousel-container">
+      <div
+        className="carousel-container"
+        onTouchStart={empreendimentos.length > 1 ? handleCarouselTouchStart : undefined}
+        onTouchEnd={empreendimentos.length > 1 ? handleCarouselTouchEnd : undefined}
+      >
         {empreendimentos.map((emp, index) => (
           <div
             key={emp.id}
@@ -464,13 +492,6 @@ const Login = () => {
             {/* Slot invisivel: define a posicao/tamanho final da floating-logo */}
             <img ref={logoSlotRef} src={brandLogo} alt="" className="login-logo login-brand-logo login-logo-slot" aria-hidden="true" />
           </div>
-          <div className="brand-text brand-text-minimal">
-            <div className="brand-divider">
-              <span className="line"></span>
-              <span className="diamond">◆</span>
-              <span className="line"></span>
-            </div>
-          </div>
         </div>
 
         <form onSubmit={handleSubmit} className="login-form">
@@ -536,11 +557,6 @@ const Login = () => {
             Esqueci minha senha
           </button>
         </form>
-
-        {/* Footer */}
-        <div className="login-footer">
-          <span>Desenvolvido por IM Tecnologia @ 2025</span>
-        </div>
       </div>
 
       {showForgot && (
