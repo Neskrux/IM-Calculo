@@ -450,8 +450,8 @@
 }
 
 .premium-login .login-brand-logo {
-  width: 330px;
-  height: 118px;
+  width: 389px;
+  height: 139px;
   object-fit: cover;
   object-position: 50% 56%;
   filter: brightness(1.15) contrast(1.05);
@@ -976,8 +976,8 @@
   }
 
   .premium-login .login-brand-logo {
-    width: min(250px, 74vw);
-    height: 88px;
+    width: min(295px, 87vw);
+    height: 104px;
   }
 
   .logo-glow {
@@ -1121,8 +1121,8 @@
   }
 
   .premium-login .login-brand-logo {
-    width: min(226px, 76vw);
-    height: 80px;
+    width: min(267px, 90vw);
+    height: 94px;
   }
 
   .brand-text h1 {

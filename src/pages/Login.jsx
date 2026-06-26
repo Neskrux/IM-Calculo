@@ -492,13 +492,6 @@ const Login = () => {
             {/* Slot invisivel: define a posicao/tamanho final da floating-logo */}
             <img ref={logoSlotRef} src={brandLogo} alt="" className="login-logo login-brand-logo login-logo-slot" aria-hidden="true" />
           </div>
-          <div className="brand-text brand-text-minimal">
-            <div className="brand-divider">
-              <span className="line"></span>
-              <span className="diamond">◆</span>
-              <span className="line"></span>
-            </div>
-          </div>
         </div>
 
         <form onSubmit={handleSubmit} className="login-form">
