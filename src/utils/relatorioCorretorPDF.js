@@ -55,8 +55,10 @@ function makeCalcularComissao(vendas, corretorProfile) {
 
 // Recorte: empreendimento + status + PERÍODO POR DATA DO PAGAMENTO (não data da venda).
 function getRelatorioDados({ vendas, pagamentos, filtros }) {
+  // Distrato NÃO entra no relatório do corretor (venda cancelada não conta).
   const vendasBase = vendas.filter(v =>
-    !filtros.empreendimento || v.empreendimento_nome === filtros.empreendimento)
+    v.status !== 'distrato' &&
+    (!filtros.empreendimento || v.empreendimento_nome === filtros.empreendimento))
   const vendaIds = new Set(vendasBase.map(v => v.id))
 
   const dataInicio = parseDataLocal(filtros.dataInicio)

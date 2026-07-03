@@ -1041,6 +1041,8 @@ const CorretorDashboard = () => {
   // janeiro com TODAS as parcelas pagas (qualquer mês). Igual ao relatório do admin.
   const getRelatorioVendasBase = () => {
     return vendas.filter((venda) => {
+      // Distrato NÃO entra no relatório do corretor (venda cancelada não conta).
+      if (venda.status === 'distrato') return false
       if (relatorioFiltros.empreendimento && venda.empreendimento_nome !== relatorioFiltros.empreendimento) {
         return false
       }
