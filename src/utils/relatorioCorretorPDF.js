@@ -160,6 +160,9 @@ export function gerarRelatorioCorretorPDF({ corretorProfile, vendas = [], pagame
     })
     .map(p => {
       const v = vendaPorId.get(p.venda_id) || {}
+      const comissaoParcela = calcularComissao(p)
+      const valorParcela = parseFloat(p.valor) || 0
+      const fatorPct = valorParcela > 0 ? (comissaoParcela / valorParcela) * 100 : 0
       return [
         formatDataBR(p.data_prevista),
         p.data_pagamento ? formatDataBR(p.data_pagamento) : '-',
@@ -167,21 +170,22 @@ export function gerarRelatorioCorretorPDF({ corretorProfile, vendas = [], pagame
         capitalizeName(v.cliente_nome) || '-',
         rotuloParcela(p),
         formatCurrency(p.valor),
-        formatCurrency(calcularComissao(p)),
+        `${fatorPct.toFixed(2).replace('.', ',')}%`,
+        formatCurrency(comissaoParcela),
         p.status === 'pago' ? 'Pago' : 'Pendente',
       ]
     })
 
   autoTable(doc, {
     startY: yPos + 10,
-    head: [['Vencimento', 'Pagamento', 'Unidade', 'Cliente', 'Tipo', 'Valor', 'Comissao', 'Status']],
+    head: [['Vencimento', 'Pagamento', 'Unidade', 'Cliente', 'Tipo', 'Valor', '%', 'Comissao', 'Status']],
     body: tableData,
     headStyles: { fillColor: cores.dourado, textColor: cores.preto, fontStyle: 'bold', fontSize: 8 },
     bodyStyles: { textColor: cores.preto, fontSize: 8 },
     alternateRowStyles: { fillColor: cores.cinzaClaro },
     columnStyles: {
-      0: { cellWidth: 23 }, 1: { cellWidth: 23 }, 2: { cellWidth: 15 }, 3: { cellWidth: 33 },
-      4: { cellWidth: 20 }, 5: { cellWidth: 22 }, 6: { cellWidth: 24 }, 7: { cellWidth: 15 },
+      0: { cellWidth: 20 }, 1: { cellWidth: 20 }, 2: { cellWidth: 14 }, 3: { cellWidth: 28 },
+      4: { cellWidth: 18 }, 5: { cellWidth: 20 }, 6: { cellWidth: 12 }, 7: { cellWidth: 22 }, 8: { cellWidth: 14 },
     },
   })
 
