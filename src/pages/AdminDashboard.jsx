@@ -1415,6 +1415,7 @@ const AdminDashboard = () => {
     let comissaoTotal = 0
     let comissaoCorretor = 0
     grupo.pagamentos.forEach(pag => {
+      if (pag.status === 'cancelado') return
       comissaoTotal += parseFloat(pag.comissao_gerada) || 0
       const cargos = calcularComissaoPorCargoPagamento(pag)
       const cargoCorretor = cargos.find(c => c.nome_cargo === 'Corretor' || c.nome_cargo?.toLowerCase().includes('corretor'))
@@ -2997,6 +2998,7 @@ const AdminDashboard = () => {
     let comissaoTotal = 0
     let comissaoCorretor = 0
     grupo.pagamentos.forEach(pag => {
+      if (pag.status === 'cancelado') return
       const isPago = pag.status === 'pago'
       const dataPrevista = parseDataLocal(pag.data_prevista)
       const isVencidoAteDistrato = dataPrevista && dataPrevista <= dataLimite
@@ -5122,14 +5124,14 @@ const AdminDashboard = () => {
         const dataVenda = venda?.data_venda ? formatDataBR(venda.data_venda) : (venda?.data_emissao ? formatDataBR(venda.data_emissao) : '-')
         const valorVenda = parseFloat(venda?.valor_venda) || parseFloat(venda?.valor_venda_total) || 0
         const valorProSolutoDb = parseFloat(venda?.valor_pro_soluto) || 0
-        const valorProSolutoCalc = grupo.pagamentos.reduce((acc, p) => acc + (parseFloat(p.valor) || 0), 0)
+        const valorProSolutoCalc = grupo.pagamentos.filter(p => p.status !== 'cancelado').reduce((acc, p) => acc + (parseFloat(p.valor) || 0), 0)
         const valorProSoluto = valorProSolutoDb > 0 ? valorProSolutoDb : (valorProSolutoCalc > 0 ? valorProSolutoCalc : valorVenda)
         
         // Calcular comissão da venda
         let comissaoVenda = 0
         if (percentualCorretorTotais !== null) {
           // Soma viva da comissao do cargo "Corretor" via fator (ver .claude/rules/fator-comissao.md).
-          comissaoVenda = grupo.pagamentos.reduce((acc, p) => {
+          comissaoVenda = grupo.pagamentos.filter(p => p.status !== 'cancelado').reduce((acc, p) => {
             const cargos = calcularComissaoPorCargoPagamento(p)
             const cargoCorretor = cargos.find(c => c.nome_cargo === 'Corretor' || c.nome_cargo?.toLowerCase().includes('corretor'))
             return acc + (cargoCorretor?.valor ?? 0)
@@ -5137,7 +5139,7 @@ const AdminDashboard = () => {
         } else {
           // soma viva dos pagamentos — nao usar venda.comissao_total (snapshot stale
           // em 89.7% das vendas, ver .claude/rules/visualizacao-totais.md)
-          comissaoVenda = grupo.totalComissao || grupo.pagamentos.reduce((acc, p) => acc + (parseFloat(p.comissao_gerada) || 0), 0)
+          comissaoVenda = grupo.totalComissao || grupo.pagamentos.filter(p => p.status !== 'cancelado').reduce((acc, p) => acc + (parseFloat(p.comissao_gerada) || 0), 0)
         }
         
         // ========================================
@@ -5621,7 +5623,7 @@ const AdminDashboard = () => {
       }
       
       // Retornar grupo com pagamentos filtrados e totais recalculados
-      const novoTotalValor = pagamentosFiltrados.reduce((sum, p) => sum + (parseFloat(p.valor) || 0), 0)
+      const novoTotalValor = pagamentosFiltrados.filter(p => p.status !== 'cancelado').reduce((sum, p) => sum + (parseFloat(p.valor) || 0), 0)
       return {
         ...grupo,
         pagamentos: pagamentosFiltrados,
@@ -5832,7 +5834,7 @@ const AdminDashboard = () => {
       const dataPagamento = parseDataLocal(p.data_pagamento)
       return dataPagamento && dataPagamento >= inicioHoje && dataPagamento <= fimHoje
     })
-    const totalPagamentosHoje = pagamentosHoje.reduce((acc, p) => acc + (parseFloat(p.valor) || 0), 0)
+    const totalPagamentosHoje = pagamentosHoje.filter(p => p.status !== 'cancelado').reduce((acc, p) => acc + (parseFloat(p.valor) || 0), 0)
     
     // Formatar valores
     const formatTicker = (value) => {
@@ -6905,7 +6907,7 @@ const AdminDashboard = () => {
                   const pagamentosEmp = pagamentos.filter(p => vendasEmp.some(v => v.id === p.venda_id))
                   const totalVendasEmp = vendasEmp.length
                   const valorTotalVendas = vendasEmp.reduce((acc, v) => acc + (parseFloat(v.valor_venda) || 0), 0)
-                  const comissaoTotal = pagamentosEmp.reduce((acc, p) => acc + (parseFloat(p.comissao_gerada) || 0), 0)
+                  const comissaoTotal = pagamentosEmp.filter(p => p.status !== 'cancelado').reduce((acc, p) => acc + (parseFloat(p.comissao_gerada) || 0), 0)
                   const comissaoPaga = pagamentosEmp.filter(p => p.status === 'pago').reduce((acc, p) => acc + (parseFloat(p.comissao_gerada) || 0), 0)
                   const comissaoPendente = comissaoTotal - comissaoPaga
                   
@@ -7620,7 +7622,7 @@ const AdminDashboard = () => {
                     <span className="resumo-valor">
                       {formatCurrency(filteredPagamentos.reduce((acc, grupo) => {
                         // Calcular comissão total baseada nos pagamentos filtrados
-                        return acc + grupo.pagamentos.reduce((sum, pag) => {
+                        return acc + grupo.pagamentos.filter(pag => pag.status !== 'cancelado').reduce((sum, pag) => {
                           return sum + (parseFloat(pag.comissao_gerada) || 0)
                         }, 0)
                       }, 0))}
@@ -7729,7 +7731,7 @@ const AdminDashboard = () => {
                           <div className="valor-item">
                             <span className="valor-label">Comissão Total</span>
                             <span className="valor-number comissao">{formatCurrency(
-                              grupo.pagamentos.reduce((sum, p) => sum + (parseFloat(p.comissao_gerada) || 0), 0)
+                              grupo.pagamentos.filter(p => p.status !== 'cancelado').reduce((sum, p) => sum + (parseFloat(p.comissao_gerada) || 0), 0)
                             )}</span>
                           </div>
                           <div className="valor-item">
@@ -8837,7 +8839,7 @@ const AdminDashboard = () => {
                   <span className="resumo-numero verde">
                     {formatCurrency(
                       // Usar comissao_gerada dos pagamentos (mais preciso que comissao_total da venda)
-                      pagamentos.reduce((acc, p) => acc + (parseFloat(p.comissao_gerada) || 0), 0)
+                      pagamentos.filter(p => p.status !== 'cancelado').reduce((acc, p) => acc + (parseFloat(p.comissao_gerada) || 0), 0)
                     )}
                   </span>
                 </div>
