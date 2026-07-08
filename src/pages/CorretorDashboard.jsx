@@ -15,12 +15,11 @@ import {
   Plus, UserPlus, Send, ClipboardList, CheckCircle2, XCircle, AlertCircle,
   Camera, Search, Upload
 } from 'lucide-react'
-import { jsPDF } from 'jspdf'
-import autoTable from 'jspdf-autotable'
 import logo from '../imgs/logo.png'
 import Ticker from '../components/Ticker'
 import Autocomplete from '../components/Autocomplete'
 import ParcelaCard from '../components/corretor/ParcelaCard'
+import { gerarRelatorioCorretorPDF } from '../utils/relatorioCorretorPDF'
 import InputDataBR from "../components/InputDataBR"
 import { casaBusca } from '../utils/searchUtils'
 import ProfilePhotoModal from '../components/ProfilePhotoModal'
@@ -94,7 +93,7 @@ const CorretorDashboard = () => {
   })
   const [filtrosVendas, setFiltrosVendas] = useState({
     busca: '',
-    status: 'todos',
+    status: 'ativas',
     empreendimento: '',
     periodo: 'todos',
     dataInicio: '',
@@ -154,6 +153,9 @@ const CorretorDashboard = () => {
   const [uploadingDoc, setUploadingDoc] = useState(false)
   const [uploadingDocType, setUploadingDocType] = useState(null)
   const [visaoParcelas, setVisaoParcelas] = useState('calendario')
+  // Distrato é visão segregada (spec 2026-06-11): Contrato/Calendário nunca misturam
+  // distratadas; este toggle mostra SÓ elas (as pagas reais pré-distrato). Espelha o Admin.
+  const [mostrarDistratos, setMostrarDistratos] = useState(false)
   
   // Form de nova venda
   const [novaVendaForm, setNovaVendaForm] = useState({
@@ -311,7 +313,7 @@ const CorretorDashboard = () => {
         const vendaIds = new Set(vendasCliente.map(v => v.id))
         const pagamentosCliente = meusPagamentos.filter(p => vendaIds.has(p.venda_id))
         const totalVendas = vendasCliente.reduce((acc, v) => acc + (parseFloat(v.valor_venda) || 0), 0)
-        const totalComissao = pagamentosCliente.reduce((acc, p) => acc + calcularComissaoPagamento(p), 0)
+        const totalComissao = pagamentosCliente.filter(p => p.status !== 'cancelado').reduce((acc, p) => acc + calcularComissaoPagamento(p), 0)
         const totalComissaoPaga = pagamentosCliente
           .filter(p => p.status === 'pago')
           .reduce((acc, p) => acc + calcularComissaoPagamento(p), 0)
@@ -918,7 +920,13 @@ const CorretorDashboard = () => {
       acc[vendaId].totalValor += parseFloat(pag.valor) || 0
       return acc
     }, {})
-  ).sort((a, b) => {
+  ).filter((grupo) => {
+    // Distrato é visão segregada: Contrato/Calendário NUNCA mostram distratadas;
+    // o botão "Distratos" mostra SÓ elas (as pagas reais pré-distrato seguem visíveis lá).
+    const venda = vendas.find(v => v.id === grupo.venda_id)
+    const ehDistrato = venda?.status === 'distrato'
+    return mostrarDistratos ? ehDistrato : !ehDistrato
+  }).sort((a, b) => {
     // Ordenar por data do primeiro pagamento (mais recente primeiro)
     const dataA = a.pagamentos[0]?.data_prevista || ''
     const dataB = b.pagamentos[0]?.data_prevista || ''
@@ -961,17 +969,22 @@ const CorretorDashboard = () => {
     if (filtrosVendas.busca && !casaBusca(venda, filtrosVendas.busca, VENDA_SEARCH_FIELDS)) {
       return false
     }
-    // Distrato é visão segregada (spec 2026-06-11): a lista padrão NUNCA mistura
-    // distratadas; o filtro Status="Distratos" mostra SÓ elas
+    // Distrato é visão segregada (spec 2026-06-11):
+    //  - "Distratos" → SÓ distratadas
+    //  - "Todos"     → total COM distrato (corretor vê o número cheio)
+    //  - "Vendas ativas" (default) / "Pendente" / "Pago" → SEM distrato
     const ehDistrato = venda.status === 'distrato'
-    if (filtrosVendas.status === 'distrato') {
+    const st = filtrosVendas.status
+    if (st === 'distrato') {
       if (!ehDistrato) return false
-    } else {
+    } else if (st === 'todos') {
+      // inclui distrato — não filtra por status
+    } else if (st === 'ativas') {
       if (ehDistrato) return false
-      // Filtro por status (demais)
-      if (filtrosVendas.status !== 'todos' && venda.status !== filtrosVendas.status) {
-        return false
-      }
+    } else {
+      // pendente / pago — sempre sem distrato
+      if (ehDistrato) return false
+      if (venda.status !== st) return false
     }
     // Filtro por empreendimento
     if (filtrosVendas.empreendimento && venda.empreendimento_nome !== filtrosVendas.empreendimento) {
@@ -1018,9 +1031,13 @@ const CorretorDashboard = () => {
     return meusPagamentos.filter(pag => vendaIdsFiltradas.includes(pag.venda_id))
   }
 
+  // Pagamentos do recorte SEM canceladas — base p/ somas financeiras exibidas
+  // (parcela cancelada nunca entra em total de comissão). Ver .claude/rules/visualizacao-totais.md
+  const getFilteredPagamentosAtivos = () => getFilteredPagamentos().filter(pag => pag.status !== 'cancelado')
+
   // R2 — sempre por pagamento. Sem pagamentos → 0.
   const getFilteredTotalComissao = () => {
-    return getFilteredPagamentos().reduce((acc, pag) => acc + calcularComissaoPagamento(pag), 0)
+    return getFilteredPagamentosAtivos().reduce((acc, pag) => acc + calcularComissaoPagamento(pag), 0)
   }
 
   const getFilteredComissaoPendente = () => {
@@ -1101,179 +1118,17 @@ const CorretorDashboard = () => {
     }
   }
 
+  // FONTE ÚNICA: o corretor gera o MESMO PDF que o admin vê em "Ver PDF do corretor"
+  // (util relatorioCorretorPDF). Antes era uma cópia inline que divergia — agora não há drift.
   const gerarMeuRelatorioPDF = async () => {
     setGerandoPdf(true)
     try {
-      const { vendasFiltradas, pagamentosFiltrados } = getRelatorioDados()
-
-      // Calcular totais usando PAGAMENTOS ativos (regra correta)
-      const totalVendas = vendasFiltradas.length
-      const valorTotalVendas = vendasFiltradas.reduce((acc, v) => acc + (parseFloat(v.valor_venda) || 0), 0)
-      const comissaoTotal = pagamentosFiltrados.reduce((acc, pag) => acc + calcularComissaoPagamento(pag), 0)
-      const comissaoPaga = pagamentosFiltrados
-        .filter(p => p.status === 'pago')
-        .reduce((acc, pag) => acc + calcularComissaoPagamento(pag), 0)
-      const comissaoPendente = pagamentosFiltrados
-        .filter(p => p.status === 'pendente')
-        .reduce((acc, pag) => acc + calcularComissaoPagamento(pag), 0)
-      const statusFiltroTexto = relatorioFiltros.status === 'pago'
-        ? 'Pagos'
-        : relatorioFiltros.status === 'pendente'
-          ? 'Pendentes'
-          : 'Todos'
-
-      // Criar PDF
-      const doc = new jsPDF()
-      const cores = {
-        dourado: [201, 169, 98],
-        douradoEscuro: [161, 129, 58],
-        preto: [15, 15, 15],
-        branco: [255, 255, 255],
-        cinzaClaro: [245, 245, 245],
-        verde: [16, 185, 129],
-        vermelho: [239, 68, 68],
-        amarelo: [234, 179, 8]
-      }
-
-      // Header
-      doc.setFillColor(...cores.preto)
-      doc.rect(0, 0, 210, 35, 'F')
-      doc.setFillColor(...cores.dourado)
-      doc.rect(0, 35, 210, 2, 'F')
-      
-      doc.setTextColor(...cores.dourado)
-      doc.setFontSize(20)
-      doc.setFont('helvetica', 'bold')
-      doc.text('RELATORIO DE COMISSOES', 105, 18, { align: 'center' })
-      
-      doc.setTextColor(...cores.branco)
-      doc.setFontSize(12)
-      doc.setFont('helvetica', 'normal')
-      doc.text(capitalizeName(userProfile?.nome || 'Corretor'), 105, 28, { align: 'center' })
-
-      // Data do relatório
-      doc.setTextColor(...cores.dourado)
-      doc.setFontSize(10)
-      doc.text(`Gerado em: ${new Date().toLocaleDateString('pt-BR')} as ${new Date().toLocaleTimeString('pt-BR')}`, 105, 45, { align: 'center' })
-      doc.setTextColor(...cores.preto)
-      doc.setFontSize(9)
-      doc.text(`Status: ${statusFiltroTexto}`, 14, 53)
-
-      // Resumo
-      let yPos = 64
-      doc.setFillColor(...cores.preto)
-      doc.roundedRect(14, yPos - 5, 182, 43, 3, 3, 'F')
-      
-      doc.setTextColor(...cores.branco)
-      doc.setFontSize(9)
-      doc.text('Total Vendas', 22, yPos + 6)
-      doc.text('Volume', 66, yPos + 6)
-      doc.text('Comissao Total', 112, yPos + 6)
-      doc.text('Recebido', 158, yPos + 6)
-      
-      doc.setTextColor(...cores.dourado)
-      doc.setFontSize(12)
-      doc.setFont('helvetica', 'bold')
-      doc.text(String(totalVendas), 22, yPos + 19)
-      doc.text(formatCurrency(valorTotalVendas), 66, yPos + 19)
-      doc.text(formatCurrency(comissaoTotal), 112, yPos + 19)
-      doc.setTextColor(...cores.verde)
-      doc.text(formatCurrency(comissaoPaga), 158, yPos + 19)
-      doc.setTextColor(...cores.amarelo)
-      doc.setFontSize(8)
-      doc.text(`Pendente: ${formatCurrency(comissaoPendente)}`, 158, yPos + 31)
-
-      // Detalhamento POR PAGAMENTO (parcela), igual ao relatório do admin —
-      // cada linha é uma parcela, recortada pela data do pagamento (não por venda).
-      yPos = 116
-      doc.setTextColor(...cores.preto)
-      doc.setFontSize(14)
-      doc.setFont('helvetica', 'bold')
-      doc.text('Detalhamento dos Pagamentos', 14, yPos)
-
-      const rotuloParcela = (p) => {
-        if (p.tipo === 'sinal') return 'Sinal'
-        if (p.tipo === 'entrada') return 'Entrada'
-        if (p.tipo === 'comissao_integral') return 'Comissao integral'
-        if (p.tipo === 'bens') return 'Bens'
-        const base = p.tipo === 'balao' ? 'Balao' : 'Parcela'
-        return p.numero_parcela ? `${base} ${p.numero_parcela}` : base
-      }
-      const vendaPorId = new Map(vendasFiltradas.map(v => [v.id, v]))
-      const tableData = pagamentosFiltrados
-        .slice()
-        .sort((a, b) => {
-          const da = parseDataLocal(a.data_pagamento || a.data_prevista)?.getTime() || 0
-          const db = parseDataLocal(b.data_pagamento || b.data_prevista)?.getTime() || 0
-          return da - db
-        })
-        .map(p => {
-          const v = vendaPorId.get(p.venda_id) || {}
-          const comissaoParcela = calcularComissaoPagamento(p)
-          const valorParcela = parseFloat(p.valor) || 0
-          const fatorPct = valorParcela > 0 ? (comissaoParcela / valorParcela) * 100 : 0
-          return [
-            formatDataBR(p.data_prevista),
-            p.data_pagamento ? formatDataBR(p.data_pagamento) : '-',
-            v.unidade || '-',
-            capitalizeName(v.cliente_nome) || '-',
-            rotuloParcela(p),
-            formatCurrency(p.valor),
-            `${fatorPct.toFixed(2).replace('.', ',')}%`,
-            formatCurrency(comissaoParcela),
-            p.status === 'pago' ? 'Pago' : 'Pendente'
-          ]
-        })
-
-      autoTable(doc, {
-        startY: yPos + 10,
-        head: [['Vencimento', 'Pagamento', 'Unidade', 'Cliente', 'Tipo', 'Valor', '%', 'Comissao', 'Status']],
-        body: tableData,
-        headStyles: {
-          fillColor: cores.dourado,
-          textColor: cores.preto,
-          fontStyle: 'bold',
-          fontSize: 8
-        },
-        bodyStyles: {
-          textColor: cores.preto,
-          fontSize: 8
-        },
-        alternateRowStyles: {
-          fillColor: cores.cinzaClaro
-        },
-        columnStyles: {
-          0: { cellWidth: 20 },
-          1: { cellWidth: 20 },
-          2: { cellWidth: 14 },
-          3: { cellWidth: 28 },
-          4: { cellWidth: 18 },
-          5: { cellWidth: 20 },
-          6: { cellWidth: 12 },
-          7: { cellWidth: 22 },
-          8: { cellWidth: 14 }
-        }
+      gerarRelatorioCorretorPDF({
+        corretorProfile: userProfile,
+        vendas,
+        pagamentos: meusPagamentos,
+        filtros: relatorioFiltros,
       })
-
-      // Footer
-      const pageCount = doc.getNumberOfPages()
-      for (let i = 1; i <= pageCount; i++) {
-        doc.setPage(i)
-        doc.setFillColor(...cores.preto)
-        doc.rect(0, 282, 210, 15, 'F')
-        doc.setFillColor(...cores.dourado)
-        doc.rect(0, 282, 210, 1, 'F')
-        
-        doc.setTextColor(...cores.dourado)
-        doc.setFontSize(8)
-        doc.text('IM Incorporadora - Relatorio de Comissoes', 14, 290)
-        doc.text(`Pagina ${i} de ${pageCount}`, 196, 290, { align: 'right' })
-      }
-
-      // Salvar
-      const nomeArquivo = `Relatorio_${userProfile?.nome?.replace(/\s+/g, '_') || 'Corretor'}_${new Date().toISOString().split('T')[0]}.pdf`
-      doc.save(nomeArquivo)
-
     } catch (error) {
       console.error('Erro ao gerar PDF:', error)
       alert('Erro ao gerar relatorio. Tente novamente.')
@@ -1584,6 +1439,14 @@ const CorretorDashboard = () => {
             <span>Relatórios</span>
           </button>
           <button
+            className="nav-item"
+            onClick={() => window.open('/cadastro-figueira', '_blank', 'noopener')}
+            title="Cadastro Figueira (abre em nova aba)"
+          >
+            <UserPlus size={20} />
+            <span>Cadastro Figueira</span>
+          </button>
+          <button
             className={`nav-item ${activeTab === 'vendas' ? 'active' : ''}`}
             onClick={() => goTo('/corretor/vendas')}
             title="Minhas Vendas"
@@ -1857,7 +1720,7 @@ const CorretorDashboard = () => {
                   })
                   // Usar PAGAMENTOS para calcular comissão (regra correta)
                   const vendaIdsMes = vendasMes.map(v => v.id)
-                  const pagamentosMes = meusPagamentos.filter(p => vendaIdsMes.includes(p.venda_id))
+                  const pagamentosMes = meusPagamentos.filter(p => vendaIdsMes.includes(p.venda_id) && p.status !== 'cancelado')
                   const total = pagamentosMes.reduce((acc, pag) => acc + calcularComissaoPagamento(pag), 0)
                   meses.push({ nome: mesNome, total, count: vendasMes.length })
                 }
@@ -1902,7 +1765,7 @@ const CorretorDashboard = () => {
             ) : (
               vendas.slice(0, 5).map((venda, idx) => {
                 // Calcular comissão baseado em PAGAMENTOS
-                const pagamentosVenda = meusPagamentos.filter(p => p.venda_id === venda.id)
+                const pagamentosVenda = meusPagamentos.filter(p => p.venda_id === venda.id && p.status !== 'cancelado')
                 const comissaoVenda = pagamentosVenda.reduce((acc, pag) => acc + calcularComissaoPagamento(pag), 0)
                 const comissaoPagaVenda = pagamentosVenda
                   .filter(p => p.status === 'pago')
@@ -1975,6 +1838,7 @@ const CorretorDashboard = () => {
                       className="filter-select"
                     >
                       <option value="todos">Todos</option>
+                      <option value="ativas">Vendas ativas</option>
                       <option value="pendente">Pendente</option>
                       <option value="pago">Pago</option>
                       <option value="distrato">Distratos</option>
@@ -2089,7 +1953,7 @@ const CorretorDashboard = () => {
           <div className="vendas-list">
                       {filteredMinhasVendas.map((venda) => {
                         // Calcular comissão baseado em PAGAMENTOS (regra correta)
-                        const pagamentosDestaVenda = meusPagamentos.filter(p => p.venda_id === venda.id)
+                        const pagamentosDestaVenda = meusPagamentos.filter(p => p.venda_id === venda.id && p.status !== 'cancelado')
                         const comissaoVenda = pagamentosDestaVenda.reduce((acc, pag) => acc + calcularComissaoPagamento(pag), 0)
                         const comissaoPagaVenda = pagamentosDestaVenda
                           .filter(p => p.status === 'pago')
@@ -2359,8 +2223,26 @@ const CorretorDashboard = () => {
                     </div>
                   </div>
 
-                  {/* Toggle Visão: Contrato / Calendário */}
-                  <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '12px', gap: '4px' }}>
+                  {/* Toggle Visão: Distratos / Contrato / Calendário */}
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '12px', gap: '4px', flexWrap: 'wrap' }}>
+                    <button
+                      onClick={() => setMostrarDistratos(v => !v)}
+                      title="Vendas distratadas ficam fora de Contrato/Calendário; este botão mostra SÓ elas"
+                      style={{
+                        padding: '5px 14px',
+                        fontSize: '12px',
+                        borderRadius: '6px',
+                        cursor: 'pointer',
+                        border: mostrarDistratos ? '1px solid #dc2626' : '1px solid rgba(255,255,255,0.15)',
+                        background: mostrarDistratos ? 'rgba(220, 38, 38, 0.85)' : 'transparent',
+                        color: mostrarDistratos ? '#fff' : 'rgba(255,255,255,0.7)',
+                        fontWeight: mostrarDistratos ? 600 : 400,
+                        transition: 'all 0.2s'
+                      }}
+                    >
+                      <XCircle size={12} style={{ marginRight: '4px', verticalAlign: 'middle' }} />
+                      Distratos
+                    </button>
                     <button
                       onClick={() => setVisaoParcelas('contrato')}
                       style={{
@@ -2639,7 +2521,7 @@ const CorretorDashboard = () => {
                           // Calcular comissão baseado em PAGAMENTOS
                           const vendaIdsCliente = c.vendas?.map(v => v.id) || []
                           const pagamentosCliente = meusPagamentos.filter(p => vendaIdsCliente.includes(p.venda_id))
-                          const comissao = pagamentosCliente.reduce((sum, pag) => sum + calcularComissaoPagamento(pag), 0)
+                          const comissao = pagamentosCliente.filter(p => p.status !== 'cancelado').reduce((sum, pag) => sum + calcularComissaoPagamento(pag), 0)
                           return acc + (comissao > 0 ? comissao : c.total_comissao)
                         }, 0))}
                       </span>
@@ -2659,7 +2541,7 @@ const CorretorDashboard = () => {
                         // Calcular comissão baseado em PAGAMENTOS
                         const vendaIdsCliente = cliente.vendas?.map(v => v.id) || []
                         const pagamentosCliente = meusPagamentos.filter(p => vendaIdsCliente.includes(p.venda_id))
-                        const comissaoCliente = pagamentosCliente.reduce((sum, pag) => sum + calcularComissaoPagamento(pag), 0)
+                        const comissaoCliente = pagamentosCliente.filter(p => p.status !== 'cancelado').reduce((sum, pag) => sum + calcularComissaoPagamento(pag), 0)
                         
                         return (
                         <div key={cliente.id} className="cliente-card">
@@ -2737,7 +2619,7 @@ const CorretorDashboard = () => {
                 </div>
                 <div className="emp-stat-card">
                   <span className="emp-stat-value">{vendas.length}</span>
-                  <span className="emp-stat-label">Total Vendas</span>
+                  <span className="emp-stat-label">Suas vendas totais</span>
                 </div>
                 <div className="emp-stat-card">
                   <span className="emp-stat-value">{formatCurrency(getTotalComissao())}</span>
@@ -2800,7 +2682,7 @@ const CorretorDashboard = () => {
                       
                       // Usar PAGAMENTOS para calcular comissões (regra correta)
                       const vendaIdsEmp = vendasEmp.map(v => v.id)
-                      const pagamentosEmp = meusPagamentos.filter(p => vendaIdsEmp.includes(p.venda_id))
+                      const pagamentosEmp = meusPagamentos.filter(p => vendaIdsEmp.includes(p.venda_id) && p.status !== 'cancelado')
                       const comissaoTotal = pagamentosEmp.reduce((acc, pag) => acc + calcularComissaoPagamento(pag), 0)
                       const comissaoPaga = pagamentosEmp
                         .filter(p => p.status === 'pago')
@@ -3264,12 +3146,24 @@ const CorretorDashboard = () => {
                         </div>
                         <div className="perfil-detalhe-item">
                           <Phone size={18} />
-                          <span>{userProfile?.telefone || 'Não informado'}</span>
+                          <span>{userProfile?.telefone || userProfile?.celular || 'Não informado'}</span>
                         </div>
+                        {userProfile?.creci && (
+                          <div className="perfil-detalhe-item">
+                            <Award size={18} />
+                            <span>CRECI: {userProfile.creci}</span>
+                          </div>
+                        )}
                         {userProfile?.cpf && (
                           <div className="perfil-detalhe-item">
                             <User size={18} />
                             <span>CPF: {userProfile.cpf}</span>
+                          </div>
+                        )}
+                        {userProfile?.cidade && (
+                          <div className="perfil-detalhe-item">
+                            <MapPin size={18} />
+                            <span>{userProfile.cidade}</span>
                           </div>
                         )}
                         {userProfile?.cnpj && (
@@ -3868,6 +3762,30 @@ const CorretorDashboard = () => {
                       <span>{selectedCliente.email}</span>
                     </div>
                   )}
+                  {selectedCliente.rg && (
+                    <div className="info-row">
+                      <FileText size={16} />
+                      <span>RG: {selectedCliente.rg}</span>
+                    </div>
+                  )}
+                  {selectedCliente.data_nascimento && (
+                    <div className="info-row">
+                      <CalendarDays size={16} />
+                      <span>{formatDataBR(selectedCliente.data_nascimento)}</span>
+                    </div>
+                  )}
+                  {selectedCliente.profissao && (
+                    <div className="info-row">
+                      <Award size={16} />
+                      <span>{selectedCliente.profissao}</span>
+                    </div>
+                  )}
+                  {(selectedCliente.cidade || selectedCliente.endereco) && (
+                    <div className="info-row">
+                      <MapPin size={16} />
+                      <span>{[selectedCliente.endereco, selectedCliente.cidade].filter(Boolean).join(' · ')}</span>
+                    </div>
+                  )}
                 </div>
 
                 <div className="cliente-detalhe-vendas">
@@ -3898,7 +3816,7 @@ const CorretorDashboard = () => {
           
           // Usar PAGAMENTOS para calcular comissões (regra correta)
           const vendaIdsEmp = vendasEmp.map(v => v.id)
-          const pagamentosEmp = meusPagamentos.filter(p => vendaIdsEmp.includes(p.venda_id))
+          const pagamentosEmp = meusPagamentos.filter(p => vendaIdsEmp.includes(p.venda_id) && p.status !== 'cancelado')
           const comissaoTotal = pagamentosEmp.reduce((acc, pag) => acc + calcularComissaoPagamento(pag), 0)
           
           return (
