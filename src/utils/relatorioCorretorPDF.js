@@ -127,8 +127,6 @@ export function gerarRelatorioCorretorPDF({ corretorProfile, vendas = [], pagame
 
   doc.setTextColor(...cores.dourado); doc.setFontSize(10)
   doc.text(`Gerado em: ${new Date().toLocaleDateString('pt-BR')} as ${new Date().toLocaleTimeString('pt-BR')}`, 105, 45, { align: 'center' })
-  doc.setTextColor(...cores.preto); doc.setFontSize(9)
-  doc.text(`Status: ${statusFiltroTexto}`, 14, 53)
 
   // Resumo
   let yPos = 64
@@ -146,6 +144,14 @@ export function gerarRelatorioCorretorPDF({ corretorProfile, vendas = [], pagame
   doc.text(formatCurrency(comissaoPaga), 158, yPos + 19)
   doc.setTextColor(...cores.amarelo); doc.setFontSize(8)
   doc.text(`Pendente: ${formatCurrency(comissaoPendente)}`, 158, yPos + 31)
+
+  // Filtro aplicado — documenta o recorte do relatório (substitui o "Status: Todos" solto)
+  const fmtFiltroData = (d) => (parseDataLocal(d) ? formatDataBR(d) : '—')
+  doc.setTextColor(...cores.preto); doc.setFont('helvetica', 'normal'); doc.setFontSize(9)
+  doc.text(
+    `Filtro:   Status: ${statusFiltroTexto}      Data Inicio: ${fmtFiltroData(filtros.dataInicio)}      Data Fim: ${fmtFiltroData(filtros.dataFim)}`,
+    14, 110,
+  )
 
   // Detalhamento POR PAGAMENTO (parcela)
   yPos = 116
@@ -170,7 +176,7 @@ export function gerarRelatorioCorretorPDF({ corretorProfile, vendas = [], pagame
         p.data_pagamento ? formatDataBR(p.data_pagamento) : '-',
         v.unidade || '-',
         capitalizeName(v.cliente_nome) || '-',
-        rotuloParcela(p),
+        rotuloParcela(p) + (p.renegociacao_id ? '\n(aditivo)' : ''),
         formatCurrency(p.valor),
         `${fatorPct.toFixed(2).replace('.', ',')}%`,
         formatCurrency(comissaoParcela),
@@ -186,8 +192,11 @@ export function gerarRelatorioCorretorPDF({ corretorProfile, vendas = [], pagame
     bodyStyles: { textColor: cores.preto, fontSize: 8 },
     alternateRowStyles: { fillColor: cores.cinzaClaro },
     columnStyles: {
-      0: { cellWidth: 20 }, 1: { cellWidth: 20 }, 2: { cellWidth: 14 }, 3: { cellWidth: 28 },
-      4: { cellWidth: 18 }, 5: { cellWidth: 20 }, 6: { cellWidth: 12 }, 7: { cellWidth: 22 }, 8: { cellWidth: 14 },
+      0: { cellWidth: 20 }, 1: { cellWidth: 20 },
+      2: { cellWidth: 18, overflow: 'visible' },   // Unidade nunca quebra ("9902 A")
+      3: { cellWidth: 26 },
+      4: { cellWidth: 18 }, 5: { cellWidth: 20 }, 6: { cellWidth: 12 }, 7: { cellWidth: 22 },
+      8: { cellWidth: 16, overflow: 'visible' },   // Status nunca quebra ("Pendente")
     },
   })
 
