@@ -37,7 +37,6 @@ export default function ParcelaCard({ pagamento, comissao, modo = 'corretor' }) 
   const status = pagamento.status || 'pendente'
   const pago = status === 'pago'
   const cancelado = status === 'cancelado'
-  const data = pago ? pagamento.data_pagamento || pagamento.data_prevista : pagamento.data_prevista
 
   return (
     <div className={`parcela-card ${pago ? 'pago' : cancelado ? 'cancelado' : 'pendente'}`}>
@@ -57,9 +56,13 @@ export default function ParcelaCard({ pagamento, comissao, modo = 'corretor' }) 
       <div className="parcela-card-comissao">{fmtBRL(cliente ? pagamento.valor : comissao)}</div>
 
       <div className="parcela-card-rodape">
-        <span>
-          {pago ? 'pago em' : 'vence'} {formatDataBR(data)}
-        </span>
+        <span>vence {formatDataBR(pagamento.data_prevista)}</span>
+        {pago && (
+          <>
+            <span className="parcela-card-sep">·</span>
+            <span>pago em {formatDataBR(pagamento.data_pagamento || pagamento.data_prevista)}</span>
+          </>
+        )}
         {!cliente && (
           <>
             <span className="parcela-card-sep">·</span>
