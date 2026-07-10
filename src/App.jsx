@@ -1,5 +1,5 @@
 import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { supabase } from './lib/supabase'
 import Login from './pages/Login'
@@ -54,9 +54,38 @@ const LoadingScreen = ({ showLogout = false }) => {
   )
 }
 
+// Tela de ERRO ao carregar perfil (falha de rede/timeout) — NÃO é "sem cadastro".
+// O corretor tem perfil; foi só a busca que falhou. Oferece "Tentar novamente".
+const ProfileErrorScreen = ({ onRetry }) => {
+  const [tentando, setTentando] = useState(false)
+  return (
+    <div className="loading-screen">
+      <div className="loading-content">
+        <p style={{ color: '#f59e0b', marginBottom: '10px', fontSize: '18px' }}>Não foi possível carregar seu perfil</p>
+        <p style={{ fontSize: '14px', color: 'rgba(255,255,255,0.7)', marginBottom: '20px', maxWidth: 360, textAlign: 'center' }}>
+          Parece instabilidade de conexão. Seu cadastro está OK — é só tentar de novo.
+        </p>
+        <button
+          onClick={async () => { setTentando(true); try { await onRetry?.() } finally { setTentando(false) } }}
+          disabled={tentando}
+          style={{ padding: '12px 24px', background: '#c9a962', border: 'none', color: '#000', borderRadius: '6px', cursor: tentando ? 'default' : 'pointer', fontSize: '14px', fontWeight: 'bold', opacity: tentando ? 0.6 : 1 }}
+        >
+          {tentando ? 'Tentando…' : 'Tentar novamente'}
+        </button>
+        <button
+          onClick={async () => { await supabase.auth.signOut(); localStorage.clear(); window.location.href = '/login' }}
+          style={{ marginTop: '20px', padding: '10px 20px', background: '#ef4444', border: 'none', color: '#fff', borderRadius: '6px', cursor: 'pointer', fontSize: '13px' }}
+        >
+          Sair
+        </button>
+      </div>
+    </div>
+  )
+}
+
 // Componente para rotas protegidas
 const ProtectedRoute = ({ children, requiredRole }) => {
-  const { user, userProfile, loading } = useAuth()
+  const { user, userProfile, loading, profileError, refreshProfile } = useAuth()
 
   // Se a transição de login está ativa, não mostrar nada - deixar a intro aparecer
   if (sessionStorage.getItem('im-login-transition')) {
@@ -71,7 +100,12 @@ const ProtectedRoute = ({ children, requiredRole }) => {
     return <Navigate to="/login" replace />
   }
 
-  // Se não tem perfil cadastrado
+  // Falha ao BUSCAR o perfil (timeout/rede) — não confundir com "sem cadastro"
+  if (profileError) {
+    return <ProfileErrorScreen onRetry={refreshProfile} />
+  }
+
+  // Se não tem perfil cadastrado (busca OK e vazia)
   if (!userProfile) {
     const handleCadastrarUsuario = async () => {
       try {
@@ -188,11 +222,16 @@ const PublicRoute = ({ children }) => {
 
 // Componente de Dashboard que redireciona baseado no tipo de usuário
 const DashboardRedirect = () => {
-  const { userProfile, loading, user } = useAuth()
+  const { userProfile, loading, user, profileError, refreshProfile } = useAuth()
   const navigate = useNavigate()
 
   if (loading) {
     return <LoadingScreen showLogout={true} />
+  }
+
+  // Falha ao BUSCAR o perfil (timeout/rede) — não confundir com "sem cadastro"
+  if (user && profileError) {
+    return <ProfileErrorScreen onRetry={refreshProfile} />
   }
 
   if (user && !userProfile) {
