@@ -9,6 +9,9 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null)
   const [userProfile, setUserProfile] = useState(null)
   const [loading, setLoading] = useState(true)
+  // Distingue "perfil não existe" de "a busca do perfil falhou (timeout/rede)".
+  // Sem isso, um soluço de rede virava a tela falsa de "Usuário não cadastrado".
+  const [profileError, setProfileError] = useState(false)
   
   const isLoadingProfile = useRef(false)
 
@@ -42,6 +45,7 @@ export const AuthProvider = ({ children }) => {
     if (!authUser) {
       setUser(null)
       setUserProfile(null)
+      setProfileError(false)
       setLoading(false)
       return
     }
@@ -55,41 +59,58 @@ export const AuthProvider = ({ children }) => {
     setUser(authUser)
 
     try {
-      // Usar fetch direto com timeout
       const accessToken = session?.access_token
-      
+
       if (!accessToken) {
         console.error('Sem access token')
+        setProfileError(true) // falha de sessão — NÃO é "sem perfil"
         setUserProfile(null)
         setLoading(false)
         isLoadingProfile.current = false
         return
       }
 
-      console.log('>>> Buscando perfil via REST API...')
-      
-      // Timeout de 8 segundos
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('TIMEOUT')), 8000)
-      )
-      
-      const fetchPromise = fetchProfileDirect(authUser.id, accessToken)
-      
-      const profile = await Promise.race([fetchPromise, timeoutPromise])
+      // Busca com RETRY: timeout/erro de rede NÃO significa "sem perfil".
+      // Só marcamos profileError depois de todas as tentativas falharem.
+      const TENTATIVAS = 3
+      let sucesso = false
+      let perfil = null
+      let ultimoErro = null
 
-      if (profile) {
-        console.log('Perfil encontrado:', profile)
-        setUserProfile(profile)
+      for (let i = 0; i < TENTATIVAS; i++) {
+        try {
+          const timeoutPromise = new Promise((_, reject) =>
+            setTimeout(() => reject(new Error('TIMEOUT')), 10000)
+          )
+          perfil = await Promise.race([fetchProfileDirect(authUser.id, accessToken), timeoutPromise])
+          sucesso = true
+          break
+        } catch (err) {
+          ultimoErro = err
+          if (i < TENTATIVAS - 1) {
+            await new Promise((r) => setTimeout(r, 800 * (i + 1))) // backoff progressivo
+          }
+        }
+      }
+
+      if (!sucesso) {
+        // A BUSCA falhou (timeout/rede) — não dá pra afirmar que não tem perfil.
+        // NÃO mostrar "Usuário não cadastrado"; mostrar erro com "Tentar novamente".
+        console.error('Falha ao buscar perfil (todas as tentativas):', ultimoErro?.message)
+        setProfileError(true)
+        setUserProfile(null)
+      } else if (perfil) {
+        setProfileError(false)
+        setUserProfile(perfil)
       } else {
+        // Busca OK e VAZIA = genuinamente sem perfil cadastrado.
         console.warn('Usuário sem perfil:', authUser.email)
+        setProfileError(false)
         setUserProfile(null)
       }
     } catch (err) {
-      if (err.message === 'TIMEOUT') {
-        console.error('❌ TIMEOUT ao buscar perfil')
-      } else {
-        console.error('Erro ao carregar perfil:', err)
-      }
+      console.error('Erro inesperado ao carregar perfil:', err)
+      setProfileError(true) // erro inesperado — trata como falha de busca, não "sem perfil"
       setUserProfile(null)
     } finally {
       isLoadingProfile.current = false
@@ -127,6 +148,7 @@ export const AuthProvider = ({ children }) => {
       if (event === 'SIGNED_OUT') {
         setUser(null)
         setUserProfile(null)
+        setProfileError(false)
         setLoading(false)
       } else if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && session?.user) {
         if (!userProfile) {
@@ -186,6 +208,7 @@ export const AuthProvider = ({ children }) => {
       user,
       userProfile,
       loading,
+      profileError,
       signIn,
       signOut,
       refreshProfile,
