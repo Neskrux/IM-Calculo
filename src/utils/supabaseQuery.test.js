@@ -87,3 +87,54 @@ describe('fetchAllPaginated', () => {
     expect(build).toHaveBeenNthCalledWith(2, 200, 399)
   })
 })
+
+describe('fetchAllPaginated com concurrency (lotes paralelos)', () => {
+  // Simula uma tabela de `total` linhas: cada página devolve o recorte real
+  const buildTabela = (total) =>
+    vi.fn().mockImplementation((from) => {
+      const count = Math.max(0, Math.min(1000, total - from))
+      return Promise.resolve({ data: rows(from, count), error: null })
+    })
+
+  it('1ª página sozinha, depois lote paralelo; resultado completo e em ordem', async () => {
+    const build = buildTabela(3500)
+
+    const result = await fetchAllPaginated(build, { concurrency: 3 })
+
+    expect(result).toHaveLength(3500)
+    expect(result[0].id).toBe(0)
+    expect(result[3499].id).toBe(3499)
+    // 1 chamada (página 0) + 1 lote de 3 (páginas 1-3; a última é incompleta)
+    expect(build).toHaveBeenCalledTimes(4)
+    expect(build).toHaveBeenNthCalledWith(1, 0, 999)
+    expect(build).toHaveBeenNthCalledWith(2, 1000, 1999)
+    expect(build).toHaveBeenNthCalledWith(4, 3000, 3999)
+  })
+
+  it('página incompleta no meio do lote: termina ali e descarta as posteriores', async () => {
+    const build = buildTabela(1500)
+
+    const result = await fetchAllPaginated(build, { concurrency: 3 })
+
+    expect(result).toHaveLength(1500)
+    expect(result[1499].id).toBe(1499)
+  })
+
+  it('erro em página do lote → throw, NUNCA retorno parcial', async () => {
+    const build = vi.fn().mockImplementation((from) => {
+      if (from === 2000) return Promise.resolve({ data: null, error: { message: 'boom' } })
+      return Promise.resolve({ data: rows(from, 1000), error: null })
+    })
+
+    await expect(fetchAllPaginated(build, { concurrency: 3 })).rejects.toEqual({ message: 'boom' })
+  })
+
+  it('concurrency 1 (default) mantém o comportamento sequencial', async () => {
+    const build = buildTabela(2500)
+
+    const result = await fetchAllPaginated(build)
+
+    expect(result).toHaveLength(2500)
+    expect(build).toHaveBeenCalledTimes(3)
+  })
+})

@@ -265,7 +265,7 @@ const CorretorDashboard = () => {
           .order('data_prevista', { ascending: true })
           .order('id', { ascending: true })
           .range(from, to)
-      )
+      , { concurrency: 4 })
 
       // Associar nome do cliente e empreendimento a cada pagamento
       const pagamentosEnriquecidos = (data || []).map(pag => {
