@@ -102,6 +102,35 @@
   animation: fadeIn 0.3s ease-in;
 }
 
+/* Recarga em segundo plano — pill discreto, não bloqueia interação */
+.global-loading-mini {
+  position: fixed;
+  top: 14px;
+  right: 18px;
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: rgba(18, 18, 18, 0.92);
+  border: 1px solid rgba(201, 169, 98, 0.35);
+  color: var(--im-accent, #c9a962);
+  font-size: 12px;
+  font-weight: 600;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+  animation: fadeIn 0.2s ease-in;
+  pointer-events: none;
+}
+
+.loading-mini-spin {
+  animation: girar 1s linear infinite;
+}
+
+@keyframes girar {
+  to { transform: rotate(360deg); }
+}
+
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -1623,6 +1652,17 @@ button.user-avatar:focus-visible {
 
 .action-btn.delete:hover {
   background: rgba(239, 68, 68, 0.2);
+  transform: translateY(-2px);
+}
+
+.action-btn.access {
+  background: var(--im-accent-subtle, rgba(201, 169, 98, 0.12));
+  color: var(--im-accent, #c9a962);
+  border-color: var(--im-border-accent, rgba(201, 169, 98, 0.3));
+}
+
+.action-btn.access:hover {
+  background: rgba(201, 169, 98, 0.25);
   transform: translateY(-2px);
 }
 
@@ -4418,6 +4458,20 @@ button.user-avatar:focus-visible {
 .cliente-badges .badge.complemento {
   background: rgba(59, 130, 246, 0.15);
   color: var(--im-accent);
+}
+
+.cliente-badges .badge.acesso-ok {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--im-accent-subtle, rgba(201, 169, 98, 0.12));
+  color: var(--im-accent, #c9a962);
+}
+
+.cliente-badges .badge.acesso-nao {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--im-text-secondary, #94a3b8);
+  border: 1px dashed rgba(255, 255, 255, 0.2);
 }
 
 .cliente-docs {

@@ -13,7 +13,7 @@ import autoTable from 'jspdf-autotable'
 import { 
   Users, DollarSign, TrendingUp, Plus, Edit2, Trash2, 
   Search, Filter, LogOut, Menu, X, ChevronDown, Save, Eye,
-  Calculator, Calendar, User, Briefcase, CheckCircle, Clock, UserPlus, Mail, Lock, Percent, Building, PlusCircle, CreditCard, Check, Upload, FileText, Trash, UserCircle, Phone, MapPin, Camera, Download, FileDown, LayoutDashboard, ChevronLeft, ChevronRight, PanelLeftClose, PanelLeft, AlertCircle, RefreshCw, ClipboardList, CheckCircle2, XCircle, MessageSquare, Undo2, ShieldAlert, Radar, ArrowRight, ListChecks
+  Calculator, Calendar, User, Briefcase, CheckCircle, Clock, UserPlus, Mail, Lock, Percent, Building, PlusCircle, CreditCard, Check, Upload, FileText, Trash, UserCircle, Phone, MapPin, Camera, Download, FileDown, LayoutDashboard, ChevronLeft, ChevronRight, PanelLeftClose, PanelLeft, AlertCircle, RefreshCw, ClipboardList, CheckCircle2, XCircle, MessageSquare, Undo2, ShieldAlert, Radar, ArrowRight, ListChecks, KeyRound
 } from 'lucide-react'
 import logo from '../imgs/logo.png'
 import Ticker from '../components/Ticker'
@@ -1232,6 +1232,14 @@ const AdminDashboard = () => {
     senha: ''
   })
 
+  // Modal "Gerar acesso" pra cliente já existente (botão no card)
+  const [acessoForm, setAcessoForm] = useState({ email: '', senha: '' })
+  const [gerandoAcesso, setGerandoAcesso] = useState(false)
+
+  // Overlay bloqueante "Carregando dados..." só na PRIMEIRA carga; recargas
+  // posteriores mostram indicador discreto sem travar a tela.
+  const [primeiraCargaConcluida, setPrimeiraCargaConcluida] = useState(false)
+
   const complementadorVazio = {
     nome: '',
     cpf: '',
@@ -1533,49 +1541,53 @@ const AdminDashboard = () => {
     setLoading(true)
     
     try {
-      // Buscar todos os dados em paralelo
+      // Buscar TODOS os dados em paralelo — inclusive tabelas de domínio, fotos,
+      // complementadores e o paginado de pagamentos. Antes eram 5 rodadas
+      // sequenciais de round-trips; o paginado (o mais lento) agora corre junto.
       const [
         { data: corretoresData, error: corretoresError },
         { data: vendasData, error: vendasError },
         { data: empreendimentosData, error: empreendimentosError },
-        { data: clientesData, error: clientesError }
+        { data: clientesData, error: clientesError },
+        { data: cargosData, error: cargosError },
+        { data: coordenadorasData },
+        { data: fotosData },
+        { data: complementadoresData, error: complementadoresError },
+        // Pagamentos pro-soluto (sem JOINs) — paginado com ordenação total.
+        // ver .claude/rules/leitura-de-listas-e-refetch.md: o loop antigo paginava sem
+        // ORDER BY (ordem instável entre páginas) e fazia break silencioso em erro
+        // (dado parcial apresentado como completo).
+        pagamentosData
       ] = await Promise.all([
         supabase.from('usuarios').select('*').eq('tipo', 'corretor'),
         supabase.from('vendas').select('*').or('excluido.eq.false,excluido.is.null'),
         supabase.from('empreendimentos').select('*'),
-        supabase.from('clientes').select('*').or('ativo.eq.true,ativo.is.null')
+        supabase.from('clientes').select('*').or('ativo.eq.true,ativo.is.null'),
+        supabase.from('cargos_empreendimento').select('*'),
+        supabase.from('coordenadoras').select('*').eq('ativo', true).order('nome'),
+        supabase.from('empreendimento_fotos')
+          .select('empreendimento_id, url, categoria, destaque, ordem')
+          .in('categoria', ['fachada', 'logo'])
+          .order('destaque', { ascending: false })
+          .order('ordem', { ascending: true }),
+        supabase.from('complementadores_renda').select('*'),
+        fetchAllPaginated((from, to) =>
+          supabase
+            .from('pagamentos_prosoluto')
+            .select('*')
+            .order('id', { ascending: true })
+            .range(from, to)
+        , { concurrency: 8 })
       ])
 
       if (corretoresError) console.error('Erro ao buscar corretores:', corretoresError)
       if (vendasError) console.error('Erro ao buscar vendas:', vendasError)
       if (empreendimentosError) console.error('Erro ao buscar empreendimentos:', empreendimentosError)
       if (clientesError) console.error('Erro ao buscar clientes:', clientesError)
+      if (cargosError) console.error('Erro ao buscar cargos:', cargosError)
+      if (complementadoresError) console.error('Erro ao buscar complementadores:', complementadoresError)
 
-      // Buscar cargos separadamente
-      const { data: cargosData, error: cargosError } = await supabase
-        .from('cargos_empreendimento')
-        .select('*')
-      
-      if (cargosError) {
-        console.error('Erro ao buscar cargos:', cargosError)
-      }
-
-      // Buscar coordenadoras (2º seletor do relatório quando cargo = Coordenadora)
-      const { data: coordenadorasData } = await supabase
-        .from('coordenadoras').select('*').eq('ativo', true).order('nome')
       setCoordenadoras(coordenadorasData || [])
-
-      // Buscar pagamentos pro-soluto (sem JOINs) — paginado com ordenação total.
-      // ver .claude/rules/leitura-de-listas-e-refetch.md: o loop antigo paginava sem
-      // ORDER BY (ordem instável entre páginas) e fazia break silencioso em erro
-      // (dado parcial apresentado como completo).
-      const pagamentosData = await fetchAllPaginated((from, to) =>
-        supabase
-          .from('pagamentos_prosoluto')
-          .select('*')
-          .order('id', { ascending: true })
-          .range(from, to)
-      )
       
      // console.log('Pagamentos do banco:', pagamentosData.length, 'registros')
       
@@ -1599,14 +1611,6 @@ const AdminDashboard = () => {
         tipoIdPagamento: pagamentosData?.[0]?.venda_id ? typeof pagamentosData[0].venda_id : 'N/A'
       })
 */
-      // Buscar fotos de fachada para cada empreendimento
-      const { data: fotosData } = await supabase
-        .from('empreendimento_fotos')
-        .select('empreendimento_id, url, categoria, destaque, ordem')
-        .in('categoria', ['fachada', 'logo'])
-        .order('destaque', { ascending: false })
-        .order('ordem', { ascending: true })
-
       // Associar cargos e fotos aos empreendimentos
       const empreendimentosComCargos = (empreendimentosData || []).map(emp => {
         // Buscar foto de fachada (prioridade: destaque > primeira)
@@ -1697,15 +1701,6 @@ const AdminDashboard = () => {
         }
       })
 
-      // Buscar complementadores de renda
-      const { data: complementadoresData, error: complementadoresError } = await supabase
-        .from('complementadores_renda')
-        .select('*')
-      
-      if (complementadoresError) {
-        console.error('Erro ao buscar complementadores:', complementadoresError)
-      }
-
       // Associar complementadores aos clientes
       const clientesComComplementadores = (clientesData || []).map(cliente => ({
         ...cliente,
@@ -1731,7 +1726,7 @@ const AdminDashboard = () => {
       setMessage({ type: 'error', text: `Erro ao carregar dados: ${error.message || 'Erro desconhecido'}. Tente recarregar a página.` })
     } finally {
       setLoading(false)
-     // console.log('🏁 fetchData finalizado')
+      setPrimeiraCargaConcluida(true)
     }
   }
 
@@ -3883,6 +3878,67 @@ const AdminDashboard = () => {
     }
   }
 
+  // Gestão de acesso do cliente via edge function `admin-cliente-acesso` (service role).
+  // O front NUNCA usa signUp pra isso: signUp trocaria a sessão do admin pela do
+  // cliente recém-criado, e anon key não pode trocar senha de outro usuário.
+  const chamarAdminClienteAcesso = async (body) => {
+    const { data, error } = await supabase.functions.invoke('admin-cliente-acesso', { body })
+    if (error) {
+      let msg = error.message
+      try {
+        const ctx = await error.context?.json?.()
+        if (ctx?.error) msg = ctx.error
+      } catch { /* mantém msg genérica */ }
+      throw new Error(msg)
+    }
+    if (data?.error) throw new Error(data.error)
+    return data
+  }
+
+  const criarAcessoCliente = async ({ clienteId, email, senha }) => {
+    const data = await chamarAdminClienteAcesso({ acao: 'criar', cliente_id: clienteId, email, senha })
+    return data?.user_id
+  }
+
+  // Criar acesso OU trocar senha de cliente já existente (modal do card)
+  const handleGerarAcesso = async () => {
+    const temAcesso = !!selectedItem?.user_id
+    if (!temAcesso && !acessoForm.email) {
+      setMessage({ type: 'error', text: 'E-mail é obrigatório para criar acesso' })
+      return
+    }
+    if (!acessoForm.senha || acessoForm.senha.length < 6) {
+      setMessage({ type: 'error', text: 'Senha deve ter no mínimo 6 caracteres' })
+      return
+    }
+    setGerandoAcesso(true)
+    try {
+      if (temAcesso) {
+        await chamarAdminClienteAcesso({ acao: 'trocar_senha', cliente_id: selectedItem.id, senha: acessoForm.senha })
+        setMessage({ type: 'success', text: `Senha de ${selectedItem.nome_completo} alterada com sucesso!` })
+      } else {
+        const userId = await criarAcessoCliente({
+          clienteId: selectedItem.id,
+          email: acessoForm.email,
+          senha: acessoForm.senha
+        })
+        // Refetch escopado (ver .claude/rules/leitura-de-listas-e-refetch.md):
+        // merge do cliente no estado em vez de recarregar o banco inteiro.
+        setClientes(prev => prev.map(c => (
+          c.id === selectedItem.id ? { ...c, user_id: userId, email: acessoForm.email } : c
+        )))
+        setMessage({ type: 'success', text: `Acesso criado! ${selectedItem.nome_completo} já pode fazer login com ${acessoForm.email}` })
+      }
+      setShowModal(false)
+      setAcessoForm({ email: '', senha: '' })
+    } catch (error) {
+      console.error('Erro ao gerenciar acesso:', error)
+      setMessage({ type: 'error', text: 'Erro ao gerenciar acesso: ' + error.message })
+    } finally {
+      setGerandoAcesso(false)
+    }
+  }
+
   // Salvar cliente
   const handleSaveCliente = async () => {
     if (!clienteForm.nome_completo) {
@@ -3979,82 +4035,12 @@ const AdminDashboard = () => {
       let acessoCriado = false
       if (clienteForm.criar_acesso && !selectedItem?.user_id) {
         try {
-          // Criar usuário na autenticação
-          // Nota: Para sistemas internos, é recomendado desabilitar a confirmação de email
-          // no painel do Supabase (Authentication > Settings > Email Auth > Confirm email)
-          const { data: authData, error: authError } = await supabase.auth.signUp({
+          await criarAcessoCliente({
+            clienteId,
             email: clienteForm.email,
-            password: clienteForm.senha,
-            options: {
-              data: {
-                nome: clienteForm.nome_completo,
-                role: 'cliente'
-              },
-              emailRedirectTo: undefined // Não redirecionar para confirmação
-            }
+            senha: clienteForm.senha
           })
-          
-          if (authError) {
-            // Se o erro for sobre email já existente, tentar fazer login
-            if (authError.message && authError.message.includes('already registered')) {
-              // Tentar fazer login para obter o user_id
-              const { data: loginData, error: loginError } = await supabase.auth.signInWithPassword({
-                email: clienteForm.email,
-                password: clienteForm.senha
-              })
-              
-              if (!loginError && loginData?.user?.id) {
-                // Usar o user_id do login
-                const userId = loginData.user.id
-                
-                // Atualizar cliente com user_id
-                await supabase
-                  .from('clientes')
-                  .update({ user_id: userId })
-                  .eq('id', clienteId)
-                
-                // Criar/atualizar registro na tabela usuarios
-                await supabase
-                  .from('usuarios')
-                  .upsert({
-                    id: userId,
-                    nome: clienteForm.nome_completo,
-                    email: clienteForm.email,
-                    tipo: 'cliente',
-                    ativo: true
-                  }, { onConflict: 'id' })
-                
-                acessoCriado = true
-              } else {
-                throw new Error('Email já cadastrado, mas não foi possível fazer login. Verifique a senha ou peça ao administrador para redefinir.')
-              }
-            } else {
-              throw authError
-            }
-          }
-          
-          const userId = authData.user?.id
-          
-          if (userId) {
-            // Atualizar cliente com user_id
-            await supabase
-              .from('clientes')
-              .update({ user_id: userId })
-              .eq('id', clienteId)
-            
-            // Criar registro na tabela usuarios
-            await supabase
-              .from('usuarios')
-              .insert([{
-                id: userId,
-                nome: clienteForm.nome_completo,
-                email: clienteForm.email,
-                tipo: 'cliente',
-                ativo: true
-              }])
-            
-            acessoCriado = true
-          }
+          acessoCriado = true
         } catch (acessoError) {
           console.error('Erro ao criar acesso:', acessoError)
           // Não impede o salvamento do cliente, apenas mostra aviso
@@ -5914,8 +5900,8 @@ const AdminDashboard = () => {
 
   return (
     <div className="dashboard-container admin-shell">
-      {/* Barra de Carregamento Global */}
-      {(loading || authLoading) && (
+      {/* Barra de Carregamento Global — bloqueia SÓ a primeira carga */}
+      {(loading || authLoading) && !primeiraCargaConcluida && (
         <div className="global-loading-overlay">
           <div className="global-loading-content">
             <div className="loading-spinner-large"></div>
@@ -5924,6 +5910,14 @@ const AdminDashboard = () => {
               <div className="loading-progress-fill"></div>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Recargas posteriores: indicador discreto, sem travar a tela */}
+      {loading && primeiraCargaConcluida && (
+        <div className="global-loading-mini">
+          <RefreshCw size={14} className="loading-mini-spin" />
+          <span>Atualizando dados...</span>
         </div>
       )}
       
@@ -8454,7 +8448,19 @@ const AdminDashboard = () => {
                         <p className="cliente-cpf">{cliente.cpf || 'CPF não informado'}</p>
                       </div>
                       <div className="cliente-actions">
-                        <button 
+                        <button
+                          className="action-btn access small"
+                          onClick={() => {
+                            setSelectedItem(cliente)
+                            setAcessoForm({ email: cliente.email || '', senha: '' })
+                            setModalType('gerar-acesso-cliente')
+                            setShowModal(true)
+                          }}
+                          title={cliente.user_id ? 'Gerenciar acesso (trocar senha)' : 'Gerar acesso ao sistema'}
+                        >
+                          <KeyRound size={16} />
+                        </button>
+                        <button
                           className="action-btn view small"
                           onClick={() => {
                             // Buscar vendas do cliente
@@ -8515,6 +8521,9 @@ const AdminDashboard = () => {
                       </div>
                     </div>
                     <div className="cliente-badges">
+                      {cliente.user_id
+                        ? <span className="badge acesso-ok"><KeyRound size={11} /> Tem acesso</span>
+                        : <span className="badge acesso-nao">Sem acesso</span>}
                       {cliente.possui_3_anos_fgts && <span className="badge fgts">3+ anos FGTS</span>}
                       {cliente.beneficiado_subsidio_fgts && <span className="badge subsidio">Subsidiado FGTS</span>}
                       {cliente.tem_complemento_renda && <span className="badge complemento">{cliente.complementadores?.length || 0} Complementador(es)</span>}
@@ -12073,6 +12082,92 @@ const AdminDashboard = () => {
       )}
 
       {/* Modal de Visualização de Cliente */}
+      {showModal && modalType === 'gerar-acesso-cliente' && selectedItem && (
+        <div className="modal-overlay" onClick={() => setShowModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '480px' }}>
+            <div className="modal-header">
+              <h2>
+                <KeyRound size={20} style={{ marginRight: '8px' }} />
+                {selectedItem.user_id ? 'Gerenciar Acesso' : 'Gerar Acesso ao Sistema'}
+              </h2>
+              <button className="close-btn" onClick={() => setShowModal(false)}>
+                <X size={24} />
+              </button>
+            </div>
+            <div className="modal-body" style={{ padding: '24px' }}>
+              {selectedItem.user_id ? (
+                <>
+                  <p style={{ margin: '0 0 20px', color: '#94a3b8', fontSize: '14px' }}>
+                    Definir uma nova senha de login para{' '}
+                    <strong style={{ color: '#f5f5f5' }}>{selectedItem.nome_completo}</strong>.
+                  </p>
+                  <div className="acesso-info success" style={{ marginBottom: '16px' }}>
+                    <CheckCircle size={16} />
+                    <span>Login: {selectedItem.email || 'e-mail não informado'}</span>
+                  </div>
+                  <div className="form-group">
+                    <label>Nova senha *</label>
+                    <input
+                      type="password"
+                      placeholder="Mínimo 6 caracteres"
+                      value={acessoForm.senha}
+                      onChange={(e) => setAcessoForm(prev => ({ ...prev, senha: e.target.value }))}
+                    />
+                    <small className="form-hint">
+                      A senha atual do cliente será substituída imediatamente
+                    </small>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <p style={{ margin: '0 0 20px', color: '#94a3b8', fontSize: '14px' }}>
+                    Criar login do portal do cliente para{' '}
+                    <strong style={{ color: '#f5f5f5' }}>{selectedItem.nome_completo}</strong>.
+                    O cliente entrará pela tela de login normal com o e-mail e a senha abaixo.
+                  </p>
+                  <div className="form-group">
+                    <label>E-mail de login *</label>
+                    <input
+                      type="email"
+                      placeholder="email@exemplo.com"
+                      value={acessoForm.email}
+                      onChange={(e) => setAcessoForm(prev => ({ ...prev, email: e.target.value }))}
+                    />
+                    {!selectedItem.email && (
+                      <small className="form-hint warning">
+                        Cliente sem e-mail no cadastro — o e-mail informado será salvo no cadastro.
+                      </small>
+                    )}
+                  </div>
+                  <div className="form-group">
+                    <label>Senha de acesso *</label>
+                    <input
+                      type="password"
+                      placeholder="Mínimo 6 caracteres"
+                      value={acessoForm.senha}
+                      onChange={(e) => setAcessoForm(prev => ({ ...prev, senha: e.target.value }))}
+                    />
+                    <small className="form-hint">
+                      A senha será usada pelo cliente para fazer login no sistema
+                    </small>
+                  </div>
+                </>
+              )}
+            </div>
+            <div className="modal-footer">
+              <button className="btn-secondary" onClick={() => setShowModal(false)} disabled={gerandoAcesso}>
+                Cancelar
+              </button>
+              <button className="btn-primary" onClick={handleGerarAcesso} disabled={gerandoAcesso}>
+                {gerandoAcesso
+                  ? 'Salvando...'
+                  : selectedItem.user_id ? 'Alterar senha' : 'Criar acesso'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {showModal && modalType === 'visualizar-cliente' && selectedItem && (
         <div className="modal-overlay" onClick={() => setShowModal(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '700px' }}>
