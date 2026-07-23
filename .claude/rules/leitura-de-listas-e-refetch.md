@@ -19,7 +19,10 @@ continuar correto quando linhas "sumirem" por permissão.
 1. **Toda leitura de lista potencialmente >1000 linhas usa `fetchAllPaginated`**
    ([src/utils/supabaseQuery.js](../../src/utils/supabaseQuery.js)). Término **SEMPRE** por
    página incompleta (`data.length < pageSize`) — **NUNCA** por count. Count só serve pra
-   dimensionar paralelismo, não pra terminar loop.
+   dimensionar paralelismo, não pra terminar loop. Para tabelas grandes, passe
+   `{ concurrency: N }` — depois da 1ª página, os lotes de N páginas são buscados em
+   paralelo (23k linhas: 24 round-trips sequenciais → ~4), mantendo o término por página
+   incompleta e o descarte das páginas do lote posteriores à incompleta.
 2. **`buildQuery` é FACTORY** — `(from, to) => supabase.from(...)...range(from, to)` retorna
    builder **novo** a cada página (builders do supabase-js são mutáveis; reusar instância
    acumula estado).

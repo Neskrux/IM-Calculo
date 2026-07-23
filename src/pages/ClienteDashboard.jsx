@@ -3,12 +3,13 @@ import { safeGet, safeSet } from '../utils/storage'
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { supabase } from '../lib/supabase'
-import { 
+import {
   Home, ShoppingBag, FileText, User as UserIcon, LogOut,
   Menu, X, ChevronLeft, ChevronRight, ChevronDown, Calendar, MapPin,
   Building, DollarSign, CheckCircle, Clock, Download,
   CreditCard, FileCheck, AlertCircle, Eye, Upload,
-  IdCard, Copy, Heart, Image as ImageIcon
+  IdCard, Copy, Heart, Image as ImageIcon,
+  MessageCircle, Phone, Pencil, Save, Lock, ShieldCheck, Building2
 } from 'lucide-react'
 import logo from '../imgs/logo.png'
 import Ticker from '../components/Ticker'
@@ -17,6 +18,22 @@ import { parseDataLocal, formatDataBR } from '../utils/datas'
 import '../styles/ClienteDashboard.css'
 import { sortParcelas } from '../utils/parcelasSort'
 import ParcelaCard from '../components/corretor/ParcelaCard'
+import { isPago, isPendente, isAtivo } from '../utils/comissaoCalculator'
+import { gerarExtratoClientePDF } from '../utils/extratoClientePDF'
+
+// Labels das categorias de fotos (espelha foto_categorias — migrations 005/007)
+const CATEGORIA_LABELS = {
+  fachada: 'Fachada',
+  interior: 'Áreas Internas',
+  apartamento: 'Apartamento Modelo',
+  planta: 'Planta Baixa',
+  area_lazer: 'Área de Lazer',
+  area_comum: 'Áreas Comuns',
+  implantacao: 'Implantação',
+  perspectiva: 'Perspectiva 3D',
+  obra: 'Andamento da Obra',
+  outros: 'Outros',
+}
 
 const ClienteDashboard = () => {
   const { user, userProfile, signOut } = useAuth()
@@ -44,6 +61,19 @@ const ClienteDashboard = () => {
   const [compraExpandida, setCompraExpandida] = useState(null)
   const [gruposExpandidos, setGruposExpandidos] = useState({})
   const [visaoParcelas, setVisaoParcelas] = useState('calendario')
+  const [editandoPerfil, setEditandoPerfil] = useState(false)
+  const [perfilForm, setPerfilForm] = useState({})
+  const [salvandoPerfil, setSalvandoPerfil] = useState(false)
+  const [senhaForm, setSenhaForm] = useState({ nova: '', confirmar: '' })
+  const [salvandoSenha, setSalvandoSenha] = useState(false)
+  const [fotosEmpreendimentos, setFotosEmpreendimentos] = useState([])
+  const [empreendimentosTodos, setEmpreendimentosTodos] = useState([])
+  const [filtroStatusPag, setFiltroStatusPag] = useState('todos')
+  const [filtroCompraPag, setFiltroCompraPag] = useState('todas')
+  // Modal de detalhes do empreendimento (galeria completa por categoria + lightbox)
+  const [empDetalhe, setEmpDetalhe] = useState(null)
+  const [catAtivaDetalhe, setCatAtivaDetalhe] = useState('todas')
+  const [fotoAmpliada, setFotoAmpliada] = useState(null)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
     const saved = safeGet('cliente-sidebar-collapsed')
     return saved === 'true'
@@ -81,6 +111,20 @@ const ClienteDashboard = () => {
     setLoading(true)
     
     try {
+      // Catálogo de empreendimentos + fotos (aba Empreendimentos é vitrine de TODOS,
+      // não só dos que o cliente comprou) — dispara em paralelo com o resto
+      const catalogoPromise = Promise.all([
+        supabase
+          .from('empreendimentos')
+          .select('id, nome, descricao, logo_url, ativo, garantia_url')
+          .order('nome'),
+        supabase
+          .from('empreendimento_fotos')
+          .select('empreendimento_id, url, categoria, descricao, ordem, destaque')
+          .order('destaque', { ascending: false })
+          .order('ordem', { ascending: true })
+      ])
+
       // Buscar dados do cliente
       const { data: clienteData, error: clienteError } = await supabase
         .from('clientes')
@@ -88,11 +132,16 @@ const ClienteDashboard = () => {
         .eq('user_id', user.id)
         .maybeSingle()
 
+      const [{ data: empTodosData, error: empTodosError }, { data: fotosData }] = await catalogoPromise
+      if (empTodosError) console.error('Erro ao buscar empreendimentos:', empTodosError)
+      setEmpreendimentosTodos(empTodosData || [])
+      setFotosEmpreendimentos(fotosData || [])
+
       if (clienteError) {
         console.error('Erro ao buscar cliente:', clienteError)
       } else if (clienteData) {
         setCliente(clienteData)
-        
+
         // Buscar compras do cliente
         // Nota: A coluna cliente_id precisa existir na tabela vendas
         // Se não existir, execute: ALTER TABLE vendas ADD COLUMN IF NOT EXISTS cliente_id UUID REFERENCES clientes(id);
@@ -100,6 +149,7 @@ const ClienteDashboard = () => {
           .from('vendas')
           .select('*')
           .eq('cliente_id', clienteData.id)
+          .not('excluido', 'is', true)
           .order('data_venda', { ascending: false })
         
         // Buscar pagamentos das compras
@@ -119,34 +169,19 @@ const ClienteDashboard = () => {
         
         // Buscar dados relacionados separadamente se necessário
         if (comprasData && comprasData.length > 0) {
-          const empreendimentoIds = [...new Set(comprasData.map(c => c.empreendimento_id).filter(Boolean))]
           const corretorIds = [...new Set(comprasData.map(c => c.corretor_id).filter(Boolean))]
-          
-          let empreendimentosMap = {}
+
+          // Empreendimentos vêm do catálogo já carregado acima
+          const empreendimentosMap = (empTodosData || []).reduce((acc, emp) => {
+            acc[emp.id] = emp
+            return acc
+          }, {})
           let corretoresMap = {}
-          
-          if (empreendimentoIds.length > 0) {
-            const { data: empData, error: empError } = await supabase
-              .from('empreendimentos')
-              .select('id, nome')
-              .in('id', empreendimentoIds)
-            
-            if (empError) {
-              console.error('Erro ao buscar empreendimentos:', empError)
-            }
-            
-            if (empData) {
-              empreendimentosMap = empData.reduce((acc, emp) => {
-                acc[emp.id] = emp
-                return acc
-              }, {})
-            }
-          }
-          
+
           if (corretorIds.length > 0) {
             const { data: corrData } = await supabase
               .from('usuarios')
-              .select('id, nome')
+              .select('id, nome, telefone, email')
               .in('id', corretorIds)
             if (corrData) {
               corretoresMap = corrData.reduce((acc, corr) => {
@@ -223,7 +258,9 @@ const ClienteDashboard = () => {
       sinal: [],
       entrada: [],
       parcela_entrada: [],
-      balao: []
+      balao: [],
+      comissao_integral: [],
+      bens: []
     }
 
     pagamentos.forEach(pagamento => {
@@ -246,7 +283,9 @@ const ClienteDashboard = () => {
       sinal: 'Sinal',
       entrada: 'Entrada',
       parcela_entrada: 'Parcelas de Entrada',
-      balao: 'Balões'
+      balao: 'Balões',
+      comissao_integral: 'Entrada (à vista)',
+      bens: 'Bens'
     }
     return labels[tipo] || tipo
   }
@@ -282,6 +321,172 @@ const ClienteDashboard = () => {
     navigate('/cliente/compras')
   }
 
+  // Resumo financeiro REAL da compra — derivado das parcelas (pagamentos_prosoluto),
+  // nunca de vendas.status/valor_venda. Ver .claude/rules/visualizacao-totais.md.
+  const resumoFinanceiroCompra = (compraId) => {
+    const parcelas = pagamentos.filter(p => String(p.venda_id) === String(compraId)).filter(isAtivo)
+    const somar = (lista) => lista.reduce((acc, p) => acc + (parseFloat(p.valor) || 0), 0)
+    const pagas = parcelas.filter(isPago)
+    const totalPlano = somar(parcelas)
+    const totalPago = somar(pagas)
+    const proxima = parcelas
+      .filter(isPendente)
+      .filter(p => p.data_prevista)
+      .sort((a, b) => (a.data_prevista < b.data_prevista ? -1 : 1))[0] || null
+    return {
+      totalPlano,
+      totalPago,
+      totalPendente: totalPlano - totalPago,
+      pct: totalPlano > 0 ? (totalPago / totalPlano) * 100 : 0,
+      qtdTotal: parcelas.length,
+      qtdPagas: pagas.length,
+      proxima,
+      quitado: parcelas.length > 0 && pagas.length === parcelas.length,
+    }
+  }
+
+  // Tag de status da compra derivada das parcelas (não de vendas.status agregado).
+  const statusCompra = (compra) => {
+    if (compra.status === 'distrato') return { classe: 'distrato', Icone: X, label: 'Distrato' }
+    const r = resumoFinanceiroCompra(compra.id)
+    if (r.qtdTotal === 0) return { classe: 'pendente', Icone: Clock, label: 'Pendente' }
+    if (r.quitado) return { classe: 'pago', Icone: CheckCircle, label: 'Quitado' }
+    return { classe: 'pendente', Icone: Clock, label: `${r.qtdPagas}/${r.qtdTotal} pagas` }
+  }
+
+  const baixarExtratoCompra = (compra) => {
+    gerarExtratoClientePDF({
+      cliente,
+      compra,
+      titulo: tituloCompra(compra),
+      parcelas: pagamentos.filter(p => String(p.venda_id) === String(compra.id)),
+      distratada: compra.status === 'distrato',
+    })
+  }
+
+  // Link de WhatsApp a partir do telefone BR (assume DDI 55 quando ausente).
+  const linkWhatsApp = (telefone) => {
+    const digitos = String(telefone || '').replace(/\D/g, '')
+    if (!digitos) return null
+    return `https://wa.me/${digitos.length <= 11 ? `55${digitos}` : digitos}`
+  }
+
+  // Corretores únicos das compras — canal de contato do cliente.
+  const corretoresDasCompras = () => {
+    const mapa = new Map()
+    compras.forEach(c => {
+      if (c.corretores?.id && c.corretores?.nome && !mapa.has(c.corretores.id)) {
+        mapa.set(c.corretores.id, c.corretores)
+      }
+    })
+    return [...mapa.values()]
+  }
+
+  // ── Detalhe do empreendimento (galeria completa) ──
+  // Fotos de um empreendimento (logo fica de fora — não é foto de galeria)
+  const fotosDoEmp = (empId) => fotosEmpreendimentos.filter(
+    f => String(f.empreendimento_id) === String(empId) && f.categoria !== 'logo'
+  )
+
+  const abrirDetalheEmp = (emp) => {
+    if (!emp) return
+    setEmpDetalhe(emp)
+    setCatAtivaDetalhe('todas')
+    setFotoAmpliada(null)
+  }
+
+  const fecharDetalheEmp = () => {
+    setEmpDetalhe(null)
+    setFotoAmpliada(null)
+  }
+
+  const fotosDetalhe = empDetalhe ? fotosDoEmp(empDetalhe.id) : []
+  const categoriasDetalhe = [...new Set(fotosDetalhe.map(f => f.categoria || 'outros'))]
+  const fotosFiltradasDetalhe = catAtivaDetalhe === 'todas'
+    ? fotosDetalhe
+    : fotosDetalhe.filter(f => (f.categoria || 'outros') === catAtivaDetalhe)
+
+  // Navegação por teclado no lightbox (Esc fecha, setas navegam)
+  useEffect(() => {
+    if (fotoAmpliada === null) return
+    const total = fotosFiltradasDetalhe.length
+    if (total === 0) return
+    const handler = (e) => {
+      if (e.key === 'Escape') setFotoAmpliada(null)
+      if (e.key === 'ArrowRight') setFotoAmpliada(i => (i + 1) % total)
+      if (e.key === 'ArrowLeft') setFotoAmpliada(i => (i - 1 + total) % total)
+    }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [fotoAmpliada, fotosFiltradasDetalhe.length])
+
+  // Campos que o próprio cliente pode corrigir. Identidade (CPF/RG/nascimento),
+  // email de login e renda continuam só com o admin.
+  const CAMPOS_PERFIL_EDITAVEIS = [
+    { campo: 'telefone', label: 'Telefone' },
+    { campo: 'endereco', label: 'Endereço' },
+    { campo: 'cep', label: 'CEP' },
+    { campo: 'profissao', label: 'Profissão' },
+    { campo: 'empresa_trabalho', label: 'Empresa' },
+  ]
+
+  const iniciarEdicaoPerfil = () => {
+    setPerfilForm(Object.fromEntries(CAMPOS_PERFIL_EDITAVEIS.map(({ campo }) => [campo, cliente?.[campo] || ''])))
+    setEditandoPerfil(true)
+  }
+
+  const salvarPerfil = async () => {
+    setSalvandoPerfil(true)
+    try {
+      const updates = Object.fromEntries(
+        CAMPOS_PERFIL_EDITAVEIS.map(({ campo }) => [campo, perfilForm[campo]?.trim() || null])
+      )
+      const { data, error } = await supabase
+        .from('clientes')
+        .update(updates)
+        .eq('id', cliente.id)
+        .eq('user_id', user.id)
+        .select('id')
+      if (error) throw error
+      // 0 linhas afetadas (ex.: RLS bloqueou) volta sem error — não fingir sucesso.
+      if (!data || data.length === 0) throw new Error('Nenhum registro atualizado')
+      setCliente(prev => ({ ...prev, ...updates }))
+      setEditandoPerfil(false)
+    } catch (error) {
+      console.error('Erro ao salvar perfil:', error)
+      alert('Erro ao salvar os dados. Tente novamente.')
+    } finally {
+      setSalvandoPerfil(false)
+    }
+  }
+
+  const trocarSenha = async () => {
+    if (!senhaForm.nova || senhaForm.nova.length < 8) {
+      alert('A nova senha precisa ter pelo menos 8 caracteres.')
+      return
+    }
+    if (senhaForm.nova !== senhaForm.confirmar) {
+      alert('As senhas não conferem.')
+      return
+    }
+    setSalvandoSenha(true)
+    try {
+      const { error } = await supabase.auth.updateUser({ password: senhaForm.nova })
+      if (error) throw error
+      setSenhaForm({ nova: '', confirmar: '' })
+      alert('Senha alterada com sucesso!')
+    } catch (error) {
+      console.error('Erro ao trocar senha:', error)
+      alert(
+        error.message?.includes('different from the old')
+          ? 'A nova senha precisa ser diferente da atual.'
+          : 'Erro ao alterar a senha. Tente novamente.'
+      )
+    } finally {
+      setSalvandoSenha(false)
+    }
+  }
+
   // Os 6 documentos do cliente (mesma lista do contador de "documentos enviados").
   const DOCS_CLIENTE = [
     { campo: 'rg_frente_url', label: 'RG Frente' },
@@ -308,8 +513,10 @@ const ClienteDashboard = () => {
   // Dados dinâmicos para o Ticker
   const getTickerData = () => {
     const totalCompras = compras.reduce((acc, c) => acc + (parseFloat(c.valor_venda) || 0), 0)
-    const comprasPagas = compras.filter(c => c.status === 'pago')
-    const totalJaPago = comprasPagas.reduce((acc, c) => acc + (parseFloat(c.valor_venda) || 0), 0)
+    // Total já pago vem das PARCELAS pagas (pagamentos_prosoluto), nunca do
+    // status agregado da venda — ver .claude/rules/visualizacao-totais.md.
+    const parcelasPagas = pagamentos.filter(isAtivo).filter(isPago)
+    const totalJaPago = parcelasPagas.reduce((acc, p) => acc + (parseFloat(p.valor) || 0), 0)
     const comprasMes = compras.filter(c => {
       const dataVenda = parseDataLocal(c.data_venda)
       const hoje = new Date()
@@ -330,8 +537,8 @@ const ClienteDashboard = () => {
       {
         name: 'TOTAL JÁ PAGO',
         value: formatTicker(totalJaPago),
-        change: comprasPagas.length > 0 ? `${comprasPagas.length} compras` : '0',
-        type: comprasPagas.length > 0 ? 'positive' : 'neutral'
+        change: parcelasPagas.length > 0 ? `${parcelasPagas.length} parcelas` : '0',
+        type: parcelasPagas.length > 0 ? 'positive' : 'neutral'
       },
       {
         name: 'TOTAL EM COMPRAS',
@@ -599,7 +806,7 @@ const ClienteDashboard = () => {
             <Home size={20} />
             <span>Dashboard</span>
           </button>
-          <button 
+          <button
             className={`nav-item ${activeTab === 'compras' ? 'active' : ''}`}
             onClick={() => navigate('/cliente/compras')}
             title="Minhas Compras"
@@ -607,7 +814,39 @@ const ClienteDashboard = () => {
             <ShoppingBag size={20} />
             <span>Minhas Compras</span>
           </button>
-          <button 
+          <button
+            className={`nav-item ${activeTab === 'pagamentos' ? 'active' : ''}`}
+            onClick={() => navigate('/cliente/pagamentos')}
+            title="Pagamentos"
+          >
+            <CreditCard size={20} />
+            <span>Pagamentos</span>
+          </button>
+          <button
+            className={`nav-item ${activeTab === 'imovel' ? 'active' : ''}`}
+            onClick={() => navigate('/cliente/imovel')}
+            title="Meu Imóvel"
+          >
+            <Building size={20} />
+            <span>Meu Imóvel</span>
+          </button>
+          <button
+            className={`nav-item ${activeTab === 'empreendimentos' ? 'active' : ''}`}
+            onClick={() => navigate('/cliente/empreendimentos')}
+            title="Empreendimentos"
+          >
+            <Building2 size={20} />
+            <span>Empreendimentos</span>
+          </button>
+          <button
+            className={`nav-item ${activeTab === 'garantia' ? 'active' : ''}`}
+            onClick={() => navigate('/cliente/garantia')}
+            title="Garantia"
+          >
+            <ShieldCheck size={20} />
+            <span>Garantia</span>
+          </button>
+          <button
             className={`nav-item ${activeTab === 'documentos' ? 'active' : ''}`}
             onClick={() => navigate('/cliente/documentos')}
             title="Documentos"
@@ -661,6 +900,10 @@ const ClienteDashboard = () => {
           <h1>
             {activeTab === 'dashboard' && 'Dashboard'}
             {activeTab === 'compras' && 'Minhas Compras'}
+            {activeTab === 'pagamentos' && 'Pagamentos'}
+            {activeTab === 'imovel' && 'Meu Imóvel'}
+            {activeTab === 'empreendimentos' && 'Empreendimentos'}
+            {activeTab === 'garantia' && 'Garantia'}
             {activeTab === 'documentos' && 'Meus Documentos'}
             {activeTab === 'perfil' && 'Meu Perfil'}
           </h1>
@@ -705,6 +948,19 @@ const ClienteDashboard = () => {
                   <div className="stat-card-decoration"></div>
                 </div>
 
+                <div className="stat-card-cliente primary">
+                  <div className="stat-card-icon">
+                    <CheckCircle size={28} />
+                  </div>
+                  <div className="stat-card-content">
+                    <span className="stat-card-label">Valor Já Pago</span>
+                    <span className="stat-card-value">
+                      {formatCurrency(pagamentos.filter(isAtivo).filter(isPago).reduce((acc, p) => acc + (parseFloat(p.valor) || 0), 0))}
+                    </span>
+                  </div>
+                  <div className="stat-card-decoration"></div>
+                </div>
+
                 <div className="stat-card-cliente info">
                   <div className="stat-card-icon">
                     <FileText size={28} />
@@ -712,12 +968,7 @@ const ClienteDashboard = () => {
                   <div className="stat-card-content">
                     <span className="stat-card-label">Documentos</span>
                     <span className="stat-card-value">
-                      {[
-                        cliente.rg_frente_url,
-                        cliente.cpf_url,
-                        cliente.comprovante_residencia_url,
-                        cliente.comprovante_renda_url
-                      ].filter(Boolean).length} enviados
+                      {DOCS_CLIENTE.filter(d => cliente[d.campo]).length} enviados
                     </span>
                   </div>
                   <div className="stat-card-decoration"></div>
@@ -749,19 +1000,15 @@ const ClienteDashboard = () => {
                               <Calendar size={14} />
                               {formatDate(compra.data_venda)}
                             </span>
-                            <span className={`status-tag ${compra.status}`}>
-                              {compra.status === 'pago' ? (
-                                <>
-                                  <CheckCircle size={12} />
-                                  Pago
-                                </>
-                              ) : (
-                                <>
-                                  <Clock size={12} />
-                                  Pendente
-                                </>
-                              )}
-                            </span>
+                            {(() => {
+                              const tag = statusCompra(compra)
+                              return (
+                                <span className={`status-tag ${tag.classe}`}>
+                                  <tag.Icone size={12} />
+                                  {tag.label}
+                                </span>
+                              )
+                            })()}
                           </div>
                         </div>
                         <div className="compra-valor-mini">
@@ -811,6 +1058,47 @@ const ClienteDashboard = () => {
                   </button>
                 </section>
               )}
+
+              {/* Contato — corretores das compras do cliente */}
+              {corretoresDasCompras().length > 0 && (
+                <section className="ultimas-compras-section">
+                  <h2>
+                    <MessageCircle size={24} />
+                    Fale com seu corretor
+                  </h2>
+                  <div className="contato-corretor-list">
+                    {corretoresDasCompras().map((corr) => (
+                      <div key={corr.id} className="contato-corretor-card">
+                        <div className="contato-corretor-avatar">
+                          {(corr.nome || 'C').charAt(0).toUpperCase()}
+                        </div>
+                        <div className="contato-corretor-info">
+                          <span className="contato-corretor-nome">{corr.nome}</span>
+                          {corr.telefone ? (
+                            <span className="contato-corretor-tel">
+                              <Phone size={13} />
+                              {corr.telefone}
+                            </span>
+                          ) : corr.email ? (
+                            <span className="contato-corretor-tel">{corr.email}</span>
+                          ) : null}
+                        </div>
+                        {corr.telefone && (
+                          <a
+                            className="btn-whatsapp"
+                            href={linkWhatsApp(corr.telefone)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            <MessageCircle size={16} />
+                            WhatsApp
+                          </a>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              )}
             </>
           )}
 
@@ -835,24 +1123,28 @@ const ClienteDashboard = () => {
                       <div className="compra-header">
                         <div className="compra-title">
                           <h3>{tituloCompra(compra)}</h3>
-                          <span className={`status-tag ${compra.status}`}>
-                            {compra.status === 'pago' ? (
-                              <>
-                                <CheckCircle size={12} />
-                                Pago
-                              </>
-                            ) : (
-                              <>
-                                <Clock size={12} />
-                                Pendente
-                              </>
-                            )}
-                          </span>
+                          {(() => {
+                            const tag = statusCompra(compra)
+                            return (
+                              <span className={`status-tag ${tag.classe}`}>
+                                <tag.Icone size={12} />
+                                {tag.label}
+                              </span>
+                            )
+                          })()}
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
                           <div className="compra-valor-principal">
                             {formatCurrency(compra.valor_venda)}
                           </div>
+                          <button
+                            className="btn-extrato-pdf"
+                            onClick={() => baixarExtratoCompra(compra)}
+                            title="Baixar extrato de pagamentos em PDF"
+                          >
+                            <Download size={16} />
+                            <span>Extrato</span>
+                          </button>
                           {/* Botão Ver mais */}
                           <div className="venda-expand-btn-wrapper">
                             <button 
@@ -884,6 +1176,18 @@ const ClienteDashboard = () => {
                             <div>
                               <span className="detail-label">CORRETOR</span>
                               <span className="detail-value">{compra.corretores.nome}</span>
+                              {compra.corretores.telefone && (
+                                <a
+                                  className="detail-whatsapp"
+                                  href={linkWhatsApp(compra.corretores.telefone)}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  title="Falar com o corretor no WhatsApp"
+                                >
+                                  <MessageCircle size={13} />
+                                  {compra.corretores.telefone}
+                                </a>
+                              )}
                             </div>
                           </div>
                         )}
@@ -912,6 +1216,52 @@ const ClienteDashboard = () => {
                           </div>
                         )}
                       </div>
+
+                      {/* Resumo financeiro — derivado das parcelas (pagamentos_prosoluto) */}
+                      {(() => {
+                        const r = resumoFinanceiroCompra(compra.id)
+                        if (r.qtdTotal === 0) return null
+                        // Distrato: contrato rescindido — mostrar só o histórico pago,
+                        // nunca "falta"/"próxima parcela" (parece cobrança ativa).
+                        if (compra.status === 'distrato') {
+                          if (r.qtdPagas === 0) return null
+                          return (
+                            <div className="compra-financeiro">
+                              <div className="compra-financeiro-header">
+                                <span className="compra-financeiro-titulo">Contrato distratado</span>
+                              </div>
+                              <div className="compra-financeiro-valores">
+                                <span>Total pago até o distrato: <strong className="valor-pago">{formatCurrency(r.totalPago)}</strong></span>
+                                <span className="compra-financeiro-contador">{r.qtdPagas} parcelas pagas</span>
+                              </div>
+                            </div>
+                          )
+                        }
+                        return (
+                          <div className="compra-financeiro">
+                            <div className="compra-financeiro-header">
+                              <span className="compra-financeiro-titulo">Plano de pagamentos</span>
+                              <span className="compra-financeiro-pct">{r.pct.toFixed(0)}% quitado</span>
+                            </div>
+                            <div className="progress-bar-cliente">
+                              <div className="progress-bar-fill" style={{ width: `${Math.min(100, r.pct)}%` }} />
+                            </div>
+                            <div className="compra-financeiro-valores">
+                              <span>Pago: <strong className="valor-pago">{formatCurrency(r.totalPago)}</strong></span>
+                              <span>Falta: <strong className="valor-pendente">{formatCurrency(r.totalPendente)}</strong></span>
+                              <span className="compra-financeiro-contador">{r.qtdPagas}/{r.qtdTotal} parcelas pagas</span>
+                            </div>
+                            {r.proxima && (
+                              <div className="compra-proxima-parcela">
+                                <Calendar size={14} />
+                                <span>
+                                  Próxima parcela: <strong>{formatCurrency(r.proxima.valor)}</strong> — vence {formatDataBR(r.proxima.data_prevista)}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        )
+                      })()}
 
                       {/* Seção expandida com detalhes dos pagamentos */}
                       {compraExpandida === compra.id && (
@@ -997,7 +1347,7 @@ const ClienteDashboard = () => {
                                   (() => {
                                     const pagamentosAtivosCompra = pagamentosCompra.filter((pagamento) => pagamento.status !== 'cancelado')
                                     const grupos = agruparPagamentosPorTipo(pagamentosAtivosCompra)
-                                    const tiposOrdem = ['sinal', 'entrada', 'parcela_entrada', 'balao']
+                                    const tiposOrdem = ['sinal', 'entrada', 'parcela_entrada', 'balao', 'comissao_integral', 'bens']
                                     return tiposOrdem.map(tipo => {
                                       const pagamentosGrupo = grupos[tipo]
                                       if (!pagamentosGrupo || pagamentosGrupo.length === 0) return null
@@ -1065,6 +1415,430 @@ const ClienteDashboard = () => {
               )}
             </section>
           )}
+
+          {/* Pagamentos Tab — consolidado de todas as parcelas do cliente */}
+          {activeTab === 'pagamentos' && (() => {
+            const ativos = pagamentos.filter(isAtivo)
+            const pagos = ativos.filter(isPago)
+            const pendentes = ativos.filter(isPendente)
+            const somar = (lista) => lista.reduce((acc, p) => acc + (parseFloat(p.valor) || 0), 0)
+            const proxima = pendentes
+              .filter(p => p.data_prevista)
+              .sort((a, b) => (a.data_prevista < b.data_prevista ? -1 : 1))[0]
+            const comprasFiltradas = filtroCompraPag === 'todas'
+              ? compras
+              : compras.filter(c => String(c.id) === filtroCompraPag)
+
+            return (
+              <section className="pagamentos-section-cliente">
+                {/* Resumo — derivado das parcelas (visualizacao-totais.md) */}
+                <div className="stats-section">
+                  <div className="stat-card-cliente success">
+                    <div className="stat-card-icon"><CheckCircle size={28} /></div>
+                    <div className="stat-card-content">
+                      <span className="stat-card-label">Total Pago</span>
+                      <span className="stat-card-value">{formatCurrency(somar(pagos))}</span>
+                      <span className="stat-card-sub">{pagos.length} parcelas</span>
+                    </div>
+                    <div className="stat-card-decoration"></div>
+                  </div>
+                  <div className="stat-card-cliente primary">
+                    <div className="stat-card-icon"><Clock size={28} /></div>
+                    <div className="stat-card-content">
+                      <span className="stat-card-label">Em Aberto</span>
+                      <span className="stat-card-value">{formatCurrency(somar(pendentes))}</span>
+                      <span className="stat-card-sub">{pendentes.length} parcelas</span>
+                    </div>
+                    <div className="stat-card-decoration"></div>
+                  </div>
+                  <div className="stat-card-cliente info">
+                    <div className="stat-card-icon"><Calendar size={28} /></div>
+                    <div className="stat-card-content">
+                      <span className="stat-card-label">Próxima Parcela</span>
+                      <span className="stat-card-value">{proxima ? formatCurrency(proxima.valor) : '—'}</span>
+                      <span className="stat-card-sub">{proxima ? `vence ${formatDataBR(proxima.data_prevista)}` : 'nada em aberto'}</span>
+                    </div>
+                    <div className="stat-card-decoration"></div>
+                  </div>
+                </div>
+
+                {/* Filtros */}
+                <div className="pag-filtros">
+                  <div className="pag-filtros-chips">
+                    {[
+                      { id: 'todos', label: 'Todas' },
+                      { id: 'pago', label: 'Pagas' },
+                      { id: 'pendente', label: 'Pendentes' },
+                    ].map(f => (
+                      <button
+                        key={f.id}
+                        className={`chip-filtro ${filtroStatusPag === f.id ? 'ativo' : ''}`}
+                        onClick={() => setFiltroStatusPag(f.id)}
+                      >
+                        {f.label}
+                      </button>
+                    ))}
+                  </div>
+                  {compras.length > 1 && (
+                    <select
+                      className="pag-filtro-compra"
+                      value={filtroCompraPag}
+                      onChange={(e) => setFiltroCompraPag(e.target.value)}
+                    >
+                      <option value="todas">Todas as compras</option>
+                      {compras.map(c => (
+                        <option key={c.id} value={String(c.id)}>{tituloCompra(c)}</option>
+                      ))}
+                    </select>
+                  )}
+                </div>
+
+                {comprasFiltradas.every(compra =>
+                  ativos.filter(p => String(p.venda_id) === String(compra.id))
+                    .filter(p => filtroStatusPag === 'todos' || p.status === filtroStatusPag).length === 0
+                ) ? (
+                  <div className="empty-state">
+                    <CreditCard size={48} />
+                    <h3>Nenhuma parcela encontrada</h3>
+                    <p>Ajuste os filtros ou aguarde o registro dos pagamentos</p>
+                  </div>
+                ) : (
+                  comprasFiltradas.map(compra => {
+                    const doCompra = ativos
+                      .filter(p => String(p.venda_id) === String(compra.id))
+                      .filter(p => filtroStatusPag === 'todos' || p.status === filtroStatusPag)
+                      .sort((a, b) => {
+                        const da = a.data_pagamento || a.data_prevista || ''
+                        const db = b.data_pagamento || b.data_prevista || ''
+                        return da < db ? -1 : da > db ? 1 : 0
+                      })
+                    if (doCompra.length === 0) return null
+                    const estaExpandido = isGrupoExpandido(compra.id, 'pagtab')
+                    const exibidas = doCompra.length > 12 && !estaExpandido ? doCompra.slice(0, 12) : doCompra
+                    return (
+                      <div key={compra.id} className="pag-grupo-compra">
+                        {compras.length > 1 && (
+                          <h3 className="pag-grupo-titulo">
+                            <Building size={16} />
+                            {tituloCompra(compra)}
+                          </h3>
+                        )}
+                        <div className="parcelas-list">
+                          {exibidas.map(pagamento => (
+                            <ParcelaCard key={pagamento.id} pagamento={pagamento} modo="cliente" />
+                          ))}
+                        </div>
+                        {doCompra.length > 12 && (
+                          <div className="grupo-expand-btn-wrapper">
+                            <button
+                              className="grupo-expand-btn"
+                              onClick={() => toggleGrupoExpandido(compra.id, 'pagtab')}
+                            >
+                              <ChevronDown size={16} className={estaExpandido ? 'rotated' : ''} />
+                              <span>
+                                {estaExpandido
+                                  ? `Ver menos (${doCompra.length - 12} itens ocultos)`
+                                  : `Ver mais (${doCompra.length - 12} itens restantes)`}
+                              </span>
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })
+                )}
+              </section>
+            )
+          })()}
+
+          {/* Meu Imóvel Tab — empreendimento + fotos */}
+          {activeTab === 'imovel' && (
+            <section className="imovel-section">
+              {compras.length === 0 ? (
+                <div className="empty-state">
+                  <Building size={48} />
+                  <h3>Nenhum imóvel encontrado</h3>
+                  <p>Seu imóvel aparecerá aqui quando a compra for registrada</p>
+                </div>
+              ) : (
+                compras.map(compra => {
+                  const emp = compra.empreendimentos || compra.empreendimento
+                  const fotos = fotosEmpreendimentos.filter(
+                    f => String(f.empreendimento_id) === String(emp?.id) && f.categoria !== 'logo'
+                  )
+                  const fachada = fotos.find(f => f.categoria === 'fachada' && f.destaque)
+                    || fotos.find(f => f.categoria === 'fachada')
+                    || fotos[0]
+                  const galeria = fotos.filter(f => f !== fachada)
+                  return (
+                    <div key={compra.id} className="imovel-card">
+                      {fachada && (
+                        <a className="imovel-hero" href={fachada.url} target="_blank" rel="noopener noreferrer">
+                          <img src={fachada.url} alt={emp?.nome || 'Empreendimento'} loading="lazy" />
+                        </a>
+                      )}
+                      <div className="imovel-info">
+                        <h3>{emp?.nome || 'Empreendimento'}</h3>
+                        <div className="imovel-meta">
+                          {compra.unidade && (
+                            <span className="imovel-chip"><MapPin size={13} /> Unidade {compra.unidade}</span>
+                          )}
+                          {compra.bloco && <span className="imovel-chip">Bloco {compra.bloco}</span>}
+                          {compra.andar && <span className="imovel-chip">{compra.andar}</span>}
+                          {(() => {
+                            const tag = statusCompra(compra)
+                            return (
+                              <span className={`status-tag ${tag.classe}`}>
+                                <tag.Icone size={12} />
+                                {tag.label}
+                              </span>
+                            )
+                          })()}
+                        </div>
+                        {emp?.descricao && <p className="imovel-descricao">{emp.descricao}</p>}
+                      </div>
+                      {galeria.length > 0 && (
+                        <div className="imovel-galeria">
+                          {galeria.slice(0, 12).map((f, i) => (
+                            <a key={`${f.url}-${i}`} href={f.url} target="_blank" rel="noopener noreferrer" title={f.descricao || f.categoria}>
+                              <img src={f.url} alt={f.descricao || f.categoria || 'Foto'} loading="lazy" />
+                            </a>
+                          ))}
+                        </div>
+                      )}
+                      {fotos.length > 0 && emp && (
+                        <div className="imovel-ver-tudo-wrapper">
+                          <button className="btn-ver-todas" onClick={() => abrirDetalheEmp(emp)}>
+                            Ver todas as fotos, plantas e detalhes
+                          </button>
+                        </div>
+                      )}
+                      {fotos.length === 0 && (
+                        <div className="imovel-sem-fotos">
+                          <ImageIcon size={20} />
+                          <span>Fotos do empreendimento em breve</span>
+                        </div>
+                      )}
+                    </div>
+                  )
+                })
+              )}
+            </section>
+          )}
+
+          {/* Empreendimentos Tab — vitrine de todos os empreendimentos da IM */}
+          {activeTab === 'empreendimentos' && (() => {
+            const meusEmpIds = new Set(
+              compras.map(c => String(c.empreendimento_id)).filter(Boolean)
+            )
+            const lista = empreendimentosTodos.filter(e => e.ativo !== false)
+            return (
+              <section className="empreendimentos-section-cliente">
+                <p className="emp-catalogo-intro">
+                  Conheça os empreendimentos da IM Incorporadora
+                </p>
+                {lista.length === 0 ? (
+                  <div className="empty-state">
+                    <Building2 size={48} />
+                    <h3>Nenhum empreendimento disponível</h3>
+                    <p>Os empreendimentos aparecerão aqui em breve</p>
+                  </div>
+                ) : (
+                  <div className="empreendimentos-grid-cliente">
+                    {lista.map(emp => {
+                      const fotos = fotosEmpreendimentos.filter(
+                        f => String(f.empreendimento_id) === String(emp.id) && f.categoria !== 'logo'
+                      )
+                      const fachada = fotos.find(f => f.categoria === 'fachada' && f.destaque)
+                        || fotos.find(f => f.categoria === 'fachada')
+                        || fotos[0]
+                      const galeria = fotos.filter(f => f !== fachada)
+                      const ehMeu = meusEmpIds.has(String(emp.id))
+                      return (
+                        <div
+                          key={emp.id}
+                          className={`emp-card-cliente ${ehMeu ? 'meu' : ''}`}
+                          role="button"
+                          tabIndex={0}
+                          onClick={() => abrirDetalheEmp(emp)}
+                          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); abrirDetalheEmp(emp) } }}
+                          title="Ver detalhes do empreendimento"
+                        >
+                          {fachada ? (
+                            <div className="emp-card-hero">
+                              <img src={fachada.url} alt={emp.nome} loading="lazy" />
+                            </div>
+                          ) : (
+                            <div className="emp-card-hero placeholder">
+                              {emp.logo_url
+                                ? <img src={emp.logo_url} alt={emp.nome} loading="lazy" className="emp-card-logo-placeholder" />
+                                : <Building2 size={40} />}
+                            </div>
+                          )}
+                          <div className="emp-card-body">
+                            <div className="emp-card-titulo">
+                              <h3>{emp.nome}</h3>
+                              {ehMeu && (
+                                <span className="emp-badge-meu">
+                                  <CheckCircle size={12} />
+                                  Meu empreendimento
+                                </span>
+                              )}
+                            </div>
+                            {emp.descricao && <p className="emp-card-descricao">{emp.descricao}</p>}
+                            <div className="emp-card-rodape">
+                              {galeria.length > 0 && (
+                                <div className="emp-card-galeria">
+                                  {galeria.slice(0, 4).map((f, i) => (
+                                    <span key={`${f.url}-${i}`} className="emp-card-thumb" title={f.descricao || CATEGORIA_LABELS[f.categoria] || f.categoria}>
+                                      <img src={f.url} alt={f.descricao || f.categoria || 'Foto'} loading="lazy" />
+                                    </span>
+                                  ))}
+                                  {galeria.length > 4 && (
+                                    <span className="emp-card-mais-fotos">+{galeria.length - 4}</span>
+                                  )}
+                                </div>
+                              )}
+                              <span className="emp-card-ver-detalhes">
+                                <Eye size={14} />
+                                Ver detalhes
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
+              </section>
+            )
+          })()}
+
+          {/* Garantia Tab — portal oficial por empreendimento + como acionar + prazos */}
+          {activeTab === 'garantia' && (() => {
+            const meusEmpIds = new Set(compras.map(c => String(c.empreendimento_id)).filter(Boolean))
+            const empsComPortal = empreendimentosTodos.filter(
+              e => meusEmpIds.has(String(e.id)) && e.garantia_url
+            )
+            return (
+            <section className="garantia-section">
+              {empsComPortal.length > 0 && (
+                <div className="garantia-card garantia-portal-card">
+                  <h2>
+                    <ShieldCheck size={24} />
+                    Portal de Garantia
+                  </h2>
+                  <p className="garantia-intro">
+                    Abra e acompanhe os chamados de garantia do seu imóvel direto no portal
+                    oficial do seu empreendimento:
+                  </p>
+                  <div className="garantia-portal-lista">
+                    {empsComPortal.map(emp => (
+                      <a
+                        key={emp.id}
+                        className="btn-portal-garantia"
+                        href={emp.garantia_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        <span className="btn-portal-garantia-info">
+                          {emp.logo_url
+                            ? <img src={emp.logo_url} alt="" className="btn-portal-garantia-logo" />
+                            : <Building2 size={18} />}
+                          <span>
+                            <strong>{emp.nome}</strong>
+                            <small>Abrir chamado de garantia</small>
+                          </span>
+                        </span>
+                        <ChevronRight size={18} />
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="garantia-card">
+                <h2>
+                  <ShieldCheck size={24} />
+                  Garantia do seu imóvel
+                </h2>
+                <p className="garantia-intro">
+                  Encontrou algum problema no seu imóvel? A IM Incorporadora oferece garantia
+                  conforme o contrato e o Manual do Proprietário. Veja como acionar:
+                </p>
+                <div className="garantia-passos">
+                  <div className="garantia-passo">
+                    <span className="garantia-passo-num">1</span>
+                    <div>
+                      <strong>Registre o problema</strong>
+                      <p>Descreva o que aconteceu e tire fotos ou vídeos que mostrem o problema.</p>
+                    </div>
+                  </div>
+                  <div className="garantia-passo">
+                    <span className="garantia-passo-num">2</span>
+                    <div>
+                      <strong>Abra o chamado</strong>
+                      <p>
+                        {empsComPortal.length > 0
+                          ? 'Use o Portal de Garantia do seu empreendimento (acima) anexando a descrição e as fotos. Se preferir, fale com seu corretor.'
+                          : 'Mande a descrição e as fotos pelo WhatsApp do seu corretor ou pelo contato da administração.'}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="garantia-passo">
+                    <span className="garantia-passo-num">3</span>
+                    <div>
+                      <strong>Acompanhe a visita técnica</strong>
+                      <p>Nossa equipe avalia o chamado e agenda a vistoria ou o reparo quando coberto pela garantia.</p>
+                    </div>
+                  </div>
+                </div>
+                {(() => {
+                  const corr = corretoresDasCompras().find(c => c.telefone)
+                  if (!corr) return null
+                  return (
+                    <a
+                      className="btn-whatsapp garantia-whatsapp"
+                      href={linkWhatsApp(corr.telefone)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <MessageCircle size={16} />
+                      Falar com {corr.nome?.split(' ')[0]}
+                    </a>
+                  )
+                })()}
+              </div>
+
+              <div className="garantia-card">
+                <h3>Prazos usuais de garantia (referência)</h3>
+                <div className="garantia-prazos">
+                  <div className="garantia-prazo">
+                    <span className="garantia-prazo-anos">5 anos</span>
+                    <span>Solidez e segurança estrutural (fundações, estrutura)</span>
+                  </div>
+                  <div className="garantia-prazo">
+                    <span className="garantia-prazo-anos">3 anos</span>
+                    <span>Impermeabilização</span>
+                  </div>
+                  <div className="garantia-prazo">
+                    <span className="garantia-prazo-anos">2 anos</span>
+                    <span>Instalações hidráulicas e elétricas</span>
+                  </div>
+                  <div className="garantia-prazo">
+                    <span className="garantia-prazo-anos">1 ano</span>
+                    <span>Revestimentos, pintura e acabamentos</span>
+                  </div>
+                </div>
+                <p className="garantia-disclaimer">
+                  <AlertCircle size={14} />
+                  Prazos de referência do mercado. Valem os prazos do seu contrato e do Manual
+                  do Proprietário do seu empreendimento — em caso de dúvida, fale com a administração.
+                </p>
+              </div>
+            </section>
+            )
+          })()}
 
           {/* Documentos Tab */}
           {activeTab === 'documentos' && (
@@ -1379,7 +2153,43 @@ const ClienteDashboard = () => {
                     <h3>{cliente.nome_completo}</h3>
                     <p>Cliente IM Incorporadora</p>
                   </div>
+                  {!editandoPerfil && (
+                    <button className="btn-editar-perfil" onClick={iniciarEdicaoPerfil}>
+                      <Pencil size={15} />
+                      <span>Editar dados</span>
+                    </button>
+                  )}
                 </div>
+
+                {editandoPerfil && (
+                  <div className="perfil-edit-form">
+                    <div className="perfil-edit-grid">
+                      {CAMPOS_PERFIL_EDITAVEIS.map(({ campo, label }) => (
+                        <div key={campo} className="perfil-edit-field">
+                          <label htmlFor={`perfil-${campo}`}>{label}</label>
+                          <input
+                            id={`perfil-${campo}`}
+                            type="text"
+                            value={perfilForm[campo] ?? ''}
+                            onChange={(e) => setPerfilForm(prev => ({ ...prev, [campo]: e.target.value }))}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                    <div className="perfil-edit-actions">
+                      <button className="btn-salvar-perfil" onClick={salvarPerfil} disabled={salvandoPerfil}>
+                        <Save size={15} />
+                        {salvandoPerfil ? 'Salvando...' : 'Salvar'}
+                      </button>
+                      <button className="btn-cancelar-perfil" onClick={() => setEditandoPerfil(false)} disabled={salvandoPerfil}>
+                        Cancelar
+                      </button>
+                    </div>
+                    <p className="perfil-edit-aviso">
+                      CPF, RG, data de nascimento, email e renda só podem ser alterados pela administração.
+                    </p>
+                  </div>
+                )}
 
                 <div className="perfil-details-grid">
                   <div className="perfil-detail-card">
@@ -1452,11 +2262,164 @@ const ClienteDashboard = () => {
                     )}
                   </div>
                 )}
+
+                {/* Troca de senha — supabase.auth.updateUser na sessão do próprio cliente */}
+                <div className="perfil-senha-section">
+                  <h4>
+                    <Lock size={16} />
+                    Alterar senha
+                  </h4>
+                  <div className="perfil-senha-form">
+                    <input
+                      type="password"
+                      placeholder="Nova senha (mín. 8 caracteres)"
+                      value={senhaForm.nova}
+                      onChange={(e) => setSenhaForm(prev => ({ ...prev, nova: e.target.value }))}
+                      autoComplete="new-password"
+                    />
+                    <input
+                      type="password"
+                      placeholder="Confirmar nova senha"
+                      value={senhaForm.confirmar}
+                      onChange={(e) => setSenhaForm(prev => ({ ...prev, confirmar: e.target.value }))}
+                      autoComplete="new-password"
+                    />
+                    <button
+                      className="btn-salvar-perfil"
+                      onClick={trocarSenha}
+                      disabled={salvandoSenha || !senhaForm.nova}
+                    >
+                      {salvandoSenha ? 'Alterando...' : 'Alterar senha'}
+                    </button>
+                  </div>
+                </div>
               </div>
             </section>
           )}
         </div>
       </main>
+
+      {/* Modal de detalhes do empreendimento — galeria completa por categoria */}
+      {empDetalhe && (
+        <div className="modal-overlay-cliente" onClick={fecharDetalheEmp}>
+          <div className="emp-detalhe-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="emp-detalhe-header">
+              <div className="emp-detalhe-header-titulo">
+                {empDetalhe.logo_url && (
+                  <img src={empDetalhe.logo_url} alt="" className="emp-detalhe-logo" />
+                )}
+                <h2>{empDetalhe.nome}</h2>
+              </div>
+              <button className="emp-detalhe-fechar" onClick={fecharDetalheEmp} title="Fechar">
+                <X size={22} />
+              </button>
+            </div>
+
+            <div className="emp-detalhe-body">
+              {empDetalhe.descricao && (
+                <p className="emp-detalhe-descricao">{empDetalhe.descricao}</p>
+              )}
+
+              {fotosDetalhe.length === 0 ? (
+                <div className="imovel-sem-fotos">
+                  <ImageIcon size={20} />
+                  <span>Fotos do empreendimento em breve</span>
+                </div>
+              ) : (
+                <>
+                  <div className="emp-detalhe-cats">
+                    <button
+                      className={`chip-filtro ${catAtivaDetalhe === 'todas' ? 'ativo' : ''}`}
+                      onClick={() => { setCatAtivaDetalhe('todas'); setFotoAmpliada(null) }}
+                    >
+                      Todas ({fotosDetalhe.length})
+                    </button>
+                    {categoriasDetalhe.map(cat => (
+                      <button
+                        key={cat}
+                        className={`chip-filtro ${catAtivaDetalhe === cat ? 'ativo' : ''}`}
+                        onClick={() => { setCatAtivaDetalhe(cat); setFotoAmpliada(null) }}
+                      >
+                        {CATEGORIA_LABELS[cat] || cat} ({fotosDetalhe.filter(f => (f.categoria || 'outros') === cat).length})
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className="emp-detalhe-grid">
+                    {fotosFiltradasDetalhe.map((f, i) => (
+                      <button
+                        key={`${f.url}-${i}`}
+                        className="emp-detalhe-foto"
+                        onClick={() => setFotoAmpliada(i)}
+                        title={f.descricao || CATEGORIA_LABELS[f.categoria] || ''}
+                      >
+                        <img src={f.url} alt={f.descricao || f.categoria || 'Foto'} loading="lazy" />
+                        <span className="emp-detalhe-foto-cat">
+                          {CATEGORIA_LABELS[f.categoria] || f.categoria}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Lightbox — foto ampliada com navegação */}
+      {empDetalhe && fotoAmpliada !== null && fotosFiltradasDetalhe[fotoAmpliada] && (
+        <div className="lightbox-overlay" onClick={() => setFotoAmpliada(null)}>
+          <button
+            className="lightbox-fechar"
+            onClick={(e) => { e.stopPropagation(); setFotoAmpliada(null) }}
+            title="Fechar (Esc)"
+          >
+            <X size={26} />
+          </button>
+          {fotosFiltradasDetalhe.length > 1 && (
+            <button
+              className="lightbox-nav prev"
+              onClick={(e) => {
+                e.stopPropagation()
+                setFotoAmpliada(i => (i - 1 + fotosFiltradasDetalhe.length) % fotosFiltradasDetalhe.length)
+              }}
+              title="Anterior (←)"
+            >
+              <ChevronLeft size={30} />
+            </button>
+          )}
+          <figure className="lightbox-conteudo" onClick={(e) => e.stopPropagation()}>
+            <img
+              src={fotosFiltradasDetalhe[fotoAmpliada].url}
+              alt={fotosFiltradasDetalhe[fotoAmpliada].descricao || 'Foto'}
+            />
+            <figcaption>
+              <span className="lightbox-cat">
+                {CATEGORIA_LABELS[fotosFiltradasDetalhe[fotoAmpliada].categoria] || fotosFiltradasDetalhe[fotoAmpliada].categoria}
+              </span>
+              {fotosFiltradasDetalhe[fotoAmpliada].descricao && (
+                <span>{fotosFiltradasDetalhe[fotoAmpliada].descricao}</span>
+              )}
+              <span className="lightbox-contador">
+                {fotoAmpliada + 1} / {fotosFiltradasDetalhe.length}
+              </span>
+            </figcaption>
+          </figure>
+          {fotosFiltradasDetalhe.length > 1 && (
+            <button
+              className="lightbox-nav next"
+              onClick={(e) => {
+                e.stopPropagation()
+                setFotoAmpliada(i => (i + 1) % fotosFiltradasDetalhe.length)
+              }}
+              title="Próxima (→)"
+            >
+              <ChevronRight size={30} />
+            </button>
+          )}
+        </div>
+      )}
     </div>
   )
 }

@@ -9,11 +9,6 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     autoRefreshToken: true,
     detectSessionInUrl: false
   },
-  global: {
-    headers: {
-      'x-my-custom-header': 'im-calculo'
-    }
-  },
   db: {
     schema: 'public'
   }

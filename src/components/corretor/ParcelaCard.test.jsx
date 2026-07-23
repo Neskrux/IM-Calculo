@@ -12,6 +12,11 @@ describe('labelTipoParcela', () => {
     expect(labelTipoParcela({ tipo: 'parcela_entrada', numero_parcela: 7 })).toBe('Parcela 7')
     expect(labelTipoParcela({ tipo: 'balao', numero_parcela: 2 })).toBe('Balão 2')
     expect(labelTipoParcela({ tipo: 'comissao_integral' })).toBe('✨ Comissão Integral')
+    expect(labelTipoParcela({ tipo: 'bens' })).toBe('Bens')
+  })
+
+  it('na visão do cliente, comissao_integral vira "Entrada (à vista)" — comissão nunca aparece pra cliente', () => {
+    expect(labelTipoParcela({ tipo: 'comissao_integral' }, { cliente: true })).toBe('Entrada (à vista)')
   })
 })
 

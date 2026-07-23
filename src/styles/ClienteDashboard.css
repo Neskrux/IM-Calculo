@@ -1461,3 +1461,1279 @@
   }
 }
 
+
+
+/* =============================================
+   NOVAS SEÇÕES DO PERFIL DO CLIENTE (2026-07)
+   Resumo financeiro · Extrato PDF · Contato
+   corretor · Edição de perfil · Troca de senha
+   ============================================= */
+
+/* Status distrato (compra cancelada) */
+.status-tag.distrato {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+/* Botão Extrato PDF no card da compra */
+.btn-extrato-pdf {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: 1px solid rgba(201, 169, 98, 0.35);
+  background: transparent;
+  color: var(--im-accent, #c9a962);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-extrato-pdf:hover {
+  background: rgba(201, 169, 98, 0.12);
+  border-color: var(--im-accent, #c9a962);
+}
+
+/* Resumo financeiro da compra (derivado das parcelas) */
+.compra-financeiro {
+  margin-top: 4px;
+  padding: 16px 18px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--im-border, rgba(255, 255, 255, 0.08));
+}
+
+.compra-financeiro-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.compra-financeiro-titulo {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--im-text-secondary, #a0a0a0);
+}
+
+.compra-financeiro-pct {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--im-accent, #c9a962);
+}
+
+.progress-bar-cliente {
+  height: 8px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+  margin-bottom: 12px;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  border-radius: 4px;
+  background: linear-gradient(90deg, #a1813a, #c9a962);
+  transition: width 0.4s ease;
+}
+
+.compra-financeiro-valores {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+  font-size: 13px;
+  color: var(--im-text-secondary, #a0a0a0);
+}
+
+.compra-financeiro-valores .valor-pago {
+  color: #10b981;
+}
+
+.compra-financeiro-valores .valor-pendente {
+  color: #f59e0b;
+}
+
+.compra-financeiro-contador {
+  margin-left: auto;
+  font-size: 12px;
+}
+
+.compra-proxima-parcela {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px dashed rgba(255, 255, 255, 0.1);
+  font-size: 13px;
+  color: var(--im-text-secondary, #a0a0a0);
+}
+
+.compra-proxima-parcela svg {
+  color: var(--im-accent, #c9a962);
+  flex-shrink: 0;
+}
+
+.compra-proxima-parcela strong {
+  color: var(--im-text-primary, #f5f5f5);
+}
+
+/* Contato do corretor dentro do card da compra */
+.detail-whatsapp {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 4px;
+  font-size: 12px;
+  color: #25d366;
+  text-decoration: none;
+}
+
+.detail-whatsapp:hover {
+  text-decoration: underline;
+}
+
+/* Seção "Fale com seu corretor" no dashboard */
+.contato-corretor-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.contato-corretor-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 18px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--im-border, rgba(255, 255, 255, 0.08));
+}
+
+.contato-corretor-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(201, 169, 98, 0.15);
+  color: var(--im-accent, #c9a962);
+  font-weight: 700;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.contato-corretor-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.contato-corretor-nome {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--im-text-primary, #f5f5f5);
+}
+
+.contato-corretor-tel {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  color: var(--im-text-secondary, #a0a0a0);
+}
+
+.btn-whatsapp {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-left: auto;
+  padding: 9px 16px;
+  border-radius: 8px;
+  background: rgba(37, 211, 102, 0.12);
+  border: 1px solid rgba(37, 211, 102, 0.35);
+  color: #25d366;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.btn-whatsapp:hover {
+  background: rgba(37, 211, 102, 0.2);
+}
+
+/* Edição de perfil */
+.btn-editar-perfil {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-left: auto;
+  padding: 9px 16px;
+  border-radius: 8px;
+  border: 1px solid rgba(201, 169, 98, 0.35);
+  background: transparent;
+  color: var(--im-accent, #c9a962);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-editar-perfil:hover {
+  background: rgba(201, 169, 98, 0.12);
+}
+
+.perfil-edit-form {
+  margin-bottom: 28px;
+  padding: 20px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(201, 169, 98, 0.2);
+}
+
+.perfil-edit-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.perfil-edit-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.perfil-edit-field label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--im-text-secondary, #a0a0a0);
+}
+
+.perfil-edit-field input,
+.perfil-senha-form input {
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--im-border, rgba(255, 255, 255, 0.12));
+  background: rgba(0, 0, 0, 0.3);
+  color: var(--im-text-primary, #f5f5f5);
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.perfil-edit-field input:focus,
+.perfil-senha-form input:focus {
+  border-color: var(--im-accent, #c9a962);
+}
+
+.perfil-edit-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.btn-salvar-perfil {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 10px 18px;
+  border-radius: 8px;
+  border: none;
+  background: var(--im-accent, #c9a962);
+  color: #000;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.btn-salvar-perfil:hover:not(:disabled) {
+  opacity: 0.85;
+}
+
+.btn-salvar-perfil:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-cancelar-perfil {
+  padding: 10px 18px;
+  border-radius: 8px;
+  border: 1px solid var(--im-border, rgba(255, 255, 255, 0.15));
+  background: transparent;
+  color: var(--im-text-secondary, #a0a0a0);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-cancelar-perfil:hover:not(:disabled) {
+  border-color: rgba(255, 255, 255, 0.3);
+  color: var(--im-text-primary, #f5f5f5);
+}
+
+.perfil-edit-aviso {
+  margin: 14px 0 0;
+  font-size: 12px;
+  color: var(--im-text-secondary, #a0a0a0);
+}
+
+/* Troca de senha */
+.perfil-senha-section {
+  margin-top: 28px;
+  padding-top: 24px;
+  border-top: 1px solid var(--im-border, rgba(255, 255, 255, 0.08));
+}
+
+.perfil-senha-section h4 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 16px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--im-text-primary, #f5f5f5);
+}
+
+.perfil-senha-section h4 svg {
+  color: var(--im-accent, #c9a962);
+}
+
+.perfil-senha-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.perfil-senha-form input {
+  flex: 1 1 220px;
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+  .compra-financeiro-valores {
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .compra-financeiro-contador {
+    margin-left: 0;
+  }
+
+  .contato-corretor-card {
+    flex-wrap: wrap;
+  }
+
+  .btn-whatsapp {
+    margin-left: 0;
+    width: 100%;
+    justify-content: center;
+  }
+
+  .btn-editar-perfil {
+    margin-left: 0;
+    width: 100%;
+    justify-content: center;
+  }
+
+  .perfil-senha-form {
+    flex-direction: column;
+  }
+
+  .btn-extrato-pdf span {
+    display: none;
+  }
+}
+
+
+/* =============================================
+   ABAS NOVAS: Pagamentos · Meu Imóvel · Garantia
+   ============================================= */
+
+.stat-card-sub {
+  font-size: 12px;
+  color: var(--im-text-secondary, #a0a0a0);
+}
+
+/* Filtros da aba Pagamentos */
+.pag-filtros {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.pag-filtros-chips {
+  display: flex;
+  gap: 8px;
+}
+
+.chip-filtro {
+  padding: 7px 16px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: transparent;
+  color: var(--im-text-secondary, #a0a0a0);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.chip-filtro:hover {
+  border-color: rgba(201, 169, 98, 0.4);
+}
+
+.chip-filtro.ativo {
+  background: var(--im-accent, #c9a962);
+  border-color: var(--im-accent, #c9a962);
+  color: #000;
+  font-weight: 600;
+}
+
+.pag-filtro-compra {
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--im-border, rgba(255, 255, 255, 0.12));
+  background: rgba(0, 0, 0, 0.3);
+  color: var(--im-text-primary, #f5f5f5);
+  font-size: 13px;
+  outline: none;
+}
+
+.pag-grupo-compra {
+  margin-bottom: 28px;
+}
+
+.pag-grupo-titulo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 12px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--im-text-primary, #f5f5f5);
+}
+
+.pag-grupo-titulo svg {
+  color: var(--im-accent, #c9a962);
+}
+
+/* Meu Imóvel */
+.imovel-section {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.imovel-card {
+  background: var(--im-bg-card, rgba(18, 18, 18, 0.8));
+  border: 1px solid var(--im-border, rgba(255, 255, 255, 0.08));
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.imovel-hero {
+  display: block;
+  width: 100%;
+  height: 260px;
+  overflow: hidden;
+}
+
+.imovel-hero img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s;
+}
+
+.imovel-hero:hover img {
+  transform: scale(1.03);
+}
+
+.imovel-info {
+  padding: 20px 24px;
+}
+
+.imovel-info h3 {
+  margin: 0 0 12px;
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 24px;
+  font-weight: 500;
+  color: var(--im-text-primary, #f5f5f5);
+}
+
+.imovel-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.imovel-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: rgba(201, 169, 98, 0.12);
+  border: 1px solid rgba(201, 169, 98, 0.25);
+  color: var(--im-accent, #c9a962);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.imovel-descricao {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--im-text-secondary, #a0a0a0);
+}
+
+.imovel-galeria {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 8px;
+  padding: 0 24px 24px;
+}
+
+.imovel-galeria a {
+  display: block;
+  height: 100px;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid var(--im-border, rgba(255, 255, 255, 0.08));
+}
+
+.imovel-galeria img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.25s;
+}
+
+.imovel-galeria a:hover img {
+  transform: scale(1.06);
+}
+
+.imovel-sem-fotos {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 24px 24px;
+  color: var(--im-text-secondary, #a0a0a0);
+  font-size: 13px;
+}
+
+/* Garantia */
+.garantia-section {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  max-width: 760px;
+}
+
+.garantia-card {
+  background: var(--im-bg-card, rgba(18, 18, 18, 0.8));
+  border: 1px solid var(--im-border, rgba(255, 255, 255, 0.08));
+  border-radius: 16px;
+  padding: 28px;
+}
+
+.garantia-card h2 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 12px;
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 24px;
+  font-weight: 500;
+  color: var(--im-text-primary, #f5f5f5);
+}
+
+.garantia-card h2 svg {
+  color: var(--im-accent, #c9a962);
+}
+
+.garantia-card h3 {
+  margin: 0 0 16px;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--im-text-primary, #f5f5f5);
+}
+
+.garantia-intro {
+  margin: 0 0 20px;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--im-text-secondary, #a0a0a0);
+}
+
+.garantia-passos {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.garantia-passo {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+}
+
+.garantia-passo-num {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(201, 169, 98, 0.15);
+  color: var(--im-accent, #c9a962);
+  font-weight: 700;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.garantia-passo strong {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--im-text-primary, #f5f5f5);
+  font-size: 14px;
+}
+
+.garantia-passo p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--im-text-secondary, #a0a0a0);
+}
+
+.garantia-whatsapp {
+  margin-left: 0;
+}
+
+.garantia-prazos {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.garantia-prazo {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 16px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--im-border, rgba(255, 255, 255, 0.08));
+  font-size: 13px;
+  color: var(--im-text-secondary, #a0a0a0);
+}
+
+.garantia-prazo-anos {
+  min-width: 62px;
+  text-align: center;
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: rgba(201, 169, 98, 0.12);
+  border: 1px solid rgba(201, 169, 98, 0.3);
+  color: var(--im-accent, #c9a962);
+  font-weight: 700;
+  font-size: 12px;
+  flex-shrink: 0;
+}
+
+.garantia-disclaimer {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--im-text-secondary, #a0a0a0);
+}
+
+.garantia-disclaimer svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+  color: #f59e0b;
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+  .pag-filtros {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .pag-filtro-compra {
+    width: 100%;
+  }
+
+  .imovel-hero {
+    height: 180px;
+  }
+
+  .imovel-galeria {
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    padding: 0 16px 16px;
+  }
+
+  .imovel-info {
+    padding: 16px;
+  }
+
+  .garantia-card {
+    padding: 20px;
+  }
+}
+
+
+/* =============================================
+   ABA EMPREENDIMENTOS (vitrine)
+   ============================================= */
+
+.emp-catalogo-intro {
+  margin: 0 0 20px;
+  font-size: 14px;
+  color: var(--im-text-secondary, #a0a0a0);
+}
+
+.empreendimentos-grid-cliente {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 20px;
+}
+
+.emp-card-cliente {
+  background: var(--im-bg-card, rgba(18, 18, 18, 0.8));
+  border: 1px solid var(--im-border, rgba(255, 255, 255, 0.08));
+  border-radius: 16px;
+  overflow: hidden;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.emp-card-cliente:hover {
+  transform: translateY(-3px);
+  border-color: rgba(201, 169, 98, 0.25);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
+}
+
+.emp-card-cliente.meu {
+  border-color: rgba(201, 169, 98, 0.4);
+}
+
+.emp-card-hero {
+  display: block;
+  height: 170px;
+  overflow: hidden;
+}
+
+.emp-card-hero img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s;
+}
+
+.emp-card-hero:hover img {
+  transform: scale(1.04);
+}
+
+.emp-card-hero.placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(201, 169, 98, 0.5);
+}
+
+.emp-card-logo-placeholder {
+  max-width: 60% !important;
+  max-height: 70% !important;
+  width: auto !important;
+  height: auto !important;
+  object-fit: contain !important;
+}
+
+.emp-card-body {
+  padding: 16px 18px 18px;
+}
+
+.emp-card-titulo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.emp-card-titulo h3 {
+  margin: 0;
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 19px;
+  font-weight: 500;
+  color: var(--im-text-primary, #f5f5f5);
+}
+
+.emp-badge-meu {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(201, 169, 98, 0.14);
+  border: 1px solid rgba(201, 169, 98, 0.35);
+  color: var(--im-accent, #c9a962);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.emp-card-descricao {
+  margin: 0 0 12px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--im-text-secondary, #a0a0a0);
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.emp-card-galeria {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.emp-card-galeria a {
+  display: block;
+  width: 56px;
+  height: 42px;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid var(--im-border, rgba(255, 255, 255, 0.08));
+  flex-shrink: 0;
+}
+
+.emp-card-galeria img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.emp-card-mais-fotos {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--im-accent, #c9a962);
+}
+
+@media (max-width: 768px) {
+  .empreendimentos-grid-cliente {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+/* =============================================
+   MODAL DE DETALHES DO EMPREENDIMENTO + LIGHTBOX
+   ============================================= */
+
+.emp-card-rodape {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.emp-card-thumb {
+  display: block;
+  width: 56px;
+  height: 42px;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid var(--im-border, rgba(255, 255, 255, 0.08));
+  flex-shrink: 0;
+}
+
+.emp-card-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.emp-card-ver-detalhes {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--im-accent, #c9a962);
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.emp-card-cliente {
+  cursor: pointer;
+}
+
+.imovel-ver-tudo-wrapper {
+  padding: 0 24px 24px;
+}
+
+.modal-overlay-cliente {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9000;
+  padding: 20px;
+}
+
+.emp-detalhe-modal {
+  width: 100%;
+  max-width: 920px;
+  max-height: 88vh;
+  display: flex;
+  flex-direction: column;
+  background: #121212;
+  border: 1px solid rgba(201, 169, 98, 0.25);
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.emp-detalhe-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px 24px;
+  border-bottom: 1px solid var(--im-border, rgba(255, 255, 255, 0.08));
+  flex-shrink: 0;
+}
+
+.emp-detalhe-header-titulo {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+}
+
+.emp-detalhe-logo {
+  height: 36px;
+  width: auto;
+  object-fit: contain;
+}
+
+.emp-detalhe-header h2 {
+  margin: 0;
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 22px;
+  font-weight: 500;
+  color: var(--im-text-primary, #f5f5f5);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.emp-detalhe-fechar {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  border: 1px solid var(--im-border, rgba(255, 255, 255, 0.12));
+  background: transparent;
+  color: var(--im-text-secondary, #a0a0a0);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.emp-detalhe-fechar:hover {
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.emp-detalhe-body {
+  padding: 20px 24px 24px;
+  overflow-y: auto;
+}
+
+.emp-detalhe-descricao {
+  margin: 0 0 18px;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--im-text-secondary, #a0a0a0);
+}
+
+.emp-detalhe-cats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+
+.emp-detalhe-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 10px;
+}
+
+.emp-detalhe-foto {
+  position: relative;
+  display: block;
+  height: 130px;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid var(--im-border, rgba(255, 255, 255, 0.08));
+  padding: 0;
+  background: none;
+  cursor: zoom-in;
+}
+
+.emp-detalhe-foto img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.25s;
+}
+
+.emp-detalhe-foto:hover img {
+  transform: scale(1.05);
+}
+
+.emp-detalhe-foto-cat {
+  position: absolute;
+  left: 8px;
+  bottom: 8px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.65);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
+/* Lightbox */
+.lightbox-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.92);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9500;
+}
+
+.lightbox-conteudo {
+  margin: 0;
+  max-width: 86vw;
+  max-height: 88vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.lightbox-conteudo img {
+  max-width: 86vw;
+  max-height: 78vh;
+  object-fit: contain;
+  border-radius: 8px;
+}
+
+.lightbox-conteudo figcaption {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--im-text-secondary, #a0a0a0);
+  font-size: 13px;
+}
+
+.lightbox-cat {
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: rgba(201, 169, 98, 0.15);
+  border: 1px solid rgba(201, 169, 98, 0.35);
+  color: var(--im-accent, #c9a962);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.lightbox-contador {
+  font-size: 12px;
+  opacity: 0.7;
+}
+
+.lightbox-fechar {
+  position: absolute;
+  top: 18px;
+  right: 22px;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(0, 0, 0, 0.5);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 2;
+  transition: all 0.2s;
+}
+
+.lightbox-fechar:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.lightbox-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(0, 0, 0, 0.5);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 2;
+  transition: all 0.2s;
+}
+
+.lightbox-nav:hover {
+  background: rgba(201, 169, 98, 0.3);
+}
+
+.lightbox-nav.prev { left: 22px; }
+.lightbox-nav.next { right: 22px; }
+
+@media (max-width: 768px) {
+  .modal-overlay-cliente {
+    padding: 10px;
+  }
+
+  .emp-detalhe-modal {
+    max-height: 94vh;
+  }
+
+  .emp-detalhe-header,
+  .emp-detalhe-body {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  .emp-detalhe-grid {
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  }
+
+  .emp-detalhe-foto {
+    height: 100px;
+  }
+
+  .lightbox-nav {
+    width: 42px;
+    height: 42px;
+  }
+
+  .lightbox-nav.prev { left: 8px; }
+  .lightbox-nav.next { right: 8px; }
+
+  .lightbox-fechar {
+    top: 10px;
+    right: 10px;
+  }
+}
+
+
+/* Portal de Garantia (Solumn) por empreendimento */
+.garantia-portal-card {
+  border-color: rgba(201, 169, 98, 0.35);
+}
+
+.garantia-portal-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.btn-portal-garantia {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 18px;
+  border-radius: 12px;
+  background: rgba(201, 169, 98, 0.1);
+  border: 1px solid rgba(201, 169, 98, 0.35);
+  color: var(--im-text-primary, #f5f5f5);
+  text-decoration: none;
+  transition: all 0.2s;
+}
+
+.btn-portal-garantia:hover {
+  background: rgba(201, 169, 98, 0.2);
+  transform: translateY(-2px);
+}
+
+.btn-portal-garantia > svg {
+  color: var(--im-accent, #c9a962);
+  flex-shrink: 0;
+}
+
+.btn-portal-garantia-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.btn-portal-garantia-info > svg {
+  color: var(--im-accent, #c9a962);
+  flex-shrink: 0;
+}
+
+.btn-portal-garantia-logo {
+  height: 28px;
+  width: auto;
+  max-width: 64px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.btn-portal-garantia-info strong {
+  display: block;
+  font-size: 14px;
+}
+
+.btn-portal-garantia-info small {
+  display: block;
+  font-size: 12px;
+  color: var(--im-text-secondary, #a0a0a0);
+}

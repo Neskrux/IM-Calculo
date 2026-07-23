@@ -19,13 +19,17 @@ const fmtBRL = (v) =>
 
 const STATUS_LABEL = { pago: 'Pago', cancelado: 'Cancelado', pendente: 'Pendente' }
 
-export function labelTipoParcela(p) {
+// opts.cliente: rótulos na linguagem do CLIENTE — "comissão" é jargão interno
+// IM↔corretor e nunca aparece pra ele; a linha comissao_integral é, do lado
+// dele, a entrada paga à vista.
+export function labelTipoParcela(p, { cliente = false } = {}) {
   if (!p) return ''
   if (p.tipo === 'sinal') return 'Sinal'
   if (p.tipo === 'entrada') return 'Entrada'
   if (p.tipo === 'parcela_entrada') return `Parcela ${p.numero_parcela || ''}`.trim()
   if (p.tipo === 'balao') return `Balão ${p.numero_parcela || ''}`.trim()
-  if (p.tipo === 'comissao_integral') return '✨ Comissão Integral'
+  if (p.tipo === 'comissao_integral') return cliente ? 'Entrada (à vista)' : '✨ Comissão Integral'
+  if (p.tipo === 'bens') return 'Bens'
   return p.tipo || ''
 }
 
@@ -41,7 +45,7 @@ export default function ParcelaCard({ pagamento, comissao, modo = 'corretor' }) 
   return (
     <div className={`parcela-card ${pago ? 'pago' : cancelado ? 'cancelado' : 'pendente'}`}>
       <div className="parcela-card-top">
-        <span className="parcela-card-tipo">{labelTipoParcela(pagamento)}</span>
+        <span className="parcela-card-tipo">{labelTipoParcela(pagamento, { cliente })}</span>
         <span className="parcela-card-badges">
           <span className={`status-pill ${status}`}>{STATUS_LABEL[status] || 'Pendente'}</span>
           {!cliente && pagamento.renegociacao_id && (
