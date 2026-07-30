@@ -1154,7 +1154,14 @@ const CorretorDashboard = () => {
     if (valorParcela <= 0) return 0
 
     const venda = vendas.find(v => v.id === pagamento.venda_id)
-    const percentualCorretorVenda = parseFloat(venda?.percentual_corretor) || parseFloat(percentualFallback) || 0
+    // Fatia do corretor por VENDA. Conta multi-tipo (ex.: cadastro interno com vendas
+    // externas): usa a taxa padrão do tipo DA VENDA (interno 2,5 / externo 4). Para o
+    // caso normal (venda do mesmo tipo do cadastro) mantém o fallback — zero regressão.
+    const percentualCorretorVenda =
+      parseFloat(venda?.percentual_corretor) ||
+      (venda?.tipo_corretor && venda.tipo_corretor !== userProfile?.tipo_corretor
+        ? (venda.tipo_corretor === 'interno' ? 2.5 : 4)
+        : parseFloat(percentualFallback)) || 0
     const valorProSoluto = parseFloat(venda?.valor_pro_soluto) || 0
 
     if (venda && percentualCorretorVenda > 0 && valorProSoluto > 0) {

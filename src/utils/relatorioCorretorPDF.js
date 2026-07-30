@@ -37,7 +37,13 @@ function makeCalcularComissao(vendas, corretorProfile) {
     if (valorParcela <= 0) return 0
 
     const venda = vendas.find(v => v.id === pagamento.venda_id)
-    const percentualCorretorVenda = parseFloat(venda?.percentual_corretor) || parseFloat(percentualFallback) || 0
+    // Conta multi-tipo: venda de tipo diferente do cadastro usa a taxa do tipo DA VENDA
+    // (interno 2,5 / externo 4); mesmo tipo mantém o fallback. Zero regressão.
+    const percentualCorretorVenda =
+      parseFloat(venda?.percentual_corretor) ||
+      (venda?.tipo_corretor && venda.tipo_corretor !== corretorProfile?.tipo_corretor
+        ? (venda.tipo_corretor === 'interno' ? 2.5 : 4)
+        : parseFloat(percentualFallback)) || 0
     const valorProSoluto = parseFloat(venda?.valor_pro_soluto) || 0
 
     if (venda && percentualCorretorVenda > 0 && valorProSoluto > 0) {
