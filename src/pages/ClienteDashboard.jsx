@@ -20,6 +20,7 @@ import { sortParcelas } from '../utils/parcelasSort'
 import ParcelaCard from '../components/corretor/ParcelaCard'
 import { isPago, isPendente, isAtivo } from '../utils/comissaoCalculator'
 import { gerarExtratoClientePDF } from '../utils/extratoClientePDF'
+import { baixarPdfBase64 } from '../utils/pdfBase64'
 
 // Labels das categorias de fotos (espelha foto_categorias — migrations 005/007)
 const CATEGORIA_LABELS = {
@@ -74,6 +75,10 @@ const ClienteDashboard = () => {
   const [empDetalhe, setEmpDetalhe] = useState(null)
   const [catAtivaDetalhe, setCatAtivaDetalhe] = useState('todas')
   const [fotoAmpliada, setFotoAmpliada] = useState(null)
+  // Boletos Sicoob das parcelas do cliente
+  const [boletos, setBoletos] = useState([])
+  const [copiadoKey, setCopiadoKey] = useState(null)
+  const [baixandoPdfId, setBaixandoPdfId] = useState(null)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
     const saved = safeGet('cliente-sidebar-collapsed')
     return saved === 'true'
@@ -152,18 +157,26 @@ const ClienteDashboard = () => {
           .not('excluido', 'is', true)
           .order('data_venda', { ascending: false })
         
-        // Buscar pagamentos das compras
+        // Buscar pagamentos + boletos das compras
         let pagamentosData = []
         if (comprasData && comprasData.length > 0) {
           const compraIds = comprasData.map(c => c.id)
-          const { data: pagData } = await supabase
-            .from('pagamentos_prosoluto')
-            .select('*')
-            .in('venda_id', compraIds)
-          
+          const [{ data: pagData }, { data: boletosData }] = await Promise.all([
+            supabase
+              .from('pagamentos_prosoluto')
+              .select('*')
+              .in('venda_id', compraIds),
+            supabase
+              .from('boletos')
+              .select('*')
+              .in('venda_id', compraIds)
+              .order('created_at', { ascending: false })
+          ])
+
           if (pagData) {
             pagamentosData = pagData
           }
+          setBoletos(boletosData || [])
         }
         setPagamentos(pagamentosData)
         
@@ -380,6 +393,117 @@ const ClienteDashboard = () => {
       }
     })
     return [...mapa.values()]
+  }
+
+  // ── Boletos Sicoob ──
+  // Boleto vivo da parcela (cancelado/baixado/erro não contam; lista já vem
+  // ordenada por created_at desc do fetch)
+  const boletoAtivoDaParcela = (pagamentoId) =>
+    boletos.find(
+      b => String(b.pagamento_id) === String(pagamentoId) &&
+        !['cancelado', 'baixado', 'erro'].includes(b.status)
+    ) || null
+
+  const statusBoletoInfo = (boleto) => {
+    const hoje = new Date().toISOString().slice(0, 10)
+    if (boleto.status === 'pago') {
+      return {
+        classe: 'pago',
+        label: boleto.data_pagamento ? `Pago em ${formatDataBR(boleto.data_pagamento)}` : 'Pago',
+      }
+    }
+    if (boleto.status === 'vencido' || (boleto.data_vencimento && boleto.data_vencimento < hoje)) {
+      return { classe: 'atrasado', label: 'Atrasado' }
+    }
+    return { classe: 'pendente', label: 'Aguardando pagamento' }
+  }
+
+  const copiarTexto = async (texto, key) => {
+    try {
+      await navigator.clipboard.writeText(texto)
+      setCopiadoKey(key)
+      setTimeout(() => setCopiadoKey(prev => (prev === key ? null : prev)), 2000)
+    } catch (error) {
+      console.error('Erro ao copiar:', error)
+      alert('Não foi possível copiar. Copie manualmente: ' + texto)
+    }
+  }
+
+  const baixarPdfBoleto = async (boleto) => {
+    setBaixandoPdfId(boleto.id)
+    try {
+      const { data, error } = await supabase.functions.invoke('sicoob-boletos', {
+        body: { acao: 'segunda_via', boleto_id: boleto.id },
+      })
+      if (error) {
+        let msg = error.message
+        try {
+          const ctx = await error.context?.json?.()
+          if (ctx?.error) msg = ctx.error
+        } catch { /* mantém msg genérica */ }
+        throw new Error(msg)
+      }
+      if (data?.error) throw new Error(data.error)
+      if (!data?.pdf_base64) throw new Error('PDF não disponível no momento')
+
+      baixarPdfBase64(data.pdf_base64, `Boleto_${boleto.nosso_numero || boleto.id}.pdf`)
+    } catch (error) {
+      console.error('Erro ao baixar PDF do boleto:', error)
+      alert('Erro ao baixar o boleto: ' + error.message)
+    } finally {
+      setBaixandoPdfId(null)
+    }
+  }
+
+  // Strip de boleto exibido sob a parcela na aba Pagamentos
+  const renderBoletoStrip = (boleto) => {
+    const info = statusBoletoInfo(boleto)
+    return (
+      <div className={`boleto-strip ${info.classe}`}>
+        <div className="boleto-strip-header">
+          <span className="boleto-strip-titulo">
+            <CreditCard size={14} />
+            Boleto
+          </span>
+          <span className={`boleto-status-chip ${info.classe}`}>{info.label}</span>
+        </div>
+        {boleto.linha_digitavel && (
+          <div className="boleto-linha" title={boleto.linha_digitavel}>
+            {boleto.linha_digitavel}
+          </div>
+        )}
+        {boleto.status !== 'pago' && (
+          <div className="boleto-acoes">
+            {boleto.linha_digitavel && (
+              <button
+                className="btn-boleto-acao"
+                onClick={() => copiarTexto(boleto.linha_digitavel, `linha-${boleto.id}`)}
+              >
+                <Copy size={13} />
+                {copiadoKey === `linha-${boleto.id}` ? 'Copiado!' : 'Copiar linha digitável'}
+              </button>
+            )}
+            {boleto.qrcode_pix && (
+              <button
+                className="btn-boleto-acao"
+                onClick={() => copiarTexto(boleto.qrcode_pix, `pix-${boleto.id}`)}
+              >
+                <Copy size={13} />
+                {copiadoKey === `pix-${boleto.id}` ? 'Copiado!' : 'Copiar Pix'}
+              </button>
+            )}
+            <button
+              className="btn-boleto-acao"
+              onClick={() => baixarPdfBoleto(boleto)}
+              disabled={baixandoPdfId === boleto.id}
+            >
+              <Download size={13} />
+              {baixandoPdfId === boleto.id ? 'Baixando...' : 'Baixar PDF'}
+            </button>
+          </div>
+        )}
+      </div>
+    )
   }
 
   // ── Detalhe do empreendimento (galeria completa) ──
@@ -1524,9 +1648,15 @@ const ClienteDashboard = () => {
                           </h3>
                         )}
                         <div className="parcelas-list">
-                          {exibidas.map(pagamento => (
-                            <ParcelaCard key={pagamento.id} pagamento={pagamento} modo="cliente" />
-                          ))}
+                          {exibidas.map(pagamento => {
+                            const boleto = boletoAtivoDaParcela(pagamento.id)
+                            return (
+                              <div key={pagamento.id} className="parcela-com-boleto">
+                                <ParcelaCard pagamento={pagamento} modo="cliente" />
+                                {boleto && renderBoletoStrip(boleto)}
+                              </div>
+                            )
+                          })}
                         </div>
                         {doCompra.length > 12 && (
                           <div className="grupo-expand-btn-wrapper">

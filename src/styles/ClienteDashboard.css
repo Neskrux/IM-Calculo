@@ -2737,3 +2737,129 @@
   font-size: 12px;
   color: var(--im-text-secondary, #a0a0a0);
 }
+
+
+/* =============================================
+   BOLETOS (Sicoob) — strip sob a parcela
+   ============================================= */
+
+.parcela-com-boleto {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.boleto-strip {
+  margin-top: -4px;
+  padding: 12px 16px;
+  border-radius: 0 0 12px 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--im-border, rgba(255, 255, 255, 0.08));
+  border-top: 1px dashed rgba(201, 169, 98, 0.25);
+}
+
+.boleto-strip.pago {
+  border-color: rgba(16, 185, 129, 0.25);
+}
+
+.boleto-strip.atrasado {
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+.boleto-strip-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.boleto-strip-titulo {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: var(--im-accent, #c9a962);
+}
+
+.boleto-status-chip {
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.boleto-status-chip.pendente {
+  background: rgba(245, 158, 11, 0.15);
+  color: #f59e0b;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.boleto-status-chip.pago {
+  background: rgba(16, 185, 129, 0.15);
+  color: #10b981;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.boleto-status-chip.atrasado {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.boleto-linha {
+  font-family: 'Courier New', monospace;
+  font-size: 12px;
+  color: var(--im-text-secondary, #a0a0a0);
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 6px;
+  padding: 7px 10px;
+  margin-bottom: 10px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.boleto-acoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.btn-boleto-acao {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px;
+  border-radius: 7px;
+  border: 1px solid rgba(201, 169, 98, 0.35);
+  background: transparent;
+  color: var(--im-accent, #c9a962);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-boleto-acao:hover:not(:disabled) {
+  background: rgba(201, 169, 98, 0.12);
+}
+
+.btn-boleto-acao:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+@media (max-width: 768px) {
+  .boleto-acoes {
+    flex-direction: column;
+  }
+
+  .btn-boleto-acao {
+    justify-content: center;
+  }
+}

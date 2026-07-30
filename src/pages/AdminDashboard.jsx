@@ -13,7 +13,7 @@ import autoTable from 'jspdf-autotable'
 import { 
   Users, DollarSign, TrendingUp, Plus, Edit2, Trash2, 
   Search, Filter, LogOut, Menu, X, ChevronDown, Save, Eye,
-  Calculator, Calendar, User, Briefcase, CheckCircle, Clock, UserPlus, Mail, Lock, Percent, Building, PlusCircle, CreditCard, Check, Upload, FileText, Trash, UserCircle, Phone, MapPin, Camera, Download, FileDown, LayoutDashboard, ChevronLeft, ChevronRight, PanelLeftClose, PanelLeft, AlertCircle, RefreshCw, ClipboardList, CheckCircle2, XCircle, MessageSquare, Undo2, ShieldAlert, Radar, ArrowRight, ListChecks, KeyRound
+  Calculator, Calendar, User, Briefcase, CheckCircle, Clock, UserPlus, Mail, Lock, Percent, Building, PlusCircle, CreditCard, Check, Upload, FileText, Trash, UserCircle, Phone, MapPin, Camera, Download, FileDown, LayoutDashboard, ChevronLeft, ChevronRight, PanelLeftClose, PanelLeft, AlertCircle, RefreshCw, ClipboardList, CheckCircle2, XCircle, MessageSquare, Undo2, ShieldAlert, Radar, ArrowRight, ListChecks, KeyRound, Barcode, Copy
 } from 'lucide-react'
 import logo from '../imgs/logo.png'
 import Ticker from '../components/Ticker'
@@ -31,6 +31,7 @@ import { LayoutGrid, List } from 'lucide-react'
 import { safeGet, safeSet } from '../utils/storage'
 import { calcularFatorComissao, calcularComissaoPagamento, dataEfetiva } from '../utils/comissaoCalculator'
 import { parseDataLocal, formatDataBR } from '../utils/datas'
+import { baixarPdfBase64 } from '../utils/pdfBase64'
 import { triggerFullSync, triggerNormalizeOnly, probeSienge, pollRunUntilDone } from '../lib/siengeSyncApi'
 import { sortParcelas } from '../utils/parcelasSort'
 
@@ -1240,6 +1241,15 @@ const AdminDashboard = () => {
   // posteriores mostram indicador discreto sem travar a tela.
   const [primeiraCargaConcluida, setPrimeiraCargaConcluida] = useState(false)
 
+  // Boletos Sicoob (camada própria de cobrança — tabela boletos; aba "Boletos")
+  const [boletosAdmin, setBoletosAdmin] = useState([])
+  const [emitindoBoletoId, setEmitindoBoletoId] = useState(null)
+  const [buscaBoleto, setBuscaBoleto] = useState('')
+  const [clienteBoletoExpandido, setClienteBoletoExpandido] = useState(null)
+  const [filtroStatusBoleto, setFiltroStatusBoleto] = useState('todos')
+  const [boletoDetalhe, setBoletoDetalhe] = useState(null)
+  const [baixandoPdfBoleto, setBaixandoPdfBoleto] = useState(false)
+
   const complementadorVazio = {
     nome: '',
     cpf: '',
@@ -1557,7 +1567,8 @@ const AdminDashboard = () => {
         // ver .claude/rules/leitura-de-listas-e-refetch.md: o loop antigo paginava sem
         // ORDER BY (ordem instável entre páginas) e fazia break silencioso em erro
         // (dado parcial apresentado como completo).
-        pagamentosData
+        pagamentosData,
+        boletosData
       ] = await Promise.all([
         supabase.from('usuarios').select('*').eq('tipo', 'corretor'),
         supabase.from('vendas').select('*').or('excluido.eq.false,excluido.is.null'),
@@ -1577,7 +1588,14 @@ const AdminDashboard = () => {
             .select('*')
             .order('id', { ascending: true })
             .range(from, to)
-        , { concurrency: 8 })
+        , { concurrency: 8 }),
+        fetchAllPaginated((from, to) =>
+          supabase
+            .from('boletos')
+            .select('*')
+            .order('id', { ascending: true })
+            .range(from, to)
+        , { concurrency: 4 })
       ])
 
       if (corretoresError) console.error('Erro ao buscar corretores:', corretoresError)
@@ -1712,6 +1730,7 @@ const AdminDashboard = () => {
       setEmpreendimentos(empreendimentosComCargos || [])
       setPagamentos(pagamentosComRelacionamentos || [])
       setClientes(clientesComComplementadores || [])
+      setBoletosAdmin(boletosData || [])
       
       /*console.log('✅ Dados carregados com sucesso:', {
         corretores: corretoresComRelacionamentos?.length || 0,
@@ -3900,6 +3919,69 @@ const AdminDashboard = () => {
     return data?.user_id
   }
 
+  // ── Boletos Sicoob (edge function sicoob-boletos) ──
+  // A function NUNCA toca pagamentos_prosoluto — só a tabela boletos.
+  const chamarSicoobBoletos = async (body) => {
+    const { data, error } = await supabase.functions.invoke('sicoob-boletos', { body })
+    if (error) {
+      let msg = error.message
+      try {
+        const ctx = await error.context?.json?.()
+        if (ctx?.error) msg = ctx.error
+      } catch { /* mantém msg genérica */ }
+      throw new Error(msg)
+    }
+    if (data?.error) throw new Error(data.error)
+    return data
+  }
+
+  // Boleto vivo da parcela (cancelado/baixado/erro liberam re-emissão)
+  const boletoAtivoDaParcela = (pagamentoId) =>
+    boletosAdmin.find(
+      b => String(b.pagamento_id) === String(pagamentoId) &&
+        !['cancelado', 'baixado', 'erro'].includes(b.status)
+    ) || null
+
+  const emitirBoletoParcela = async (pag) => {
+    setEmitindoBoletoId(pag.id)
+    try {
+      const data = await chamarSicoobBoletos({ acao: 'emitir', pagamento_id: pag.id })
+      setBoletosAdmin(prev => [...prev, data.boleto])
+      setMessage({ type: 'success', text: 'Boleto emitido no Sicoob!' })
+    } catch (error) {
+      console.error('Erro ao emitir boleto:', error)
+      setMessage({ type: 'error', text: 'Erro ao emitir boleto: ' + error.message })
+    } finally {
+      setEmitindoBoletoId(null)
+    }
+  }
+
+  const baixarPdfBoletoAdmin = async (boleto) => {
+    setBaixandoPdfBoleto(true)
+    try {
+      const data = await chamarSicoobBoletos({ acao: 'segunda_via', boleto_id: boleto.id })
+      if (!data?.pdf_base64) throw new Error('PDF não disponível (no sandbox a segunda via pode não vir)')
+      baixarPdfBase64(data.pdf_base64, `Boleto_${boleto.nosso_numero || boleto.id}.pdf`)
+    } catch (error) {
+      console.error('Erro ao baixar PDF do boleto:', error)
+      setMessage({ type: 'error', text: 'Erro ao baixar PDF: ' + error.message })
+    } finally {
+      setBaixandoPdfBoleto(false)
+    }
+  }
+
+  const cancelarBoletoParcela = async (boleto) => {
+    if (!window.confirm('Cancelar (baixar) este boleto no banco? O cliente não conseguirá mais pagá-lo.')) return
+    try {
+      const data = await chamarSicoobBoletos({ acao: 'cancelar', boleto_id: boleto.id })
+      setBoletosAdmin(prev => prev.map(b => (b.id === data.boleto.id ? data.boleto : b)))
+      setMessage({ type: 'success', text: 'Boleto cancelado.' })
+    } catch (error) {
+      console.error('Erro ao cancelar boleto:', error)
+      setMessage({ type: 'error', text: 'Erro ao cancelar boleto: ' + error.message })
+    }
+  }
+
   // Criar acesso OU trocar senha de cliente já existente (modal do card)
   const handleGerarAcesso = async () => {
     const temAcesso = !!selectedItem?.user_id
@@ -3967,6 +4049,9 @@ const AdminDashboard = () => {
         cpf: clienteForm.cpf,
         rg: clienteForm.rg,
         endereco: clienteForm.endereco,
+        cep: clienteForm.cep || null,
+        cidade: clienteForm.cidade || null,
+        estado: clienteForm.estado || null,
         telefone: clienteForm.telefone,
         email: clienteForm.email,
         profissao: clienteForm.profissao,
@@ -5999,13 +6084,21 @@ const AdminDashboard = () => {
               <span className="nav-badge">{auditoriaResumo.alta}</span>
             )}
           </button>
-          <button 
+          <button
             className={`nav-item ${activeTab === 'clientes' ? 'active' : ''}`}
             onClick={() => navigate('/admin/clientes')}
             title="Clientes"
           >
             <UserCircle size={20} />
             <span>Clientes</span>
+          </button>
+          <button
+            className={`nav-item ${activeTab === 'boletos' ? 'active' : ''}`}
+            onClick={() => navigate('/admin/boletos')}
+            title="Boletos dos clientes (Sicoob)"
+          >
+            <Barcode size={20} />
+            <span>Boletos</span>
           </button>
           <button 
             className={`nav-item ${activeTab === 'relatorios' ? 'active' : ''}`}
@@ -6117,6 +6210,7 @@ const AdminDashboard = () => {
             {activeTab === 'pagamentos' && 'Acompanhamento de Pagamentos'}
             {activeTab === 'auditoria' && 'Central de Auditoria'}
             {activeTab === 'clientes' && 'Cadastro de Clientes'}
+            {activeTab === 'boletos' && 'Boletos dos Clientes'}
             {activeTab === 'relatorios' && 'Relatórios'}
             {activeTab === 'preview-pdf' && 'Ver PDF'}
             {activeTab === 'solicitacoes' && 'Solicitações'}
@@ -8542,6 +8636,224 @@ const AdminDashboard = () => {
             )}
           </div>
         )}
+
+        {/* Aba Boletos — cobrança dos CLIENTES (mundo separado das comissões) */}
+        {activeTab === 'boletos' && (() => {
+          const hoje = new Date().toISOString().slice(0, 10)
+
+          // Vendas ativas agrupadas por cliente
+          const vendasPorCliente = new Map()
+          vendas.forEach(v => {
+            if (v.excluido === true || v.status === 'distrato' || !v.cliente_id) return
+            const key = String(v.cliente_id)
+            if (!vendasPorCliente.has(key)) vendasPorCliente.set(key, [])
+            vendasPorCliente.get(key).push(v)
+          })
+
+          const busca = buscaBoleto.trim().toLowerCase()
+          const listaClientes = clientes
+            .filter(c => vendasPorCliente.has(String(c.id)))
+            .filter(c => !busca ||
+              c.nome_completo?.toLowerCase().includes(busca) ||
+              (c.cpf || '').replace(/\D/g, '').includes(busca.replace(/\D/g, '') || '___'))
+            .sort((a, b) => (a.nome_completo || '').localeCompare(b.nome_completo || ''))
+
+          // Resumo geral dos boletos vivos
+          const boletosVivos = boletosAdmin.filter(b => !['cancelado', 'baixado', 'erro'].includes(b.status))
+          const bolPagos = boletosVivos.filter(b => b.status === 'pago')
+          const bolAtrasados = boletosVivos.filter(b => b.status !== 'pago' && b.data_vencimento && b.data_vencimento < hoje)
+          const bolAguardando = boletosVivos.filter(b => b.status !== 'pago' && !(b.data_vencimento && b.data_vencimento < hoje))
+          const somaValor = (lista) => lista.reduce((acc, b) => acc + (parseFloat(b.valor) || 0), 0)
+
+          const estadoBoletoParcela = (pag) => {
+            const bol = boletoAtivoDaParcela(pag.id)
+            if (!bol) return { chave: 'sem_boleto', bol: null }
+            if (bol.status === 'pago') return { chave: 'pago', bol }
+            if (bol.data_vencimento && bol.data_vencimento < hoje) return { chave: 'atrasado', bol }
+            return { chave: 'aguardando', bol }
+          }
+
+          const rotuloParc = (p) => {
+            if (p.tipo === 'sinal') return 'Sinal'
+            if (p.tipo === 'entrada') return 'Entrada'
+            if (p.tipo === 'parcela_entrada') return `Parcela ${p.numero_parcela || ''}`
+            if (p.tipo === 'balao') return `Balão ${p.numero_parcela || ''}`
+            return p.tipo || 'Parcela'
+          }
+
+          return (
+            <div className="content-section">
+              {/* Resumo */}
+              <div className="boletos-resumo-grid">
+                <div className="boletos-resumo-card aguardando">
+                  <span className="boletos-resumo-label">Aguardando pagamento</span>
+                  <span className="boletos-resumo-valor">{formatCurrency(somaValor(bolAguardando))}</span>
+                  <span className="boletos-resumo-qtd">{bolAguardando.length} boletos</span>
+                </div>
+                <div className="boletos-resumo-card atrasado">
+                  <span className="boletos-resumo-label">Atrasados</span>
+                  <span className="boletos-resumo-valor">{formatCurrency(somaValor(bolAtrasados))}</span>
+                  <span className="boletos-resumo-qtd">{bolAtrasados.length} boletos</span>
+                </div>
+                <div className="boletos-resumo-card pago">
+                  <span className="boletos-resumo-label">Pagos</span>
+                  <span className="boletos-resumo-valor">{formatCurrency(somaValor(bolPagos))}</span>
+                  <span className="boletos-resumo-qtd">{bolPagos.length} boletos</span>
+                </div>
+              </div>
+
+              {/* Filtros */}
+              <div className="boletos-filtros">
+                <div className="search-box" style={{ flex: 1, minWidth: '240px' }}>
+                  <Search size={18} />
+                  <input
+                    type="text"
+                    placeholder="Buscar cliente por nome ou CPF..."
+                    value={buscaBoleto}
+                    onChange={(e) => setBuscaBoleto(e.target.value)}
+                  />
+                </div>
+                <div className="boletos-filtros-chips">
+                  {[
+                    { id: 'todos', label: 'Todas' },
+                    { id: 'sem_boleto', label: 'Sem boleto' },
+                    { id: 'aguardando', label: 'Aguardando' },
+                    { id: 'atrasado', label: 'Atrasados' },
+                    { id: 'pago', label: 'Pagos' },
+                  ].map(f => (
+                    <button
+                      key={f.id}
+                      className={`chip-filtro-admin ${filtroStatusBoleto === f.id ? 'ativo' : ''}`}
+                      onClick={() => setFiltroStatusBoleto(f.id)}
+                    >
+                      {f.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Lista por cliente */}
+              {listaClientes.length === 0 ? (
+                <div className="empty-state-box">
+                  <Barcode size={48} />
+                  <h3>Nenhum cliente encontrado</h3>
+                  <p>Ajuste a busca ou os filtros</p>
+                </div>
+              ) : (
+                listaClientes.map(cliente => {
+                  const vendasCli = vendasPorCliente.get(String(cliente.id)) || []
+                  const linhas = []
+                  vendasCli.forEach(v => {
+                    pagamentos
+                      .filter(p => String(p.venda_id) === String(v.id) && p.status === 'pendente')
+                      .forEach(p => linhas.push({ venda: v, pag: p, estado: estadoBoletoParcela(p) }))
+                  })
+                  linhas.sort((a, b) => ((a.pag.data_prevista || '') < (b.pag.data_prevista || '') ? -1 : 1))
+                  const linhasFiltradas = filtroStatusBoleto === 'todos'
+                    ? linhas
+                    : linhas.filter(l => l.estado.chave === filtroStatusBoleto)
+                  if (filtroStatusBoleto !== 'todos' && linhasFiltradas.length === 0) return null
+
+                  const qtdComBoleto = linhas.filter(l => l.estado.bol).length
+                  const qtdAtrasadas = linhas.filter(l => l.estado.chave === 'atrasado').length
+                  const expandido = clienteBoletoExpandido === cliente.id
+
+                  return (
+                    <div key={cliente.id} className="boletos-cliente-card">
+                      <div
+                        className="boletos-cliente-header"
+                        role="button"
+                        tabIndex={0}
+                        onClick={() => setClienteBoletoExpandido(expandido ? null : cliente.id)}
+                        onKeyDown={(e) => { if (e.key === 'Enter') setClienteBoletoExpandido(expandido ? null : cliente.id) }}
+                      >
+                        <div className="boletos-cliente-info">
+                          <UserCircle size={28} />
+                          <div>
+                            <h4>{cliente.nome_completo}</h4>
+                            <span>{cliente.cpf || 'CPF não informado'} · {vendasCli.length} {vendasCli.length === 1 ? 'compra' : 'compras'}</span>
+                          </div>
+                        </div>
+                        <div className="boletos-cliente-badges">
+                          <span className="boleto-pill-admin emitido">{qtdComBoleto}/{linhas.length} com boleto</span>
+                          {qtdAtrasadas > 0 && (
+                            <span className="boleto-pill-admin atrasado">{qtdAtrasadas} atrasados</span>
+                          )}
+                          <ChevronDown size={20} className={expandido ? 'rotated' : ''} />
+                        </div>
+                      </div>
+
+                      {expandido && (
+                        <div className="boletos-parcelas-lista">
+                          {linhasFiltradas.length === 0 ? (
+                            <p className="boletos-vazio">Nenhuma parcela pendente</p>
+                          ) : (
+                            linhasFiltradas.map(({ venda, pag, estado }) => (
+                              <div key={pag.id} className="boletos-parcela-row">
+                                <div className="boletos-parcela-desc">
+                                  <strong>{rotuloParc(pag)}</strong>
+                                  <span>{venda.empreendimento?.nome || ''} · Un. {venda.unidade || '-'}</span>
+                                </div>
+                                <div className="boletos-parcela-venc">vence {formatDataBR(pag.data_prevista)}</div>
+                                <div className="boletos-parcela-valor">{formatCurrency(pag.valor)}</div>
+                                <div className="boletos-parcela-acao">
+                                  {estado.chave === 'sem_boleto' ? (
+                                    <button
+                                      className="btn-small-confirm"
+                                      onClick={() => emitirBoletoParcela(pag)}
+                                      disabled={emitindoBoletoId === pag.id}
+                                      title="Emitir boleto Sicoob"
+                                    >
+                                      <Barcode size={14} />
+                                      {emitindoBoletoId === pag.id ? 'Emitindo...' : 'Emitir boleto'}
+                                    </button>
+                                  ) : (
+                                    <>
+                                      <span className={`boleto-pill-admin ${estado.chave === 'pago' ? 'pago' : estado.chave === 'atrasado' ? 'atrasado' : 'emitido'}`}>
+                                        {estado.chave === 'pago'
+                                          ? `Pago${estado.bol.data_pagamento ? ` em ${formatDataBR(estado.bol.data_pagamento)}` : ''}`
+                                          : estado.chave === 'atrasado' ? 'Atrasado' : 'Aguardando'}
+                                      </span>
+                                      <button
+                                        className="btn-ver-detalhe"
+                                        onClick={() => setBoletoDetalhe({
+                                          ...estado.bol,
+                                          contexto: {
+                                            clienteNome: cliente.nome_completo,
+                                            parcela: rotuloParc(pag),
+                                            empreendimento: venda.empreendimento?.nome || '',
+                                            unidade: venda.unidade || '-',
+                                          },
+                                        })}
+                                        title="Ver boleto"
+                                      >
+                                        <Eye size={14} />
+                                        Ver
+                                      </button>
+                                      {estado.chave !== 'pago' && (
+                                        <button
+                                          className="btn-small-reverter"
+                                          onClick={() => cancelarBoletoParcela(estado.bol)}
+                                          title="Cancelar boleto no banco"
+                                        >
+                                          <X size={14} />
+                                        </button>
+                                      )}
+                                    </>
+                                  )}
+                                </div>
+                              </div>
+                            ))
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )
+                })
+              )}
+            </div>
+          )
+        })()}
 
         {activeTab === 'relatorios' && (
           <div className="content-section">
@@ -11384,6 +11696,38 @@ const AdminDashboard = () => {
                     />
                   </div>
 
+                  {/* CEP/Cidade/UF — obrigatórios pra emissão de boleto (Sicoob) */}
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label>CEP</label>
+                      <input
+                        type="text"
+                        placeholder="00000-000"
+                        value={clienteForm.cep || ''}
+                        onChange={(e) => setClienteForm({...clienteForm, cep: e.target.value})}
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>Cidade</label>
+                      <input
+                        type="text"
+                        placeholder="Cidade"
+                        value={clienteForm.cidade || ''}
+                        onChange={(e) => setClienteForm({...clienteForm, cidade: e.target.value})}
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>UF</label>
+                      <input
+                        type="text"
+                        placeholder="SC"
+                        maxLength={2}
+                        value={clienteForm.estado || ''}
+                        onChange={(e) => setClienteForm({...clienteForm, estado: e.target.value.toUpperCase()})}
+                      />
+                    </div>
+                  </div>
+
                   <div className="form-row">
                     <div className="form-group">
                       <label>Telefone</label>
@@ -12082,6 +12426,100 @@ const AdminDashboard = () => {
       )}
 
       {/* Modal de Visualização de Cliente */}
+      {/* Modal de detalhes do boleto (aba Boletos) */}
+      {boletoDetalhe && (
+        <div className="modal-overlay" onClick={() => setBoletoDetalhe(null)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '560px' }}>
+            <div className="modal-header">
+              <h2>
+                <Barcode size={20} style={{ marginRight: '8px' }} />
+                Boleto — {boletoDetalhe.contexto?.parcela || 'Parcela'}
+              </h2>
+              <button className="close-btn" onClick={() => setBoletoDetalhe(null)}>
+                <X size={24} />
+              </button>
+            </div>
+            <div className="modal-body" style={{ padding: '24px' }}>
+              <p style={{ margin: '0 0 16px', color: '#94a3b8', fontSize: '14px' }}>
+                <strong style={{ color: '#f5f5f5' }}>{boletoDetalhe.contexto?.clienteNome}</strong>
+                {boletoDetalhe.contexto?.empreendimento && (
+                  <> · {boletoDetalhe.contexto.empreendimento} · Un. {boletoDetalhe.contexto.unidade}</>
+                )}
+              </p>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px', marginBottom: '18px' }}>
+                {[
+                  ['Valor', formatCurrency(boletoDetalhe.valor)],
+                  ['Vencimento', formatDataBR(boletoDetalhe.data_vencimento)],
+                  ['Status', boletoDetalhe.status],
+                  ['Ambiente', boletoDetalhe.ambiente],
+                  ['Nosso número', boletoDetalhe.nosso_numero || '-'],
+                  ['Emitido em', formatDataBR(boletoDetalhe.data_emissao)],
+                ].map(([label, valor]) => (
+                  <div key={label} style={{ background: 'rgba(255,255,255,0.04)', padding: '10px 14px', borderRadius: '10px' }}>
+                    <div style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '1px', color: '#94a3b8', marginBottom: '4px' }}>{label}</div>
+                    <div style={{ fontSize: '14px', fontWeight: 600 }}>{String(valor)}</div>
+                  </div>
+                ))}
+              </div>
+
+              {boletoDetalhe.linha_digitavel && (
+                <div style={{ marginBottom: '12px' }}>
+                  <div style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '1px', color: '#94a3b8', marginBottom: '6px' }}>Linha digitável</div>
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                    <code style={{ flex: 1, background: 'rgba(0,0,0,0.35)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '8px', padding: '10px 12px', fontSize: '13px', overflowWrap: 'anywhere' }}>
+                      {boletoDetalhe.linha_digitavel}
+                    </code>
+                    <button
+                      className="btn-ver-detalhe"
+                      onClick={() => {
+                        navigator.clipboard.writeText(boletoDetalhe.linha_digitavel)
+                        setMessage({ type: 'success', text: 'Linha digitável copiada!' })
+                      }}
+                      title="Copiar"
+                    >
+                      <Copy size={14} />
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {boletoDetalhe.qrcode_pix && (
+                <div style={{ marginBottom: '12px' }}>
+                  <div style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '1px', color: '#94a3b8', marginBottom: '6px' }}>Pix copia-e-cola</div>
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                    <code style={{ flex: 1, background: 'rgba(0,0,0,0.35)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '8px', padding: '10px 12px', fontSize: '11px', maxHeight: '64px', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {boletoDetalhe.qrcode_pix.slice(0, 120)}...
+                    </code>
+                    <button
+                      className="btn-ver-detalhe"
+                      onClick={() => {
+                        navigator.clipboard.writeText(boletoDetalhe.qrcode_pix)
+                        setMessage({ type: 'success', text: 'Código Pix copiado!' })
+                      }}
+                      title="Copiar Pix"
+                    >
+                      <Copy size={14} />
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+            <div className="modal-footer">
+              <button className="btn-secondary" onClick={() => setBoletoDetalhe(null)}>Fechar</button>
+              <button
+                className="btn-primary"
+                onClick={() => baixarPdfBoletoAdmin(boletoDetalhe)}
+                disabled={baixandoPdfBoleto}
+              >
+                <Download size={16} style={{ marginRight: '6px' }} />
+                {baixandoPdfBoleto ? 'Baixando...' : 'Baixar PDF'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {showModal && modalType === 'gerar-acesso-cliente' && selectedItem && (
         <div className="modal-overlay" onClick={() => setShowModal(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '480px' }}>

@@ -8611,3 +8611,255 @@ textarea:focus {
     padding-right: 8px;
   }
 }
+
+
+/* Boletos Sicoob — pill de status na linha da parcela (admin) */
+.boleto-pill-admin {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.boleto-pill-admin.emitido {
+  background: rgba(201, 169, 98, 0.14);
+  color: var(--im-accent, #c9a962);
+  border: 1px solid rgba(201, 169, 98, 0.35);
+}
+
+.boleto-pill-admin.pago {
+  background: rgba(16, 185, 129, 0.15);
+  color: #10b981;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.boleto-pill-admin.atrasado {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.boleto-pill-cancelar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 255, 255, 0.1);
+  color: inherit;
+  cursor: pointer;
+  padding: 0;
+}
+
+.boleto-pill-cancelar:hover {
+  background: rgba(239, 68, 68, 0.35);
+}
+
+
+/* =============================================
+   ABA BOLETOS (admin) — cobrança dos clientes
+   ============================================= */
+
+.boletos-resumo-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.boletos-resumo-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 20px 24px;
+  border-radius: 14px;
+  background: var(--im-bg-card, rgba(18, 18, 18, 0.8));
+  border: 1px solid var(--im-border, rgba(255, 255, 255, 0.08));
+}
+
+.boletos-resumo-card.aguardando { border-color: rgba(245, 158, 11, 0.3); }
+.boletos-resumo-card.atrasado { border-color: rgba(239, 68, 68, 0.35); }
+.boletos-resumo-card.pago { border-color: rgba(16, 185, 129, 0.3); }
+
+.boletos-resumo-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--im-text-secondary, #94a3b8);
+}
+
+.boletos-resumo-valor {
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.boletos-resumo-card.aguardando .boletos-resumo-valor { color: #f59e0b; }
+.boletos-resumo-card.atrasado .boletos-resumo-valor { color: #ef4444; }
+.boletos-resumo-card.pago .boletos-resumo-valor { color: #10b981; }
+
+.boletos-resumo-qtd {
+  font-size: 12px;
+  color: var(--im-text-secondary, #94a3b8);
+}
+
+.boletos-filtros {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.boletos-filtros-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.chip-filtro-admin {
+  padding: 7px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: transparent;
+  color: var(--im-text-secondary, #94a3b8);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.chip-filtro-admin:hover { border-color: rgba(201, 169, 98, 0.4); }
+
+.chip-filtro-admin.ativo {
+  background: var(--im-accent, #c9a962);
+  border-color: var(--im-accent, #c9a962);
+  color: #000;
+  font-weight: 600;
+}
+
+.boletos-cliente-card {
+  background: var(--im-bg-card, rgba(18, 18, 18, 0.8));
+  border: 1px solid var(--im-border, rgba(255, 255, 255, 0.08));
+  border-radius: 14px;
+  margin-bottom: 12px;
+  overflow: hidden;
+}
+
+.boletos-cliente-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 16px 20px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.boletos-cliente-header:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.boletos-cliente-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.boletos-cliente-info svg { color: var(--im-accent, #c9a962); flex-shrink: 0; }
+
+.boletos-cliente-info h4 {
+  margin: 0 0 2px;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.boletos-cliente-info span {
+  font-size: 12px;
+  color: var(--im-text-secondary, #94a3b8);
+}
+
+.boletos-cliente-badges {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.boletos-cliente-badges .rotated { transform: rotate(180deg); }
+.boletos-cliente-badges svg { transition: transform 0.2s; }
+
+.boletos-parcelas-lista {
+  border-top: 1px solid var(--im-border, rgba(255, 255, 255, 0.08));
+  padding: 8px 20px 16px;
+}
+
+.boletos-vazio {
+  margin: 12px 0 4px;
+  font-size: 13px;
+  color: var(--im-text-secondary, #94a3b8);
+}
+
+.boletos-parcela-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 0;
+  border-bottom: 1px dashed rgba(255, 255, 255, 0.06);
+}
+
+.boletos-parcela-row:last-child { border-bottom: none; }
+
+.boletos-parcela-desc {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.boletos-parcela-desc strong { font-size: 13px; }
+
+.boletos-parcela-desc span {
+  font-size: 11px;
+  color: var(--im-text-secondary, #94a3b8);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.boletos-parcela-venc {
+  font-size: 12px;
+  color: var(--im-text-secondary, #94a3b8);
+  white-space: nowrap;
+}
+
+.boletos-parcela-valor {
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  min-width: 100px;
+  text-align: right;
+}
+
+.boletos-parcela-acao {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+@media (max-width: 768px) {
+  .boletos-parcela-row {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .boletos-parcela-valor { min-width: 0; }
+}
