@@ -62,4 +62,5 @@ Thumbs.db
 graphify-out/
 
 # Claude Code runtime
-.claude/scheduled_tasks.lock
+.claude/scheduled_tasks.lock.env.homolog
+docs/homolog/*.sql
