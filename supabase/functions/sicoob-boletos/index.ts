@@ -40,6 +40,8 @@ const SICOOB_ACCESS_TOKEN = Deno.env.get("SICOOB_ACCESS_TOKEN") ?? "" // sandbox
 const SICOOB_NUMERO_CLIENTE = Number(Deno.env.get("SICOOB_NUMERO_CLIENTE") ?? "0") // código do beneficiário na cooperativa
 const SICOOB_NUMERO_CONTA = Number(Deno.env.get("SICOOB_NUMERO_CONTA") ?? "0")
 const CODIGO_MODALIDADE = 1 // cobrança simples com registro
+// Segredo do worker local (emissão/PDFs de produção rodam fora do edge — mTLS)
+const WORKER_SECRET = Deno.env.get("BOLETOS_WORKER_SECRET") ?? ""
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -333,6 +335,24 @@ async function segundaVia(caller: Caller, body: Record<string, unknown>): Promis
   if (caller.tipo !== "admin" && !(await donoDoBoleto(caller, boleto))) {
     return json({ error: "sem permissão" }, 403)
   }
+
+  // 1º: PDF oficial armazenado no Storage (populado pelo worker de produção —
+  // o edge não tem o certificado mTLS pra buscar na API real)
+  if (boleto.pdf_path) {
+    const { data: arquivo, error: dlErr } = await admin.storage.from("boletos").download(boleto.pdf_path)
+    if (!dlErr && arquivo) {
+      const bytes = new Uint8Array(await arquivo.arrayBuffer())
+      let bin = ""
+      for (let i = 0; i < bytes.length; i += 8192) {
+        bin += String.fromCharCode(...bytes.subarray(i, i + 8192))
+      }
+      return json({ ok: true, pdf_base64: btoa(bin), linha_digitavel: boleto.linha_digitavel })
+    }
+  }
+
+  if (boleto.ambiente === "producao") {
+    return json({ error: "PDF ainda não disponível — aguarde a sincronização de PDFs do lote" }, 404)
+  }
   if (!sicoobConfigurado()) return json({ error: "integração Sicoob não configurada" }, 503)
   if (!boleto.nosso_numero) return json({ error: "boleto sem nossoNumero — não há segunda via" }, 400)
 
@@ -369,6 +389,35 @@ async function aplicarSituacaoSicoob(
   }
   const { data } = await db().from("boletos").update(patch).eq("id", boleto.id).select().single()
   return data
+}
+
+// Recebe do WORKER local (autenticado por segredo) o PDF oficial baixado da
+// produção via mTLS e o guarda no Storage; segunda_via passa a servi-lo.
+async function armazenarPdf(body: Record<string, unknown>): Promise<Response> {
+  if (!WORKER_SECRET || String(body.worker_secret ?? "") !== WORKER_SECRET) {
+    return json({ error: "worker_secret inválido" }, 403)
+  }
+  const boletoId = String(body.boleto_id ?? "")
+  const pdfB64 = String(body.pdf_base64 ?? "")
+  if (!boletoId || !pdfB64) return json({ error: "boleto_id e pdf_base64 são obrigatórios" }, 400)
+
+  const admin = db()
+  const { data: boleto } = await admin.from("boletos").select("id").eq("id", boletoId).maybeSingle()
+  if (!boleto) return json({ error: "boleto não encontrado" }, 404)
+
+  const bin = atob(pdfB64.replace(/[^A-Za-z0-9+/=]/g, ""))
+  const bytes = new Uint8Array(bin.length)
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i)
+  if (bytes.length < 1000) return json({ error: `PDF suspeito de truncado (${bytes.length} bytes) — não armazenado` }, 400)
+
+  const path = `${boletoId}.pdf`
+  const { error: upErr } = await admin.storage.from("boletos")
+    .upload(path, bytes, { contentType: "application/pdf", upsert: true })
+  if (upErr) return json({ error: `falha no upload: ${upErr.message}` }, 500)
+
+  const { error: dbErr } = await admin.from("boletos").update({ pdf_path: path }).eq("id", boletoId)
+  if (dbErr) return json({ error: dbErr.message }, 500)
+  return json({ ok: true, pdf_path: path, bytes: bytes.length })
 }
 
 // ── Webhook (Sicoob → nós) ──────────────────────────────────────────────────
@@ -443,6 +492,12 @@ Deno.serve(async (req) => {
 
   try {
     if (path === "/webhook") return await webhook(req)
+
+    // ação do worker autenticada por segredo próprio (sem JWT de usuário)
+    if (path === "/armazenar-pdf") {
+      const body = (await req.json().catch(() => ({}))) as Record<string, unknown>
+      return await armazenarPdf(body)
+    }
 
     const caller = await autenticar(req)
     if (!caller) return json({ error: "não autenticado" }, 401)
