@@ -63,6 +63,13 @@ graphify-out/
 
 # Claude Code runtime
 .claude/scheduled_tasks.lock
+
 # Planilhas operacionais com dados de clientes (PII) - nunca commitar
 modelo-*.xlsx
 conferencia-*.xlsx
+
+# Extração temporária de PDFs (contratos-extrair-textos.mjs)
+tmp-extract/
+
+# Scratchpads de investigação do dia a dia (efêmeros, não versionar)
+scratchpad-*/

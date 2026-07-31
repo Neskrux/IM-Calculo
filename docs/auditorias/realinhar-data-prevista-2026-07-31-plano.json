@@ -1,0 +1,18 @@
+{
+  "meta": {
+    "geradoEm": "2026-07-31T15:09:12.699Z",
+    "spec_ref": ".claude/rules/sincronizacao-sienge.md",
+    "script": "scripts/realinhar-data-prevista-ancora.mjs",
+    "modo": "dry-run",
+    "cache": "ac5154c6f2b9101cef0c4b65.json"
+  },
+  "resumo": {
+    "exato": 14260,
+    "auto": 0,
+    "rodada_b": 0,
+    "s4_antes": [],
+    "s4_depois": []
+  },
+  "auto": [],
+  "rodada_b": []
+}
