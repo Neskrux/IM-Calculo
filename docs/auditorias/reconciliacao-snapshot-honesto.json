@@ -1,0 +1,315 @@
+{
+  "meta": {
+    "geradoEm": "2026-06-25T20:18:15.393Z",
+    "asOf": "2026-06-25",
+    "spec_ref": ".claude/rules/sincronizacao-sienge.md",
+    "script": "scripts/reconciliacao-snapshot-honesto.mjs",
+    "modo": "read-only",
+    "income_cache": "ac5154c6f2b9101cef0c4b65.json"
+  },
+  "pagas": {
+    "total": 2809,
+    "comissao": 1256582.31,
+    "ancoradas": 2798,
+    "pct_ancoradas": 99.61
+  },
+  "lentes": {
+    "anchor": {
+      "pct": 99.42,
+      "comissao": 1249353.98,
+      "parc": 2790
+    },
+    "anchor_ou_valordata": {
+      "pct": 99.49,
+      "comissao": 1250117.78,
+      "parc": 2793
+    },
+    "resgate_valordata": {
+      "parc": 3,
+      "comissao": 763.8
+    },
+    "limpo": {
+      "pct": 99.69,
+      "parc_conf": 2558,
+      "parc_total": 2567
+    }
+  },
+  "residuo": {
+    "tail_genuino": [
+      {
+        "id": "17d9c582-5778-41f1-8aa1-62ea2ac8e0bf",
+        "unidade": "908 B",
+        "contrato": "196",
+        "corretor_id": "d8462dde-fc5a-49c4-9dd4-ac2457a5930a",
+        "np": 1,
+        "tipo": "parcela_entrada",
+        "valor": 1394.47,
+        "comissao": 488.07,
+        "data_pagamento": "2025-07-20",
+        "data_prevista": "2025-07-20",
+        "termo": "distrato",
+        "anchored": false
+      },
+      {
+        "id": "88ce1156-3dd9-417d-8e26-1ca25e4539b7",
+        "unidade": "1005 A",
+        "contrato": "135",
+        "corretor_id": "9b1f5c90-defa-4b6c-b011-ffb496a14349",
+        "np": 1,
+        "tipo": "parcela_entrada",
+        "valor": 537.99,
+        "comissao": 163.29,
+        "data_pagamento": "2025-05-20",
+        "data_prevista": "2025-05-20",
+        "termo": "limpo",
+        "anchored": false
+      },
+      {
+        "id": "c4069144-0c6c-485e-ae07-4aac96db2aa4",
+        "unidade": "1105 A",
+        "contrato": "141",
+        "corretor_id": "0c79763f-4477-424c-aa0a-aa1e4c4a9fcb",
+        "np": 1,
+        "tipo": "parcela_entrada",
+        "valor": 1422.5,
+        "comissao": 497.88,
+        "data_pagamento": "2025-07-04",
+        "data_prevista": "2025-07-10",
+        "termo": "distrato",
+        "anchored": false
+      },
+      {
+        "id": "105a7e3f-4508-4f61-b001-76d51ea87ebd",
+        "unidade": "603 B",
+        "contrato": "411",
+        "corretor_id": "64e7ac1a-7723-4de6-a633-bf3f6b3c5283",
+        "np": 4,
+        "tipo": "parcela_entrada",
+        "valor": 2967.39,
+        "comissao": 452.11,
+        "data_pagamento": "2026-05-25",
+        "data_prevista": "2026-06-20",
+        "termo": "aditivo",
+        "anchored": true
+      },
+      {
+        "id": "a8f2d91b-113a-41c0-bf9e-255c477d55e5",
+        "unidade": "903 B",
+        "contrato": "191",
+        "corretor_id": "a53be519-e59e-4be1-8ab3-5e40572bbd64",
+        "np": 1,
+        "tipo": "parcela_entrada",
+        "valor": 2916.67,
+        "comissao": 204.17,
+        "data_pagamento": "2025-07-20",
+        "data_prevista": "2025-07-20",
+        "termo": "limpo",
+        "anchored": true
+      },
+      {
+        "id": "e1988a79-bc67-4b07-8a6e-8d2ef59b4e55",
+        "unidade": "903 C",
+        "contrato": "228",
+        "corretor_id": "9b1f5c90-defa-4b6c-b011-ffb496a14349",
+        "np": 53,
+        "tipo": "parcela_entrada",
+        "valor": 285.21,
+        "comissao": 87.64,
+        "data_pagamento": "2026-06-05",
+        "data_prevista": "2026-05-20",
+        "termo": "known_messy",
+        "anchored": true
+      },
+      {
+        "id": "a61286fc-1ad9-4a2b-afb1-a555d584fd96",
+        "unidade": "901 D",
+        "contrato": "278",
+        "corretor_id": "a80c1aa4-0d13-4ea0-9f90-f86ddcf03602",
+        "np": 1,
+        "tipo": "parcela_entrada",
+        "valor": 1152.44,
+        "comissao": 403.35,
+        "data_pagamento": "2025-05-20",
+        "data_prevista": "2025-05-20",
+        "termo": "distrato",
+        "anchored": false
+      },
+      {
+        "id": "e52bee7c-0514-4dca-9f7b-a19b56cc6b77",
+        "unidade": "604 D",
+        "contrato": "268",
+        "corretor_id": "0863fd3b-e90d-4f88-ac22-49d618b42446",
+        "np": 1,
+        "tipo": "parcela_entrada",
+        "valor": 1298.97,
+        "comissao": 454.64,
+        "data_pagamento": "2025-07-21",
+        "data_prevista": "2025-07-20",
+        "termo": "distrato",
+        "anchored": false
+      },
+      {
+        "id": "cd4ace1c-9530-4b16-8250-fee0f3455f5d",
+        "unidade": "1004 A",
+        "contrato": "134",
+        "corretor_id": "e94de4d7-1e73-478a-9a93-39132265ab7e",
+        "np": 7,
+        "tipo": "parcela_entrada",
+        "valor": 1163.97,
+        "comissao": 407.39,
+        "data_pagamento": "2026-01-19",
+        "data_prevista": "2025-12-10",
+        "termo": "limpo",
+        "anchored": true
+      },
+      {
+        "id": "ebc3c091-0cc8-41a1-ae56-7b202fccd69e",
+        "unidade": "1004 A",
+        "contrato": "134",
+        "corretor_id": "e94de4d7-1e73-478a-9a93-39132265ab7e",
+        "np": 8,
+        "tipo": "parcela_entrada",
+        "valor": 1163.97,
+        "comissao": 407.39,
+        "data_pagamento": "2026-02-04",
+        "data_prevista": "2026-01-10",
+        "termo": "limpo",
+        "anchored": true
+      },
+      {
+        "id": "615959e5-d7cc-4388-9aca-9d282a0ad4a3",
+        "unidade": "905 B",
+        "contrato": "340",
+        "corretor_id": "a80c1aa4-0d13-4ea0-9f90-f86ddcf03602",
+        "np": 3,
+        "tipo": "parcela_entrada",
+        "valor": 1574.8,
+        "comissao": 551.39,
+        "data_pagamento": "2025-08-20",
+        "data_prevista": "2030-03-20",
+        "termo": "limpo",
+        "anchored": true
+      },
+      {
+        "id": "9b27c83c-59c9-4e2f-9eb2-ed9bc808e494",
+        "unidade": "905 B",
+        "contrato": "340",
+        "corretor_id": "a80c1aa4-0d13-4ea0-9f90-f86ddcf03602",
+        "np": 1,
+        "tipo": "parcela_entrada",
+        "valor": 1574.8,
+        "comissao": 551.39,
+        "data_pagamento": "2025-06-20",
+        "data_prevista": "2030-01-20",
+        "termo": "limpo",
+        "anchored": true
+      },
+      {
+        "id": "a996f29d-1e7f-4701-86a9-a5d920385373",
+        "unidade": "404 A",
+        "contrato": "8",
+        "corretor_id": "a80c1aa4-0d13-4ea0-9f90-f86ddcf03602",
+        "np": 1,
+        "tipo": "parcela_entrada",
+        "valor": 1016.67,
+        "comissao": 356.34,
+        "data_pagamento": "2025-06-20",
+        "data_prevista": "2025-05-20",
+        "termo": "limpo",
+        "anchored": false
+      },
+      {
+        "id": "d007dc8a-2241-4441-a464-fa63a82c783a",
+        "unidade": "905 B",
+        "contrato": "340",
+        "corretor_id": "a80c1aa4-0d13-4ea0-9f90-f86ddcf03602",
+        "np": 5,
+        "tipo": "parcela_entrada",
+        "valor": 1574.8,
+        "comissao": 551.39,
+        "data_pagamento": "2025-11-04",
+        "data_prevista": "2030-05-20",
+        "termo": "limpo",
+        "anchored": true
+      },
+      {
+        "id": "ef5c6413-5e67-490b-9f36-afcb4bbb3d7d",
+        "unidade": "904 A",
+        "contrato": "79",
+        "corretor_id": null,
+        "np": 1,
+        "tipo": "parcela_entrada",
+        "valor": 1394.47,
+        "comissao": 488.06,
+        "data_pagamento": "2025-07-07",
+        "data_prevista": "2025-07-10",
+        "termo": "distrato",
+        "anchored": false
+      }
+    ],
+    "stale_recent": [
+      {
+        "id": "ea7cc429-8d5a-4f18-9ab9-5aa8cac1621a",
+        "unidade": "606 A",
+        "contrato": null,
+        "corretor_id": "4c04b405-d75b-4638-9dab-c149e563bc0c",
+        "np": 1,
+        "tipo": "parcela_entrada",
+        "valor": 1142.93,
+        "comissao": 400.03,
+        "data_pagamento": "2026-06-23",
+        "data_prevista": "2026-06-20",
+        "termo": "limpo",
+        "anchored": false
+      }
+    ],
+    "identidade_quebrada": [],
+    "tail_por_termo": {
+      "distrato": 5,
+      "limpo": 8,
+      "aditivo": 1,
+      "known_messy": 1
+    }
+  },
+  "por_termo": {
+    "limpo": {
+      "n": 2567,
+      "com": 1151469.9100000039,
+      "conf_any_n": 2558,
+      "conf_any_com": 1147877.130000004
+    },
+    "distrato": {
+      "n": 155,
+      "com": 75280.70000000001,
+      "conf_any_n": 150,
+      "conf_any_com": 72948.70000000003
+    },
+    "aditivo": {
+      "n": 72,
+      "com": 26159.410000000014,
+      "conf_any_n": 71,
+      "conf_any_com": 25707.30000000001
+    },
+    "known_messy": {
+      "n": 15,
+      "com": 3672.29,
+      "conf_any_n": 14,
+      "conf_any_com": 3584.6499999999996
+    }
+  },
+  "inadimplencia": {
+    "banco": {
+      "vencidas": 2838,
+      "nao_pagas": 354,
+      "pct": 12.47,
+      "reais": 467176
+    },
+    "sienge": {
+      "vencidas": 2882,
+      "nao_pagas": 348,
+      "pct": 12.07,
+      "reais": 465017.37
+    },
+    "gap_pontos": 0.4
+  }
+}
