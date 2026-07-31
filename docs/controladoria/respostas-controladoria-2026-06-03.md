@@ -15,8 +15,8 @@ fonte_perguntas: docs/controladoria/conferencia-sienge-2026-06-02.xlsx + textos 
 
 | Caso | Cliente / CPF | Unid | Resposta dela | Significado | Ação (a mapear) |
 |------|---------------|------|---------------|-------------|------------------|
-| **412** | GABRIEL ADRIANO GOMES · 126.241.199-81 | 412 | **Distrato** — não pagou nenhuma parcela e pediu distrato | Venda real, distratada. 0 parcelas pagas. | Encerrar a venda manual (marcar distrato / soft-delete — 0 pagas, sem risco). Confirmar se há contrato no Sienge pro distrato. |
-| **606** | GUSTAVO HENRIQUE DA CUNHA · 118.163.869-01 | 606 | **Reparcelamento** — existe no Sienge; cliente mudou a 1ª parcela pra **junho**. **Contrato 305 / código 451** | Venda real, existe no Sienge (contrato 305, possível reemissão/código 451), reparcelada. | Vincular a venda manual ao contrato real do Sienge (c305 / 451); ajustar cronograma (1ª parcela junho). **Não excluir.** Investigar relação c305↔451 (reemissão?). |
+| **412** | GABRIEL ADRIANO GOMES · ***.***.***-** | 412 | **Distrato** — não pagou nenhuma parcela e pediu distrato | Venda real, distratada. 0 parcelas pagas. | Encerrar a venda manual (marcar distrato / soft-delete — 0 pagas, sem risco). Confirmar se há contrato no Sienge pro distrato. |
+| **606** | GUSTAVO HENRIQUE DA CUNHA · ***.***.***-** | 606 | **Reparcelamento** — existe no Sienge; cliente mudou a 1ª parcela pra **junho**. **Contrato 305 / código 451** | Venda real, existe no Sienge (contrato 305, possível reemissão/código 451), reparcelada. | Vincular a venda manual ao contrato real do Sienge (c305 / 451); ajustar cronograma (1ª parcela junho). **Não excluir.** Investigar relação c305↔451 (reemissão?). |
 
 **Nota:** ambas as respostas batem com o mapeamento prévio (eram "vendas reais sem contrato Sienge").
 A 412 vira distrato; a 606 vira vínculo+reparcelamento. Detalhamento técnico fica pra rodada futura.

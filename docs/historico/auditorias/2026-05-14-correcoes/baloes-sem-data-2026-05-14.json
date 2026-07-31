@@ -12,7 +12,7 @@
       "numero_contrato": null,
       "unidade": "401",
       "cliente": "RAYLTON GOMES DA COSTA  ",
-      "cliente_cpf": "113.127.329-03",
+      "cliente_cpf": "***.***.***-**",
       "excluido": false,
       "qtd_baloes_sem_data": 5,
       "baloes": [
@@ -64,7 +64,7 @@
       "numero_contrato": null,
       "unidade": "002",
       "cliente": "jonas cliente",
-      "cliente_cpf": "196.849.841-98",
+      "cliente_cpf": "***.***.***-**",
       "excluido": false,
       "qtd_baloes_sem_data": 5,
       "baloes": [
@@ -116,7 +116,7 @@
       "numero_contrato": "207",
       "unidade": "1305 D",
       "cliente": "LURDES COLMAN LOPES",
-      "cliente_cpf": "51348039191",
+      "cliente_cpf": "***********",
       "excluido": false,
       "qtd_baloes_sem_data": 4,
       "baloes": [
@@ -188,7 +188,7 @@
       "numero_contrato": null,
       "unidade": "603",
       "cliente": "CAYO KAMENAC RAMOS DA SILVA",
-      "cliente_cpf": "138.953.824-93",
+      "cliente_cpf": "***.***.***-**",
       "excluido": false,
       "qtd_baloes_sem_data": 4,
       "baloes": [
@@ -234,7 +234,7 @@
       "numero_contrato": null,
       "unidade": "1307",
       "cliente": "Felix Roman Munieweg",
-      "cliente_cpf": "030.678.040-23",
+      "cliente_cpf": "***.***.***-**",
       "excluido": false,
       "qtd_baloes_sem_data": 4,
       "baloes": [
@@ -280,7 +280,7 @@
       "numero_contrato": "243",
       "unidade": "905 B",
       "cliente": "CAROLINE SARAIVA DA SILVEIRA RODRIGUES ",
-      "cliente_cpf": "06023755925",
+      "cliente_cpf": "***********",
       "excluido": false,
       "qtd_baloes_sem_data": 3,
       "baloes": [
@@ -341,7 +341,7 @@
       "numero_contrato": null,
       "unidade": "1305",
       "cliente": "ALISSON RODRIGUES DO CARMO",
-      "cliente_cpf": "039.401.881-82",
+      "cliente_cpf": "***.***.***-**",
       "excluido": false,
       "qtd_baloes_sem_data": 1,
       "baloes": [
