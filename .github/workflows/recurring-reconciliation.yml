@@ -4,18 +4,17 @@
 # Pode ser disparado manualmente.
 #
 # O que faz (em ordem):
-#   1. Corrige drift de data_prevista (gerar-plano + aplicar-correcao).
-#   2. Reconciliacao GERAL contra Sienge (reconciliar-todas-vendas.mjs --apply):
+#   1. Reconciliacao GERAL contra Sienge (reconciliar-todas-vendas.mjs --apply):
 #      - popula sienge_installment_id (ancoragem 1:1)
 #      - marca pago / reativa canceladas validas / cria parcelas faltantes
 #      Com 5 salvaguardas: pula venda se houver qualquer ambiguidade.
-#   3. Sincroniza sales-contracts + receivable-bills (vendas novas) via edge
+#   2. Sincroniza sales-contracts + receivable-bills (vendas novas) via edge
 #      function. Roda POR ULTIMO e e best-effort (continue-on-error): consome
 #      ~10 chamadas bulk-data e a quota diaria do Sienge e pequena, entao
-#      gerar-plano/reconciliar furam a fila primeiro. Vendas novas entram na
+#      a reconciliacao fura a fila primeiro. Vendas novas entram na
 #      reconciliacao do dia seguinte (lag de 1 dia e aceitavel).
-#   4. Salva reports em artifact.
-#   5. Falha o job se a reconciliacao reportar erros (dispara email).
+#   3. Salva reports em artifact.
+#   4. Falha o job se a reconciliacao reportar erros (dispara email).
 #
 # Resiliencia a quota Sienge:
 #   - actions/cache@v4 persiste .sienge-cache/ entre runs.
@@ -99,31 +98,9 @@ jobs:
           unzip -q /tmp/seed.zip -d .sienge-cache
           echo "Seed restaurado: $(ls .sienge-cache | wc -l) arquivos"
 
-      # Etapa 1 — corrige drift de data_prevista. Roda PRIMEIRO pra a chamada
-      # de income (1 call bulk-data) pegar a quota Sienge cheia. Em dias sem
-      # refresh de cache, le do cache persistido (0 chamadas).
-      - name: Gerar plano de correcao
-        run: node scripts/gerar-plano-correcao-data-prevista.mjs
-        env:
-          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
-          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
-          SIENGE_USERNAME: ${{ secrets.SIENGE_USERNAME }}
-          SIENGE_PASSWORD: ${{ secrets.SIENGE_PASSWORD }}
-          SIENGE_SUBDOMAIN: ${{ secrets.SIENGE_SUBDOMAIN }}
-          SIENGE_MAX_RETRIES: '6'
-          SIENGE_5XX_BASE_DELAY_MS: '15000'
-          SIENGE_5XX_MAX_DELAY_MS: '90000'
-          SIENGE_CACHE_TTL_MS: '3600000' # 1h — tenta income fresco em cada cron; usa stale se Sienge falhar
-
-      - name: Aplicar plano
-        run: node scripts/aplicar-correcao-data-prevista.mjs --apply
-        env:
-          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
-          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-
-      # Etapa 2 — reconciliacao geral. Le o income do cache populado pela
-      # etapa 1 (mesma URL/range => cache hit, 0 chamadas Sienge).
+      # Etapa 1 — reconciliacao geral (UNICO passo que toca pagamentos). Busca o
+      # income (1 call bulk-data) ou le do cache persistido. Casa SEMPRE pela ancora
+      # (sienge_bill_id, sienge_installment_id) — nunca por numero_parcela.
       - name: Reconciliar todas as vendas
         run: node scripts/reconciliar-todas-vendas.mjs --apply
         env:
