@@ -12,9 +12,10 @@
 //   - status pago, drift <= 30d  -> AUTO (correcao que reaproxima do Sienge)
 //   - status pago, drift  > 30d  -> RODADA-B (revisao humana; pode denunciar ancora errada/renegociacao)
 //
-// ATENCAO OPERACIONAL: o cron roda da `main`. Enquanto o passo legado
-// (gerar-plano/aplicar-correcao-data-prevista) estiver no workflow da main, QUALQUER apply feito aqui
-// e desfeito na madrugada seguinte. Ja aconteceu 2x (b12 25/06 e wf-data 10/07). DESARMAR ANTES DE CURAR.
+// HISTORICO: o cron roda da `main`. Ate 2026-07-31 o workflow tinha um passo legado
+// (gerar-plano/aplicar-correcao-data-prevista) que casava por numero_parcela e desfazia qualquer
+// correcao feita aqui na madrugada seguinte — aconteceu 2x (b12 25/06 e wf-data 10/07). O passo saiu
+// do workflow no PR #60 e os scripts foram deletados. Se algum dia voltarem: DESARMAR ANTES DE CURAR.
 //
 // Uso: node scripts/realinhar-data-prevista-ancora.mjs            (dry-run, nao grava)
 //      node scripts/realinhar-data-prevista-ancora.mjs --apply
