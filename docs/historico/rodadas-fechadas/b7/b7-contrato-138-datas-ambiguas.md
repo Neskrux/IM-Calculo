@@ -49,6 +49,6 @@ Enquanto isso: contrato 138 fica como está. Não bloqueia financeiro do cliente
 
 - **João Pedro Marasca** (sienge customer 92)
 - Tel: (47) 99670-3160
-- CPF: 09762700916
+- CPF: ***********
 
 Referência: [docs/B3-execucao.json](docs/B3-execucao.json)

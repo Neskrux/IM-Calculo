@@ -146,8 +146,8 @@ Sienge broker 118: nome idêntico, **CNPJ idêntico 60.509.941/0001-87**, cidade
 ### Maicon/Maicom Iaroch e Erica Faerber
 
 Ambos têm cadastro local com `origem='manual'`, sem CPF preenchido, sem `sienge_broker_id`. No Sienge:
-- Broker 461 — Maicom Iaroch (CPF 031.620.719-50, Itajaí)
-- Broker 352 — ERICA FAERBER (CPF 630.525.479-68, Itajaí)
+- Broker 461 — Maicom Iaroch (CPF ***.***.***-**, Itajaí)
+- Broker 352 — ERICA FAERBER (CPF ***.***.***-**, Itajaí)
 
 Mesmo nome, mesma cidade. Quase certo que são a mesma pessoa. Pra vincular com segurança, **pedir CPF deles pra controladoria** e confirmar.
 

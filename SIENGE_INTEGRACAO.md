@@ -174,7 +174,7 @@ O `enterpriseId` é o **ID do empreendimento** no Sienge. Ele serve para:
     {
       "id": 12345,
       "name": "João Silva",
-      "cpf": "12345678901",
+      "cpf": "***********",
       "email": "joao@email.com",
       "birthDate": "1990-01-15",
       "numberIdentityCard": "1234567",
@@ -198,7 +198,7 @@ O `enterpriseId` é o **ID do empreendimento** no Sienge. Ele serve para:
       ],
       "spouse": {
         "name": "Maria Silva",
-        "cpf": "98765432100",
+        "cpf": "***********",
         "email": "maria@email.com"
       },
       "createdAt": "2024-01-01T10:00:00Z",

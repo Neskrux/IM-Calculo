@@ -43,7 +43,7 @@ Este documento detalha o mapeamento **campo a campo** entre a API do Sienge e as
   "id": 12345,
   "name": "João Silva Corretor",
   "tradeName": "JS Imóveis",
-  "cpf": "12345678901",
+  "cpf": "***********",
   "cnpj": null,
   "broker": "S",
   "active": true,
@@ -104,7 +104,7 @@ Este documento detalha o mapeamento **campo a campo** entre a API do Sienge e as
 {
   "id": 67890,
   "name": "Maria Santos",
-  "cpf": "98765432100",
+  "cpf": "***********",
   "email": "maria@email.com",
   "birthDate": "1985-03-15",
   "numberIdentityCard": "1234567",
@@ -127,7 +127,7 @@ Este documento detalha o mapeamento **campo a campo** entre a API do Sienge e as
   ],
   "spouse": {
     "name": "José Santos",
-    "cpf": "11122233344"
+    "cpf": "***********"
   },
   "modifiedAt": "2024-01-15T10:30:00Z"
 }
@@ -351,7 +351,7 @@ A API do Sienge pode retornar CPF/CNPJ como string ou objeto:
 
 ```javascript
 // String
-"cpf": "12345678901"
+"cpf": "***********"
 
 // Objeto
 "cpf": { "value": "12345678901" }

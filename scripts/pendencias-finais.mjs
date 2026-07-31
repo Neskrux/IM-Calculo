@@ -19,7 +19,7 @@ for (const p of (semPrev || []).slice(0,10)) console.log(`    ${p.id} venda=${p.
 console.log('\n=== MAICON IAROCH local — verificar se eh o Maicom 461 do Sienge ===')
 const { data: maicon } = await supa.from('usuarios').select('id, nome, email, cpf, cidade, sienge_broker_id, origem').eq('id', '8f1cfe8b-3ac7-4adb-a90d-a7f293fca237').maybeSingle()
 console.log(`  ${maicon?.nome}`)
-console.log(`  cpf local: ${maicon?.cpf || '(vazio)'}  cpf Sienge 461: 031.620.719-50`)
+console.log(`  cpf local: ${maicon?.cpf || '(vazio)'}  cpf Sienge 461: ***.***.***-**`)
 console.log(`  cidade local: ${maicon?.cidade}`)
 console.log(`  origem local: ${maicon?.origem}`)
 console.log(`  sienge_broker_id local: ${maicon?.sienge_broker_id || '(NULL)'}`)
@@ -29,7 +29,7 @@ const { data: vEntrega } = await supa.from('vendas').select('corretor_id').eq('s
 if (vEntrega?.corretor_id) {
   const { data: erica } = await supa.from('usuarios').select('id, nome, cpf, cidade, sienge_broker_id, origem').eq('id', vEntrega.corretor_id).maybeSingle()
   console.log(`  ${erica?.nome}`)
-  console.log(`  cpf local: ${erica?.cpf || '(vazio)'}  cpf Sienge 352: 630.525.479-68`)
+  console.log(`  cpf local: ${erica?.cpf || '(vazio)'}  cpf Sienge 352: ***.***.***-**`)
   console.log(`  cidade local: ${erica?.cidade}`)
   console.log(`  origem local: ${erica?.origem}`)
   console.log(`  sienge_broker_id local: ${erica?.sienge_broker_id || '(NULL)'}`)
