@@ -15,6 +15,10 @@
 //                       fica cancelada (nao e pagamento real do cliente) — protege o curativo
 //   - Sienge sem match-> CRIA a parcela
 //   - banco ativa sem match -> loga (NAO mexe)
+//   - DRIFT DE DATA (anchor-driven): linha casada por installmentId com data_prevista/data_pagamento
+//                       != Sienge -> corrige a DATA (Sienge vence; nunca toca valor/comissao/status).
+//                       data_prevista em PAGO com drift > 30d -> rodada-b (revisao_data), nao auto.
+//                       ver docs/contexto/2026-06-19-north-star-data-drift-auto.md
 //
 // SALVAGUARDAS — pula a venda (revisao humana) se:
 //   S1. bill sem parcelas relevantes no income
@@ -57,6 +61,8 @@ async function fetchRetry(url, opts, tentativas = 4) {
 }
 const FIGUEIRA = '0d7d01f4-c398-4d9a-a280-13f44c957279'
 const norm = (x) => Number(x).toFixed(2)
+const d10 = (x) => (x ? String(x).slice(0, 10) : null)
+const diasEntre = (a, b) => Math.abs((new Date(a) - new Date(b)) / 86400000)
 const PAGE = 1000
 
 // mapa tipo Sienge -> tipo interno
@@ -145,8 +151,8 @@ for (const i of income) {
 // 4. processar
 const resultado = {
   meta: { geradoEm: new Date().toISOString(), modo: DRY ? 'dry-run' : 'apply', total_vendas: vendas.length },
-  processadas: [], revisao_humana: [],
-  totais: { popular: 0, marcar_pago: 0, reativar: 0, criar: 0, sem_match_banco: 0 },
+  processadas: [], revisao_humana: [], revisao_data: [], drift: [],
+  totais: { popular: 0, marcar_pago: 0, reativar: 0, criar: 0, sem_match_banco: 0, corrigir_data: 0 },
 }
 
 for (const v of vendas) {
@@ -192,7 +198,7 @@ for (const v of vendas) {
   const PCT = v.tipo_corretor === 'interno' ? 6.5 : 7
   const fator = Number(v.valor_pro_soluto) > 0 ? (Number(v.valor_venda) * (PCT / 100)) / Number(v.valor_pro_soluto) : 0
   const usados = new Set()
-  const acoes = { popular: [], marcar_pago: [], reativar: [], criar: [] }
+  const acoes = { popular: [], marcar_pago: [], reativar: [], criar: [], corrigir_data: [] }
   let maxNum = Math.max(0, ...pags.filter((p) => p.numero_parcela != null).map((p) => Number(p.numero_parcela)))
   // Distrato-aware (ver .claude/rules/sincronizacao-sienge.md): no distrato o Sienge dá baixa em
   // TODAS as parcelas restantes (paymentDate >= data_distrato). Essa baixa NÃO é pagamento real do
@@ -221,6 +227,30 @@ for (const v of vendas) {
       usados.add(ativa.id)
       if (siengePago && ativa.status === 'pendente') acoes.marcar_pago.push({ id: ativa.id, data_pagamento: pd, instId })
       else if (String(ativa.sienge_installment_id || '') !== instId) acoes.popular.push({ id: ativa.id, instId })
+
+      // DRIFT DE DATA (anchor-driven) — ver docs/contexto/2026-06-19-north-star-data-drift-auto.md
+      // Só corrige linha cuja identidade Sienge é inequívoca = casada por installmentId.
+      // (O match por chave já exige data_prevista==dueDate, então nunca dispara aqui — só ancorada.)
+      // Sienge vence em data; NUNCA toca valor/comissao_gerada/tipo/status. Distrato-aware: data_pagamento
+      // só de pago REAL (siengePago já exclui baixa de distrato). Reneg-aware: inst já saiu do universo.
+      if (porInstallmentId) {
+        // Gate único: drift PEQUENO (<=30d) = drift clerical/fuso/lançamento -> auto-cura.
+        // Drift GRANDE (>30d) = NÃO auto-corrige -> rodada-b. Em data_prevista pode ser renegociação
+        // não-mapeada; em data_pagamento (histórico financeiro) um pulo grande denuncia ÂNCORA ERRADA
+        // (Q3/MICHEL) — mover a data cega corromperia um pagamento certo. ver north-star-data-drift-auto.
+        const considerar = (campo, antes, depois, gateGrande, motivoGrande) => {
+          if (!depois || d10(antes) === d10(depois)) return
+          const dias = diasEntre(d10(depois), d10(antes))
+          if (gateGrande && dias > 30) resultado.revisao_data.push({ venda_id: v.id, unidade: v.unidade, contrato: v.sienge_contract_id, id: ativa.id, instId, campo, antes: d10(antes), depois: d10(depois), dias: Math.round(dias), motivo: motivoGrande })
+          else acoes.corrigir_data.push({ id: ativa.id, campo, antes: d10(antes), depois: d10(depois) })
+        }
+        // data_prevista: Sienge é a previsão vigente. Gate >30d SÓ em PAGO (spec: data_prevista em pago
+        // >30d exige revisão — pode ser renegociação). Pendente é cronograma futuro: auto seguro qualquer Δ.
+        considerar('data_prevista', ativa.data_prevista, due, ativa.status === 'pago', 'data_prevista em pago com drift > 30d (revisão: renegociação não-mapeada?)')
+        // data_pagamento: histórico financeiro. Só pago real (siengePago já exclui baixa de distrato);
+        // migration 020 libera em pago. Gate >30d SEMPRE: pulo grande denuncia âncora errada (Q3/MICHEL).
+        if (ativa.status === 'pago' && siengePago && pd) considerar('data_pagamento', ativa.data_pagamento, pd, true, 'data_pagamento com drift > 30d (revisão: âncora errada / pagamento mal-casado?)')
+      }
     } else if (cancelada) {
       usados.add(cancelada.id)
       // NÃO reativa: (a) baixa de liquidação de distrato; (b) parcela cancelada DE PROPÓSITO
@@ -256,7 +286,9 @@ for (const v of vendas) {
   resultado.totais.marcar_pago += acoes.marcar_pago.length
   resultado.totais.reativar += acoes.reativar.length
   resultado.totais.criar += acoes.criar.length
+  resultado.totais.corrigir_data += acoes.corrigir_data.length
   resultado.totais.sem_match_banco += semMatch.length
+  for (const a of acoes.corrigir_data) resultado.drift.push({ id: a.id, venda_id: v.id, contrato: v.sienge_contract_id, campo: a.campo, antes: a.antes, depois: a.depois })
 }
 
 console.log(`\n=== ESCOPO ===`)
@@ -267,6 +299,8 @@ console.log(`  popular sienge_installment_id: ${resultado.totais.popular}`)
 console.log(`  marcar pago (Sienge confirma): ${resultado.totais.marcar_pago}`)
 console.log(`  reativar cancelada:            ${resultado.totais.reativar}`)
 console.log(`  criar parcela faltante:        ${resultado.totais.criar}`)
+console.log(`  corrigir data (drift Sienge):  ${resultado.totais.corrigir_data}  (prevista: ${resultado.drift.filter(d=>d.campo==='data_prevista').length}, pagamento: ${resultado.drift.filter(d=>d.campo==='data_pagamento').length})`)
+console.log(`  drift de data >30d (rodada-b, NAO auto): ${resultado.revisao_data.length}  (prevista: ${resultado.revisao_data.filter(d=>d.campo==='data_prevista').length}, pagamento: ${resultado.revisao_data.filter(d=>d.campo==='data_pagamento').length})`)
 console.log(`  ativas no banco sem match (so loga): ${resultado.totais.sem_match_banco}`)
 const comMudanca = resultado.processadas.filter((p) => p.acoes.marcar_pago.length || p.acoes.reativar.length || p.acoes.criar.length)
 console.log(`  vendas com correcao real (marcar/reativar/criar): ${comMudanca.length}`)
@@ -283,7 +317,7 @@ if (DRY) { console.log('\nDry-run apenas. Pra aplicar: --apply'); process.exit(0
 
 // ---------- APPLY ----------
 console.log('\nAplicando...')
-let okPop = 0, okMarc = 0, okReat = 0, okCriar = 0, err = 0
+let okPop = 0, okMarc = 0, okReat = 0, okCriar = 0, okData = 0, err = 0
 const errosDetalhe = []
 for (const venda of resultado.processadas) {
   for (const a of venda.acoes.popular) {
@@ -304,9 +338,16 @@ for (const venda of resultado.processadas) {
     const res = await fetchRetry(`${URL}/rest/v1/pagamentos_prosoluto`, { method: 'POST', headers: H, body: JSON.stringify({ ...a, created_at: new Date().toISOString(), updated_at: new Date().toISOString() }) })
     if (res.ok) okCriar++; else { const t = await res.text(); err++; errosDetalhe.push({ acao: 'criar', venda: venda.venda_id, status: res.status, msg: t.slice(0, 120) }) }
   }
+  for (const a of venda.acoes.corrigir_data) {
+    // só data (data_prevista livre; data_pagamento em pago liberado p/ migration 020). NUNCA valor/comissão/status.
+    const patch = { updated_at: new Date().toISOString() }
+    patch[a.campo] = a.depois
+    const res = await fetchRetry(`${URL}/rest/v1/pagamentos_prosoluto?id=eq.${a.id}`, { method: 'PATCH', headers: H, body: JSON.stringify(patch) })
+    if (res.ok) okData++; else { const t = await res.text(); err++; errosDetalhe.push({ acao: 'corrigir_data', id: a.id, campo: a.campo, status: res.status, msg: t.slice(0, 120) }) }
+  }
 }
 console.log(`\n=== APLICADO ===`)
-console.log(`  populados: ${okPop} | marcados pago: ${okMarc} | reativados: ${okReat} | criados: ${okCriar} | erros: ${err}`)
+console.log(`  populados: ${okPop} | marcados pago: ${okMarc} | reativados: ${okReat} | criados: ${okCriar} | datas corrigidas: ${okData} | erros: ${err}`)
 if (errosDetalhe.length) for (const e of errosDetalhe.slice(0, 10)) console.log(`    ERRO ${JSON.stringify(e)}`)
-resultado.aplicacao = { okPop, okMarc, okReat, okCriar, err, errosDetalhe }
+resultado.aplicacao = { okPop, okMarc, okReat, okCriar, okData, err, errosDetalhe }
 writeFileSync(`docs/reconciliacao-geral-${dataRef}-aplicado.json`, JSON.stringify(resultado, null, 2))
