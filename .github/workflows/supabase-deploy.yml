@@ -39,3 +39,12 @@ jobs:
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+
+      # Gestao de acesso do CORRETOR. --no-verify-jwt porque o preflight OPTIONS do
+      # browser nao leva Authorization; a autenticacao (JWT + tipo='admin') e feita
+      # dentro da propria funcao. Mesmo desenho de admin-cliente-acesso.
+      - name: Deploy admin-corretor-acesso
+        run: supabase functions deploy admin-corretor-acesso --project-ref $SUPABASE_PROJECT_REF --no-verify-jwt
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
