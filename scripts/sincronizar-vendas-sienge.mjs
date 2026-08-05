@@ -67,6 +67,12 @@ async function aguardarRun(runId, timeoutMs = 10 * 60 * 1000) {
 
 const report = { meta: { geradoEm: new Date().toISOString() }, runs: [], errors: [] }
 
+// Extrai o bloco de paginacao que o normalize devolve:
+// metrics.per_entity[entity].normalize.extra = { total, offset, limit, fetched, hasMore }
+function extraNormalize(metrics, entity) {
+  return metrics?.per_entity?.[entity]?.normalize?.extra ?? null
+}
+
 // Modo por entidade — sales-contracts nao aceita o formato de modifiedAfter
 // que a edge envia (Sienge devolve 400 "Failed to convert property value").
 // receivable-bills aceita incremental normalmente.
@@ -87,6 +93,37 @@ for (const entity of ['sales-contracts', 'receivable-bills']) {
     console.log(`  status: ${run.status} | metrics:`, JSON.stringify(run.metrics).slice(0, 400))
     report.runs.push({ entity, runId: kick.runId, status: run.status, metrics: run.metrics })
     if (run.status !== 'OK') report.errors.push({ entity, runId: kick.runId, status: run.status })
+
+    // --- PAGINACAO DO NORMALIZE (fix 2026-08-05) ---
+    // normalizeSalesContracts processa `limit` raws por invocacao (default 40, ordenados por
+    // sienge_id) e devolve `hasMore`. Ate hoje ninguem lia esse campo: o cron normalizava
+    // sempre os MESMOS 40 contratos de menor id, e os outros ~263 nunca eram reavaliados.
+    // Distrato, reemissao ou troca de titular fora dos 40 primeiros so chegava ao banco se
+    // alguem rodasse na mao — causa-raiz dos 2 distrato-stale de julho (710 A e 404 A,
+    // R$ 41.764,02 de comissao fantasma que foi parar no relatorio de um corretor).
+    //
+    // Usa /sync/normalize-only (skipIngest=true): re-normaliza o RAW ja baixado, ZERO chamada
+    // ao Sienge — nao consome a quota de 100/dia da REST.
+    let ex = extraNormalize(run.metrics, entity)
+    let paginas = 0
+    while (ex?.hasMore && paginas++ < 50) {
+      const proximo = Number(ex.offset || 0) + Number(ex.limit || 40)
+      console.log(`  normalize: offset ${proximo}/${ex.total} (hasMore)`)
+      try {
+        const k2 = await post('/sync/normalize-only', { entities: [entity], offset: proximo, limit: ex.limit })
+        const r2 = await aguardarRun(k2.runId)
+        report.runs.push({ entity, runId: k2.runId, status: r2.status, metrics: r2.metrics, normalize_offset: proximo })
+        if (r2.status !== 'OK') { report.errors.push({ entity, runId: k2.runId, status: r2.status, offset: proximo }); break }
+        ex = extraNormalize(r2.metrics, entity)
+      } catch (e) {
+        console.error(`  ERRO na pagina offset=${proximo}: ${String(e).slice(0, 200)}`)
+        report.errors.push({ entity, offset: proximo, msg: String(e).slice(0, 300) })
+        break
+      }
+    }
+    // Guarda contra loop infinito se a edge parar de avancar o offset.
+    if (paginas >= 50) report.errors.push({ entity, msg: 'paginacao abortada em 50 paginas — offset nao avancou?' })
+    if (ex && !ex.hasMore) console.log(`  normalize cobriu os ${ex.total} registros`)
   } catch (e) {
     console.error(`  ERRO: ${String(e).slice(0, 300)}`)
     report.errors.push({ entity, msg: String(e).slice(0, 300) })
