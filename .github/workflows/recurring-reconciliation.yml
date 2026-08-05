@@ -127,12 +127,25 @@ jobs:
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
 
+      # Etapa 4 — detector de distrato-stale. READ-ONLY, roda DEPOIS do sync (le o estado
+      # ja atualizado). Nao escreve no banco e nunca derruba o job: e aviso no log + artifact.
+      # Existe porque em julho dois contratos cancelados no Sienge (710 A c63 e 404 A c8)
+      # continuaram ativos no banco, e as 110 baixas do distrato viraram R$ 41.764,02 de
+      # comissao fantasma no relatorio de um corretor — descoberto so porque ele reclamou.
+      - name: Detectar distrato-stale (aviso)
+        continue-on-error: true
+        run: node scripts/detectar-distrato-stale.mjs
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+
       - name: Upload report
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: reconciliation-report-${{ github.run_id }}
           path: |
+            docs/auditorias/distrato-stale-*.json
             docs/plano-correcao-data-prevista-*.json
             docs/aplicacao-data-prevista-*.json
             docs/reconciliacao-geral-*.json
