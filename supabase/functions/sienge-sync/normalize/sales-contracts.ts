@@ -300,7 +300,6 @@ async function mergePagamentos(vendaId: string, desejados: PagamentoRow[]): Prom
   const now = new Date().toISOString()
   const toInsert: Record<string, unknown>[] = []
   const updatesPendente: Array<{ id: string; body: Record<string, unknown> }> = []
-  const updatesPago: Array<{ id: string; body: Record<string, unknown> }> = []
   let ins = 0, upd = 0, skip = 0
 
   for (const d of desejados) {
@@ -309,13 +308,27 @@ async function mergePagamentos(vendaId: string, desejados: PagamentoRow[]): Prom
     if (!ex) {
       toInsert.push({ ...d, status: "pendente", created_at: now, updated_at: now })
     } else if (ex.status === "pago") {
-      // Migration 017: não tocar em valor/tipo/data_pagamento/comissao_gerada.
-      // Snapshots de fator/percentual são editáveis (migration 018).
-      const body: Record<string, unknown> = {}
-      if (numberChanged(ex.fator_comissao_aplicado, d.fator_comissao_aplicado)) body.fator_comissao_aplicado = d.fator_comissao_aplicado
-      if (numberChanged(ex.percentual_comissao_total, d.percentual_comissao_total)) body.percentual_comissao_total = d.percentual_comissao_total
-      if (Object.keys(body).length > 0) updatesPago.push({ id: ex.id, body: { ...body, updated_at: now } })
-      else skip++
+      // PARCELA PAGA: o sync NÃO escreve nada aqui — nem o dinheiro, nem o snapshot.
+      //
+      // Até 2026-08-07 este ramo reescrevia `fator_comissao_aplicado` e
+      // `percentual_comissao_total`, com o raciocínio "a 017 protege o dinheiro e a 018
+      // libera o snapshot, então é seguro". É o contrário: o snapshot é a EXPLICAÇÃO do
+      // dinheiro. Atualizar um sem o outro quebra a identidade
+      // `comissao_gerada = valor × fator_comissao_aplicado` de forma IRREVERSÍVEL — depois
+      // a 017 impede consertar pelo lado do `comissao_gerada`.
+      //
+      // Dano medido: 169 parcelas pagas em 21 vendas com identidade quebrada, 168 delas num
+      // único minuto (2026-08-05 15:45 UTC), quando a paginação do normalize (#66) fez este
+      // ramo alcançar a frota inteira pela primeira vez. Antes só os 40 contratos de menor
+      // sienge_id passavam por aqui — o defeito existia e era invisível.
+      //
+      // Regra de Ouro (.claude/rules/fator-comissao.md): "NUNCA recalcule comissões de
+      // vendas antigas ao alterar percentuais. Use sempre o fator_comissao_aplicado salvo."
+      // Snapshot histórico é imutável JUNTO com o dinheiro que ele explica.
+      //
+      // Se algum dia for preciso corrigir snapshot de linha paga, o caminho é script
+      // auditado com métrica e rollback (molde do B1 de 2026-06-03), nunca o sync silencioso.
+      skip++
     } else {
       const body: Record<string, unknown> = {}
       if (moneyChanged(ex.valor, d.valor)) body.valor = d.valor
@@ -344,15 +357,10 @@ async function mergePagamentos(vendaId: string, desejados: PagamentoRow[]): Prom
     }
   }
 
-  if (updatesPago.length > 0) {
-    const results = await Promise.all(
-      updatesPago.map((u) => supa.from("pagamentos_prosoluto").update(u.body).eq("id", u.id)),
-    )
-    for (const r of results) {
-      if (r.error) log("warn", "pagamentos_update_pago_error", { err: r.error.message })
-      else skip++
-    }
-  }
+  // NÃO existe caminho de UPDATE em parcela `pago` neste normalize — por desenho.
+  // O bloco que existia aqui foi removido junto com o ramo que o alimentava (ver o
+  // comentário em `ex.status === "pago"` acima). Reintroduzir um UPDATE em linha paga
+  // sem script auditado quebra o snapshot histórico de novo.
 
   return { ins, upd, skip }
 }
