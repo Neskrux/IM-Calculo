@@ -48,11 +48,20 @@ for (let f = 0; ; f += PAGE) {
   vendas.push(...data)
   if (data.length < PAGE) break
 }
+// DOIS grupos, dois defeitos diferentes — a versao anterior so via o primeiro:
+//   A) STALE: o banco acha que a venda esta viva, mas o Sienge cancelou.
+//   B) NAO-CURADA: o banco JA sabe do distrato (situacao='3'), mas as baixas em massa
+//      continuam como `pago`. Nao aparece no relatorio do corretor (o filtro de distrato
+//      pega), mas contamina totais do admin e conferencia com a controladoria.
+// (B) foi descoberto em 07/08 com 1204 B (53 baixas / R$25.676,35) e 401 B (4 / R$5.600,04):
+// as duas ja estavam marcadas como distrato havia semanas e passaram batido justamente
+// porque o detector so varria as ativas.
 const ativas = vendas.filter((v) => v.situacao_contrato !== '3' && !v.data_distrato)
-const vById = new Map(ativas.map((v) => [v.id, v]))
+const distratadas = vendas.filter((v) => v.situacao_contrato === '3' && v.data_distrato)
+const vById = new Map([...ativas, ...distratadas].map((v) => [v.id, v]))
 
-// 2. parcelas dessas vendas
-const ids = ativas.map((v) => v.id)
+// 2. parcelas dos dois grupos
+const ids = [...ativas, ...distratadas].map((v) => v.id)
 const pags = []
 for (let i = 0; i < ids.length; i += 200) {
   const chunk = ids.slice(i, i + 200)
@@ -70,13 +79,19 @@ for (let i = 0; i < ids.length; i += 200) {
 // 3. agrega por venda
 const agg = new Map()
 for (const p of pags) {
-  const a = agg.get(p.venda_id) || { tot: 0, pago: 0, pend: 0, pagoFuturo: 0, comissaoPago: 0, datas: new Set() }
+  const a = agg.get(p.venda_id) || { tot: 0, pago: 0, pend: 0, pagoFuturo: 0, comissaoPago: 0, datas: new Set(), posDistrato: 0, comissaoPosDistrato: 0 }
   a.tot++
   if (p.status === 'pago') {
     a.pago++
     a.comissaoPago += +p.comissao_gerada || 0
     if (p.data_pagamento) a.datas.add(p.data_pagamento)
     if (p.data_prevista && p.data_prevista > HOJE) a.pagoFuturo++
+    // grupo B: baixa na data do distrato ou depois = baixa de encerramento, nao pagamento
+    const dd = vById.get(p.venda_id)?.data_distrato
+    if (dd && p.data_pagamento && String(p.data_pagamento).slice(0, 10) >= String(dd).slice(0, 10)) {
+      a.posDistrato++
+      a.comissaoPosDistrato += +p.comissao_gerada || 0
+    }
   } else if (p.status === 'pendente') a.pend++
   agg.set(p.venda_id, a)
 }
@@ -85,35 +100,68 @@ for (const p of pags) {
 const suspeitos = []
 for (const [vid, a] of agg) {
   const v = vById.get(vid)
-  if (!v || a.pagoFuturo < 3) continue // <3 futuras pagas: ruido (antecipacao real acontece)
+  if (!v) continue
+  // A: banco nao sabe do distrato. Exige as DUAS marcas juntas — parcela futura paga E
+  // baixa concentrada em poucas datas. So a primeira produz falso positivo em cliente que
+  // antecipa: 905 B (c340) tem 3 futuras pagas em 8 datas distintas e esta `Emitido` no
+  // Sienge (verificado 07/08). Distrato baixa TUDO num dia; antecipacao espalha no tempo.
+  const ehStale = !v.data_distrato && a.pagoFuturo >= 3 &&
+    a.pago >= 10 && a.datas.size > 0 && a.pago / a.datas.size >= 4
+  const ehNaoCurada = !!v.data_distrato && a.posDistrato > 0    // B: banco sabe, baixas nao curadas
+  if (!ehStale && !ehNaoCurada) continue
   suspeitos.push({
+    tipo: ehStale ? 'STALE (banco nao sabe do distrato)' : 'NAO-CURADA (baixas do distrato ainda pagas)',
     unidade: v.unidade, cliente: v.nome_cliente, venda_id: vid, contrato: v.sienge_contract_id,
+    data_distrato: v.data_distrato ?? null,
     total: a.tot, pago: a.pago, pendente: a.pend, pagoFuturo: a.pagoFuturo,
+    pagasPosDistrato: a.posDistrato,
     datasDeBaixa: a.datas.size,
     baixaEmMassa: a.pago >= 10 && a.datas.size > 0 && a.pago / a.datas.size >= 4,
-    comissaoEmJogo: +a.comissaoPago.toFixed(2),
+    // no grupo B o fantasma é medido com precisão (as pagas >= data_distrato);
+    // no grupo A é o teto, porque a data do distrato ainda é desconhecida.
+    comissaoEmJogo: +(ehNaoCurada ? a.comissaoPosDistrato : a.comissaoPago).toFixed(2),
   })
 }
-suspeitos.sort((x, y) => y.pagoFuturo - x.pagoFuturo)
+suspeitos.sort((x, y) => y.comissaoEmJogo - x.comissaoEmJogo)
 
-console.log(`\n=== DETECTOR DE DISTRATO-STALE (${HOJE}) ===`)
-console.log(`vendas ativas no banco: ${ativas.length} | suspeitas: ${suspeitos.length}`)
-if (suspeitos.length) {
-  console.log(`\nunidade  contrato  tot pago pend futPg  nDatas massa   comissao em jogo`)
-  for (const s of suspeitos) {
+const stale = suspeitos.filter((s) => s.tipo.startsWith('STALE'))
+const naoCurada = suspeitos.filter((s) => s.tipo.startsWith('NAO-CURADA'))
+
+console.log(`\n=== DETECTOR DE DISTRATO (${HOJE}) ===`)
+console.log(`escopo: ${ativas.length} ativas + ${distratadas.length} distratadas`)
+console.log(`suspeitas: ${suspeitos.length}  (stale: ${stale.length} | nao-curadas: ${naoCurada.length})`)
+
+if (stale.length) {
+  console.log(`\n--- A) STALE — banco acha viva, provavel cancelada no Sienge ---`)
+  console.log(`unidade  contrato  tot pago pend futPg nDatas massa  comissao (TETO)`)
+  for (const s of stale) {
     console.log(
       `${(s.unidade || '?').padEnd(8)} ${String(s.contrato || '?').padEnd(9)}` +
       `${String(s.total).padStart(4)}${String(s.pago).padStart(5)}${String(s.pendente).padStart(5)}` +
-      `${String(s.pagoFuturo).padStart(6)}${String(s.datasDeBaixa).padStart(8)}  ${s.baixaEmMassa ? 'SIM' : '-  '}   R$ ${R(s.comissaoEmJogo)}`,
+      `${String(s.pagoFuturo).padStart(6)}${String(s.datasDeBaixa).padStart(7)}  ${s.baixaEmMassa ? 'SIM' : '-  '}   R$ ${R(s.comissaoEmJogo)}`,
     )
   }
+  console.log('>>> CONFIRMAR no Sienge REST (/sales-contracts/{id}: situation + cancellationDate) ANTES de curar.')
+}
+
+if (naoCurada.length) {
+  console.log(`\n--- B) NAO-CURADA — distrato ja marcado, baixas ainda como PAGO ---`)
+  console.log(`unidade  contrato  distrato    pagas>=distrato   comissao FANTASMA`)
+  for (const s of naoCurada) {
+    console.log(
+      `${(s.unidade || '?').padEnd(8)} ${String(s.contrato || '?').padEnd(9)} ${String(s.data_distrato).padEnd(11)}` +
+      `${String(s.pagasPosDistrato).padStart(9)}          R$ ${R(s.comissaoEmJogo)}`,
+    )
+  }
+  console.log('>>> Aqui a data do distrato JA e conhecida: o valor acima e o fantasma medido, nao teto.')
+  console.log('>>> Nao aparece no relatorio do corretor (filtro de distrato), mas suja totais do admin.')
+}
+
+if (suspeitos.length) {
   const tot = suspeitos.reduce((s, x) => s + x.comissaoEmJogo, 0)
-  console.log(`\n>>> comissao TOTAL nas suspeitas: R$ ${R(tot)}`)
-  console.log('>>> (teto do fantasma — a cura preserva o pago REAL anterior a data do distrato)')
-  console.log('>>> PROXIMO PASSO: confirmar cada uma no Sienge REST (/sales-contracts/{id}:')
-  console.log('>>> situation="Cancelado" + cancellationDate) ANTES de curar. Decisao humana.')
+  console.log(`\n>>> comissao total em jogo: R$ ${R(tot)}`)
 } else {
-  console.log('nenhuma venda ativa com >=3 parcelas futuras marcadas pagas.')
+  console.log('nada a reportar: nenhuma venda com fingerprint de distrato pendente.')
 }
 
 mkdirSync('docs/auditorias', { recursive: true })
