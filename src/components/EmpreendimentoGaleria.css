@@ -39,6 +39,136 @@
   background: rgba(239, 68, 68, 0.2);
 }
 
+/* Abas Fotos | Documentos */
+.galeria-abas {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding-bottom: 0;
+}
+
+.galeria-aba {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 10px 18px;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.galeria-aba:hover {
+  color: #fff;
+}
+
+.galeria-aba.active {
+  color: #c9a962;
+  border-bottom-color: #c9a962;
+}
+
+/* Documentos do empreendimento */
+.documentos-grupo {
+  margin-bottom: 20px;
+}
+
+.documentos-grupo-titulo {
+  margin: 0 0 10px;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #c9a962;
+}
+
+.documentos-lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.documento-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+}
+
+.documento-icone {
+  color: #c9a962;
+  flex-shrink: 0;
+}
+
+.documento-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.documento-nome {
+  color: #fff;
+  font-size: 14px;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.documento-meta {
+  color: rgba(255, 255, 255, 0.45);
+  font-size: 12px;
+}
+
+.documento-acoes {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.documento-acoes .btn-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.documento-acoes .btn-action:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+}
+
+.documento-acoes .btn-action.active {
+  color: #c9a962;
+  border-color: rgba(201, 169, 98, 0.4);
+}
+
+.documento-acoes .btn-action.delete:hover {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: rgba(239, 68, 68, 0.4);
+  color: #ef4444;
+}
+
 /* Upload */
 .galeria-upload {
   margin-bottom: 24px;
