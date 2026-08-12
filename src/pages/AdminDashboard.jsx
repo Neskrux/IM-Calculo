@@ -1246,6 +1246,9 @@ const AdminDashboard = () => {
   const [boletosAdmin, setBoletosAdmin] = useState([])
   // Banco selecionado pra emissão em massa (multi-banco desde 2026-08: sicoob | ailos)
   const [bancoEmissao, setBancoEmissao] = useState('sicoob')
+  // Importação da planilha de cobranças preenchida (conferência client-side)
+  const [importResultado, setImportResultado] = useState(null)
+  const [importandoPlanilha, setImportandoPlanilha] = useState(false)
   const [emitindoBoletoId, setEmitindoBoletoId] = useState(null)
   const [buscaBoleto, setBuscaBoleto] = useState('')
   const [clienteBoletoExpandido, setClienteBoletoExpandido] = useState(null)
@@ -3994,6 +3997,80 @@ const AdminDashboard = () => {
     inst['!cols'] = [{ wch: 95 }]
     XLSX.utils.book_append_sheet(wb, inst, 'Instruções')
     XLSX.writeFile(wb, `modelo-${tipo}-${banco}.xlsx`)
+  }
+
+  // Importa a planilha de Cobranças preenchida e roda a MESMA conferência dos
+  // robôs de emissão (match EXATO cliente+parcela+valor+vencimento com parcela
+  // pendente; 1 boleto vivo por parcela vale entre bancos). NÃO emite nada —
+  // gera o lote conferido pro robô do banco selecionado.
+  const importarPlanilhaCobrancas = async (file, banco) => {
+    setImportandoPlanilha(true)
+    try {
+      const XLSX = await import('xlsx')
+      const wb = XLSX.read(await file.arrayBuffer(), { type: 'array' })
+      const aba = wb.Sheets['Cobrancas']
+      if (!aba) throw new Error('Aba "Cobrancas" não encontrada — use o modelo baixado aqui, sem renomear abas.')
+      const linhas = XLSX.utils.sheet_to_json(aba, { defval: null })
+      if (linhas.length === 0) throw new Error('A aba Cobrancas está vazia.')
+
+      const dig = (s) => String(s ?? '').replace(/\D/g, '')
+      const dataISO = (s) => {
+        if (s instanceof Date) return s.toISOString().slice(0, 10)
+        const m = String(s ?? '').match(/(\d{2})\/(\d{2})\/(\d{4})/)
+        return m ? `${m[3]}-${m[2]}-${m[1]}` : null
+      }
+      const hoje = new Date().toISOString().slice(0, 10)
+      const cliPorCpf = new Map()
+      clientes.forEach(c => { const d = dig(c.cpf) || dig(c.cnpj); if (d) cliPorCpf.set(d, c) })
+      const boletoVivo = new Set(
+        boletosAdmin.filter(b => !['cancelado', 'baixado', 'erro'].includes(b.status)).map(b => String(b.pagamento_id)))
+
+      const lote = []
+      const fora = { divergente: [], sem_match: [], ja_tem_boleto: [], venc_passado: [] }
+      for (const l of linhas) {
+        const cli = cliPorCpf.get(dig(l['CPF/CNPJ do Cliente *']))
+        const ref = `${l['Contrato/Unidade'] ?? '?'} parc ${l['Nº da Parcela'] ?? '?'} (${l['CPF/CNPJ do Cliente *'] ?? 'sem CPF'})`
+        if (!cli) { fora.sem_match.push(ref + ' — cliente não encontrado'); continue }
+        const uni = String(l['Contrato/Unidade'] ?? '').match(/(\d+)\s*[A-Za-z]?\s*$/)?.[1]
+        const vendasCli = vendas.filter(v =>
+          String(v.cliente_id) === String(cli.id) && v.excluido !== true && v.status !== 'distrato' &&
+          (!uni || String(v.unidade ?? '').replace(/\D/g, '') === uni))
+        const nparc = Number(l['Nº da Parcela'])
+        const ehBalao = /bal[aã]o/i.test(String(l['Descrição *'] ?? ''))
+        const valorPlan = Number(l['Valor (R$) *'])
+        const vencPlan = dataISO(l['Data de Vencimento *'])
+        const exata = pagamentos.find(p =>
+          vendasCli.some(v => String(v.id) === String(p.venda_id)) &&
+          p.status === 'pendente' &&
+          (ehBalao ? p.tipo === 'balao' : p.tipo !== 'balao') &&
+          (!nparc || Number(p.numero_parcela) === nparc) &&
+          Math.abs(Number(p.valor) - valorPlan) < 0.01 &&
+          p.data_prevista === vencPlan)
+        if (!exata) {
+          const quase = pagamentos.some(p => vendasCli.some(v => String(v.id) === String(p.venda_id)) && Number(p.numero_parcela) === nparc)
+          ;(quase ? fora.divergente : fora.sem_match).push(ref)
+          continue
+        }
+        if (boletoVivo.has(String(exata.id))) { fora.ja_tem_boleto.push(ref); continue }
+        if (exata.data_prevista <= hoje) { fora.venc_passado.push(`${ref} — venc ${exata.data_prevista}`); continue }
+        lote.push({ ref, cliente: cli.nome_completo, valor: Number(exata.valor), vencimento: exata.data_prevista, pagamento_id: exata.id })
+      }
+      setImportResultado({ banco, arquivo: file.name, totalPlanilha: linhas.length, lote, fora })
+    } catch (e) {
+      setMessage({ type: 'error', text: 'Importação: ' + e.message })
+    } finally {
+      setImportandoPlanilha(false)
+    }
+  }
+
+  const baixarLoteConferido = () => {
+    const r = importResultado
+    const blob = new Blob([JSON.stringify(r, null, 2)], { type: 'application/json' })
+    const a = document.createElement('a')
+    a.href = URL.createObjectURL(blob)
+    a.download = `lote-conferido-${r.banco}-${new Date().toISOString().slice(0, 10)}.json`
+    a.click()
+    URL.revokeObjectURL(a.href)
   }
 
   // Boleto vivo da parcela (cancelado/baixado/erro liberam re-emissão)
@@ -8779,9 +8856,66 @@ const AdminDashboard = () => {
                     <button className="btn-modelo" onClick={() => baixarModeloPlanilha(bancoEmissao, 'cobrancas')}>
                       <FileDown size={15} /> Modelo Cobranças
                     </button>
+                    <label className="btn-modelo btn-importar-planilha">
+                      <Upload size={15} /> {importandoPlanilha ? 'Conferindo...' : 'Importar planilha preenchida'}
+                      <input
+                        type="file"
+                        accept=".xlsx,.xls"
+                        style={{ display: 'none' }}
+                        disabled={importandoPlanilha}
+                        onChange={(e) => {
+                          const f = e.target.files?.[0]
+                          e.target.value = ''
+                          if (f) importarPlanilhaCobrancas(f, bancoEmissao)
+                        }}
+                      />
+                    </label>
                   </div>
                 </div>
               </div>
+
+              {/* Modal de conferência da planilha importada */}
+              {importResultado && (
+                <div className="modal-overlay" onClick={() => setImportResultado(null)}>
+                  <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '640px' }}>
+                    <div className="modal-header">
+                      <h2><Upload size={18} style={{ marginRight: 8 }} /> Conferência do lote — {BANCOS_EMISSAO[importResultado.banco].label}</h2>
+                      <button className="close-btn" onClick={() => setImportResultado(null)}><X size={22} /></button>
+                    </div>
+                    <div className="modal-body" style={{ padding: '20px 24px', maxHeight: '65vh', overflowY: 'auto' }}>
+                      <p style={{ marginTop: 0, fontSize: 13, color: 'var(--text-secondary)' }}>
+                        {importResultado.arquivo} · {importResultado.totalPlanilha} linhas na planilha
+                      </p>
+                      <div className="import-resumo-ok">
+                        ✅ <strong>{importResultado.lote.length} boletos prontos pra emitir</strong> — {formatCurrency(importResultado.lote.reduce((a, x) => a + x.valor, 0))}
+                        <span> (casam exatamente com parcela pendente do sistema)</span>
+                      </div>
+                      {[
+                        ['divergente', '⚠️ Divergentes (valor/data não batem com o sistema — conferir antes)'],
+                        ['sem_match', '❌ Sem correspondência no sistema'],
+                        ['ja_tem_boleto', '⏭ Já têm boleto vivo (não duplica, em nenhum banco)'],
+                        ['venc_passado', '📅 Vencimento passado'],
+                      ].map(([k, titulo]) => importResultado.fora[k].length > 0 && (
+                        <div key={k} className="import-grupo-fora">
+                          <strong>{titulo} — {importResultado.fora[k].length}</strong>
+                          <ul>{importResultado.fora[k].slice(0, 15).map((r, i) => <li key={i}>{r}</li>)}
+                            {importResultado.fora[k].length > 15 && <li>… +{importResultado.fora[k].length - 15}</li>}
+                          </ul>
+                        </div>
+                      ))}
+                      <p style={{ fontSize: 12.5, color: 'var(--text-secondary)' }}>
+                        Nada foi emitido ainda. Baixe o lote conferido e rode o robô do
+                        {' '}{BANCOS_EMISSAO[importResultado.banco].label}: <code style={{ fontSize: 11.5 }}>{BANCOS_EMISSAO[importResultado.banco].worker}</code>
+                      </p>
+                    </div>
+                    <div className="modal-footer" style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', padding: '14px 24px' }}>
+                      <button className="btn-modelo" onClick={baixarLoteConferido}>
+                        <FileDown size={15} /> Baixar lote conferido
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Resumo */}
               <div className="boletos-resumo-grid">

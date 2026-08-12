@@ -8800,6 +8800,46 @@ textarea:focus {
   background: rgba(201, 169, 98, 0.22);
 }
 
+.btn-importar-planilha {
+  border-color: rgba(16, 185, 129, 0.4);
+  background: rgba(16, 185, 129, 0.1);
+  color: #10b981;
+}
+
+.btn-importar-planilha:hover {
+  background: rgba(16, 185, 129, 0.2);
+}
+
+.import-resumo-ok {
+  padding: 12px 14px;
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  border-radius: 10px;
+  background: rgba(16, 185, 129, 0.08);
+  font-size: 13.5px;
+  margin-bottom: 14px;
+}
+
+.import-resumo-ok span {
+  display: block;
+  font-size: 12px;
+  color: var(--text-secondary, #a0a0a0);
+  margin-top: 2px;
+}
+
+.import-grupo-fora {
+  margin-bottom: 12px;
+  font-size: 13px;
+}
+
+.import-grupo-fora ul {
+  margin: 6px 0 0;
+  padding-left: 18px;
+  color: var(--text-secondary, #a0a0a0);
+  font-size: 12px;
+  max-height: 130px;
+  overflow-y: auto;
+}
+
 .boletos-resumo-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
