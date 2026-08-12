@@ -13,7 +13,7 @@ import autoTable from 'jspdf-autotable'
 import { 
   Users, DollarSign, TrendingUp, Plus, Edit2, Trash2, 
   Search, Filter, LogOut, Menu, X, ChevronDown, Save, Eye,
-  Calculator, Calendar, User, Briefcase, CheckCircle, Clock, UserPlus, Mail, Lock, Percent, Building, PlusCircle, CreditCard, Check, Upload, FileText, Trash, UserCircle, Phone, MapPin, Camera, Download, FileDown, LayoutDashboard, ChevronLeft, ChevronRight, PanelLeftClose, PanelLeft, AlertCircle, RefreshCw, ClipboardList, CheckCircle2, XCircle, MessageSquare, Undo2, ShieldAlert, Radar, ArrowRight, ListChecks, KeyRound, Barcode, Copy
+  Calculator, Calendar, User, Briefcase, CheckCircle, Clock, UserPlus, Mail, Lock, Percent, Building, PlusCircle, CreditCard, Check, Upload, FileText, Trash, UserCircle, Phone, MapPin, Camera, Download, FileDown, LayoutDashboard, ChevronLeft, ChevronRight, PanelLeftClose, PanelLeft, AlertCircle, RefreshCw, ClipboardList, CheckCircle2, XCircle, MessageSquare, Undo2, ShieldAlert, Radar, ArrowRight, ListChecks, KeyRound, Barcode, Copy, FolderOpen
 } from 'lucide-react'
 import logo from '../imgs/logo.png'
 import Ticker from '../components/Ticker'
@@ -22,6 +22,7 @@ import NotasAtualizacaoModal from '../components/NotasAtualizacaoModal'
 import AtualizacoesView from '../components/AtualizacoesView'
 import { Sparkles } from 'lucide-react'
 import EmpreendimentoGaleria from '../components/EmpreendimentoGaleria'
+import VendaDocumentos from '../components/VendaDocumentos'
 import ProfilePhotoModal from '../components/ProfilePhotoModal'
 // import CadastrarCorretores from '../components/CadastrarCorretores'
 // import ImportarVendas from '../components/ImportarVendas'
@@ -1241,8 +1242,10 @@ const AdminDashboard = () => {
   // posteriores mostram indicador discreto sem travar a tela.
   const [primeiraCargaConcluida, setPrimeiraCargaConcluida] = useState(false)
 
-  // Boletos Sicoob (camada própria de cobrança — tabela boletos; aba "Boletos")
+  // Boletos (camada própria de cobrança — tabela boletos; aba "Boletos")
   const [boletosAdmin, setBoletosAdmin] = useState([])
+  // Banco selecionado pra emissão em massa (multi-banco desde 2026-08: sicoob | ailos)
+  const [bancoEmissao, setBancoEmissao] = useState('sicoob')
   const [emitindoBoletoId, setEmitindoBoletoId] = useState(null)
   const [buscaBoleto, setBuscaBoleto] = useState('')
   const [clienteBoletoExpandido, setClienteBoletoExpandido] = useState(null)
@@ -3933,6 +3936,64 @@ const AdminDashboard = () => {
     }
     if (data?.error) throw new Error(data.error)
     return data
+  }
+
+  // Config dos bancos de emissão (multi-banco 2026-08). A emissão em massa
+  // roda nos workers locais (scripts/boletos) — a planilha é a MESMA estrutura
+  // pros dois bancos; o que muda é o worker/convênio.
+  const BANCOS_EMISSAO = {
+    sicoob: {
+      label: 'Sicoob', codigo: '756',
+      conta: 'Coop 4368 · conta 119.638-3 · contrato 3771512',
+      worker: 'node emitir-lote-excel.cjs "clientes.xlsx" "cobrancas.xlsx" [--apply]',
+      obs: 'Descrição vira instrução no boleto: máx. 40 caracteres. PDF oficial vem do banco.',
+      status: 'Em produção desde 07/2026',
+    },
+    ailos: {
+      label: 'Ailos', codigo: '085',
+      conta: 'Convênio 101004 · ag 0101-5 · conta 20974370',
+      worker: "$env:AILOS_ENV='producao'; node ailos-emitir-lote-excel.cjs \"clientes.xlsx\" \"cobrancas.xlsx\" [--apply]",
+      obs: 'Boleto sai com QR Pix (Bolepix). PDF é gerado pelo nosso layout homologado.',
+      status: 'Homologação concluída 08/2026 — emissão em massa em preparação',
+    },
+  }
+
+  // Gera e baixa o modelo de planilha (Clientes ou Cobrancas) do banco escolhido.
+  // Mesmas colunas que os workers de lote leem — não renomear.
+  const baixarModeloPlanilha = async (banco, tipo) => {
+    const XLSX = await import('xlsx')
+    const cfg = BANCOS_EMISSAO[banco]
+    const wb = XLSX.utils.book_new()
+    if (tipo === 'clientes') {
+      const ws = XLSX.utils.aoa_to_sheet([
+        ['Nome Completo *', 'CPF/CNPJ *', 'Endereço (Rua e Número) *', 'Bairro *', 'Cidade *', 'UF *', 'CEP *', 'Email', 'Telefone'],
+        ['MARIA EXEMPLO DA SILVA', '111.444.777-35', 'Rua Exemplo, 123 Apto 45', 'Centro', 'Itajaí', 'SC', '88300-000', 'maria@email.com', '(47) 99999-0000'],
+      ])
+      ws['!cols'] = [{ wch: 30 }, { wch: 18 }, { wch: 32 }, { wch: 16 }, { wch: 16 }, { wch: 5 }, { wch: 12 }, { wch: 26 }, { wch: 16 }]
+      XLSX.utils.book_append_sheet(wb, ws, 'Clientes')
+    } else {
+      const ws = XLSX.utils.aoa_to_sheet([
+        ['CPF/CNPJ do Cliente *', 'Valor (R$) *', 'Data de Vencimento *', 'Descrição *', 'Nº da Parcela', 'Contrato/Unidade'],
+        ['111.444.777-35', 1264.65, '10/09/2026', 'Parcela 15/60 - Unidade 710 Bloco C', 15, 'FIGUEIRA 710 C'],
+      ])
+      ws['!cols'] = [{ wch: 20 }, { wch: 12 }, { wch: 18 }, { wch: 38 }, { wch: 12 }, { wch: 18 }]
+      XLSX.utils.book_append_sheet(wb, ws, 'Cobrancas')
+    }
+    const inst = XLSX.utils.aoa_to_sheet([
+      [`INSTRUÇÕES — Modelo de ${tipo === 'clientes' ? 'Clientes (pagadores)' : 'Cobranças (boletos a emitir)'} — Banco ${cfg.label} (${cfg.codigo})`],
+      [''],
+      ['1. Não renomear colunas nem abas — o robô de emissão lê exatamente esses nomes.'],
+      ['2. Colunas com * são obrigatórias. Datas no formato DD/MM/AAAA.'],
+      ['3. Cada cobrança precisa casar EXATAMENTE com uma parcela PENDENTE do sistema'],
+      ['   (cliente + nº parcela + valor + vencimento) — divergências ficam fora do lote.'],
+      [`4. ${cfg.obs}`],
+      [`5. Emissão (${cfg.label} · ${cfg.conta}):`],
+      [`   ${cfg.worker}`],
+      ['   Rodar primeiro SEM --apply (dry-run), conferir o relatório, depois com --apply.'],
+    ])
+    inst['!cols'] = [{ wch: 95 }]
+    XLSX.utils.book_append_sheet(wb, inst, 'Instruções')
+    XLSX.writeFile(wb, `modelo-${tipo}-${banco}.xlsx`)
   }
 
   // Boleto vivo da parcela (cancelado/baixado/erro liberam re-emissão)
@@ -8683,6 +8744,45 @@ const AdminDashboard = () => {
 
           return (
             <div className="content-section">
+              {/* Emissão em massa — escolha do banco + modelos de planilha */}
+              <div className="emissao-massa-card">
+                <div className="emissao-massa-topo">
+                  <div className="emissao-massa-titulo">
+                    <Barcode size={18} />
+                    <div>
+                      <h3>Emissão em massa</h3>
+                      <p>Escolha o banco emissor e baixe o modelo de planilha dele</p>
+                    </div>
+                  </div>
+                  <div className="emissao-massa-bancos">
+                    {Object.entries(BANCOS_EMISSAO).map(([id, b]) => (
+                      <button
+                        key={id}
+                        className={`banco-emissao-btn ${bancoEmissao === id ? 'ativo' : ''}`}
+                        onClick={() => setBancoEmissao(id)}
+                      >
+                        {b.label} <span className="banco-codigo">{b.codigo}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="emissao-massa-detalhe">
+                  <div className="emissao-massa-info">
+                    <span className="emissao-massa-conta">{BANCOS_EMISSAO[bancoEmissao].conta}</span>
+                    <span className="emissao-massa-status">{BANCOS_EMISSAO[bancoEmissao].status}</span>
+                    <span className="emissao-massa-obs">{BANCOS_EMISSAO[bancoEmissao].obs}</span>
+                  </div>
+                  <div className="emissao-massa-modelos">
+                    <button className="btn-modelo" onClick={() => baixarModeloPlanilha(bancoEmissao, 'clientes')}>
+                      <FileDown size={15} /> Modelo Clientes
+                    </button>
+                    <button className="btn-modelo" onClick={() => baixarModeloPlanilha(bancoEmissao, 'cobrancas')}>
+                      <FileDown size={15} /> Modelo Cobranças
+                    </button>
+                  </div>
+                </div>
+              </div>
+
               {/* Resumo */}
               <div className="boletos-resumo-grid">
                 <div className="boletos-resumo-card aguardando">
@@ -9793,6 +9893,13 @@ const AdminDashboard = () => {
                 <RefreshCw size={15} />
                 Renegociações
               </button>
+              <button
+                className={`visualizar-venda-tab${abaVisualizarVenda === 'documentos' ? ' active' : ''}`}
+                onClick={() => setAbaVisualizarVenda('documentos')}
+              >
+                <FolderOpen size={15} />
+                Documentos
+              </button>
             </div>
             
             <div className="modal-body" style={{ padding: '24px' }}>
@@ -9861,7 +9968,10 @@ const AdminDashboard = () => {
                   })}
                 </div>
               )}
-              {abaVisualizarVenda !== 'renegociacoes' && (
+              {abaVisualizarVenda === 'documentos' && (
+                <VendaDocumentos vendaId={selectedItem.id} />
+              )}
+              {abaVisualizarVenda === 'detalhes' && (
               <>{/* Informações Principais */}
               <div style={{ 
                 display: 'grid', 
