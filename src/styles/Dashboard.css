@@ -8748,6 +8748,29 @@ textarea:focus {
   align-self: center;
 }
 
+.banco-emissao-select {
+  padding: 9px 34px 9px 14px;
+  border-radius: 10px;
+  border: 1px solid rgba(201, 169, 98, 0.45);
+  background: rgba(201, 169, 98, 0.1) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23c9a962' stroke-width='2.5'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat right 12px center;
+  color: #c9a962;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.banco-emissao-select:focus {
+  outline: none;
+  border-color: #c9a962;
+}
+
+.banco-emissao-select option {
+  background: #1a1a1a;
+  color: #f5f5f5;
+}
+
 /* Passos 1-2-3 (tiles clicáveis) */
 .emissao-massa-passos {
   display: grid;
@@ -8854,9 +8877,10 @@ textarea:focus {
   .emissao-massa-bancos {
     width: 100%;
   }
-  .emissao-massa-bancos .banco-emissao-btn {
+  .emissao-massa-bancos .banco-emissao-select {
     flex: 1;
-    padding: 10px 8px;
+    padding-top: 11px;
+    padding-bottom: 11px;
   }
   .emissao-massa-passos {
     grid-template-columns: 1fr;

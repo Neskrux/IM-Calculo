@@ -4003,20 +4003,27 @@ const AdminDashboard = () => {
   // robôs de emissão (match EXATO cliente+parcela+valor+vencimento com parcela
   // pendente; 1 boleto vivo por parcela vale entre bancos). NÃO emite nada —
   // gera o lote conferido pro robô do banco selecionado.
-  const importarPlanilhaCobrancas = async (file, banco) => {
+  const importarPlanilhaCobrancas = async (files, banco) => {
     setImportandoPlanilha(true)
     try {
       const XLSX = await import('xlsx')
-      const wb = XLSX.read(await file.arrayBuffer(), { type: 'array' })
-      const aba = wb.Sheets['Cobrancas']
-      if (!aba) {
-        if (wb.Sheets['Clientes']) {
-          throw new Error('Essa é a planilha de CLIENTES (passo 1). Aqui se importa a planilha de COBRANÇAS (passo 2) — a de clientes só acompanha na hora da emissão.')
-        }
-        throw new Error('Aba "Cobrancas" não encontrada — use o modelo do passo 2, sem renomear as abas.')
+      // Aceita 1 ou 2 arquivos (Cobranças obrigatória; Clientes opcional —
+      // se vier, os pagadores também são conferidos)
+      let abaCob = null, abaCli = null
+      const nomes = []
+      for (const file of files) {
+        nomes.push(file.name)
+        const wb = XLSX.read(await file.arrayBuffer(), { type: 'array' })
+        if (wb.Sheets['Cobrancas']) abaCob = wb.Sheets['Cobrancas']
+        if (wb.Sheets['Clientes']) abaCli = wb.Sheets['Clientes']
       }
-      const linhas = XLSX.utils.sheet_to_json(aba, { defval: null })
+      if (!abaCob) {
+        if (abaCli) throw new Error('Você enviou só a planilha de Clientes — inclua também a de Cobranças (passo 2). Dica: dá pra selecionar as duas de uma vez.')
+        throw new Error('Aba "Cobrancas" não encontrada — use os modelos dos passos 1 e 2, sem renomear as abas.')
+      }
+      const linhas = XLSX.utils.sheet_to_json(abaCob, { defval: null })
       if (linhas.length === 0) throw new Error('A aba Cobrancas está vazia.')
+      const linhasCli = abaCli ? XLSX.utils.sheet_to_json(abaCli, { defval: null }) : []
 
       const dig = (s) => String(s ?? '').replace(/\D/g, '')
       const dataISO = (s) => {
@@ -4027,11 +4034,13 @@ const AdminDashboard = () => {
       const hoje = new Date().toISOString().slice(0, 10)
       const cliPorCpf = new Map()
       clientes.forEach(c => { const d = dig(c.cpf) || dig(c.cnpj); if (d) cliPorCpf.set(d, c) })
+      const planCliPorCpf = new Map()
+      linhasCli.forEach(l => { const d = dig(l['CPF/CNPJ *']); if (d) planCliPorCpf.set(d, l) })
       const boletoVivo = new Set(
         boletosAdmin.filter(b => !['cancelado', 'baixado', 'erro'].includes(b.status)).map(b => String(b.pagamento_id)))
 
       const lote = []
-      const fora = { divergente: [], sem_match: [], ja_tem_boleto: [], venc_passado: [] }
+      const fora = { divergente: [], sem_match: [], ja_tem_boleto: [], venc_passado: [], sem_endereco: [] }
       for (const l of linhas) {
         const cli = cliPorCpf.get(dig(l['CPF/CNPJ do Cliente *']))
         const ref = `${l['Contrato/Unidade'] ?? '?'} parc ${l['Nº da Parcela'] ?? '?'} (${l['CPF/CNPJ do Cliente *'] ?? 'sem CPF'})`
@@ -4058,9 +4067,17 @@ const AdminDashboard = () => {
         }
         if (boletoVivo.has(String(exata.id))) { fora.ja_tem_boleto.push(ref); continue }
         if (exata.data_prevista <= hoje) { fora.venc_passado.push(`${ref} — venc ${exata.data_prevista}`); continue }
+        // banco exige endereço do pagador: da planilha de Clientes ou do cadastro
+        const cliPlan = planCliPorCpf.get(dig(l['CPF/CNPJ do Cliente *']))
+        if (!cliPlan?.['Endereço (Rua e Número) *'] && !cli.endereco) {
+          fora.sem_endereco.push(`${ref} — ${cli.nome_completo}`); continue
+        }
         lote.push({ ref, cliente: cli.nome_completo, valor: Number(exata.valor), vencimento: exata.data_prevista, pagamento_id: exata.id })
       }
-      setImportResultado({ banco, arquivo: file.name, totalPlanilha: linhas.length, lote, fora })
+      setImportResultado({
+        banco, arquivo: nomes.join(' + '), totalPlanilha: linhas.length,
+        clientesPlanilha: linhasCli.length, lote, fora,
+      })
     } catch (e) {
       setMessage({ type: 'error', text: 'Importação: ' + e.message })
     } finally {
@@ -8837,56 +8854,57 @@ const AdminDashboard = () => {
                     </div>
                   </div>
                   <div className="emissao-massa-bancos">
-                    <span className="emissao-massa-bancos-label">Emitir pelo banco:</span>
-                    {Object.entries(BANCOS_EMISSAO).map(([id, b]) => (
-                      <button
-                        key={id}
-                        className={`banco-emissao-btn ${bancoEmissao === id ? 'ativo' : ''}`}
-                        onClick={() => setBancoEmissao(id)}
-                      >
-                        {b.label}
-                      </button>
-                    ))}
+                    <label className="emissao-massa-bancos-label" htmlFor="banco-emissao-select">Emitir pelo banco:</label>
+                    <select
+                      id="banco-emissao-select"
+                      className="banco-emissao-select"
+                      value={bancoEmissao}
+                      onChange={(e) => setBancoEmissao(e.target.value)}
+                    >
+                      {Object.entries(BANCOS_EMISSAO).map(([id, b]) => (
+                        <option key={id} value={id}>{b.label} ({b.codigo})</option>
+                      ))}
+                    </select>
                   </div>
                 </div>
                 <div className="emissao-massa-passos">
                   <button className="passo-tile" onClick={() => baixarModeloPlanilha(bancoEmissao, 'clientes')}>
                     <span className="passo-num">1</span>
                     <div className="passo-texto">
-                      <strong><FileDown size={14} /> Planilha de Clientes</strong>
-                      <p>Quem vai pagar: nome, CPF e endereço de cada cliente</p>
+                      <strong><FileDown size={14} /> Baixar planilha de Clientes</strong>
+                      <p>Preencha com quem vai pagar: nome, CPF e endereço</p>
                     </div>
                   </button>
                   <button className="passo-tile" onClick={() => baixarModeloPlanilha(bancoEmissao, 'cobrancas')}>
                     <span className="passo-num">2</span>
                     <div className="passo-texto">
-                      <strong><FileDown size={14} /> Planilha de Cobranças</strong>
-                      <p>O que cobrar: parcela, valor e data de vencimento</p>
+                      <strong><FileDown size={14} /> Baixar planilha de Cobranças</strong>
+                      <p>Preencha com o que cobrar: parcela, valor e vencimento</p>
                     </div>
                   </button>
                   <label className="passo-tile passo-importar">
                     <span className="passo-num">3</span>
                     <div className="passo-texto">
-                      <strong><Upload size={14} /> {importandoPlanilha ? 'Conferindo...' : 'Importar Cobranças preenchida'}</strong>
-                      <p>Envie a planilha de Cobranças (passo 2) — o sistema confere cada linha com as parcelas antes de emitir</p>
+                      <strong><Upload size={14} /> {importandoPlanilha ? 'Conferindo...' : 'Importar as duas preenchidas'}</strong>
+                      <p>Selecione os 2 arquivos juntos — o sistema confere tudo antes de emitir</p>
                     </div>
                     <input
                       type="file"
                       accept=".xlsx,.xls"
+                      multiple
                       style={{ display: 'none' }}
                       disabled={importandoPlanilha}
                       onChange={(e) => {
-                        const f = e.target.files?.[0]
+                        const fs = Array.from(e.target.files || [])
                         e.target.value = ''
-                        if (f) importarPlanilhaCobrancas(f, bancoEmissao)
+                        if (fs.length > 0) importarPlanilhaCobrancas(fs, bancoEmissao)
                       }}
                     />
                   </label>
                 </div>
                 <p className="emissao-massa-rodape">
-                  Baixe os dois modelos do <strong>{BANCOS_EMISSAO[bancoEmissao].label}</strong> e preencha (ou adapte a
-                  planilha do financeiro). A de <strong>Cobranças</strong> é a que você importa no passo 3 pra conferir;
-                  a de <strong>Clientes</strong> acompanha na emissão. Nada é emitido sem a sua conferência.
+                  Preencha as duas planilhas (ou adapte as do financeiro) e importe as duas de uma vez no passo 3
+                  — segure Ctrl pra selecionar os 2 arquivos. Nada é emitido sem a sua conferência.
                 </p>
               </div>
 
@@ -8900,7 +8918,8 @@ const AdminDashboard = () => {
                     </div>
                     <div className="modal-body" style={{ padding: '20px 24px', maxHeight: '65vh', overflowY: 'auto' }}>
                       <p style={{ marginTop: 0, fontSize: 13, color: 'var(--text-secondary)' }}>
-                        {importResultado.arquivo} · {importResultado.totalPlanilha} linhas na planilha
+                        {importResultado.arquivo} · {importResultado.totalPlanilha} cobranças
+                        {importResultado.clientesPlanilha > 0 ? ` · ${importResultado.clientesPlanilha} clientes` : ' · planilha de Clientes não enviada (usando endereços do cadastro)'}
                       </p>
                       <div className="import-resumo-ok">
                         ✅ <strong>{importResultado.lote.length} boletos prontos pra emitir</strong> — {formatCurrency(importResultado.lote.reduce((a, x) => a + x.valor, 0))}
@@ -8911,6 +8930,7 @@ const AdminDashboard = () => {
                         ['sem_match', '❌ Sem correspondência no sistema'],
                         ['ja_tem_boleto', '⏭ Já têm boleto vivo (não duplica, em nenhum banco)'],
                         ['venc_passado', '📅 Vencimento passado'],
+                        ['sem_endereco', '🏠 Sem endereço do pagador (preencher na planilha de Clientes)'],
                       ].map(([k, titulo]) => importResultado.fora[k].length > 0 && (
                         <div key={k} className="import-grupo-fora">
                           <strong>{titulo} — {importResultado.fora[k].length}</strong>
