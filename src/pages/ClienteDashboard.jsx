@@ -22,6 +22,21 @@ import { isPago, isPendente, isAtivo } from '../utils/comissaoCalculator'
 import { gerarExtratoClientePDF } from '../utils/extratoClientePDF'
 import { baixarPdfBase64 } from '../utils/pdfBase64'
 
+// Labels dos documentos (espelha empreendimento_documentos/venda_documentos — migration 037)
+const DOC_LABELS = {
+  registro_incorporacao: 'Registro de Incorporação',
+  matricula_obra: 'Matrícula da Obra',
+  alvara: 'Alvará de Construção',
+  memorial_descritivo: 'Memorial Descritivo',
+  convencao_condominio: 'Convenção de Condomínio',
+  manual_proprietario: 'Manual do Proprietário',
+  contrato: 'Contrato de Compra e Venda',
+  aditivo: 'Aditivo / Renegociação',
+  distrato: 'Distrato',
+  quitacao: 'Termo de Quitação',
+  outros: 'Outros',
+}
+
 // Labels das categorias de fotos (espelha foto_categorias — migrations 005/007)
 const CATEGORIA_LABELS = {
   fachada: 'Fachada',
@@ -69,6 +84,8 @@ const ClienteDashboard = () => {
   const [salvandoSenha, setSalvandoSenha] = useState(false)
   const [fotosEmpreendimentos, setFotosEmpreendimentos] = useState([])
   const [empreendimentosTodos, setEmpreendimentosTodos] = useState([])
+  const [docsEmpreendimentos, setDocsEmpreendimentos] = useState([])
+  const [docsVendas, setDocsVendas] = useState([])
   const [filtroStatusPag, setFiltroStatusPag] = useState('todos')
   const [filtroCompraPag, setFiltroCompraPag] = useState('todas')
   // Modal de detalhes do empreendimento (galeria completa por categoria + lightbox)
@@ -127,6 +144,11 @@ const ClienteDashboard = () => {
           .from('empreendimento_fotos')
           .select('empreendimento_id, url, categoria, descricao, ordem, destaque')
           .order('destaque', { ascending: false })
+          .order('ordem', { ascending: true }),
+        supabase
+          .from('empreendimento_documentos')
+          .select('id, empreendimento_id, categoria, titulo, url, nome_arquivo, ordem')
+          .eq('visivel_cliente', true)
           .order('ordem', { ascending: true })
       ])
 
@@ -137,10 +159,11 @@ const ClienteDashboard = () => {
         .eq('user_id', user.id)
         .maybeSingle()
 
-      const [{ data: empTodosData, error: empTodosError }, { data: fotosData }] = await catalogoPromise
+      const [{ data: empTodosData, error: empTodosError }, { data: fotosData }, { data: empDocsData }] = await catalogoPromise
       if (empTodosError) console.error('Erro ao buscar empreendimentos:', empTodosError)
       setEmpreendimentosTodos(empTodosData || [])
       setFotosEmpreendimentos(fotosData || [])
+      setDocsEmpreendimentos(empDocsData || [])
 
       if (clienteError) {
         console.error('Erro ao buscar cliente:', clienteError)
@@ -161,7 +184,7 @@ const ClienteDashboard = () => {
         let pagamentosData = []
         if (comprasData && comprasData.length > 0) {
           const compraIds = comprasData.map(c => c.id)
-          const [{ data: pagData }, { data: boletosData }] = await Promise.all([
+          const [{ data: pagData }, { data: boletosData }, { data: vendaDocsData }] = await Promise.all([
             supabase
               .from('pagamentos_prosoluto')
               .select('*')
@@ -170,19 +193,27 @@ const ClienteDashboard = () => {
               .from('boletos')
               .select('*')
               .in('venda_id', compraIds)
-              .order('created_at', { ascending: false })
+              .order('created_at', { ascending: false }),
+            supabase
+              .from('venda_documentos')
+              .select('id, venda_id, categoria, titulo, url, nome_arquivo')
+              .in('venda_id', compraIds)
+              .eq('visivel_cliente', true)
+              .order('created_at', { ascending: true })
           ])
 
           if (pagData) {
             pagamentosData = pagData
           }
           setBoletos(boletosData || [])
+          setDocsVendas(vendaDocsData || [])
         }
         setPagamentos(pagamentosData)
         
         // Buscar dados relacionados separadamente se necessário
         if (comprasData && comprasData.length > 0) {
           const corretorIds = [...new Set(comprasData.map(c => c.corretor_id).filter(Boolean))]
+          const unidadeIds = [...new Set(comprasData.map(c => c.unidade_id).filter(Boolean))]
 
           // Empreendimentos vêm do catálogo já carregado acima
           const empreendimentosMap = (empTodosData || []).reduce((acc, emp) => {
@@ -190,18 +221,29 @@ const ClienteDashboard = () => {
             return acc
           }, {})
           let corretoresMap = {}
+          let unidadesMap = {}
 
-          if (corretorIds.length > 0) {
-            const { data: corrData } = await supabase
-              .from('usuarios')
-              .select('id, nome, telefone, email')
-              .in('id', corretorIds)
-            if (corrData) {
-              corretoresMap = corrData.reduce((acc, corr) => {
-                acc[corr.id] = corr
-                return acc
-              }, {})
-            }
+          const [corrRes, uniRes] = await Promise.all([
+            corretorIds.length > 0
+              ? supabase.from('usuarios').select('id, nome, telefone, email').in('id', corretorIds)
+              : Promise.resolve({ data: [] }),
+            unidadeIds.length > 0
+              ? supabase.from('unidades')
+                  .select('id, nome, bloco, andar, numero, tipo, area_privativa, area_total')
+                  .in('id', unidadeIds)
+              : Promise.resolve({ data: [] })
+          ])
+          if (corrRes.data) {
+            corretoresMap = corrRes.data.reduce((acc, corr) => {
+              acc[corr.id] = corr
+              return acc
+            }, {})
+          }
+          if (uniRes.data) {
+            unidadesMap = uniRes.data.reduce((acc, uni) => {
+              acc[uni.id] = uni
+              return acc
+            }, {})
           }
           
           // Adicionar dados relacionados às compras
@@ -218,7 +260,8 @@ const ClienteDashboard = () => {
               ...compra,
               empreendimentos: empreendimento,
               empreendimento: empreendimento, // Também adicionar no singular para compatibilidade
-              corretores: corretoresMap[compra.corretor_id] || null
+              corretores: corretoresMap[compra.corretor_id] || null,
+              unidadeInfo: unidadesMap[compra.unidade_id] || null
             }
           })
           
@@ -1322,8 +1365,18 @@ const ClienteDashboard = () => {
                             <div>
                               <span className="detail-label">UNIDADE</span>
                               <span className="detail-value">
-                                {compra.bloco ? `${compra.bloco} - ` : ''}{compra.unidade}{compra.andar ? ` | ${compra.andar}` : ''}
+                                {compra.unidadeInfo?.bloco ? `Bloco ${compra.unidadeInfo.bloco} - ` : ''}{compra.unidade}
                               </span>
+                            </div>
+                          </div>
+                        )}
+
+                        {compra.numero_contrato && (
+                          <div className="detail-item">
+                            <FileText size={18} />
+                            <div>
+                              <span className="detail-label">CONTRATO</span>
+                              <span className="detail-value">Nº {compra.numero_contrato}</span>
                             </div>
                           </div>
                         )}
@@ -1693,13 +1746,19 @@ const ClienteDashboard = () => {
               ) : (
                 compras.map(compra => {
                   const emp = compra.empreendimentos || compra.empreendimento
+                  const uni = compra.unidadeInfo
                   const fotos = fotosEmpreendimentos.filter(
                     f => String(f.empreendimento_id) === String(emp?.id) && f.categoria !== 'logo'
                   )
                   const fachada = fotos.find(f => f.categoria === 'fachada' && f.destaque)
                     || fotos.find(f => f.categoria === 'fachada')
                     || fotos[0]
-                  const galeria = fotos.filter(f => f !== fachada)
+                  const plantas = fotos.filter(f => f.categoria === 'planta')
+                  const galeria = fotos.filter(f => f !== fachada && f.categoria !== 'planta')
+                  const docsCompra = docsVendas.filter(d => d.venda_id === compra.id)
+                  const docsEmp = docsEmpreendimentos.filter(
+                    d => String(d.empreendimento_id) === String(emp?.id)
+                  )
                   return (
                     <div key={compra.id} className="imovel-card">
                       {fachada && (
@@ -1713,8 +1772,11 @@ const ClienteDashboard = () => {
                           {compra.unidade && (
                             <span className="imovel-chip"><MapPin size={13} /> Unidade {compra.unidade}</span>
                           )}
-                          {compra.bloco && <span className="imovel-chip">Bloco {compra.bloco}</span>}
-                          {compra.andar && <span className="imovel-chip">{compra.andar}</span>}
+                          {uni?.bloco && <span className="imovel-chip">Bloco {uni.bloco}</span>}
+                          {uni?.andar && <span className="imovel-chip">{/^\d+$/.test(uni.andar) ? `${uni.andar}º andar` : uni.andar}</span>}
+                          {uni?.area_privativa > 0 && (
+                            <span className="imovel-chip">{Number(uni.area_privativa).toLocaleString('pt-BR')} m²</span>
+                          )}
                           {(() => {
                             const tag = statusCompra(compra)
                             return (
@@ -1727,6 +1789,90 @@ const ClienteDashboard = () => {
                         </div>
                         {emp?.descricao && <p className="imovel-descricao">{emp.descricao}</p>}
                       </div>
+
+                      {/* Dados do contrato — vindos do Sienge via sync (vendas) */}
+                      <div className="imovel-contrato">
+                        <h4><FileText size={15} /> Dados do contrato</h4>
+                        <div className="imovel-contrato-grid">
+                          {compra.numero_contrato && (
+                            <div className="contrato-item">
+                              <span className="contrato-label">Contrato</span>
+                              <span className="contrato-valor">Nº {compra.numero_contrato}</span>
+                            </div>
+                          )}
+                          <div className="contrato-item">
+                            <span className="contrato-label">Data da compra</span>
+                            <span className="contrato-valor">{formatDate(compra.data_venda)}</span>
+                          </div>
+                          {compra.valor_venda > 0 && (
+                            <div className="contrato-item">
+                              <span className="contrato-label">Valor do imóvel</span>
+                              <span className="contrato-valor">{formatCurrency(compra.valor_venda)}</span>
+                            </div>
+                          )}
+                          {compra.data_entrega_prevista && (
+                            <div className="contrato-item">
+                              <span className="contrato-label">Previsão de entrega</span>
+                              <span className="contrato-valor">{formatDate(compra.data_entrega_prevista)}</span>
+                            </div>
+                          )}
+                          {compra.corretores && (
+                            <div className="contrato-item">
+                              <span className="contrato-label">Corretor</span>
+                              <span className="contrato-valor">
+                                {compra.corretores.nome}
+                                {compra.corretores.telefone && (
+                                  <a
+                                    className="detail-whatsapp"
+                                    href={linkWhatsApp(compra.corretores.telefone)}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    title="Falar com o corretor no WhatsApp"
+                                  >
+                                    <MessageCircle size={13} />
+                                    {compra.corretores.telefone}
+                                  </a>
+                                )}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Documentos: da compra (contrato) + do empreendimento (registro, matrícula...) */}
+                        {(docsCompra.length > 0 || docsEmp.length > 0) && (
+                          <div className="contrato-docs">
+                            {docsCompra.map(doc => (
+                              <a key={doc.id} className="doc-link" href={doc.url} target="_blank" rel="noopener noreferrer">
+                                <FileText size={14} />
+                                <span>{DOC_LABELS[doc.categoria] || doc.titulo}</span>
+                                <Download size={13} />
+                              </a>
+                            ))}
+                            {docsEmp.map(doc => (
+                              <a key={doc.id} className="doc-link" href={doc.url} target="_blank" rel="noopener noreferrer">
+                                <FileText size={14} />
+                                <span>{DOC_LABELS[doc.categoria] || doc.titulo}</span>
+                                <Download size={13} />
+                              </a>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Plantas do empreendimento em destaque */}
+                      {plantas.length > 0 && (
+                        <div className="imovel-plantas">
+                          <h4><ImageIcon size={15} /> Plantas</h4>
+                          <div className="imovel-galeria">
+                            {plantas.map((f, i) => (
+                              <a key={`${f.url}-${i}`} href={f.url} target="_blank" rel="noopener noreferrer" title={f.descricao || 'Planta baixa'}>
+                                <img src={f.url} alt={f.descricao || 'Planta baixa'} loading="lazy" />
+                              </a>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
                       {galeria.length > 0 && (
                         <div className="imovel-galeria">
                           {galeria.slice(0, 12).map((f, i) => (
@@ -2449,6 +2595,28 @@ const ClienteDashboard = () => {
               {empDetalhe.descricao && (
                 <p className="emp-detalhe-descricao">{empDetalhe.descricao}</p>
               )}
+
+              {/* Documentação do empreendimento (registro, matrícula, alvará...) */}
+              {(() => {
+                const docsDetalhe = docsEmpreendimentos.filter(
+                  d => String(d.empreendimento_id) === String(empDetalhe.id)
+                )
+                if (docsDetalhe.length === 0) return null
+                return (
+                  <div className="emp-detalhe-docs">
+                    <h4><FileText size={15} /> Documentação</h4>
+                    <div className="contrato-docs">
+                      {docsDetalhe.map(doc => (
+                        <a key={doc.id} className="doc-link" href={doc.url} target="_blank" rel="noopener noreferrer">
+                          <FileText size={14} />
+                          <span>{DOC_LABELS[doc.categoria] || doc.titulo}</span>
+                          <Download size={13} />
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                )
+              })()}
 
               {fotosDetalhe.length === 0 ? (
                 <div className="imovel-sem-fotos">

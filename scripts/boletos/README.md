@@ -82,3 +82,101 @@ Cancela no Sicoob e marca `baixado` na tabela local.
       virar cron mensal.
 - [ ] Decisão de negócio: juros/multa por atraso.
 - [ ] Renovação do e-CNPJ antes de 25/03/2027.
+
+---
+
+# Worker de Boletos AILOS (banco 085) — homologação
+
+Segundo banco de emissão. Diferente do Sicoob, a Ailos **não exige mTLS** —
+autenticação é OAuth2 (WSO2) + autorização interativa do cooperado. Estado de
+tokens em `ailos_tokens` (migration 038); callback público na edge function
+`ailos-boletos/callback`.
+
+**A Ailos não devolve PDF**: a API retorna código de barras/linha digitável/QR
+Pix e o layout do boleto é responsabilidade nossa (`ailos-boleto-pdf.cjs`,
+layout Febraban com ITF-25). A homologação valida 3 PDFs de exemplo.
+
+## Credenciais
+
+`scripts/boletos/.env.ailos` (fora do git) — credenciais de DESENVOLVEDOR da
+homologação (fixas, valem pra futuras contas, e-mail Ailos 2026-08):
+Consumer Key/Secret + AilosApiKeyDeveloper + dados do cooperado
+(convênio 101004 · carteira 01 · agência 0101-5 · cedente 20974370).
+
+## Fluxo de homologação
+
+```bash
+cd scripts/boletos
+
+# 1. Autorizar o cooperado (1x — abre URL de login no navegador):
+node ailos-login.cjs
+#    → homolog: conta 7902.556-0 · senha aaaaa11111@
+#    O callback grava o code em ailos_tokens; o script confirma sozinho.
+
+# 2. Emitir 3 boletos de teste + gerar os PDFs:
+node ailos-emitir-teste.cjs
+
+# 3. Enviar ailos-homolog-boleto-{1,2,3}.pdf pra homologacaocobranca@ailos.coop.br
+#    (responder o MESMO e-mail, sem alterar o assunto)
+```
+
+Tokens renovam sozinhos: client (1h) via Basic consumer key/secret; code do
+cooperado via `/identity/api/v1/autenticacao/token/refresh` (sem interação).
+O 401 é tratado nos dois níveis em `ailos.cjs::ailosApi`.
+
+## Teste de produção (etapa final da homologação — e-mail Ailos 2026-08-10)
+
+Layout do PDF **aprovado** (logo + Bolepix). Falta o teste em produção: 2
+boletos REAIS de R$ 10,00 — o 1º pago via BolePIX (QR), o 2º via código de
+barras. Credenciais de produção em `.env.ailos.producao` (gitignored; OAuth do
+client já validado contra `apiendpoint.ailos.coop.br`).
+
+```bash
+cd scripts/boletos
+
+# 1. Autorizar o cooperado em PRODUÇÃO (1x — tela de login Ailos):
+AILOS_ENV=producao node ailos-login.cjs
+#    → conta 20974370 + SENHA DE API DE PRODUÇÃO
+#    ⚠️ a Ailos não tem essa senha; se o cooperado não tiver, contatar o
+#      posto de atendimento da cooperativa pra criar/redefinir.
+
+# 2. Emitir os 2 boletos de teste (R$ 10,00 cada, venc +7d):
+AILOS_ENV=producao node ailos-teste-producao.cjs
+
+# 3. Pagar: boleto 1 pelo QR/copia-e-cola · boleto 2 pela linha digitável.
+# 4. Compensou os dois → responder o e-mail da Ailos confirmando.
+```
+
+## Emissão em massa Ailos
+
+`ailos-emitir-lote-excel.cjs` — espelho do lote Sicoob (mesmas planilhas, mesmo
+match-exato, mesma trava de 1 boleto vivo/parcela — vale ENTRE bancos). Emite
+V2 com bolePix, grava `boletos` com `banco='ailos'`, gera o PDF homologado e
+armazena via `sicoob-boletos/armazenar-pdf` (rota agnóstica). Dry-run validado
+2026-08-11 contra as planilhas de julho (223 corretamente pulados por já terem
+boleto Sicoob vivo). Modelos de planilha: aba Boletos do Admin, card "Emissão
+em massa" (seletor Sicoob|Ailos).
+
+```powershell
+$env:AILOS_ENV='producao'
+node ailos-emitir-lote-excel.cjs "clientes.xlsx" "cobrancas.xlsx"          # dry-run
+node ailos-emitir-lote-excel.cjs "clientes.xlsx" "cobrancas.xlsx" --apply  # emite
+```
+
+## Pendências Ailos
+
+- [x] Homologação de layout (3 PDFs aprovados 2026-08-10, com logo + Bolepix).
+- [x] Teste de produção (boleto 1 Pix liquidado ✅; boleto 2 barras pago, compensação Nuclea pendente de conferir).
+- [x] Worker de lote (`ailos-emitir-lote-excel.cjs`, dry-run validado).
+- [ ] Webhooks v2: cadastro retornou **403** — API de webhooks não liberada na
+      nossa subscription; pedir habilitação à Ailos (eventos 2=BoletoLiquidado,
+      1=BoletoBaixado → `.../functions/v1/ailos-boletos/webhook`). Sem webhook,
+      conciliar por consulta (rodada periódica).
+- [ ] Conferir compensação do boleto 2 (consulta `indicadorSituacaoBoleto`).
+- [ ] Integração com o sistema: emissão gravando em `boletos` com
+      `banco='ailos'` (tabela já suporta multi-banco), seletor de banco na aba
+      Boletos do Admin, strip no portal do cliente (PDF do Storage, mesmo fluxo
+      do Sicoob).
+- [ ] Webhook v2 da Ailos (POST /ailos/cobranca/api/v2/webhooks) apontando pra
+      `.../functions/v1/ailos-boletos/webhook` (rota já deployada).
+- [ ] Decisão de negócio: juros/multa (hoje isento, igual Sicoob).

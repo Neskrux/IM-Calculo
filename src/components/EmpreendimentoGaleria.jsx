@@ -12,10 +12,12 @@
 
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
-import { Upload, X, Eye, Star, StarOff, Image as ImageIcon, Loader, ChevronLeft, ChevronRight, Filter } from 'lucide-react'
+import { Upload, X, Eye, Star, StarOff, Image as ImageIcon, Loader, ChevronLeft, ChevronRight, Filter, FileText } from 'lucide-react'
+import EmpreendimentoDocumentos from './EmpreendimentoDocumentos'
 import './EmpreendimentoGaleria.css'
 
 const EmpreendimentoGaleria = ({ empreendimentoId, onClose }) => {
+  const [abaAtiva, setAbaAtiva] = useState('fotos')
   const [fotos, setFotos] = useState([])
   const [categorias, setCategorias] = useState([])
   const [loading, setLoading] = useState(true)
@@ -272,12 +274,32 @@ const EmpreendimentoGaleria = ({ empreendimentoId, onClose }) => {
   return (
     <div className="galeria-container">
       <div className="galeria-header">
-        <h3>Galeria de Fotos</h3>
+        <h3>Mídia e Documentos</h3>
         <button className="btn-close" onClick={onClose}>
           <X size={20} />
         </button>
       </div>
 
+      {/* Abas: Fotos | Documentos */}
+      <div className="galeria-abas">
+        <button
+          className={`galeria-aba ${abaAtiva === 'fotos' ? 'active' : ''}`}
+          onClick={() => setAbaAtiva('fotos')}
+        >
+          <ImageIcon size={16} /> Fotos
+        </button>
+        <button
+          className={`galeria-aba ${abaAtiva === 'documentos' ? 'active' : ''}`}
+          onClick={() => setAbaAtiva('documentos')}
+        >
+          <FileText size={16} /> Documentos
+        </button>
+      </div>
+
+      {abaAtiva === 'documentos' ? (
+        <EmpreendimentoDocumentos empreendimentoId={empreendimentoId} />
+      ) : (
+      <>
       {/* Upload com seleção de categoria */}
       <div className="galeria-upload">
         <div className="upload-row">
@@ -424,7 +446,7 @@ const EmpreendimentoGaleria = ({ empreendimentoId, onClose }) => {
           </div>
           
           {lightboxIndex < fotosFiltradas.length - 1 && (
-            <button 
+            <button
               className="lightbox-nav lightbox-next"
               onClick={(e) => { e.stopPropagation(); navigateLightbox(1); }}
             >
@@ -432,6 +454,8 @@ const EmpreendimentoGaleria = ({ empreendimentoId, onClose }) => {
             </button>
           )}
         </div>
+      )}
+      </>
       )}
     </div>
   )

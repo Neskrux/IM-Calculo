@@ -73,3 +73,17 @@ tmp-extract/
 
 # Scratchpads de investigação do dia a dia (efêmeros, não versionar)
 scratchpad-*/
+
+# Ailos (segundo banco de boletos) — credenciais e artefatos de teste
+.env.ailos*
+scripts/boletos/ailos-homolog-boleto-*
+scripts/boletos/ailos-producao-teste-*
+scripts/boletos/ailos-lote-*.json
+scripts/boletos/ailos-pdf-amostra.pdf
+scripts/boletos/_ailos-tmp-*.pdf
+
+# Manuais/credenciais de integração bancária recebidos por e-mail (não versionar)
+API-Cobranca-Ailos-extracted/
+API de Cobran*a.zip
+Implementacao de aplicativos*.pdf
+Manual - API de Cobranca*.pdf
