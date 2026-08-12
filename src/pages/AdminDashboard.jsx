@@ -4009,7 +4009,12 @@ const AdminDashboard = () => {
       const XLSX = await import('xlsx')
       const wb = XLSX.read(await file.arrayBuffer(), { type: 'array' })
       const aba = wb.Sheets['Cobrancas']
-      if (!aba) throw new Error('Aba "Cobrancas" não encontrada — use o modelo baixado aqui, sem renomear abas.')
+      if (!aba) {
+        if (wb.Sheets['Clientes']) {
+          throw new Error('Essa é a planilha de CLIENTES (passo 1). Aqui se importa a planilha de COBRANÇAS (passo 2) — a de clientes só acompanha na hora da emissão.')
+        }
+        throw new Error('Aba "Cobrancas" não encontrada — use o modelo do passo 2, sem renomear as abas.')
+      }
       const linhas = XLSX.utils.sheet_to_json(aba, { defval: null })
       if (linhas.length === 0) throw new Error('A aba Cobrancas está vazia.')
 
@@ -8862,8 +8867,8 @@ const AdminDashboard = () => {
                   <label className="passo-tile passo-importar">
                     <span className="passo-num">3</span>
                     <div className="passo-texto">
-                      <strong><Upload size={14} /> {importandoPlanilha ? 'Conferindo...' : 'Importar preenchida'}</strong>
-                      <p>O sistema confere tudo com as parcelas antes de emitir</p>
+                      <strong><Upload size={14} /> {importandoPlanilha ? 'Conferindo...' : 'Importar Cobranças preenchida'}</strong>
+                      <p>Envie a planilha de Cobranças (passo 2) — o sistema confere cada linha com as parcelas antes de emitir</p>
                     </div>
                     <input
                       type="file"
@@ -8879,8 +8884,9 @@ const AdminDashboard = () => {
                   </label>
                 </div>
                 <p className="emissao-massa-rodape">
-                  Baixe os modelos do <strong>{BANCOS_EMISSAO[bancoEmissao].label}</strong>, preencha (ou adapte a
-                  planilha do financeiro) e importe de volta — nada é emitido sem a sua conferência.
+                  Baixe os dois modelos do <strong>{BANCOS_EMISSAO[bancoEmissao].label}</strong> e preencha (ou adapte a
+                  planilha do financeiro). A de <strong>Cobranças</strong> é a que você importa no passo 3 pra conferir;
+                  a de <strong>Clientes</strong> acompanha na emissão. Nada é emitido sem a sua conferência.
                 </p>
               </div>
 
