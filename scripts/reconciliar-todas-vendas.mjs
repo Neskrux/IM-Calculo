@@ -68,16 +68,19 @@ const PAGE = 1000
 // mapa tipo Sienge -> tipo interno
 // ⚠️ Este mapa é o FILTRO de "parcela relevante". paymentTerm ausente aqui = installment INVISÍVEL
 // pro reconciliador (não entra na soma S2, não ancora, não marca pago).
-// Medido em 2026-08-11: faltavam B9, '10' (BALÃO10), BN (BENS) e CH (Entrega das chaves) — escondiam
-// R$ 268 mil e parqueavam 903 B, 1206 B, 905 B e 603 D com "soma income != pro_soluto" quando o banco
-// estava CERTO. Ao adicionar termo novo, rodar dry-run e conferir o delta de parqueadas.
-// Fora do mapa DE PROPÓSITO: CA/FI (financiamento, não é pró-soluto), PU/PA (corporativo, não
+// Medido em 2026-08-11: faltavam B9, '10' (BALÃO10) e BN (BENS) — escondiam R$ 143 mil e parqueavam
+// 903 B, 1206 B, 905 B e 603 D com "soma income != pro_soluto" quando o banco estava CERTO
+// (o excesso batia centavo a centavo com esses termos).
+// ⚠️ CH (Entrega das chaves) foi TESTADO e REJEITADO: em 704 B o valor_pro_soluto (175.000) exclui
+// de propósito os 125.000 da entrega de chaves — incluir CH parqueava uma venda que estava correta.
+// Ao adicionar termo novo, SEMPRE rodar dry-run e conferir o delta de parqueadas nos DOIS sentidos.
+// Fora do mapa DE PROPÓSITO: CA/FI (financiamento), CH (entrega de chaves), PU/PA (corporativo, não
 // comissiona), PE (permuta/dação), CV (comissão de venda).
 const MAPA_TIPO = {
   PM: 'parcela_entrada',
   SN: 'sinal', AT: 'sinal',
   BA: 'balao', B1: 'balao', B2: 'balao', B3: 'balao', B4: 'balao', B5: 'balao', B6: 'balao', B7: 'balao', B8: 'balao',
-  B9: 'balao', 10: 'balao', BN: 'balao', CH: 'balao',
+  B9: 'balao', 10: 'balao', BN: 'balao',
 }
 const tipoInterno = (i) => MAPA_TIPO[i.paymentTerm?.id] || null
 
