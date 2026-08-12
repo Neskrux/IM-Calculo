@@ -8828,50 +8828,60 @@ const AdminDashboard = () => {
                     <Barcode size={18} />
                     <div>
                       <h3>Emissão em massa</h3>
-                      <p>Escolha o banco emissor e baixe o modelo de planilha dele</p>
+                      <p>Emita vários boletos de uma vez a partir de uma planilha</p>
                     </div>
                   </div>
                   <div className="emissao-massa-bancos">
+                    <span className="emissao-massa-bancos-label">Emitir pelo banco:</span>
                     {Object.entries(BANCOS_EMISSAO).map(([id, b]) => (
                       <button
                         key={id}
                         className={`banco-emissao-btn ${bancoEmissao === id ? 'ativo' : ''}`}
                         onClick={() => setBancoEmissao(id)}
                       >
-                        {b.label} <span className="banco-codigo">{b.codigo}</span>
+                        {b.label}
                       </button>
                     ))}
                   </div>
                 </div>
-                <div className="emissao-massa-detalhe">
-                  <div className="emissao-massa-info">
-                    <span className="emissao-massa-conta">{BANCOS_EMISSAO[bancoEmissao].conta}</span>
-                    <span className="emissao-massa-status">{BANCOS_EMISSAO[bancoEmissao].status}</span>
-                    <span className="emissao-massa-obs">{BANCOS_EMISSAO[bancoEmissao].obs}</span>
-                  </div>
-                  <div className="emissao-massa-modelos">
-                    <button className="btn-modelo" onClick={() => baixarModeloPlanilha(bancoEmissao, 'clientes')}>
-                      <FileDown size={15} /> Modelo Clientes
-                    </button>
-                    <button className="btn-modelo" onClick={() => baixarModeloPlanilha(bancoEmissao, 'cobrancas')}>
-                      <FileDown size={15} /> Modelo Cobranças
-                    </button>
-                    <label className="btn-modelo btn-importar-planilha">
-                      <Upload size={15} /> {importandoPlanilha ? 'Conferindo...' : 'Importar planilha preenchida'}
-                      <input
-                        type="file"
-                        accept=".xlsx,.xls"
-                        style={{ display: 'none' }}
-                        disabled={importandoPlanilha}
-                        onChange={(e) => {
-                          const f = e.target.files?.[0]
-                          e.target.value = ''
-                          if (f) importarPlanilhaCobrancas(f, bancoEmissao)
-                        }}
-                      />
-                    </label>
-                  </div>
+                <div className="emissao-massa-passos">
+                  <button className="passo-tile" onClick={() => baixarModeloPlanilha(bancoEmissao, 'clientes')}>
+                    <span className="passo-num">1</span>
+                    <div className="passo-texto">
+                      <strong><FileDown size={14} /> Planilha de Clientes</strong>
+                      <p>Quem vai pagar: nome, CPF e endereço de cada cliente</p>
+                    </div>
+                  </button>
+                  <button className="passo-tile" onClick={() => baixarModeloPlanilha(bancoEmissao, 'cobrancas')}>
+                    <span className="passo-num">2</span>
+                    <div className="passo-texto">
+                      <strong><FileDown size={14} /> Planilha de Cobranças</strong>
+                      <p>O que cobrar: parcela, valor e data de vencimento</p>
+                    </div>
+                  </button>
+                  <label className="passo-tile passo-importar">
+                    <span className="passo-num">3</span>
+                    <div className="passo-texto">
+                      <strong><Upload size={14} /> {importandoPlanilha ? 'Conferindo...' : 'Importar preenchida'}</strong>
+                      <p>O sistema confere tudo com as parcelas antes de emitir</p>
+                    </div>
+                    <input
+                      type="file"
+                      accept=".xlsx,.xls"
+                      style={{ display: 'none' }}
+                      disabled={importandoPlanilha}
+                      onChange={(e) => {
+                        const f = e.target.files?.[0]
+                        e.target.value = ''
+                        if (f) importarPlanilhaCobrancas(f, bancoEmissao)
+                      }}
+                    />
+                  </label>
                 </div>
+                <p className="emissao-massa-rodape">
+                  Baixe os modelos do <strong>{BANCOS_EMISSAO[bancoEmissao].label}</strong>, preencha (ou adapte a
+                  planilha do financeiro) e importe de volta — nada é emitido sem a sua conferência.
+                </p>
               </div>
 
               {/* Modal de conferência da planilha importada */}
