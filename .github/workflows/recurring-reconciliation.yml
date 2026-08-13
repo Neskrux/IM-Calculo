@@ -115,6 +115,21 @@ jobs:
           SIENGE_5XX_MAX_DELAY_MS: '90000'
           SIENGE_CACHE_TTL_MS: '3600000' # 1h — tenta income fresco em cada cron; usa stale se Sienge falhar
 
+      # Etapa 2b — o reconciliador parqueia a venda INTEIRA ao ver ambiguidade, e com isso
+      # parcelas perfeitamente casaveis da mesma venda nunca sao ancoradas. Este passo ataca
+      # parcela a parcela (match unico por tipo+valor+data no proprio bill), isolando a
+      # ambiguidade em vez de propaga-la. Grava SO sienge_installment_id. 2026-08-11: 412 orfas
+      # ancoradas de uma vez; sem este passo o furo reabre a cada venda nova que parquear.
+      - name: Ancorar parcelas orfas (parcela a parcela)
+        run: node scripts/ancorar-parcelas-orfas.mjs --apply
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          SIENGE_USERNAME: ${{ secrets.SIENGE_USERNAME }}
+          SIENGE_PASSWORD: ${{ secrets.SIENGE_PASSWORD }}
+          SIENGE_SUBDOMAIN: ${{ secrets.SIENGE_SUBDOMAIN }}
+          SIENGE_CACHE_TTL_MS: '3600000'
+
       # Etapa 3 — sincroniza sales-contracts + receivable-bills via edge
       # function (service_role; bypass em auth.ts). Best-effort: roda por
       # ultimo e nao derruba o job se a quota Sienge acabar aqui — o nucleo
