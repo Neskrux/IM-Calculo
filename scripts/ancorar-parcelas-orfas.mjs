@@ -25,10 +25,13 @@ const ROLLBACK = process.argv.includes('--rollback')
 const OUT = 'docs/auditorias/rollbacks/2026-08-11-ancorar-orfas-rollback.json'
 const REL = 'docs/auditorias/medicoes/ancorar-orfas-2026-08-11.json'
 
-const env = Object.fromEntries(readFileSync('.env', 'utf8').split('\n')
-  .filter(l => l.includes('=') && !l.trim().startsWith('#'))
-  .map(l => [l.slice(0, l.indexOf('=')).trim(), l.slice(l.indexOf('=') + 1).trim()]))
-const sb = createClient(env.VITE_SUPABASE_URL, env.VITE_SUPABASE_ANON_KEY)
+// Credenciais: process.env primeiro (CI), .env como fallback local. No runner NÃO existe .env —
+// ler direto quebrava o passo do cron com ENOENT (pego na validação por workflow_dispatch, 2026-08-13).
+// Mesmo padrão de reconciliar-todas-vendas.mjs.
+const envFile = existsSync('.env') ? readFileSync('.env', 'utf8') : ''
+const fromFile = (k) => envFile.match(new RegExp(`^${k}=(.+)$`, 'm'))?.[1]?.trim()
+const g = (k) => process.env[k] || fromFile(k)
+const sb = createClient(g('VITE_SUPABASE_URL'), g('VITE_SUPABASE_ANON_KEY'))
 const all = async (b) => { const o = []; let f = 0; for (;;) { const { data, error } = await b(f, f + 999); if (error) throw error; o.push(...data); if (data.length < 1000) break; f += 1000 } return o }
 const d10 = x => x ? String(x).slice(0, 10) : null
 
