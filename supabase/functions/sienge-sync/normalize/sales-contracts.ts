@@ -395,6 +395,18 @@ async function upsertVenda(
     }))
   }
 
+  // Mesma observabilidade pro CLIENTE. Este é o caso que produzia a queixa
+  // "o cliente sumiu do sistema, mas no Sienge está certinho": o Sienge tem titular,
+  // ele não existe em `clientes`, clienteId vira null e ninguém fica sabendo.
+  if (cliP?.id != null && !clienteId) {
+    console.warn(JSON.stringify({
+      warning: 'cliente_sienge_sem_cadastro_local',
+      sienge_contract_id: String(contract.id),
+      cliente_sienge_id: String(cliP.id),
+      cliente_name: cliP.name ?? null,
+    }))
+  }
+
   const tipoCorretorSync = corretor?.tipo ?? "externo"
   const percentualTotalSync = empInfo ? (tipoCorretorSync === "interno" ? empInfo.com_int : empInfo.com_ext) : 7
   const paymentData = mapearPaymentConditions(contract.paymentConditions)
@@ -475,6 +487,21 @@ async function upsertVenda(
   const origemClienteProtegida =
     existente?.cliente_id_origem === "manual" || existente?.cliente_id_origem === "cessao"
   if (origemClienteProtegida) {
+    // A spec manda "sync NÃO sobrescreve, só LOGA drift" (.claude/rules/sincronizacao-sienge.md).
+    // A parte do "loga" nunca existiu: a proteção era silenciosa, então um vínculo humano ERRADO
+    // ficava errado pra sempre e ninguém via. Só emite quando o Sienge realmente discorda —
+    // divergência é o sinal, não a proteção em si (senão viraria ruído em todo run).
+    if (clienteId != null && clienteId !== existente.cliente_id) {
+      console.warn(JSON.stringify({
+        warning: 'cliente_manual_diverge_do_sienge',
+        sienge_contract_id: String(contract.id),
+        cliente_id_no_banco: existente.cliente_id,
+        cliente_id_do_sienge: clienteId,
+        cliente_name_sienge: cliP?.name ?? null,
+        origem: existente.cliente_id_origem,
+        nota: "vínculo humano preservado; se for cessão isto é ESPERADO, senão é erro de cadastro",
+      }))
+    }
     rowProtegido.cliente_id = existente.cliente_id
     rowProtegido.cliente_id_origem = existente.cliente_id_origem
   }
@@ -482,6 +509,13 @@ async function upsertVenda(
   // Sienge nao resolve o cliente (nao cadastrado em `clientes`), preserva o que ja esta la — apagar
   // vinculo e sempre pior que manter um vinculo possivelmente desatualizado.
   if (!origemClienteProtegida && rowProtegido.cliente_id == null && existente?.cliente_id != null) {
+    console.warn(JSON.stringify({
+      warning: 'cliente_preservado_sienge_nao_resolveu',
+      sienge_contract_id: String(contract.id),
+      cliente_id_mantido: existente.cliente_id,
+      cliente_sienge_id: cliP?.id != null ? String(cliP.id) : null,
+      nota: "o titular do Sienge não existe em `clientes`; vínculo atual mantido em vez de apagado",
+    }))
     rowProtegido.cliente_id = existente.cliente_id
   }
 
