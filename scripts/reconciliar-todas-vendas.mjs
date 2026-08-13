@@ -150,11 +150,16 @@ const r = await siengeGet({
 const income = extractRows(r.data)
 console.log(`  ${income.length} linhas income`)
 const incomePorBill = new Map()
+// bruto = TODAS as linhas do bill, inclusive termos fora do pró-soluto. Serve pra distinguir
+// "bill vazio de verdade" (problema) de "bill só com termo que não comissiona" (fora de escopo).
+const incomeBrutoPorBill = new Map()
 for (const i of income) {
-  const ti = tipoInterno(i)
-  if (!ti) continue // CA / BN / PU / PA / CV — fora do pro-soluto
   const bill = Number(i.billId)
   if (!bill) continue
+  if (!incomeBrutoPorBill.has(bill)) incomeBrutoPorBill.set(bill, [])
+  incomeBrutoPorBill.get(bill).push(i)
+  const ti = tipoInterno(i)
+  if (!ti) continue // CA / FI / CH / PU / PA / PE / CV — fora do pro-soluto
   if (!incomePorBill.has(bill)) incomePorBill.set(bill, [])
   incomePorBill.get(bill).push({ ...i, _tipoInterno: ti })
 }
@@ -162,7 +167,7 @@ for (const i of income) {
 // 4. processar
 const resultado = {
   meta: { geradoEm: new Date().toISOString(), modo: DRY ? 'dry-run' : 'apply', total_vendas: vendas.length },
-  processadas: [], revisao_humana: [], revisao_data: [], drift: [],
+  processadas: [], revisao_humana: [], revisao_data: [], drift: [], fora_de_escopo: [],
   totais: { popular: 0, marcar_pago: 0, reativar: 0, criar: 0, sem_match_banco: 0, corrigir_data: 0 },
 }
 
@@ -176,7 +181,23 @@ for (const v of vendas) {
   if (renegSet?.size) inc = inc.filter((i) => !renegSet.has(String(i.installmentId)))
 
   // S1
-  if (inc.length === 0) { resultado.revisao_humana.push({ venda_id: v.id, unidade: v.unidade, contrato: v.sienge_contract_id, motivo: 'bill sem parcelas relevantes no income' }); continue }
+  if (inc.length === 0) {
+    // FORA DE ESCOPO ≠ problema. Venda corporativa (PU/PA) ou permuta/dação (PE) não gera pró-soluto:
+    // o bill TEM linhas, mas nenhuma comissiona, o pró-soluto é 0 e o banco corretamente não tem
+    // parcela nenhuma. Parquear isso é falso positivo — enche a fila de revisão humana com 10 vendas
+    // que não têm o que revisar. Medido 2026-08-13: 1703 C, 1602 D, 1607 D, 1606 D, 1707 C, 1603 D,
+    // 908 D, 1208 A, 1702 D, 1706 C. ⚠️ Continua parqueando quando há pró-soluto ou parcelas — é o
+    // caso da 1008 D (pró-soluto 109.571,60, bill com PM/balões e ZERO parcelas no banco = problema real).
+    const bruto = incomeBrutoPorBill.get(bill) || []
+    const semProSoluto = Number(v.valor_pro_soluto || 0) === 0
+    const semParcelas = pags.filter((p) => p.status !== 'cancelado').length === 0
+    if (bruto.length > 0 && semProSoluto && semParcelas) {
+      const termos = [...new Set(bruto.map((i) => i.paymentTerm?.id).filter(Boolean))].join(',')
+      resultado.fora_de_escopo.push({ venda_id: v.id, unidade: v.unidade, contrato: v.sienge_contract_id, termos, motivo: 'termo não comissiona (pró-soluto 0, sem parcelas)' })
+      continue
+    }
+    resultado.revisao_humana.push({ venda_id: v.id, unidade: v.unidade, contrato: v.sienge_contract_id, motivo: 'bill sem parcelas relevantes no income' }); continue
+  }
   // S2 — soma de tudo que compoe pro-soluto
   const somaInc = inc.reduce((s, i) => s + Number(i.originalAmount || 0), 0)
   if (Math.abs(somaInc - Number(v.valor_pro_soluto || 0)) > 1) {
@@ -190,9 +211,20 @@ for (const v of vendas) {
     if (!siengePorChave.has(k)) siengePorChave.set(k, [])
     siengePorChave.get(k).push(i)
   }
-  if ([...siengePorChave.values()].some((a) => a.length > 1)) {
-    resultado.revisao_humana.push({ venda_id: v.id, unidade: v.unidade, contrato: v.sienge_contract_id, motivo: 'Sienge tem parcelas com mesmo (tipo,valor,data) — ambiguo' }); continue
+  // S3 — o risco real da chave duplicada NÃO é o valor (tipo/valor/data são idênticos por definição):
+  // é parear a linha errada quando uma duplicata está PAGA e a outra em ABERTO, marcando a parcela
+  // errada como paga. Quando todas as duplicatas de uma chave têm o MESMO status de pagamento, o
+  // pareamento é indiferente — só muda qual installmentId cada linha carrega, e a ordenação por
+  // installmentId abaixo torna isso determinístico (mesmo resultado em toda execução).
+  // Medido 2026-08-13: 1003 C, 810 C, 1606 A e 1302 A têm 1 chave duplicada cada, ambas em ABERTO.
+  const pagoSienge = (i) => !!(i.paymentDate || i.receipts?.[0]?.paymentDate)
+  const dupInseguras = [...siengePorChave.values()].filter(
+    (a) => a.length > 1 && new Set(a.map(pagoSienge)).size > 1)
+  if (dupInseguras.length) {
+    resultado.revisao_humana.push({ venda_id: v.id, unidade: v.unidade, contrato: v.sienge_contract_id, motivo: 'Sienge tem parcelas com mesmo (tipo,valor,data) e status de pagamento DIFERENTE — ambiguo' }); continue
   }
+  // ordem determinística: o matcher consome por (tipo,valor,data) na ordem do array
+  inc.sort((a, b) => Number(a.installmentId || 0) - Number(b.installmentId || 0))
   // S4 — chave duplicada ATIVA no banco
   const ativos = pags.filter((p) => p.status !== 'cancelado')
   const bancoPorChave = new Map()
@@ -305,6 +337,7 @@ for (const v of vendas) {
 console.log(`\n=== ESCOPO ===`)
 console.log(`  vendas processaveis (match limpo): ${resultado.processadas.length}`)
 console.log(`  vendas pra revisao humana:         ${resultado.revisao_humana.length}`)
+console.log(`  vendas fora de escopo (nao comissionam): ${resultado.fora_de_escopo.length}`)
 console.log(`  --- acoes nas processaveis ---`)
 console.log(`  popular sienge_installment_id: ${resultado.totais.popular}`)
 console.log(`  marcar pago (Sienge confirma): ${resultado.totais.marcar_pago}`)
