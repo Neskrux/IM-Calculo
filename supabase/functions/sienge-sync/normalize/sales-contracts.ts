@@ -464,9 +464,25 @@ async function upsertVenda(
     if (existente.tipo_corretor) rowProtegido.tipo_corretor = existente.tipo_corretor
     rowProtegido.corretor_id_origem = existente.corretor_id_origem
   }
-  if (existente?.cliente_id_origem === "manual") {
+  // 'cessao' (migration 028) protege igual a 'manual': na cessao de direitos o Sienge MANTEM o
+  // cedente — nao ha endpoint v1 pra trocar o titular — enquanto o banco tem o cessionario, que e
+  // a verdade do termo assinado. Ver .claude/rules/cessao.md §2: "cessao e o unico termo onde
+  // banco != Sienge e LEGITIMO".
+  // ⚠️ Sem isso o sync zerava cliente_id: quando o cliente do Sienge nao existe em `clientes`,
+  // `clienteId` resolve pra null e o upsert gravava null por cima do cessionario. Sintoma pra quem
+  // usa: "o cliente sumiu do sistema, mas no Sienge esta certinho". Medido 2026-08-13: 1703 A e
+  // 905 B perderam o cliente_id no run 31709936096, horas depois de terem sido preenchidos.
+  const origemClienteProtegida =
+    existente?.cliente_id_origem === "manual" || existente?.cliente_id_origem === "cessao"
+  if (origemClienteProtegida) {
     rowProtegido.cliente_id = existente.cliente_id
     rowProtegido.cliente_id_origem = existente.cliente_id_origem
+  }
+  // Rede de seguranca independente da flag: NUNCA trocar um cliente_id existente por null. Se o
+  // Sienge nao resolve o cliente (nao cadastrado em `clientes`), preserva o que ja esta la — apagar
+  // vinculo e sempre pior que manter um vinculo possivelmente desatualizado.
+  if (!origemClienteProtegida && rowProtegido.cliente_id == null && existente?.cliente_id != null) {
+    rowProtegido.cliente_id = existente.cliente_id
   }
 
   const tipoCorretorFinal = String(rowProtegido.tipo_corretor ?? tipoCorretorSync)
