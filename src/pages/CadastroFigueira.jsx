@@ -180,7 +180,16 @@ export default function CadastroFigueira() {
         const fd = new FormData()
         fd.append('file', file); fd.append('tipo', tipo)
         const r = await fetch(`${PROXY}/upload`, { method: 'POST', body: fd })
-        if (!r.ok) return setErro(`Falha no upload de ${tipo} (HTTP ${r.status})`)
+        if (!r.ok) {
+          // A edge devolve o motivo no corpo; mostrar só o status fazia o corretor culpar o
+          // arquivo quando o problema era o RH fora do ar (caso real 2026-08-13: DNS do RH
+          // caiu e a tela dizia "Falha no upload de creci (HTTP 500)").
+          const corpo = await r.json().catch(() => ({}))
+          if (r.status === 502 || corpo.error === 'rh_inalcancavel') {
+            return setErro('O sistema que recebe o cadastro está fora do ar no momento. Não é problema do seu arquivo — avise a IM e tente mais tarde.')
+          }
+          return setErro(corpo.detail || corpo.error || `Falha no upload de ${tipo} (HTTP ${r.status})`)
+        }
         ref = { tipo, ...(await r.json()) }
       } catch (err) {
         return setErro(`Falha no upload de ${tipo}: ${err.message}. (O proxy/edge está no ar?)`)
