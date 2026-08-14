@@ -12,7 +12,14 @@
 import "@supabase/functions-js/edge-runtime.d.ts"
 import { createClient } from "@supabase/supabase-js"
 
-const RH_BASE_URL = Deno.env.get("RH_BASE_URL") ?? "https://rh.investmoneysa.com.br"  // default prod; override por env
+// O RH mudou de endereço: era https://rh.investmoneysa.com.br, hoje é https://solumn.com.br.
+// O subdomínio antigo está com NXDOMAIN (removido da zona Cloudflare; o apex investmoneysa.com.br
+// ainda resolve) — então a edge tentava, o DNS quebrava, e o corretor lia "Falha no upload de
+// creci (HTTP 500)" e culpava o próprio arquivo.
+// Verificado em 2026-08-13 contra o host novo: /api/rota-inexistente → 404, /api/cadastro-negociacao
+// /upload → 405 em GET (rota existe, só POST), /cadastro-colaborador → 200. O env continua tendo
+// precedência; o default serve pra não depender de secret pra voltar a funcionar.
+const RH_BASE_URL = Deno.env.get("RH_BASE_URL") ?? "https://solumn.com.br"
 const PARCERIA_API_TOKEN = Deno.env.get("PARCERIA_API_TOKEN") ?? ""
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? ""
 const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
@@ -155,6 +162,18 @@ Deno.serve(async (req) => {
 
     return json({ error: "rota não encontrada" }, 404)
   } catch (e) {
-    return json({ error: "erro inesperado", detail: String(e) }, 500)
+    // Distingue "o RH está inalcançável" de "deu erro no nosso código". Falha de DNS/conexão
+    // não é 500 nosso — é 502 (bad gateway): o upstream não respondeu. Sem isso o corretor
+    // recebia HTTP 500 e concluía que o PDF dele estava errado.
+    const msg = String(e)
+    const rhInalcancavel = /dns error|failed to lookup|Connect|ConnectionRefused|error sending request/i.test(msg)
+    if (rhInalcancavel) {
+      return json({
+        error: "rh_inalcancavel",
+        detail: `Não foi possível falar com o sistema do RH (${RH_BASE_URL || "RH_BASE_URL não configurada"}). Não é problema do arquivo enviado.`,
+        upstream: msg,
+      }, 502)
+    }
+    return json({ error: "erro inesperado", detail: msg }, 500)
   }
 })
