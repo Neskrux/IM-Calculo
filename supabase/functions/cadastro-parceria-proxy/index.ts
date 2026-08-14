@@ -12,7 +12,12 @@
 import "@supabase/functions-js/edge-runtime.d.ts"
 import { createClient } from "@supabase/supabase-js"
 
-const RH_BASE_URL = Deno.env.get("RH_BASE_URL") ?? "https://rh.investmoneysa.com.br"  // default prod; override por env
+// ⚠️ SEM default. O default antigo apontava pra https://rh.investmoneysa.com.br, que em
+// 2026-08-13 estava com NXDOMAIN (o subdomínio não existe; só o apex investmoneysa.com.br
+// resolve). Com default morto a edge não falhava por "config faltando" — ela tentava, o DNS
+// quebrava, e o erro chegava ao corretor como "Falha no upload de creci (HTTP 500)", fazendo
+// todo mundo culpar o arquivo. Sem default, a falta de config é explícita na primeira chamada.
+const RH_BASE_URL = Deno.env.get("RH_BASE_URL") ?? ""
 const PARCERIA_API_TOKEN = Deno.env.get("PARCERIA_API_TOKEN") ?? ""
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? ""
 const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
@@ -155,6 +160,18 @@ Deno.serve(async (req) => {
 
     return json({ error: "rota não encontrada" }, 404)
   } catch (e) {
-    return json({ error: "erro inesperado", detail: String(e) }, 500)
+    // Distingue "o RH está inalcançável" de "deu erro no nosso código". Falha de DNS/conexão
+    // não é 500 nosso — é 502 (bad gateway): o upstream não respondeu. Sem isso o corretor
+    // recebia HTTP 500 e concluía que o PDF dele estava errado.
+    const msg = String(e)
+    const rhInalcancavel = /dns error|failed to lookup|Connect|ConnectionRefused|error sending request/i.test(msg)
+    if (rhInalcancavel) {
+      return json({
+        error: "rh_inalcancavel",
+        detail: `Não foi possível falar com o sistema do RH (${RH_BASE_URL || "RH_BASE_URL não configurada"}). Não é problema do arquivo enviado.`,
+        upstream: msg,
+      }, 502)
+    }
+    return json({ error: "erro inesperado", detail: msg }, 500)
   }
 })
