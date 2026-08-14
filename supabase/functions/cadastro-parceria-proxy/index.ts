@@ -12,12 +12,14 @@
 import "@supabase/functions-js/edge-runtime.d.ts"
 import { createClient } from "@supabase/supabase-js"
 
-// ⚠️ SEM default. O default antigo apontava pra https://rh.investmoneysa.com.br, que em
-// 2026-08-13 estava com NXDOMAIN (o subdomínio não existe; só o apex investmoneysa.com.br
-// resolve). Com default morto a edge não falhava por "config faltando" — ela tentava, o DNS
-// quebrava, e o erro chegava ao corretor como "Falha no upload de creci (HTTP 500)", fazendo
-// todo mundo culpar o arquivo. Sem default, a falta de config é explícita na primeira chamada.
-const RH_BASE_URL = Deno.env.get("RH_BASE_URL") ?? ""
+// O RH mudou de endereço: era https://rh.investmoneysa.com.br, hoje é https://solumn.com.br.
+// O subdomínio antigo está com NXDOMAIN (removido da zona Cloudflare; o apex investmoneysa.com.br
+// ainda resolve) — então a edge tentava, o DNS quebrava, e o corretor lia "Falha no upload de
+// creci (HTTP 500)" e culpava o próprio arquivo.
+// Verificado em 2026-08-13 contra o host novo: /api/rota-inexistente → 404, /api/cadastro-negociacao
+// /upload → 405 em GET (rota existe, só POST), /cadastro-colaborador → 200. O env continua tendo
+// precedência; o default serve pra não depender de secret pra voltar a funcionar.
+const RH_BASE_URL = Deno.env.get("RH_BASE_URL") ?? "https://solumn.com.br"
 const PARCERIA_API_TOKEN = Deno.env.get("PARCERIA_API_TOKEN") ?? ""
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? ""
 const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
