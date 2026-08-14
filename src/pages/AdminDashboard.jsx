@@ -4044,7 +4044,7 @@ const AdminDashboard = () => {
       for (const l of linhas) {
         const cli = cliPorCpf.get(dig(l['CPF/CNPJ do Cliente *']))
         const ref = `${l['Contrato/Unidade'] ?? '?'} parc ${l['Nº da Parcela'] ?? '?'} (${l['CPF/CNPJ do Cliente *'] ?? 'sem CPF'})`
-        if (!cli) { fora.sem_match.push(ref + ' — cliente não encontrado'); continue }
+        if (!cli) { fora.sem_match.push(ref + ' — esse CPF não existe no cadastro de clientes. Cadastre o cliente (ou corrija o CPF na planilha) e importe de novo.'); continue }
         const uni = String(l['Contrato/Unidade'] ?? '').match(/(\d+)\s*[A-Za-z]?\s*$/)?.[1]
         const vendasCli = vendas.filter(v =>
           String(v.cliente_id) === String(cli.id) && v.excluido !== true && v.status !== 'distrato' &&
@@ -4061,11 +4061,33 @@ const AdminDashboard = () => {
           Math.abs(Number(p.valor) - valorPlan) < 0.01 &&
           p.data_prevista === vencPlan)
         if (!exata) {
-          const quase = pagamentos.some(p => vendasCli.some(v => String(v.id) === String(p.venda_id)) && Number(p.numero_parcela) === nparc)
-          ;(quase ? fora.divergente : fora.sem_match).push(ref)
+          // explica O QUE difere: acha a parcela candidata e compara com a planilha
+          const cand = pagamentos.filter(p => vendasCli.some(v => String(v.id) === String(p.venda_id)) && Number(p.numero_parcela) === nparc)
+          const pago = cand.find(p => p.status === 'pago')
+          const pend = cand.find(p => p.status === 'pendente')
+          if (pago) {
+            fora.divergente.push(`${ref} — parcela JÁ PAGA em ${formatDate(pago.data_pagamento)}. Não cobrar de novo — atualize a planilha.`)
+          } else if (pend) {
+            fora.divergente.push(`${ref} — planilha: R$ ${valorPlan?.toFixed(2)} venc ${l['Data de Vencimento *']} · sistema: R$ ${Number(pend.valor).toFixed(2)} venc ${formatDate(pend.data_prevista)}. Confira qual está certo antes de emitir.`)
+          } else if (vendasCli.length === 0) {
+            // cliente existe mas não é o titular da venda — mostra quem é
+            const vUni = uni ? vendas.find(v => v.excluido !== true && v.status !== 'distrato' && String(v.unidade ?? '').replace(/\D/g, '') === uni) : null
+            const titular = vUni ? clientes.find(c2 => String(c2.id) === String(vUni.cliente_id)) : null
+            if (titular) {
+              fora.sem_match.push(`${ref} — a venda ${vUni.unidade} está no nome de ${titular.nome_completo}${!(titular.cpf || titular.cnpj) ? ' (cadastro SEM CPF)' : ' (CPF diferente da planilha)'} — corrija o CPF no cadastro do cliente e importe de novo.`)
+            } else {
+              fora.sem_match.push(`${ref} — cliente encontrado, mas sem venda ativa nessa unidade.`)
+            }
+          } else {
+            fora.sem_match.push(`${ref} — a venda existe, mas não há parcela ${nparc || '?'} pendente com esse tipo.`)
+          }
           continue
         }
-        if (boletoVivo.has(String(exata.id))) { fora.ja_tem_boleto.push(ref); continue }
+        if (boletoVivo.has(String(exata.id))) {
+          const bv = boletosAdmin.find(b => String(b.pagamento_id) === String(exata.id) && !['cancelado', 'baixado', 'erro'].includes(b.status))
+          fora.ja_tem_boleto.push(`${ref} — já tem boleto ${bv?.banco === 'ailos' ? 'Ailos' : 'Sicoob'} ${bv?.status || ''} venc ${formatDate(bv?.data_vencimento)}. Pra reemitir, cancele o boleto atual primeiro.`)
+          continue
+        }
         if (exata.data_prevista <= hoje) { fora.venc_passado.push(`${ref} — venc ${exata.data_prevista}`); continue }
         // banco exige endereço do pagador: da planilha de Clientes ou do cadastro
         const cliPlan = planCliPorCpf.get(dig(l['CPF/CNPJ do Cliente *']))
