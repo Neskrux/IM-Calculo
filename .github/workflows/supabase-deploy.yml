@@ -34,6 +34,24 @@ jobs:
         with:
           version: latest
 
+      # RH_BASE_URL versionada em vez de invisivel no dashboard.
+      #
+      # Por que: este valor ficou apontando pra https://rh.investmoneysa.com.br depois que o
+      # SistemadeRH mudou pra https://solumn.com.br. O subdominio antigo virou NXDOMAIN e o
+      # formulario publico de negociacao caiu INTEIRO — o corretor via "Falha no upload de creci
+      # (HTTP 500)" e culpava o proprio arquivo. Como o valor so existia num campo do dashboard,
+      # nada no repo denunciava que estava morto e ninguem revisava.
+      #
+      # NAO e segredo: e uma URL publica. Versionar aqui torna a mudanca de endereco um diff
+      # revisavel, com data e motivo, em vez de uma edicao silenciosa.
+      # Verificado 2026-08-13: /api/rota-inexistente -> 404, /api/cadastro-negociacao/upload
+      # (GET) -> 405, /cadastro-colaborador -> 200.
+      - name: Configurar RH_BASE_URL (endereco do SistemadeRH)
+        run: supabase secrets set RH_BASE_URL=https://solumn.com.br --project-ref $SUPABASE_PROJECT_REF
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+
       - name: Deploy sienge-sync
         run: supabase functions deploy sienge-sync --project-ref $SUPABASE_PROJECT_REF
         env:
