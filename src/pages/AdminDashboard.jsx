@@ -2796,40 +2796,39 @@ const AdminDashboard = () => {
         
         // Se quer ativar acesso ao sistema
         if (corretorForm.ativar_acesso && !corretorForm.tem_acesso_sistema) {
-          // Criar conta no Supabase Auth
-          const { data: authData, error: authError } = await supabase.auth.signUp({
+          // Cria o login via edge function `admin-corretor-acesso` (service role), que nasce o
+          // usuário do Auth COM O MESMO id que o corretor já tem em `usuarios`.
+          //
+          // Por que NÃO usar signUp aqui (era o que este bloco fazia até 2026-08-15):
+          //   1. signUp gera id ALEATÓRIO. Como `usuarios.id` É a identidade do corretor, o código
+          //      antigo tentava compensar apagando o registro e recriando com o id do Auth —
+          //      justamente o que a edge function documenta como "nunca fazer".
+          //   2. Essa migração manual só atualizava `vendas` e `comissoes_venda`. Existem 12 FKs
+          //      apontando pra `usuarios` (clientes, leads, metas, solicitacoes, atividades,
+          //      coordenadoras, notificacoes, usuario_conquistas, boletos…) — as outras ficariam
+          //      órfãs em silêncio.
+          //   3. O `delete()` não tinha checagem de erro. Falhando ele (RLS), sobrava conta no Auth
+          //      com id que não casa com nenhum perfil: o corretor loga e o AuthContext (que busca
+          //      `usuarios?id=eq.${authUser.id}`) não acha nada → "Usuário sem perfil", carteira vazia.
+          //   4. signUp troca a sessão do admin pela do corretor recém-criado.
+          //
+          // Caso real: Diego do Nascimento (2026-08-14) ficou com auth `0d01fb09…` e perfil
+          // `87add151…`. A tela mostrava "Acesso ao Sistema Ativo" e o login não funcionava.
+          // Mesmo desenho já usado no cliente (`chamarAdminClienteAcesso`).
+          await chamarAdminCorretorAcesso({
+            acao: 'criar',
+            corretor_id: selectedItem.id,
             email: corretorForm.email,
-            password: corretorForm.senha,
-            options: {
-              data: {
-                nome: corretorForm.nome
-              }
-            }
+            senha: corretorForm.senha
           })
 
-          if (authError) {
-            // Se o email já existe no Auth, tentar outra abordagem
-            if (authError.message?.includes('already registered')) {
-              throw new Error('Este email já está cadastrado no sistema de autenticação. Use outro email ou entre em contato com o suporte.')
-            }
-            throw new Error(`Erro ao criar acesso: ${authError.message}`)
-          }
-
-          if (!authData.user) {
-            throw new Error('Erro ao criar usuário no sistema de autenticação')
-          }
-
-          // Deletar o registro antigo (com ID gerado pelo banco)
-          await supabase.from('usuarios').delete().eq('id', selectedItem.id)
-
-          // Criar novo registro com o ID do Auth
+          // O id NÃO muda, então não há registro pra recriar nem FK pra perseguir —
+          // só atualizar os dados do formulário e marcar o acesso.
           const { error: dbError } = await supabase
             .from('usuarios')
-            .insert([{
-              id: authData.user.id,
+            .update({
               email: corretorForm.email,
               nome: corretorForm.nome,
-              tipo: 'corretor',
               tipo_corretor: corretorForm.tipo_corretor,
               telefone: corretorForm.telefone || null,
               percentual_corretor: corretorForm.is_autonomo ? parseFloat(corretorForm.percentual_corretor) : (parseFloat(corretorForm.percentual_corretor) || null),
@@ -2838,27 +2837,12 @@ const AdminDashboard = () => {
               cnpj: corretorForm.cnpj || null,
               imobiliaria: corretorForm.imobiliaria || null,
               creci: corretorForm.creci || null,
-              sienge_broker_id: selectedItem.sienge_broker_id || null,
-              origem: selectedItem.origem || null,
               tem_acesso_sistema: true
-            }])
+            })
+            .eq('id', selectedItem.id)
 
           if (dbError) {
             throw new Error(dbError.message)
-          }
-
-          // Atualizar referências em vendas (corretor_id)
-          if (selectedItem.id !== authData.user.id) {
-            await supabase
-              .from('vendas')
-              .update({ corretor_id: authData.user.id })
-              .eq('corretor_id', selectedItem.id)
-            
-            // Atualizar referências em comissoes_venda
-            await supabase
-              .from('comissoes_venda')
-              .update({ corretor_id: authData.user.id })
-              .eq('corretor_id', selectedItem.id)
           }
 
           setMessage({ type: 'success', text: `Acesso ativado para ${corretorForm.nome}! O corretor pode fazer login com o email ${corretorForm.email} e a senha definida.` })
@@ -3906,6 +3890,25 @@ const AdminDashboard = () => {
   // Gestão de acesso do cliente via edge function `admin-cliente-acesso` (service role).
   // O front NUNCA usa signUp pra isso: signUp trocaria a sessão do admin pela do
   // cliente recém-criado, e anon key não pode trocar senha de outro usuário.
+  // Gestão de acesso do CORRETOR via edge function `admin-corretor-acesso` (service role).
+  // Diferença crítica pro cliente: cliente tem coluna de vínculo própria (`clientes.user_id`),
+  // então o id do Auth pode ser qualquer um. Corretor NÃO tem — `usuarios.id` É a identidade e
+  // 12 FKs apontam pra ela. A conta do Auth precisa NASCER com esse id, e é o que a função faz
+  // (ela aborta e remove a conta órfã se o Auth devolver id diferente).
+  const chamarAdminCorretorAcesso = async (body) => {
+    const { data, error } = await supabase.functions.invoke('admin-corretor-acesso', { body })
+    if (error) {
+      let msg = error.message
+      try {
+        const ctx = await error.context?.json?.()
+        if (ctx?.error) msg = ctx.error
+      } catch { /* mantém msg genérica */ }
+      throw new Error(msg)
+    }
+    if (data?.error) throw new Error(data.error)
+    return data
+  }
+
   const chamarAdminClienteAcesso = async (body) => {
     const { data, error } = await supabase.functions.invoke('admin-cliente-acesso', { body })
     if (error) {
