@@ -23,6 +23,7 @@ import AtualizacoesView from '../components/AtualizacoesView'
 import { Sparkles } from 'lucide-react'
 import EmpreendimentoGaleria from '../components/EmpreendimentoGaleria'
 import VendaDocumentos from '../components/VendaDocumentos'
+import { gerarBoletoPdfBase64 } from '../utils/ailosBoletoPdf'
 import ProfilePhotoModal from '../components/ProfilePhotoModal'
 // import CadastrarCorretores from '../components/CadastrarCorretores'
 // import ImportarVendas from '../components/ImportarVendas'
@@ -4124,53 +4125,71 @@ const AdminDashboard = () => {
     }
   }
 
-  // Emissão direta pela tela (Ailos — sem mTLS, roda na edge function).
+  // Emissão direta pela tela (Ailos — sem mTLS). 1 boleto por chamada (a edge
+  // tem limite de CPU; PDF é gerado AQUI no navegador e enviado — servidor só grava).
   // Sicoob continua pelo robô (exige certificado e-CNPJ na máquina).
   const emitirLoteConferido = async () => {
     const r = importResultado
     if (!r || r.banco !== 'ailos' || r.lote.length === 0) return
-    if (!confirm(`Emitir ${r.lote.length} boletos Ailos (${formatCurrency(r.lote.reduce((a, x) => a + x.valor, 0))})?
-
-Os boletos são registrados no banco na hora. Confirma?`)) return
+    if (!confirm(`Emitir ${r.lote.length} boletos Ailos (${formatCurrency(r.lote.reduce((a, x) => a + x.valor, 0))})?\n\nOs boletos são registrados no banco na hora. Confirma?`)) return
     setEmitindoLote(true)
+    const data = { ok: true, emitidos: [], erros: [], semPdf: [] }
     try {
       const { data: sess } = await supabase.auth.getSession()
       const jwt = sess?.session?.access_token
-      // A edge function tem limite de CPU por chamada (PDF é pesado): manda em
-      // lotes de 8. Idempotente — se cair no meio, reemitir pula os já feitos.
-      const TAM = 8
-      const ids = r.lote.map(x => x.pagamento_id)
-      const data = { ok: true, emitidos: [], erros: [] }
-      for (let i = 0; i < ids.length; i += TAM) {
-        setProgressoEmissao({ feitos: i, total: ids.length })
-        const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ailos-boletos/emitir-lote`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${jwt}`, apikey: import.meta.env.VITE_SUPABASE_ANON_KEY },
-          body: JSON.stringify({ pagamento_ids: ids.slice(i, i + TAM), pagadores: r.pagadores || {} }),
-        })
-        const parte = await resp.json().catch(() => ({}))
-        if (!resp.ok || parte.error) {
-          // registra a falha do bloco e segue — os demais blocos não dependem dele
-          ids.slice(i, i + TAM).forEach(id => {
-            const item = r.lote.find(x => x.pagamento_id === id)
-            data.erros.push({ id, ref: item?.ref || id, motivo: `falha temporária do servidor (${parte.error || 'HTTP ' + resp.status}) — clique em Emitir de novo: o que já saiu não duplica` })
-          })
+      const base = import.meta.env.VITE_SUPABASE_URL + '/functions/v1/ailos-boletos'
+      const hdr = { 'Content-Type': 'application/json', Authorization: `Bearer ${jwt}`, apikey: import.meta.env.VITE_SUPABASE_ANON_KEY }
+      const chamar = async (rota, body) => {
+        const resp = await fetch(`${base}/${rota}`, { method: 'POST', headers: hdr, body: JSON.stringify(body) })
+        const j = await resp.json().catch(() => ({}))
+        if (!resp.ok || j.error) throw new Error(j.error || `servidor respondeu HTTP ${resp.status}`)
+        return j
+      }
+      for (let i = 0; i < r.lote.length; i++) {
+        const item = r.lote[i]
+        setProgressoEmissao({ feitos: i, total: r.lote.length, atual: item.ref })
+        let parte
+        try {
+          parte = await chamar('emitir-lote', { pagamento_ids: [item.pagamento_id], pagadores: r.pagadores || {} })
+        } catch (e) {
+          data.erros.push({ ref: item.ref, motivo: `falha de comunicação: ${e.message}. Clique em Emitir de novo — o que já saiu não duplica.` })
           continue
         }
-        data.emitidos.push(...(parte.emitidos || []))
         data.erros.push(...(parte.erros || []))
+        for (const em of parte.emitidos || []) {
+          data.emitidos.push(em)
+          try {
+            const b64 = gerarBoletoPdfBase64({
+              linhaDigitavel: em.pdfDados.linhaDigitavel, codigoBarras: em.pdfDados.codigoBarras, nossoNumero: em.pdfDados.nossoNumero,
+              beneficiario: { nome: 'IM CONSTRUTORA E INCORPORADORA', cnpj: '14587169000102' },
+              agenciaCodigo: '0101-5 / 20974370',
+              pagador: em.pdfDados.pagador,
+              dataDocumento: em.pdfDados.dataDoc, numeroDocumento: em.pdfDados.numeroDoc, especieDoc: 'MENS', aceite: 'N',
+              dataProcessamento: em.pdfDados.dataDoc, carteira: '01', valor: em.pdfDados.valor, vencimento: em.pdfDados.vencimento,
+              instrucoes: em.pdfDados.instrucoes, pixQrCodeBase64: em.pdfDados.pixQr,
+            })
+            await chamar('armazenar-pdf', { boleto_id: em.boleto_id, pdf_base64: b64 })
+          } catch (e) {
+            data.semPdf.push({ ref: em.ref, motivo: e.message })
+          }
+        }
       }
       setProgressoEmissao(null)
       setResultadoEmissao(data)
-      // recarrega boletos da tela (escopado às parcelas do lote)
       const { data: novos } = await supabase.from('boletos').select('*').in('pagamento_id', r.lote.map(x => x.pagamento_id))
       if (novos) setBoletosAdmin(prev => {
         const ids = new Set(novos.map(b => b.id))
         return [...prev.filter(b => !ids.has(b.id)), ...novos]
       })
-      setMessage({ type: data.erros?.length ? 'warning' : 'success', text: `${data.emitidos.length} boletos emitidos${data.erros?.length ? ` · ${data.erros.length} não emitidos (veja os motivos)` : ''}` })
+      const falhas = data.erros.length + data.semPdf.length
+      setMessage({
+        type: falhas ? 'warning' : 'success',
+        text: `${data.emitidos.length} de ${r.lote.length} boletos emitidos${data.erros.length ? ` · ${data.erros.length} não emitidos` : ''}${data.semPdf.length ? ` · ${data.semPdf.length} sem PDF` : ''} — veja o detalhe na janela`,
+      })
     } catch (e) {
-      setMessage({ type: 'error', text: 'Emissão: ' + e.message })
+      setProgressoEmissao(null)
+      setResultadoEmissao(data)
+      setMessage({ type: 'error', text: `A emissão parou: ${e.message}. ${data.emitidos.length} já saíram — clique em Emitir de novo, o que saiu não duplica.` })
     } finally {
       setEmitindoLote(false)
       setProgressoEmissao(null)
@@ -9020,7 +9039,7 @@ Os boletos são registrados no banco na hora. Confirma?`)) return
                       {[
                         ['divergente', '⚠️ Divergentes (valor/data não batem com o sistema — conferir antes)'],
                         ['sem_match', '❌ Sem correspondência no sistema'],
-                        ['ja_tem_boleto', '⏭ Já têm boleto vivo (não duplica, em nenhum banco)'],
+                        ['ja_tem_boleto', '🔁 Duplicados — já têm boleto vivo (NÃO serão emitidos de novo)'],
                         ['venc_passado', '📅 Vencimento passado'],
                         ['sem_endereco', '🏠 Sem endereço do pagador (preencher na planilha de Clientes)'],
                       ].map(([k, titulo]) => importResultado.fora[k].length > 0 && (
@@ -9033,13 +9052,25 @@ Os boletos são registrados no banco na hora. Confirma?`)) return
                       ))}
                       {resultadoEmissao ? (
                         <div className="import-resultado-emissao">
-                          <div className="import-resumo-ok">
-                            🎉 <strong>{resultadoEmissao.emitidos.length} boletos emitidos</strong> — já aparecem na lista abaixo e no portal dos clientes, com PDF pronto.
+                          <div className={`import-resumo-ok ${resultadoEmissao.emitidos.length < importResultado.lote.length ? 'parcial' : ''}`}>
+                            {resultadoEmissao.emitidos.length === importResultado.lote.length ? '🎉' : '⚠️'}{' '}
+                            <strong>{resultadoEmissao.emitidos.length} de {importResultado.lote.length} boletos emitidos</strong>
+                            {resultadoEmissao.emitidos.length > 0 && <span> — já aparecem na lista abaixo e no portal dos clientes.</span>}
                           </div>
                           {resultadoEmissao.erros?.length > 0 && (
                             <div className="import-grupo-fora">
                               <strong>❌ Não emitidos — {resultadoEmissao.erros.length}</strong>
                               <ul>{resultadoEmissao.erros.map((e, i) => <li key={i}>{e.ref} — {e.motivo}</li>)}</ul>
+                              {resultadoEmissao.erros.some(e => /falha de comunicação|servidor/i.test(e.motivo)) && (
+                                <p className="import-dica">Importe as planilhas de novo e clique em Emitir: os que já saíram aparecem em "Duplicados" e <strong>não são emitidos de novo</strong>.</p>
+                              )}
+                            </div>
+                          )}
+                          {resultadoEmissao.semPdf?.length > 0 && (
+                            <div className="import-grupo-fora">
+                              <strong>📄 Emitidos, mas o PDF não foi salvo — {resultadoEmissao.semPdf.length}</strong>
+                              <ul>{resultadoEmissao.semPdf.map((e, i) => <li key={i}>{e.ref} — {e.motivo}</li>)}</ul>
+                              <p className="import-dica">O boleto existe no banco. Use "Baixar PDF" no boleto na lista — o sistema regenera na hora.</p>
                             </div>
                           )}
                         </div>
@@ -9061,7 +9092,7 @@ Os boletos são registrados no banco na hora. Confirma?`)) return
                     {emitindoLote && (
                       <div className="emissao-progresso">
                         <div className="emissao-progresso-topo">
-                          <strong>Emitindo boletos… {progressoEmissao ? `${progressoEmissao.feitos} de ${progressoEmissao.total}` : 'iniciando'}</strong>
+                          <strong>Emitindo boletos… {progressoEmissao ? `${progressoEmissao.feitos} de ${progressoEmissao.total}` : 'iniciando'}</strong>{progressoEmissao?.atual && <em className="emissao-progresso-atual"> · {progressoEmissao.atual}</em>}
                           <span>Não feche esta janela até terminar</span>
                         </div>
                         <div className="emissao-progresso-barra">

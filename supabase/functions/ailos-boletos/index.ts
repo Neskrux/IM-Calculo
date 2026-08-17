@@ -5,22 +5,21 @@
 //   POST /webhook      — notificações Ailos → boletos.webhook_eventos (nunca toca pagamentos_prosoluto)
 //   POST /emitir-lote  — ADMIN (JWT) emite boletos das parcelas informadas: RECONFERE no servidor
 //                        (pendente + sem boleto vivo em qualquer banco + endereço), emite V2 com
-//                        bolePix, grava boletos banco='ailos', gera PDF (layout homologado) e
-//                        armazena no Storage 'boletos'. Idempotente por parcela.
+//                        bolePix, grava boletos banco='ailos'. PDF é gerado no NAVEGADOR (mesmo
+//                        layout homologado) e enviado via /armazenar-pdf — CPU da edge não aguenta
+//                        jsPDF em lote. Idempotente por parcela.
+//   POST /armazenar-pdf — ADMIN (JWT) grava PDF (base64) no Storage 'boletos' + pdf_path.
 //
 // Segredos: AILOS_CONSUMER_KEY / AILOS_CONSUMER_SECRET (env ou Vault via RPC ailos_segredo).
 // Estado de tokens em ailos_tokens (migration 038). Ver scripts/boletos/README.md.
 
 import { createClient } from "npm:@supabase/supabase-js@2";
-import { jsPDF } from "npm:jspdf@3.0.4";
 
 const supa = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
 const AMBIENTE = "producao";
 const HOST = "https://apiendpoint.ailos.coop.br";
 const CONVENIO = "101004";
 const CARTEIRA = 1;
-const AGENCIA_CODIGO = "0101-5 / 20974370";
-const BENEF = { nome: "IM CONSTRUTORA E INCORPORADORA", cnpj: "14587169000102" };
 const CORS = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type" };
 
 const json = (b: unknown, s = 200) => new Response(JSON.stringify(b), { status: s, headers: { "Content-Type": "application/json", ...CORS } });
@@ -97,83 +96,7 @@ async function ailosApi(method: string, path: string, body?: unknown, tentativa 
   return { status: r.status, body: text };
 }
 
-// ── PDF (mesmo layout homologado de scripts/boletos/ailos-boleto-pdf.cjs) ───
-const ITF: Record<string, string> = { "0": "nnwwn", "1": "wnnnw", "2": "nwnnw", "3": "wwnnn", "4": "nnwnw", "5": "wnwnn", "6": "nwwnn", "7": "nnnww", "8": "wnnwn", "9": "nwnwn" };
-// deno-lint-ignore no-explicit-any
-function drawITF(doc: any, codigo: string, x: number, y: number, h = 13) {
-  const d = dig(codigo); const n = 0.254, w = n * 3; let cx = x;
-  doc.setFillColor(0, 0, 0);
-  const bar = (l: number) => { doc.rect(cx, y, l, h, "F"); cx += l; };
-  const gap = (l: number) => { cx += l; };
-  bar(n); gap(n); bar(n); gap(n);
-  for (let i = 0; i < d.length; i += 2) {
-    const b = ITF[d[i]], s = ITF[d[i + 1]];
-    for (let j = 0; j < 5; j++) { bar(b[j] === "w" ? w : n); gap(s[j] === "w" ? w : n); }
-  }
-  bar(w); gap(n); bar(n);
-}
-const fmtBRL = (v: number) => "R$ " + v.toFixed(2).replace(".", ",").replace(/\B(?=(\d{3})+(?!\d))/g, ".");
 const fmtData = (d: string) => { const [a, m, dd] = String(d).slice(0, 10).split("-"); return `${dd}/${m}/${a}`; };
-const fmtDoc = (s: string) => { const d = dig(s); return d.length === 11 ? d.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4") : d.length === 14 ? d.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, "$1.$2.$3/$4-$5") : s; };
-
-let LOGO_B64: string | null = null;
-async function logo(): Promise<string | null> {
-  if (LOGO_B64) return LOGO_B64;
-  const { data } = await supa.storage.from("boletos").download("_assets/ailos-logo.png");
-  if (!data) return null;
-  const buf = new Uint8Array(await data.arrayBuffer());
-  let s = ""; for (let i = 0; i < buf.length; i++) s += String.fromCharCode(buf[i]);
-  LOGO_B64 = btoa(s); return LOGO_B64;
-}
-
-// deno-lint-ignore no-explicit-any
-async function gerarPdf(d: any): Promise<Uint8Array> {
-  const doc = new jsPDF({ unit: "mm", format: "a4", compress: true });
-  doc.setLineWidth(0.2);
-  const M = 8, LARG = 194, wDir = 42;
-  const lg = await logo();
-  const cab = (x: number, y: number, label: string) => { doc.setFont("helvetica", "normal"); doc.setFontSize(5.5); doc.text(label, x + 0.8, y + 2.2); };
-  // deno-lint-ignore no-explicit-any
-  const val = (x: number, y: number, w: number, t: string, o: any = {}) => { doc.setFont("helvetica", o.bold === false ? "normal" : "bold"); doc.setFontSize(o.size ?? 8); if (o.right) doc.text(t, x + w - 1, y + 6, { align: "right" }); else doc.text(t, x + 0.8, y + 6); };
-  const bloco = (yTop: number, titulo: string, comBarcode: boolean) => {
-    let y = yTop;
-    if (lg) doc.addImage(lg, "PNG", M + 2, y + 0.75, 19, 6.5, "logoAilos", "FAST");
-    else { doc.setFont("helvetica", "bold"); doc.setFontSize(13); doc.text("AILOS", M + 2, y + 6); }
-    doc.setFont("helvetica", "bold"); doc.setFontSize(13);
-    doc.line(M + 32, y, M + 32, y + 8); doc.text("085-0", M + 34, y + 6); doc.line(M + 48, y, M + 48, y + 8);
-    doc.setFontSize(comBarcode ? 10.5 : 9.5); doc.text(d.linhaDigitavel, M + LARG - 1, y + 6, { align: "right" });
-    doc.line(M, y + 8, M + LARG, y + 8);
-    doc.setFont("helvetica", "italic"); doc.setFontSize(6.5); doc.text(titulo, M + LARG - 1, y - 1, { align: "right" });
-    y += 8;
-    // deno-lint-ignore no-explicit-any
-    const linha = (h: number, cols: any[]) => { let x = M; for (const c of cols) { doc.rect(x, y, c.w, h); if (c.label) cab(x, y, c.label); if (c.v !== undefined) val(x, y, c.w, c.v, c.o); x += c.w; } y += h; };
-    linha(8, [{ w: LARG - wDir, label: "Local de Pagamento", v: "PAGÁVEL PREFERENCIALMENTE NAS COOPERATIVAS DO SISTEMA AILOS", o: { bold: false, size: 7 } }, { w: wDir, label: "Vencimento", v: fmtData(d.vencimento), o: { right: true } }]);
-    linha(8, [{ w: LARG - wDir, label: "Beneficiário", v: `${BENEF.nome}  -  CNPJ: ${fmtDoc(BENEF.cnpj)}`, o: { bold: false, size: 7.5 } }, { w: wDir, label: "Agência/Código Beneficiário", v: AGENCIA_CODIGO, o: { right: true } }]);
-    linha(8, [{ w: 30, label: "Data do Documento", v: fmtData(d.dataDoc), o: { bold: false, size: 7.5 } }, { w: 40, label: "Nº do Documento", v: String(d.numeroDoc), o: { bold: false, size: 7.5 } }, { w: 22, label: "Espécie Doc.", v: "MENS", o: { bold: false, size: 7.5 } }, { w: 16, label: "Aceite", v: "N", o: { bold: false, size: 7.5 } }, { w: LARG - wDir - 108, label: "Data Processamento", v: fmtData(d.dataDoc), o: { bold: false, size: 7.5 } }, { w: wDir, label: "Nosso Número", v: String(d.nossoNumero), o: { right: true } }]);
-    linha(8, [{ w: 30, label: "Uso do Banco", v: "" }, { w: 20, label: "Carteira", v: "01", o: { bold: false, size: 7.5 } }, { w: 20, label: "Espécie Moeda", v: "R$", o: { bold: false, size: 7.5 } }, { w: 24, label: "Quantidade", v: "" }, { w: LARG - wDir - 94, label: "(x) Valor", v: "" }, { w: wDir, label: "(=) Valor do Documento", v: fmtBRL(d.valor), o: { right: true } }]);
-    const hI = 30, xDir = M + LARG - wDir;
-    doc.rect(M, y, LARG - wDir, hI); cab(M, y, "Instruções (texto de responsabilidade do beneficiário)");
-    doc.setFont("helvetica", "normal"); doc.setFontSize(7.5);
-    d.instrucoes.slice(0, 6).forEach((t: string, i: number) => doc.text(t, M + 1, y + 6 + i * 3.6));
-    if (d.pixQr) { try { doc.addImage(d.pixQr, "PNG", M + LARG - wDir - 26, y + 3, 24, 24); doc.setFontSize(5.5); doc.text("Pague via Pix", M + LARG - wDir - 14, y + 29, { align: "center" }); } catch { /* QR inválido não derruba o PDF */ } }
-    ["(-) Desconto/Abatimento", "(-) Outras Deduções", "(+) Mora/Multa", "(+) Outros Acréscimos", "(=) Valor Cobrado"].forEach((r, i) => { doc.rect(xDir, y + i * 6, wDir, 6); cab(xDir, y + i * 6, r); });
-    y += hI;
-    doc.rect(M, y, LARG, 14); cab(M, y, "Pagador");
-    doc.setFont("helvetica", "bold"); doc.setFontSize(8); doc.text(`${d.pagador.nome}  -  ${fmtDoc(d.pagador.doc)}`, M + 1, y + 6);
-    doc.setFont("helvetica", "normal"); doc.setFontSize(7); doc.text(d.pagador.endereco, M + 1, y + 10);
-    y += 14;
-    doc.setFontSize(6); doc.text("Sacador/Avalista:", M, y + 3.5);
-    doc.text(comBarcode ? "Autenticação Mecânica — FICHA DE COMPENSAÇÃO" : "Autenticação Mecânica — RECIBO DO PAGADOR", M + LARG, y + 3.5, { align: "right" });
-    y += 6;
-    if (comBarcode) { drawITF(doc, d.codigoBarras, M, y + 2, 13); y += 17; }
-    return y;
-  };
-  let y = bloco(14, "RECIBO DO PAGADOR", false);
-  y += 4; doc.setLineDashPattern([1.2, 1.2], 0); doc.line(M, y, M + LARG, y); doc.setLineDashPattern([], 0);
-  doc.setFontSize(6); doc.text("corte na linha pontilhada", M + LARG, y - 1, { align: "right" }); y += 6;
-  bloco(y, "FICHA DE COMPENSAÇÃO", true);
-  return new Uint8Array(doc.output("arraybuffer"));
-}
 
 // ── emitir-lote (admin) ──────────────────────────────────────────────────────
 async function autenticarAdmin(req: Request): Promise<string | null> {
@@ -271,19 +194,17 @@ async function emitirLote(req: Request, body: any): Promise<Response> {
     }).select("id").single();
     if (insErr || !novo) { erros.push({ id, ref, motivo: "emitido no banco mas falhou ao gravar: " + (insErr?.message ?? "") }); continue; }
 
-    let pdfOk = false;
-    try {
-      const pdf = await gerarPdf({
+    // PDF NÃO é gerado aqui (CPU da edge estoura em lote) — o navegador gera com
+    // o mesmo layout e envia via /armazenar-pdf. Devolvemos os dados necessários.
+    emitidos.push({
+      id, ref, cliente: c.nome_completo, valor: Number(p.valor), nossoNumero: b.documento?.nossoNumero, boleto_id: novo.id,
+      pdfDados: {
         linhaDigitavel: b.codigoBarras.linhaDigitavel, codigoBarras: b.codigoBarras.codigoBarras, nossoNumero: b.documento?.nossoNumero,
         pagador: { nome: payload.pagador.entidadeLegal.nome, doc, endereco: `${end.logradouro} - ${end.bairro} - ${end.cidade}/${end.uf} - CEP ${end.cep}` },
         dataDoc: hoje, numeroDoc, valor: Number(p.valor), vencimento: p.data_prevista,
         instrucoes: [descricao, "Nao receber apos 60 dias do vencimento."], pixQr: b.pix?.qrCode || null,
-      });
-      const { error: upErr } = await supa.storage.from("boletos").upload(`${novo.id}.pdf`, pdf, { contentType: "application/pdf", upsert: true });
-      if (!upErr) { pdfOk = true; await supa.from("boletos").update({ pdf_path: `${novo.id}.pdf` }).eq("id", novo.id); }
-    } catch (e) { console.warn("pdf falhou", novo.id, String(e)); }
-
-    emitidos.push({ id, ref, cliente: c.nome_completo, valor: Number(p.valor), nossoNumero: b.documento?.nossoNumero, boleto_id: novo.id, pdf: pdfOk });
+      },
+    });
   }
   console.log(JSON.stringify({ emitir_lote: { admin: adminId, emitidos: emitidos.length, erros: erros.length } }));
   return json({ ok: true, emitidos, erros });
@@ -312,6 +233,22 @@ Deno.serve(async (req: Request) => {
       const { data: bol } = await supa.from("boletos").select("id, webhook_eventos").eq("banco", "ailos").eq("nosso_numero", nn).maybeSingle();
       if (bol) await supa.from("boletos").update({ webhook_eventos: [...(bol.webhook_eventos ?? []), { recebido_em: new Date().toISOString(), evento: body }] }).eq("id", bol.id);
     }
+    return json({ ok: true });
+  }
+  if (rota === "armazenar-pdf") {
+    const adminId = await autenticarAdmin(req);
+    if (!adminId) return json({ error: "apenas administradores" }, 401);
+    const boletoId = String(body.boleto_id ?? ""), b64 = String(body.pdf_base64 ?? "");
+    if (!boletoId || !b64) return json({ error: "boleto_id e pdf_base64 obrigatórios" }, 400);
+    const { data: bol } = await supa.from("boletos").select("id").eq("id", boletoId).eq("banco", "ailos").maybeSingle();
+    if (!bol) return json({ error: "boleto não encontrado" }, 404);
+    const bin = atob(b64.replace(/[^A-Za-z0-9+/=]/g, ""));
+    const bytes = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    if (bytes.length < 1000) return json({ error: "PDF truncado" }, 400);
+    const { error: upErr } = await supa.storage.from("boletos").upload(`${boletoId}.pdf`, bytes, { contentType: "application/pdf", upsert: true });
+    if (upErr) return json({ error: "upload: " + upErr.message }, 500);
+    await supa.from("boletos").update({ pdf_path: `${boletoId}.pdf` }).eq("id", boletoId);
     return json({ ok: true });
   }
   if (rota === "emitir-lote") {
