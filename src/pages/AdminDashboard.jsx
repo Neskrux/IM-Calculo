@@ -4066,9 +4066,9 @@ const AdminDashboard = () => {
           const pago = cand.find(p => p.status === 'pago')
           const pend = cand.find(p => p.status === 'pendente')
           if (pago) {
-            fora.divergente.push(`${ref} — parcela JÁ PAGA em ${formatDate(pago.data_pagamento)}. Não cobrar de novo — atualize a planilha.`)
+            fora.divergente.push(`${ref} — parcela JÁ PAGA em ${formatDataBR(pago.data_pagamento)}. Não cobrar de novo — atualize a planilha.`)
           } else if (pend) {
-            fora.divergente.push(`${ref} — planilha: R$ ${valorPlan?.toFixed(2)} venc ${l['Data de Vencimento *']} · sistema: R$ ${Number(pend.valor).toFixed(2)} venc ${formatDate(pend.data_prevista)}. Confira qual está certo antes de emitir.`)
+            fora.divergente.push(`${ref} — planilha: R$ ${valorPlan?.toFixed(2)} venc ${l['Data de Vencimento *']} · sistema: R$ ${Number(pend.valor).toFixed(2)} venc ${formatDataBR(pend.data_prevista)}. Confira qual está certo antes de emitir.`)
           } else if (vendasCli.length === 0) {
             // cliente existe mas não é o titular da venda — mostra quem é
             const vUni = uni ? vendas.find(v => v.excluido !== true && v.status !== 'distrato' && String(v.unidade ?? '').replace(/\D/g, '') === uni) : null
@@ -4085,7 +4085,7 @@ const AdminDashboard = () => {
         }
         if (boletoVivo.has(String(exata.id))) {
           const bv = boletosAdmin.find(b => String(b.pagamento_id) === String(exata.id) && !['cancelado', 'baixado', 'erro'].includes(b.status))
-          fora.ja_tem_boleto.push(`${ref} — já tem boleto ${bv?.banco === 'ailos' ? 'Ailos' : 'Sicoob'} ${bv?.status || ''} venc ${formatDate(bv?.data_vencimento)}. Pra reemitir, cancele o boleto atual primeiro.`)
+          fora.ja_tem_boleto.push(`${ref} — já tem boleto ${bv?.banco === 'ailos' ? 'Ailos' : 'Sicoob'} ${bv?.status || ''} venc ${(bv?.data_vencimento ? formatDataBR(bv.data_vencimento) : "?")}. Pra reemitir, cancele o boleto atual primeiro.`)
           continue
         }
         if (exata.data_prevista <= hoje) { fora.venc_passado.push(`${ref} — venc ${exata.data_prevista}`); continue }
