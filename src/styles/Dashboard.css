@@ -9143,3 +9143,13 @@ textarea:focus {
 
   .boletos-parcela-valor { min-width: 0; }
 }
+
+/* Botão de emissão direta no modal de conferência (Ailos) */
+.btn-emitir-lote {
+  background: #c9a962;
+  border-color: #c9a962;
+  color: #121212;
+  font-weight: 700;
+}
+.btn-emitir-lote:hover { background: #d9bb76; }
+.btn-emitir-lote:disabled { opacity: 0.6; cursor: wait; }

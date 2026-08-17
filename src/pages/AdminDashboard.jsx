@@ -1249,6 +1249,8 @@ const AdminDashboard = () => {
   // Importação da planilha de cobranças preenchida (conferência client-side)
   const [importResultado, setImportResultado] = useState(null)
   const [importandoPlanilha, setImportandoPlanilha] = useState(false)
+  const [emitindoLote, setEmitindoLote] = useState(false)
+  const [resultadoEmissao, setResultadoEmissao] = useState(null)
   const [emitindoBoletoId, setEmitindoBoletoId] = useState(null)
   const [buscaBoleto, setBuscaBoleto] = useState('')
   const [clienteBoletoExpandido, setClienteBoletoExpandido] = useState(null)
@@ -4099,14 +4101,59 @@ const AdminDashboard = () => {
         }
         lote.push({ ref, cliente: cli.nome_completo, valor: Number(exata.valor), vencimento: exata.data_prevista, pagamento_id: exata.id })
       }
+      // pagadores da planilha de Clientes (endereço completo) — enviados na emissão
+      const pagadores = {}
+      linhasCli.forEach(l => {
+        const d = dig(l['CPF/CNPJ *']); if (!d) return
+        pagadores[d] = {
+          nome: l['Nome Completo *'] || undefined, endereco: l['Endereço (Rua e Número) *'] || undefined,
+          bairro: l['Bairro *'] || undefined, cidade: l['Cidade *'] || undefined,
+          uf: l['UF *'] || undefined, cep: l['CEP *'] || undefined,
+        }
+      })
+      setResultadoEmissao(null)
       setImportResultado({
         banco, arquivo: nomes.join(' + '), totalPlanilha: linhas.length,
-        clientesPlanilha: linhasCli.length, lote, fora,
+        clientesPlanilha: linhasCli.length, lote, fora, pagadores,
       })
     } catch (e) {
       setMessage({ type: 'error', text: 'Importação: ' + e.message })
     } finally {
       setImportandoPlanilha(false)
+    }
+  }
+
+  // Emissão direta pela tela (Ailos — sem mTLS, roda na edge function).
+  // Sicoob continua pelo robô (exige certificado e-CNPJ na máquina).
+  const emitirLoteConferido = async () => {
+    const r = importResultado
+    if (!r || r.banco !== 'ailos' || r.lote.length === 0) return
+    if (!confirm(`Emitir ${r.lote.length} boletos Ailos (${formatCurrency(r.lote.reduce((a, x) => a + x.valor, 0))})?
+
+Os boletos são registrados no banco na hora. Confirma?`)) return
+    setEmitindoLote(true)
+    try {
+      const { data: sess } = await supabase.auth.getSession()
+      const jwt = sess?.session?.access_token
+      const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ailos-boletos/emitir-lote`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${jwt}`, apikey: import.meta.env.VITE_SUPABASE_ANON_KEY },
+        body: JSON.stringify({ pagamento_ids: r.lote.map(x => x.pagamento_id), pagadores: r.pagadores || {} }),
+      })
+      const data = await resp.json().catch(() => ({}))
+      if (!resp.ok || data.error) throw new Error(data.error || `HTTP ${resp.status}`)
+      setResultadoEmissao(data)
+      // recarrega boletos da tela (escopado às parcelas do lote)
+      const { data: novos } = await supabase.from('boletos').select('*').in('pagamento_id', r.lote.map(x => x.pagamento_id))
+      if (novos) setBoletosAdmin(prev => {
+        const ids = new Set(novos.map(b => b.id))
+        return [...prev.filter(b => !ids.has(b.id)), ...novos]
+      })
+      setMessage({ type: data.erros?.length ? 'warning' : 'success', text: `${data.emitidos.length} boletos emitidos${data.erros?.length ? ` · ${data.erros.length} não emitidos (veja os motivos)` : ''}` })
+    } catch (e) {
+      setMessage({ type: 'error', text: 'Emissão: ' + e.message })
+    } finally {
+      setEmitindoLote(false)
     }
   }
 
@@ -8964,15 +9011,39 @@ const AdminDashboard = () => {
                           </ul>
                         </div>
                       ))}
-                      <p style={{ fontSize: 12.5, color: 'var(--text-secondary)' }}>
-                        Nada foi emitido ainda. Baixe o lote conferido e rode o robô do
-                        {' '}{BANCOS_EMISSAO[importResultado.banco].label}: <code style={{ fontSize: 11.5 }}>{BANCOS_EMISSAO[importResultado.banco].worker}</code>
-                      </p>
+                      {resultadoEmissao ? (
+                        <div className="import-resultado-emissao">
+                          <div className="import-resumo-ok">
+                            🎉 <strong>{resultadoEmissao.emitidos.length} boletos emitidos</strong> — já aparecem na lista abaixo e no portal dos clientes, com PDF pronto.
+                          </div>
+                          {resultadoEmissao.erros?.length > 0 && (
+                            <div className="import-grupo-fora">
+                              <strong>❌ Não emitidos — {resultadoEmissao.erros.length}</strong>
+                              <ul>{resultadoEmissao.erros.map((e, i) => <li key={i}>{e.ref} — {e.motivo}</li>)}</ul>
+                            </div>
+                          )}
+                        </div>
+                      ) : importResultado.banco === 'ailos' ? (
+                        <p style={{ fontSize: 12.5, color: 'var(--text-secondary)' }}>
+                          Nada foi emitido ainda. Clique em <strong>Emitir</strong> pra registrar os {importResultado.lote.length} boletos no Ailos agora
+                          — o sistema confere tudo de novo antes de emitir cada um.
+                        </p>
+                      ) : (
+                        <p style={{ fontSize: 12.5, color: 'var(--text-secondary)' }}>
+                          Nada foi emitido ainda. O Sicoob exige o certificado digital da empresa, então a emissão roda pelo robô:
+                          baixe o lote conferido e rode <code style={{ fontSize: 11.5 }}>{BANCOS_EMISSAO[importResultado.banco].worker}</code>
+                        </p>
+                      )}
                     </div>
                     <div className="modal-footer" style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', padding: '14px 24px' }}>
                       <button className="btn-modelo" onClick={baixarLoteConferido}>
                         <FileDown size={15} /> Baixar lote conferido
                       </button>
+                      {importResultado.banco === 'ailos' && !resultadoEmissao && importResultado.lote.length > 0 && (
+                        <button className="btn-modelo btn-emitir-lote" onClick={emitirLoteConferido} disabled={emitindoLote}>
+                          <Barcode size={15} /> {emitindoLote ? `Emitindo ${importResultado.lote.length}...` : `Emitir ${importResultado.lote.length} boletos`}
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>
