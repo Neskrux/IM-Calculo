@@ -14,11 +14,40 @@ assume o mesmo contrato, mesma unidade, mesmo corretor, mesma grade. As parcelas
 |---|---|---|
 | Distrato | ✅ `situacao=3` | sync |
 | Aditivo | ✅ `/remade-installments` | sync |
-| **Cessão** | ❌ **NÃO há API v1** | **só a pasta/Drive (termo assinado)** |
+| **Cessão** | ❌ **NÃO há API v1 pra APLICAR** | pasta/Drive (termo assinado) — mas o Sienge **reflete** a troca (ver ⚠️) |
 
-**Consequência-chave:** cessão é o **único termo onde banco ≠ Sienge é LEGÍTIMO** — o Sienge mantém o
-cedente (não há endpoint pra trocar), o banco tem o cessionário (a verdade do contrato assinado). A
-pasta/Drive é a **fonte da verdade** desse termo, não o Sienge.
+### ⚠️ CORREÇÃO 2026-08-15 — o Siente reflete a cessão; a premissa antiga era falsa
+
+Até aqui este documento afirmava: *"cessão é o único termo onde banco ≠ Sienge é LEGÍTIMO — o Sienge
+mantém o cedente"*. **Isso está errado** e vinha justificando divergência onde não existe divergência.
+
+**O que a medição mostrou.** Nas duas cessões pendentes, o cliente que o Sienge traz é o
+**cessionário**, não o cedente:
+
+| unidade | cedente (`sienge_customer_id`) | cessionário | quem o Sienge traz |
+|---|---|---|---|
+| 905 B | Caroline Saraiva (102) | Gabriel Antonio Marques (670) | **670 — o cessionário** |
+| 1703 A | Ruan Fernando (78) | Hugo Gabriel Rodrigues Farias (677) | **677 — o cessionário** |
+
+**Como foi provado, sem depender de leitura de tela.** Os quatro (cedentes e cessionários) têm
+`sienge_customer_id` preenchido, ou seja, **todos são resolvíveis** pelo sync. Se o contrato do Sienge
+ainda trouxesse o cedente, o normalize resolveria Caroline/Ruan, compararia com Gabriel/Hugo no banco,
+acharia diferença e emitiria `cliente_manual_diverge_do_sienge`. No cron de 2026-08-15 esse aviso
+apareceu **zero vezes** — logo o Sienge concorda com o banco.
+
+**Consequência prática:** não existe divergência legítima permanente a tolerar aqui. Se um dia o aviso
+`cliente_manual_diverge_do_sienge` disparar numa venda `origem='cessao'`, **isso é sinal de problema**
+(cadastro errado de um dos lados), não o comportamento esperado — o inverso do que este arquivo dizia.
+
+O que continua verdadeiro: **não há endpoint v1 para APLICAR a cessão** (trocar o titular pela API). A
+troca é feita por alguém no Sienge, e o termo assinado na pasta continua sendo a prova documental de
+quem cedeu para quem. O que muda é que **o Sienge não fica para trás** depois que a troca é feita lá.
+
+> **Causa real do "o cliente sumiu do sistema"** (diagnosticado 2026-08-13, PRs #76/#77 + backfill):
+> não era divergência de cessão. Era `clientes.sienge_customer_id` **NULO** nos cessionários — o sync
+> mapeia Sienge→local só por esse campo, então o cliente existia mas era invisível, `clienteId` virava
+> `null` e o vínculo era apagado. Com o campo preenchido, o sync resolve sozinho e nem precisa da
+> proteção de `origem='cessao'`.
 
 ## 2. Invariantes (o que muda, o que NÃO muda)
 
@@ -69,14 +98,25 @@ o humano decide, o sync mantém (âncora + proteção `cessao`).
 - **Pasta/Drive:** o termo de cessão assinado **prova** quem cedeu pra quem (fonte da verdade).
 - **Banco:** `cliente_id_origem='cessao'` + grade ancorada intacta.
 - **Validador de identidade** ([scripts/validar-identidade-unidade-torre.mjs](../../scripts/validar-identidade-unidade-torre.mjs)):
-  é **cessão-aware** — venda `origem='cessao'` pode divergir do `clientName` do Sienge **de propósito**
-  (não conta como erro). Sem isso, toda cessão apareceria como "cliente diverge" falso.
+  é **cessão-aware** — venda `origem='cessao'` não conta divergência de `clientName` como erro.
+  ⚠️ **Isso agora é rede de segurança, não expectativa.** Como o Sienge reflete o cessionário (§1),
+  o normal é NÃO divergir. Se divergir, investigar em vez de silenciar.
+- **Aviso do sync** (PR #77): `cliente_manual_diverge_do_sienge` dispara quando o vínculo humano é
+  preservado E o Sienge discorda. Numa cessão isso deixou de ser esperado — é sinal de cadastro errado.
 
-## 7. Estado atual (2026-06-26)
+## 7. Estado atual (atualizado 2026-08-15)
 
-- **905 B** — Gabriel Antonio Marques (Sienge/cedente) → **Caroline Saraiva** (banco/cessionária).
-  Marcado `cliente_id_origem='cessao'`. Bill 410 ancorado, 8 pagas mantidas. **Liquidação das pendentes:
-  parqueada** (negócio ainda não definiu balões × mensal).
+> ⚠️ O sentido da 905 B ficou **invertido** neste arquivo entre 06-26 e 08-07, e a linha abaixo ainda
+> repetia o erro. O correto é **Caroline (cedente) → Gabriel (cessionário)** — ver §7 atualização 08-07.
+
+- **905 B** — **Caroline Saraiva (cedente) → GABRIEL ANTONIO MARQUES (cessionário)**.
+  `cliente_id` foi preenchido em 2026-08-11, **apagado pelo sync em 08-13** (bug do `sienge_customer_id`
+  nulo, ver ⚠️ da §1) e **restaurado em 08-13** depois do fix. Hoje: Gabriel, `origem='cessao'`,
+  `sienge_customer_id=670`, sobrevive ao cron. **Liquidação das pendentes: segue parqueada** (negócio
+  ainda não definiu balões × mensal).
+- **1703 A** — **Ruan Fernando (cedente) → HUGO GABRIEL RODRIGUES FARIAS (cessionário)**. Mesmo ciclo:
+  preenchido, apagado, restaurado. Hoje ligado, `origem='cessao'`, `sienge_customer_id=677`.
+  ⚠️ A unidade tem **duas vendas** (c459 distratada, c169 ativa) — a cessão incide na **c169**.
 - **+2 cessões antigas** já autocuraram pelo sync (nome passou a bater com o Sienge) — sem divergência hoje.
 - **1208 C** — **Eduardo Vidal de Souza (cedente) → Kainã Luis de Souza & Taynara Peixoto (cessionário)**.
   Autocurou pelo sync: banco hoje = Kainã (`cliente_id_origem='sync'`, ativa, Sienge 245). Termo assinado na pasta
