@@ -1250,6 +1250,7 @@ const AdminDashboard = () => {
   const [importResultado, setImportResultado] = useState(null)
   const [importandoPlanilha, setImportandoPlanilha] = useState(false)
   const [emitindoLote, setEmitindoLote] = useState(false)
+  const [progressoEmissao, setProgressoEmissao] = useState(null) // {feitos, total}
   const [resultadoEmissao, setResultadoEmissao] = useState(null)
   const [emitindoBoletoId, setEmitindoBoletoId] = useState(null)
   const [buscaBoleto, setBuscaBoleto] = useState('')
@@ -4135,13 +4136,31 @@ Os boletos são registrados no banco na hora. Confirma?`)) return
     try {
       const { data: sess } = await supabase.auth.getSession()
       const jwt = sess?.session?.access_token
-      const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ailos-boletos/emitir-lote`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${jwt}`, apikey: import.meta.env.VITE_SUPABASE_ANON_KEY },
-        body: JSON.stringify({ pagamento_ids: r.lote.map(x => x.pagamento_id), pagadores: r.pagadores || {} }),
-      })
-      const data = await resp.json().catch(() => ({}))
-      if (!resp.ok || data.error) throw new Error(data.error || `HTTP ${resp.status}`)
+      // A edge function tem limite de CPU por chamada (PDF é pesado): manda em
+      // lotes de 8. Idempotente — se cair no meio, reemitir pula os já feitos.
+      const TAM = 8
+      const ids = r.lote.map(x => x.pagamento_id)
+      const data = { ok: true, emitidos: [], erros: [] }
+      for (let i = 0; i < ids.length; i += TAM) {
+        setProgressoEmissao({ feitos: i, total: ids.length })
+        const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ailos-boletos/emitir-lote`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${jwt}`, apikey: import.meta.env.VITE_SUPABASE_ANON_KEY },
+          body: JSON.stringify({ pagamento_ids: ids.slice(i, i + TAM), pagadores: r.pagadores || {} }),
+        })
+        const parte = await resp.json().catch(() => ({}))
+        if (!resp.ok || parte.error) {
+          // registra a falha do bloco e segue — os demais blocos não dependem dele
+          ids.slice(i, i + TAM).forEach(id => {
+            const item = r.lote.find(x => x.pagamento_id === id)
+            data.erros.push({ id, ref: item?.ref || id, motivo: `falha temporária do servidor (${parte.error || 'HTTP ' + resp.status}) — clique em Emitir de novo: o que já saiu não duplica` })
+          })
+          continue
+        }
+        data.emitidos.push(...(parte.emitidos || []))
+        data.erros.push(...(parte.erros || []))
+      }
+      setProgressoEmissao(null)
       setResultadoEmissao(data)
       // recarrega boletos da tela (escopado às parcelas do lote)
       const { data: novos } = await supabase.from('boletos').select('*').in('pagamento_id', r.lote.map(x => x.pagamento_id))
@@ -4154,6 +4173,7 @@ Os boletos são registrados no banco na hora. Confirma?`)) return
       setMessage({ type: 'error', text: 'Emissão: ' + e.message })
     } finally {
       setEmitindoLote(false)
+      setProgressoEmissao(null)
     }
   }
 
@@ -8982,11 +9002,11 @@ Os boletos são registrados no banco na hora. Confirma?`)) return
 
               {/* Modal de conferência da planilha importada */}
               {importResultado && (
-                <div className="modal-overlay" onClick={() => setImportResultado(null)}>
+                <div className="modal-overlay" onClick={() => { if (!emitindoLote) setImportResultado(null) }}>
                   <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '640px' }}>
                     <div className="modal-header">
                       <h2><Upload size={18} style={{ marginRight: 8 }} /> Conferência do lote — {BANCOS_EMISSAO[importResultado.banco].label}</h2>
-                      <button className="close-btn" onClick={() => setImportResultado(null)}><X size={22} /></button>
+                      <button className="close-btn" onClick={() => setImportResultado(null)} disabled={emitindoLote} title={emitindoLote ? 'Aguarde a emissão terminar' : ''}><X size={22} /></button>
                     </div>
                     <div className="modal-body" style={{ padding: '20px 24px', maxHeight: '65vh', overflowY: 'auto' }}>
                       <p style={{ marginTop: 0, fontSize: 13, color: 'var(--text-secondary)' }}>
@@ -9038,13 +9058,24 @@ Os boletos são registrados no banco na hora. Confirma?`)) return
                         </div>
                       )}
                     </div>
+                    {emitindoLote && (
+                      <div className="emissao-progresso">
+                        <div className="emissao-progresso-topo">
+                          <strong>Emitindo boletos… {progressoEmissao ? `${progressoEmissao.feitos} de ${progressoEmissao.total}` : 'iniciando'}</strong>
+                          <span>Não feche esta janela até terminar</span>
+                        </div>
+                        <div className="emissao-progresso-barra">
+                          <div className="emissao-progresso-fill" style={{ width: `${progressoEmissao ? Math.round(progressoEmissao.feitos / progressoEmissao.total * 100) : 3}%` }} />
+                        </div>
+                      </div>
+                    )}
                     <div className="modal-footer" style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', padding: '14px 24px' }}>
-                      <button className="btn-modelo" onClick={baixarLoteConferido}>
+                      <button className="btn-modelo" onClick={baixarLoteConferido} disabled={emitindoLote}>
                         <FileDown size={15} /> Baixar lote conferido
                       </button>
                       {importResultado.banco === 'ailos' && !resultadoEmissao && importResultado.lote.length > 0 && (
                         <button className="btn-modelo btn-emitir-lote" onClick={emitirLoteConferido} disabled={emitindoLote}>
-                          <Barcode size={15} /> {emitindoLote ? `Emitindo ${importResultado.lote.length}...` : `Emitir ${importResultado.lote.length} boletos`}
+                          <Barcode size={15} /> {emitindoLote ? `Emitindo ${progressoEmissao ? `${progressoEmissao.feitos}/${progressoEmissao.total}` : '...'}` : `Emitir ${importResultado.lote.length} boletos`}
                         </button>
                       )}
                     </div>
