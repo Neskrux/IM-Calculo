@@ -26,6 +26,7 @@
 //   S3. chave (tipo,valor,data) com 2+ no Sienge (ambiguo)
 //   S4. chave (tipo,valor,data) com 2+ ATIVAS no banco (ambiguo)
 //   S5. > 3 parcelas ativas no banco sem match no Sienge
+//   S6. N baixas no MESMO dia sem distrato conhecido (baixa-em-massa nao sincronizada)
 //
 // Trigger 017: cancelado->pago/pendente e pendente->pago permitidos. NUNCA
 // DELETE nem reverte pago. Comissao das criadas: formula canonica.
@@ -247,6 +248,41 @@ for (const v of vendas) {
   // TODAS as parcelas restantes (paymentDate >= data_distrato). Essa baixa NÃO é pagamento real do
   // cliente — só conta como pago o que foi pago ANTES do distrato. Protege o curativo de re-pago.
   const dataDistrato = v.situacao_contrato === '3' && v.data_distrato ? String(v.data_distrato).slice(0, 10) : null
+
+  // S6 — BAIXA-EM-MASSA SEM DISTRATO CONHECIDO.
+  //
+  // O filtro distrato-aware acima só funciona quando `data_distrato` JÁ está no banco. Mas no cron
+  // o reconciliador roda ANTES do sync (etapa 3, best-effort). Então existe uma janela: o contrato
+  // é cancelado no Sienge, o Sienge dá baixa em tudo, e o reconciliador lê essas baixas como
+  // "pagamento confirmado" horas antes de saber que houve distrato.
+  //
+  // Caso real 2026-08-17 — 1304 C (c248): cancelado no Sienge nesse dia, 53 baixas com a mesma
+  // data, R$ 378.357,32. O banco ainda tinha situacao_contrato='2' e data_distrato NULO. O
+  // reconciliador ia marcar 52 parcelas como pagas = R$ 23.535,72 de comissão FALSA. É o mesmo
+  // mecanismo que produziu R$ 886 mil em junho.
+  //
+  // O guard não precisa de request extra: a assinatura está no income que já foi baixado —
+  // N parcelas da MESMA venda com baixa na MESMA data. Aditivo também faz isso, mas os
+  // installments renegociados já saíram do universo pelo filtro de `renegociacoes` (2b), então
+  // não caem aqui. Quitação real de contrato inteiro é rara e parquear é o desfecho seguro.
+  //
+  // Na dúvida NÃO marca pago: parqueia e deixa o humano (ou o sync do dia seguinte) decidir.
+  const LIMIAR_MASSA = 8
+  if (!dataDistrato) {
+    const porDataBaixa = new Map()
+    for (const i of inc) {
+      const pd = i.paymentDate || i.receipts?.[0]?.paymentDate
+      if (!pd) continue
+      const k = String(pd).slice(0, 10)
+      porDataBaixa.set(k, (porDataBaixa.get(k) ?? 0) + 1)
+    }
+    const massa = [...porDataBaixa.entries()].find(([, n]) => n >= LIMIAR_MASSA)
+    if (massa) {
+      resultado.revisao_humana.push({ venda_id: v.id, unidade: v.unidade, contrato: v.sienge_contract_id,
+        motivo: `${massa[1]} baixas no MESMO dia (${massa[0]}) sem distrato conhecido — possivel distrato/quitacao nao sincronizado` })
+      continue
+    }
+  }
 
   for (const i of inc) {
     const valor = Number(i.originalAmount || 0)
