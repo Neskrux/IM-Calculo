@@ -9029,10 +9029,13 @@ Os boletos são registrados no banco na hora. Confirma?`)) return
                           — o sistema confere tudo de novo antes de emitir cada um.
                         </p>
                       ) : (
-                        <p style={{ fontSize: 12.5, color: 'var(--text-secondary)' }}>
-                          Nada foi emitido ainda. O Sicoob exige o certificado digital da empresa, então a emissão roda pelo robô:
-                          baixe o lote conferido e rode <code style={{ fontSize: 11.5 }}>{BANCOS_EMISSAO[importResultado.banco].worker}</code>
-                        </p>
+                        <div className="import-aviso-sicoob">
+                          <strong>Nada foi emitido ainda.</strong> Pelo <strong>Sicoob</strong> a emissão não sai pela tela — o banco exige o
+                          certificado digital da empresa instalado no computador, então roda pelo robô: baixe o lote conferido e peça a emissão.
+                          <br /><br />
+                          Quer emitir <strong>agora, direto daqui</strong>? Feche, troque o banco pra <strong>Ailos</strong> no seletor e importe as planilhas de novo
+                          — aí aparece o botão <strong>Emitir</strong>.
+                        </div>
                       )}
                     </div>
                     <div className="modal-footer" style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', padding: '14px 24px' }}>
