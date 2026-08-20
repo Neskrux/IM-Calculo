@@ -1,0 +1,1308 @@
+{
+  "meta": {
+    "geradoEm": "2026-08-20T20:25:33.763Z",
+    "spec_ref": "docs/specs/2026-08-20-spec-relatorio-coordenadoras.md",
+    "script": "scripts/backfill-coordenadora-taxa.mjs",
+    "modo": "apply",
+    "regra": "data_venda < 2025-07-15 => 1.0, senao 0.5"
+  },
+  "counts": {
+    "matched": 184,
+    "updated": 184,
+    "skipped_idempotent": 0,
+    "skipped_humano": 0,
+    "errors": 0
+  },
+  "plano": [
+    {
+      "id": "007edb01-92fb-4475-bc4b-60b19b0cadba",
+      "unidade": "1408 D",
+      "data_venda": "2025-11-07",
+      "de": null,
+      "para": 0.5
+    },
+    {
+      "id": "00f42011-53b9-4384-92da-558e49e46b18",
+      "unidade": "1102 A",
+      "data_venda": "2025-06-04",
+      "de": null,
+      "para": 1
+    },
+    {
+      "id": "03e1bb90-cd70-427e-9576-ced9f0b91b7e",
+      "unidade": "1403 C",
+      "data_venda": "2025-11-13",
+      "de": null,
+      "para": 0.5
+    },
+    {
+      "id": "0468889f-105f-4811-97e0-5fdaa2caf5ca",
+      "unidade": "610 B",
+      "data_venda": "2025-06-16",
+      "de": null,
+      "para": 1
+    },
+    {
+      "id": "07c77c8e-3ed1-48e4-a865-7e6d77aefae0",
+      "unidade": "1002 D",
+      "data_venda": "2025-07-27",
+      "de": null,
+      "para": 0.5
+    },
+    {
+      "id": "0b70c65e-b201-48f8-b1a5-da454e8c90d1",
+      "unidade": "1602 A",
+      "data_venda": "2025-09-29",
+      "de": null,
+      "para": 0.5
+    },
+    {
+      "id": "10ddc2e3-64c0-4e11-b7ae-a14862a74c9f",
+      "unidade": "703 D",
+      "data_venda": "2025-05-10",
+      "de": null,
+      "para": 1
+    },
+    {
+      "id": "10e16431-7bcd-435d-9379-102945570482",
+      "unidade": "1602 C",
+      "data_venda": "2026-02-12",
+      "de": null,
+      "para": 0.5
+    },
+    {
+      "id": "11c895c4-a75a-46dd-8b14-aed3c21ad5bf",
+      "unidade": "1407 D",
+      "data_venda": "2025-05-09",
+      "de": null,
+      "para": 1
+    },
+    {
+      "id": "11fb07a6-f325-49a7-8681-bfa1236a453d",
+      "unidade": "405 A",
+      "data_venda": "2025-11-07",
+      "de": null,
+      "para": 0.5
+    },
+    {
+      "id": "1313af95-2b4e-40dd-9dda-92f523ad1c89",
+      "unidade": "806 A",
+      "data_venda": "2025-06-20",
+      "de": null,
+      "para": 1
+    },
+    {
+      "id": "13429600-ea67-400e-a773-adbdf190547b",
+      "unidade": "906 D",
+      "data_venda": "2025-07-02",
+      "de": null,
+      "para": 1
+    },
+    {
+      "id": "13736419-ed8e-44b8-bd34-5b241981bd23",
+      "unidade": "1806 A",
+      "data_venda": "2025-05-09",
+      "de": null,
+      "para": 1
+    },
+    {
+      "id": "137d0df9-2c8e-49da-b3a3-528129babfd2",
+      "unidade": "1607 A",
+      "data_venda": "2025-07-31",
+      "de": null,
+      "para": 0.5
+    },
+    {
+      "id": "14343044-f5cd-49b9-b445-66b78cee27a9",
+      "unidade": "1508 B",
+      "data_venda": "2025-11-29",
+      "de": null,
+      "para": 0.5
+    },
+    {
+      "id": "199caf26-ce36-434e-a514-3d56c4c91b4f",
+      "unidade": "1206 D",
+      "data_venda": "2025-06-25",
+      "de": null,
+      "para": 1
+    },
+    {
+      "id": "1b74c53a-1f21-4c0d-bf6e-7d5dfc461f5c",
+      "unidade": "908 C",
+      "data_venda": "2026-01-14",
+      "de": null,
+      "para": 0.5
+    },
+    {
+      "id": "1b8ef317-14ad-408b-9a2d-7c15bfdca9f0",
+      "unidade": "1206 C",
+      "data_venda": "2025-04-30",
+      "de": null,
+      "para": 1
+    },
+    {
+      "id": "1d7772d4-ee1e-4d72-92ec-3e67460880cc",
+      "unidade": "803 D",
+      "data_venda": "2025-09-22",
+      "de": null,
+      "para": 0.5
+    },
+    {
+      "id": "1dfd5558-328f-483b-b19c-39ab45b43ed1",
+      "unidade": "401 B",
+      "data_venda": "2026-03-17",
+      "de": null,
+      "para": 0.5
+    },
+    {
+      "id": "1e5173b8-7dc4-4711-9cdb-6a12cab7317a",
+      "unidade": "1706 D",
+      "data_venda": "2025-12-21",
+      "de": null,
+      "para": 0.5
+    },
+    {
+      "id": "20f053e6-2484-49d1-b290-e9e8fe73b3cf",
+      "unidade": "1105 C",
+      "data_venda": "2025-05-16",
+      "de": null,
+      "para": 1
+    },
+    {
+      "id": "22b12f31-5e08-4296-a327-510709929c96",
+      "unidade": "1405 D",
+      "data_venda": "2025-04-29",
+      "de": null,
+      "para": 1
+    },
+    {
+      "id": "275196bc-0223-4386-914f-5871038c50b9",
+      "unidade": "1201 D",
+      "data_venda": "2025-05-06",
+      "de": null,
+      "para": 1
+    },
+    {
+      "id": "28239a26-a32b-45ef-9307-ed675d58cef3",
+      "unidade": "510 A",
+      "data_venda": "2025-06-03",
+      "de": null,
+      "para": 1
+    },
+    {
+      "id": "2a4e3f59-bd50-4323-b807-9c26c9a1b196",
+      "unidade": "603 A",
+      "data_venda": "2025-05-25",
+      "de": null,
+      "para": 1
+    },
+    {
+      "id": "2a86cf94-1730-4d50-8e31-1af942fa0205",
+      "unidade": "704 C",
+      "data_venda": "2025-06-19",
+      "de": null,
+      "para": 1
+    },
+    {
+      "id": "2b7cda44-45fe-4e9b-b783-29605b362342",
+      "unidade": "1506 C",
+      "data_venda": "2026-02-11",
+      "de": null,
+      "para": 0.5
+    },
+    {
+      "id": "2d329fbf-b41f-4795-b2cc-f5ebdb19a9c7",
+      "unidade": "410 C",
+      "data_venda": "2025-06-04",
+      "de": null,
+      "para": 1
+    },
+    {
+      "id": "30d07c47-ea9b-42fa-8033-ebfdbcce86e4",
+      "unidade": "1805 D",
+      "data_venda": "2025-11-10",
+      "de": null,
+      "para": 0.5
+    },
+    {
+      "id": "30d53f3b-3306-41b4-a817-70de77ac3aff",
+      "unidade": "903 B",
+      "data_venda": "2025-05-28",
+      "de": null,
+      "para": 1
+    },
+    {
+      "id": "31c1233c-989a-40c1-a36d-895b699e9d83",
+      "unidade": "1404 A",
+      "data_venda": "2025-06-21",
+      "de": null,
+      "para": 1
+    },
+    {
+      "id": "332ebe30-b39d-4d35-b3a9-eb7bedd0abc8",
+      "unidade": "1004 C",
+      "data_venda": "2025-05-10",
+      "de": null,
+      "para": 1
+    },
+    {
+      "id": "350e54e6-023b-47cb-b4b0-7f82a0db3e07",
+      "unidade": "1702 C",
+      "data_venda": "2026-02-27",
+      "de": null,
+      "para": 0.5
+    },
+    {
+      "id": "35b3be9c-d5e7-4a47-9e2e-85bac001dae0",
+      "unidade": "505 D",
+      "data_venda": "2025-05-27",
+      "de": null,
+      "para": 1
+    },
+    {
+      "id": "36810789-4453-4544-9523-3651bd74d027",
+      "unidade": "1107 C",
+      "data_venda": "2025-04-24",
+      "de": null,
+      "para": 1
+    },
+    {
+      "id": "37357039-b2ed-404a-b8f9-5162019eb51f",
+      "unidade": "508 A",
+      "data_venda": "2025-12-06",
+      "de": null,
+      "para": 0.5
+    },
+    {
+      "id": "3771951d-5221-4a3d-8b2f-6a0c5b076b12",
+      "unidade": "609 D",
+      "data_venda": "2025-06-12",
+      "de": null,
+      "para": 1
+    },
+    {
+      "id": "3a3fcbbc-1279-4d73-a177-7cb7927cde35",
+      "unidade": "904 D",
+      "data_venda": "2025-07-10",
+      "de": null,
+      "para": 1
+    },
+    {
+      "id": "3c30adc1-164f-4e5f-858b-6697c42d6c88",
+      "unidade": "1203 D",
+      "data_venda": "2025-06-25",
+      "de": null,
+      "para": 1
+    },
+    {
+      "id": "3d611079-5ced-446f-a533-b32f185f1191",
+      "unidade": "1805 A",
+      "data_venda": "2025-05-09",
+      "de": null,
+      "para": 1
+    },
+    {
+      "id": "3f0febb7-1afe-4008-9e70-8c86c28a53c1",
+      "unidade": "1407 C",
+      "data_venda": "2025-10-23",
+      "de": null,
+      "para": 0.5
+    },
+    {
+      "id": "3fb965d5-e714-4173-8830-a5f50669784e",
+      "unidade": "1003 B",
+      "data_venda": "2025-06-19",
+      "de": null,
+      "para": 1
+    },
+    {
+      "id": "3fd94157-57b7-4981-a1d6-4c7aae0a0998",
+      "unidade": "1008 A",
+      "data_venda": "2025-05-26",
+      "de": null,
+      "para": 1
+    },
+    {
+      "id": "4064d711-da91-48a6-a497-82ef0cc59839",
+      "unidade": "412 A",
+      "data_venda": "2025-07-10",
+      "de": null,
+      "para": 1
+    },
+    {
+      "id": "4088a91d-401e-46ec-ab17-c044074d30fb",
+      "unidade": "1608 A",
+      "data_venda": "2025-11-24",
+      "de": null,
+      "para": 0.5
+    },
+    {
+      "id": "41dc416b-0335-4cc2-90d2-0e21a6a50540",
+      "unidade": "403 C",
+      "data_venda": "2026-01-20",
+      "de": null,
+      "para": 0.5
+    },
+    {
+      "id": "43dfa842-e8ef-4c45-b0cc-432917442555",
+      "unidade": "1302 D",
+      "data_venda": "2025-09-24",
+      "de": null,
+      "para": 0.5
+    },
+    {
+      "id": "44a4152a-a9a7-4da9-a644-eded258546e0",
+      "unidade": "1204 A",
+      "data_venda": "2025-06-01",
+      "de": null,
+      "para": 1
+    },
+    {
+      "id": "45ea6703-2e75-4c9a-a572-27710936f03b",
+      "unidade": "1101 A",
+      "data_venda": "2025-07-02",
+      "de": null,
+      "para": 1
+    },
+    {
+      "id": "471bc996-5c8b-46be-b87c-a1cb329a9ff1",
+      "unidade": "604 B",
+      "data_venda": "2025-06-11",
+      "de": null,
+      "para": 1
+    },
+    {
+      "id": "49382dec-5f2e-4501-b4e3-030d48222e36",
+      "unidade": "404 B",
+      "data_venda": "2025-05-20",
+      "de": null,
+      "para": 1
+    },
+    {
+      "id": "4b50311b-29a2-4300-9432-5169c909e705",
+      "unidade": "804 C",
+      "data_venda": "2025-06-23",
+      "de": null,
+      "para": 1
+    },
+    {
+      "id": "4c79df6e-23d6-4d6d-90a4-6d0b53412e5a",
+      "unidade": "1004 A",
+      "data_venda": "2025-05-22",
+      "de": null,
+      "para": 1
+    },
+    {
+      "id": "4ea412d7-c4b8-43e9-a14b-ff7a309e84d0",
+      "unidade": "709 D",
+      "data_venda": "2025-06-11",
+      "de": null,
+      "para": 1
+    },
+    {
+      "id": "4fa28656-f4c5-4e93-862d-256bfe20551a",
+      "unidade": "1003 D",
+      "data_venda": "2025-08-05",
+      "de": null,
+      "para": 0.5
+    },
+    {
+      "id": "51cd12fa-c0b3-4990-ba3d-56182eb95f61",
+      "unidade": "1108 B",
+      "data_venda": "2025-11-24",
+      "de": null,
+      "para": 0.5
+    },
+    {
+      "id": "52a15049-f506-4ae5-93f9-a2fca420b2ae",
+      "unidade": "1506 A",
+      "data_venda": "2025-06-16",
+      "de": null,
+      "para": 1
+    },
+    {
+      "id": "53d0c5f5-aa8e-4804-9c64-fef6ecdf04fc",
+      "unidade": "1204 B",
+      "data_venda": "2025-06-20",
+      "de": null,
+      "para": 1
+    },
+    {
+      "id": "572c2c6c-99ca-45ec-b7ec-ce925179fd1c",
+      "unidade": "1001 D",
+      "data_venda": "2026-01-19",
+      "de": null,
+      "para": 0.5
+    },
+    {
+      "id": "5a6c00dd-e281-460a-90f6-816f4ed85002",
+      "unidade": "1407 A",
+      "data_venda": "2025-07-03",
+      "de": null,
+      "para": 1
+    },
+    {
+      "id": "5aac2bfc-6f68-45a8-872d-f3b5c3e0cc20",
+      "unidade": "809 C",
+      "data_venda": "2025-05-26",
+      "de": null,
+      "para": 1
+    },
+    {
+      "id": "5c693a17-6a08-4ecd-bb94-6025aad53ff8",
+      "unidade": "907 C",
+      "data_venda": "2025-07-14",
+      "de": null,
+      "para": 1
+    },
+    {
+      "id": "5c6c8318-2dc3-4fd7-b4e0-756c90308af8",
+      "unidade": "510 B",
+      "data_venda": "2025-05-22",
+      "de": null,
+      "para": 1
+    },
+    {
+      "id": "5ca3580f-7ad0-49d2-b682-b0f420bdfae1",
+      "unidade": "1207 D",
+      "data_venda": "2025-05-09",
+      "de": null,
+      "para": 1
+    },
+    {
+      "id": "5f86f822-2681-4d40-a107-940091a30452",
+      "unidade": "404 D",
+      "data_venda": "2025-12-29",
+      "de": null,
+      "para": 0.5
+    },
+    {
+      "id": "6004ce3c-6cf0-4341-9851-60570fd0b50b",
+      "unidade": "1307 C",
+      "data_venda": "2025-05-09",
+      "de": null,
+      "para": 1
+    },
+    {
+      "id": "6353bb51-3c58-49c9-8e9f-593ad6edc954",
+      "unidade": "906 A",
+      "data_venda": "2026-01-20",
+      "de": null,
+      "para": 0.5
+    },
+    {
+      "id": "63e023d8-2376-498e-9895-b497922f6b24",
+      "unidade": "1004 D",
+      "data_venda": "2025-06-06",
+      "de": null,
+      "para": 1
+    },
+    {
+      "id": "63e2a133-4299-4429-9962-93e07db09494",
+      "unidade": "1604 A",
+      "data_venda": "2026-01-13",
+      "de": null,
+      "para": 0.5
+    },
+    {
+      "id": "65246e6d-9e20-4df6-89d0-2f59c0aa4b5a",
+      "unidade": "604 A",
+      "data_venda": "2025-06-04",
+      "de": null,
+      "para": 1
+    },
+    {
+      "id": "66a99d53-bbea-4359-bbce-c88baac7922e",
+      "unidade": "409 C",
+      "data_venda": "2025-05-10",
+      "de": null,
+      "para": 1
+    },
+    {
+      "id": "677f0acb-1cf8-434d-b6bc-44de97936960",
+      "unidade": "1105 B",
+      "data_venda": "2025-05-27",
+      "de": null,
+      "para": 1
+    },
+    {
+      "id": "6861ee55-2dc7-4fbf-ba69-1ec3ee1c81ee",
+      "unidade": "610 A",
+      "data_venda": "2025-05-18",
+      "de": null,
+      "para": 1
+    },
+    {
+      "id": "69833968-ed1a-4988-9a38-fa28a3c29512",
+      "unidade": "1102 D",
+      "data_venda": "2025-08-18",
+      "de": null,
+      "para": 0.5
+    },
+    {
+      "id": "6a33ac0b-00af-4fc3-8539-7529998a94b2",
+      "unidade": "1305 D",
+      "data_venda": "2025-07-08",
+      "de": null,
+      "para": 1
+    },
+    {
+      "id": "6aa7d912-025b-476f-9179-bf516a2e5a0e",
+      "unidade": "1206 B",
+      "data_venda": "2025-10-15",
+      "de": null,
+      "para": 0.5
+    },
+    {
+      "id": "6dd6b270-295e-4f0f-adbd-99d8a0f65359",
+      "unidade": "402 A",
+      "data_venda": "2025-05-09",
+      "de": null,
+      "para": 1
+    },
+    {
+      "id": "6f7fec05-5a52-46e1-82f7-1b9a6ee9469c",
+      "unidade": "1203 B",
+      "data_venda": "2025-07-15",
+      "de": null,
+      "para": 0.5
+    },
+    {
+      "id": "720346d5-c932-4710-81cd-92f3777c0c9b",
+      "unidade": "1002 C",
+      "data_venda": "2025-09-23",
+      "de": null,
+      "para": 0.5
+    },
+    {
+      "id": "729caede-2357-4fd4-8e0a-5fe530b7da28",
+      "unidade": "1103 C",
+      "data_venda": "2025-07-04",
+      "de": null,
+      "para": 1
+    },
+    {
+      "id": "73bdb2c7-b89c-45ef-84ed-156a6c24e4b1",
+      "unidade": "902 A",
+      "data_venda": "2025-05-22",
+      "de": null,
+      "para": 1
+    },
+    {
+      "id": "75d5a345-83d8-4cdf-9134-722b9829c374",
+      "unidade": "1205 B",
+      "data_venda": "2025-06-12",
+      "de": null,
+      "para": 1
+    },
+    {
+      "id": "78c3af47-3351-4249-9616-bc52c6a01d35",
+      "unidade": "1203 C",
+      "data_venda": "2025-08-05",
+      "de": null,
+      "para": 0.5
+    },
+    {
+      "id": "7978c149-88eb-4568-b57a-3785c93cc953",
+      "unidade": "1606 A",
+      "data_venda": "2025-06-11",
+      "de": null,
+      "para": 1
+    },
+    {
+      "id": "7a1c8aef-9e36-4eb7-9c36-4a46521ea514",
+      "unidade": "1202 D",
+      "data_venda": "2025-09-10",
+      "de": null,
+      "para": 0.5
+    },
+    {
+      "id": "7a5a98ce-bcb2-417c-ae26-be1554a2bcd0",
+      "unidade": "1107 A",
+      "data_venda": "2025-06-18",
+      "de": null,
+      "para": 1
+    },
+    {
+      "id": "7d936e98-422e-476f-98f7-ec08c7d16532",
+      "unidade": "503 C",
+      "data_venda": "2025-05-22",
+      "de": null,
+      "para": 1
+    },
+    {
+      "id": "822c2f3b-5933-485c-8946-195be7daac86",
+      "unidade": "1506 D",
+      "data_venda": "2026-01-16",
+      "de": null,
+      "para": 0.5
+    },
+    {
+      "id": "82c32636-159d-44bc-9f74-b22820fcbb10",
+      "unidade": "509 C",
+      "data_venda": "2025-06-30",
+      "de": null,
+      "para": 1
+    },
+    {
+      "id": "8336834f-ae1f-42fc-b680-7286d4bcd4af",
+      "unidade": "1303 C",
+      "data_venda": "2025-10-10",
+      "de": null,
+      "para": 0.5
+    },
+    {
+      "id": "840df0d9-7ff7-4429-a84c-d4ee0314d728",
+      "unidade": "1308 C",
+      "data_venda": "2025-04-29",
+      "de": null,
+      "para": 1
+    },
+    {
+      "id": "85794a4e-df31-4a19-89bd-9743ba2cbb68",
+      "unidade": "901 D",
+      "data_venda": "2026-03-04",
+      "de": null,
+      "para": 0.5
+    },
+    {
+      "id": "865c0d54-f901-4f99-a0b3-add1cfa6ce1b",
+      "unidade": "1001 A",
+      "data_venda": "2025-06-15",
+      "de": null,
+      "para": 1
+    },
+    {
+      "id": "871c99bb-0e79-4bac-8657-6be5b17fb206",
+      "unidade": "703 B",
+      "data_venda": "2025-07-07",
+      "de": null,
+      "para": 1
+    },
+    {
+      "id": "880bf6f0-b260-41cc-abc7-b4ffcf2340ff",
+      "unidade": "810 C",
+      "data_venda": "2025-04-20",
+      "de": null,
+      "para": 1
+    },
+    {
+      "id": "8879bea6-eb3b-4306-a9f1-859855b2e77d",
+      "unidade": "1205 A",
+      "data_venda": "2025-11-10",
+      "de": null,
+      "para": 0.5
+    },
+    {
+      "id": "893286ff-b29b-4c0b-bec5-1158a06191e3",
+      "unidade": "1508 A",
+      "data_venda": "2025-11-24",
+      "de": null,
+      "para": 0.5
+    },
+    {
+      "id": "89489e2a-e191-4042-8e3d-aab339311fa9",
+      "unidade": "505 A",
+      "data_venda": "2025-09-22",
+      "de": null,
+      "para": 0.5
+    },
+    {
+      "id": "8ad0bd1c-2f06-41e6-a9c6-b1794f484bfc",
+      "unidade": "1504 A",
+      "data_venda": "2025-06-01",
+      "de": null,
+      "para": 1
+    },
+    {
+      "id": "8c5e1d12-92dd-4022-a94c-cc215d049bc6",
+      "unidade": "906 B",
+      "data_venda": "2025-07-15",
+      "de": null,
+      "para": 0.5
+    },
+    {
+      "id": "8d0f8c63-a7e0-4715-9373-4cb09003e5b9",
+      "unidade": "1102 C",
+      "data_venda": "2025-09-26",
+      "de": null,
+      "para": 0.5
+    },
+    {
+      "id": "8d10b601-d088-4023-81bf-e136195fa8a9",
+      "unidade": "1306 A",
+      "data_venda": "2025-06-25",
+      "de": null,
+      "para": 1
+    },
+    {
+      "id": "8d247a69-9020-4da8-8e55-b06c3a406d29",
+      "unidade": "907 D",
+      "data_venda": "2025-06-01",
+      "de": null,
+      "para": 1
+    },
+    {
+      "id": "8d759d05-115a-4690-97b5-6512128a41aa",
+      "unidade": "1404 C",
+      "data_venda": "2025-05-19",
+      "de": null,
+      "para": 1
+    },
+    {
+      "id": "90d17915-20f1-4a4e-a0d3-aeee053df610",
+      "unidade": "901 A",
+      "data_venda": "2025-06-01",
+      "de": null,
+      "para": 1
+    },
+    {
+      "id": "92142995-ce7f-4cb6-b5eb-d56e7949c72b",
+      "unidade": "1503 B",
+      "data_venda": "2025-11-21",
+      "de": null,
+      "para": 0.5
+    },
+    {
+      "id": "9441cafe-1606-4a62-8d0b-cf1c2be6fedb",
+      "unidade": "1304 C",
+      "data_venda": "2025-05-12",
+      "de": null,
+      "para": 1
+    },
+    {
+      "id": "9760cf8a-5826-4b18-b233-780551ec5586",
+      "unidade": "1603 C",
+      "data_venda": "2025-11-18",
+      "de": null,
+      "para": 0.5
+    },
+    {
+      "id": "991e6f36-a5a2-45a5-aaf9-13f7ba8e7faf",
+      "unidade": "907 B",
+      "data_venda": "2025-05-12",
+      "de": null,
+      "para": 1
+    },
+    {
+      "id": "99aab3e8-41e0-46a1-9b8e-b505cafd3479",
+      "unidade": "704 D",
+      "data_venda": "2025-06-15",
+      "de": null,
+      "para": 1
+    },
+    {
+      "id": "9b09a904-a715-43c6-957e-5ed62829343d",
+      "unidade": "901 B",
+      "data_venda": "2025-06-30",
+      "de": null,
+      "para": 1
+    },
+    {
+      "id": "9ca235ab-c4fc-42c8-9ab7-b772dc1c9932",
+      "unidade": "1502 A",
+      "data_venda": "2025-06-20",
+      "de": null,
+      "para": 1
+    },
+    {
+      "id": "9e6bbd51-6eee-4372-a51f-4d43f572e97f",
+      "unidade": "804 D",
+      "data_venda": "2025-08-18",
+      "de": null,
+      "para": 0.5
+    },
+    {
+      "id": "9ec13f46-ded0-4853-94c0-fd3f8b98fc44",
+      "unidade": "1208 C",
+      "data_venda": "2025-05-10",
+      "de": null,
+      "para": 1
+    },
+    {
+      "id": "a0c011bf-7bf2-45cd-8658-3db9d29443b0",
+      "unidade": "504 B",
+      "data_venda": "2025-05-25",
+      "de": null,
+      "para": 1
+    },
+    {
+      "id": "a1aa2617-0ed2-4eaf-bcad-a1bced7f1d48",
+      "unidade": "609 B",
+      "data_venda": "2025-06-12",
+      "de": null,
+      "para": 1
+    },
+    {
+      "id": "a2501437-3de4-4b97-b2cc-93474077de6b",
+      "unidade": "1702 A",
+      "data_venda": "2025-11-21",
+      "de": null,
+      "para": 0.5
+    },
+    {
+      "id": "a365d466-0bc4-49ef-a39f-d5fe958ab92a",
+      "unidade": "509 D",
+      "data_venda": "2025-06-07",
+      "de": null,
+      "para": 1
+    },
+    {
+      "id": "a5636b9e-0d94-441d-8883-f5db0092eeb5",
+      "unidade": "1003 C",
+      "data_venda": "2025-04-29",
+      "de": null,
+      "para": 1
+    },
+    {
+      "id": "a661779c-d938-4224-bbf4-e6b587cdf2ce",
+      "unidade": "1002 B",
+      "data_venda": "2025-05-05",
+      "de": null,
+      "para": 1
+    },
+    {
+      "id": "a6b55e8c-c563-4f51-b712-623627880393",
+      "unidade": "1402 A",
+      "data_venda": "2025-04-30",
+      "de": null,
+      "para": 1
+    },
+    {
+      "id": "a7fe850b-0b89-44ab-b222-68cf877febfe",
+      "unidade": "1406 C",
+      "data_venda": "2025-10-01",
+      "de": null,
+      "para": 0.5
+    },
+    {
+      "id": "a8c76ba4-8ed5-4c64-b8a4-0e3171a808d8",
+      "unidade": "1104 B",
+      "data_venda": "2025-07-09",
+      "de": null,
+      "para": 1
+    },
+    {
+      "id": "ab3def5e-d139-4f60-9669-d4896c74436d",
+      "unidade": "408 A",
+      "data_venda": "2025-06-02",
+      "de": null,
+      "para": 1
+    },
+    {
+      "id": "abd5b02f-8087-4aac-bb65-3c1f282b3e57",
+      "unidade": "1307 D",
+      "data_venda": "2026-01-26",
+      "de": null,
+      "para": 0.5
+    },
+    {
+      "id": "ad501fcd-0355-47c0-adc5-8419b0ae3186",
+      "unidade": "1104 A",
+      "data_venda": "2025-05-26",
+      "de": null,
+      "para": 1
+    },
+    {
+      "id": "adca045e-9c14-4451-9ecd-4662f60c20f9",
+      "unidade": "905 D",
+      "data_venda": "2025-06-19",
+      "de": null,
+      "para": 1
+    },
+    {
+      "id": "af3701ba-227a-4b92-8f4e-5df8c7883cae",
+      "unidade": "703 A",
+      "data_venda": "2025-06-12",
+      "de": null,
+      "para": 1
+    },
+    {
+      "id": "af896f28-a657-4cb9-8a96-00be5e56a2d1",
+      "unidade": "1406 D",
+      "data_venda": "2025-08-26",
+      "de": null,
+      "para": 0.5
+    },
+    {
+      "id": "aff2856b-b787-47a4-84e2-81930c5c9201",
+      "unidade": "1207 C",
+      "data_venda": "2025-09-22",
+      "de": null,
+      "para": 0.5
+    },
+    {
+      "id": "affec3f4-79bd-452d-a556-a699b5ec9bdd",
+      "unidade": "1605 A",
+      "data_venda": "2025-07-02",
+      "de": null,
+      "para": 1
+    },
+    {
+      "id": "b09f3207-6f07-4392-9add-5c6fc9f54c1e",
+      "unidade": "610 D",
+      "data_venda": "2025-06-17",
+      "de": null,
+      "para": 1
+    },
+    {
+      "id": "b42ba471-b3e3-46e0-a344-dba77fb9020a",
+      "unidade": "603 D",
+      "data_venda": "2025-06-23",
+      "de": null,
+      "para": 1
+    },
+    {
+      "id": "b568c66c-884b-4dd4-9250-09b387687b18",
+      "unidade": "1402 C",
+      "data_venda": "2025-10-06",
+      "de": null,
+      "para": 0.5
+    },
+    {
+      "id": "b5ba510b-ada7-40d0-811c-e8bebc9b5034",
+      "unidade": "1303 D",
+      "data_venda": "2025-04-30",
+      "de": null,
+      "para": 1
+    },
+    {
+      "id": "b7a817c5-aa5e-4461-b04f-0638a24c36e9",
+      "unidade": "712 A",
+      "data_venda": "2025-04-30",
+      "de": null,
+      "para": 1
+    },
+    {
+      "id": "bb518e69-de8c-4529-bc79-1c3969db7529",
+      "unidade": "606 A",
+      "data_venda": "2026-05-25",
+      "de": null,
+      "para": 0.5
+    },
+    {
+      "id": "bba79402-1f6c-445a-8626-a69a7e330cd4",
+      "unidade": "1405 A",
+      "data_venda": "2025-06-21",
+      "de": null,
+      "para": 1
+    },
+    {
+      "id": "bd50c322-a9f6-4a65-86ab-76721bfb954b",
+      "unidade": "510 C",
+      "data_venda": "2026-02-10",
+      "de": null,
+      "para": 0.5
+    },
+    {
+      "id": "bd9ce9af-8a59-4b9d-a726-c832fbfe1d80",
+      "unidade": "902 B",
+      "data_venda": "2025-06-04",
+      "de": null,
+      "para": 1
+    },
+    {
+      "id": "bf92e73a-edce-4a19-a32a-02c7ed296f6d",
+      "unidade": "1502 D",
+      "data_venda": "2026-01-20",
+      "de": null,
+      "para": 0.5
+    },
+    {
+      "id": "bffdb84f-5e9f-484b-b9bb-581a0c73f4b1",
+      "unidade": "1103 D",
+      "data_venda": "2025-07-09",
+      "de": null,
+      "para": 1
+    },
+    {
+      "id": "c14f8f16-26e4-42eb-81da-d1de2c4db0c0",
+      "unidade": "704 A",
+      "data_venda": "2025-05-22",
+      "de": null,
+      "para": 1
+    },
+    {
+      "id": "c1527d19-cb5d-428c-9c35-a8be65e2590d",
+      "unidade": "809 D",
+      "data_venda": "2025-07-27",
+      "de": null,
+      "para": 0.5
+    },
+    {
+      "id": "c2e7970b-5011-4fa2-8cb6-b6a632582a2c",
+      "unidade": "1706 A",
+      "data_venda": "2025-08-05",
+      "de": null,
+      "para": 0.5
+    },
+    {
+      "id": "c3650d6d-f1e8-4afe-ad0f-f8ee30c19a16",
+      "unidade": "603 B",
+      "data_venda": "2026-02-09",
+      "de": null,
+      "para": 0.5
+    },
+    {
+      "id": "c5812545-2a1f-4640-b76f-dd00f555930d",
+      "unidade": "1005 D",
+      "data_venda": "2025-06-20",
+      "de": null,
+      "para": 1
+    },
+    {
+      "id": "c7898645-61b2-49b2-9812-9cd2f28a1638",
+      "unidade": "1402 D",
+      "data_venda": "2025-10-14",
+      "de": null,
+      "para": 0.5
+    },
+    {
+      "id": "c850d6b4-742b-412e-8477-33ec538fcdc4",
+      "unidade": "401 A",
+      "data_venda": "2026-03-04",
+      "de": null,
+      "para": 0.5
+    },
+    {
+      "id": "c9c377ab-05a4-4e3a-bb67-afa69af8ef98",
+      "unidade": "512 A",
+      "data_venda": "2025-05-19",
+      "de": null,
+      "para": 1
+    },
+    {
+      "id": "c9e6358d-2aab-4743-8358-e7628f761350",
+      "unidade": "908 A",
+      "data_venda": "2025-06-12",
+      "de": null,
+      "para": 1
+    },
+    {
+      "id": "ca64e0e4-6e08-45fd-88f3-836892820520",
+      "unidade": "812 D",
+      "data_venda": "2025-04-30",
+      "de": null,
+      "para": 1
+    },
+    {
+      "id": "cab91095-4b55-48a6-ab29-045984076cb4",
+      "unidade": "504 C",
+      "data_venda": "2025-05-14",
+      "de": null,
+      "para": 1
+    },
+    {
+      "id": "cb112568-042f-4e78-b86d-b1a209fa76d4",
+      "unidade": "1507 A",
+      "data_venda": "2025-07-09",
+      "de": null,
+      "para": 1
+    },
+    {
+      "id": "cffb2c73-edb7-4127-8f74-18f382efbe78",
+      "unidade": "506 A",
+      "data_venda": "2025-05-20",
+      "de": null,
+      "para": 1
+    },
+    {
+      "id": "d2aa4822-4727-4e63-9824-76f892082852",
+      "unidade": "1701 A",
+      "data_venda": "2025-07-25",
+      "de": null,
+      "para": 0.5
+    },
+    {
+      "id": "d3b2e8a0-7706-4717-81e9-8ae6916a0e7d",
+      "unidade": "803 B",
+      "data_venda": "2026-03-09",
+      "de": null,
+      "para": 0.5
+    },
+    {
+      "id": "d3c61971-2f4a-4884-ba49-b8ff70db2097",
+      "unidade": "1403 B",
+      "data_venda": "2026-02-05",
+      "de": null,
+      "para": 0.5
+    },
+    {
+      "id": "ddfe2380-a927-4ad5-b37f-ed7d0913c333",
+      "unidade": "710 A",
+      "data_venda": "2025-05-10",
+      "de": null,
+      "para": 1
+    },
+    {
+      "id": "de16f7a0-b7df-4d81-a0ac-84f0f2a8097c",
+      "unidade": "609 C",
+      "data_venda": "2025-06-15",
+      "de": null,
+      "para": 1
+    },
+    {
+      "id": "df0feab5-72e8-4e10-96cd-cbeea03cd712",
+      "unidade": "1306 C",
+      "data_venda": "2025-05-10",
+      "de": null,
+      "para": 1
+    },
+    {
+      "id": "df70d805-c0a7-4157-8e8a-9a3ff9d72c4e",
+      "unidade": "1607 C",
+      "data_venda": "2026-02-23",
+      "de": null,
+      "para": 0.5
+    },
+    {
+      "id": "e2b0dd05-7326-4963-be70-7e6a55a029be",
+      "unidade": "1103 A",
+      "data_venda": "2026-01-30",
+      "de": null,
+      "para": 0.5
+    },
+    {
+      "id": "e3ca7d66-44d8-407b-a70b-6e8d5bab22c1",
+      "unidade": "1401 C",
+      "data_venda": "2025-04-29",
+      "de": null,
+      "para": 1
+    },
+    {
+      "id": "e41e24ca-3ceb-4642-86b6-7883249efa79",
+      "unidade": "1507 D",
+      "data_venda": "2026-03-12",
+      "de": null,
+      "para": 0.5
+    },
+    {
+      "id": "e570a347-c613-45de-817c-4844ba204e2c",
+      "unidade": "1002 A",
+      "data_venda": "2025-05-06",
+      "de": null,
+      "para": 1
+    },
+    {
+      "id": "e5b4837d-4733-4db6-8959-6cb2aea17d87",
+      "unidade": "1005 C",
+      "data_venda": "2025-09-30",
+      "de": null,
+      "para": 0.5
+    },
+    {
+      "id": "e6e0081a-69fe-4f9a-9393-cf4925bbde4e",
+      "unidade": "704 B",
+      "data_venda": "2025-05-28",
+      "de": null,
+      "para": 1
+    },
+    {
+      "id": "e7ab0229-0311-4ee1-9a84-d863c5b9ef5e",
+      "unidade": "803 C",
+      "data_venda": "2025-07-03",
+      "de": null,
+      "para": 1
+    },
+    {
+      "id": "e9d137e5-e34d-4514-a15c-06382411dc1d",
+      "unidade": "1106 C",
+      "data_venda": "2025-04-28",
+      "de": null,
+      "para": 1
+    },
+    {
+      "id": "e9f21d96-203e-44df-bead-9dddd6a2c250",
+      "unidade": "1006 C",
+      "data_venda": "2025-07-29",
+      "de": null,
+      "para": 0.5
+    },
+    {
+      "id": "ec7d146b-c604-4cec-8258-cea314c9e977",
+      "unidade": "1107 D",
+      "data_venda": "2025-05-26",
+      "de": null,
+      "para": 1
+    },
+    {
+      "id": "ed6fdd5b-9362-4654-8e14-d75d76020806",
+      "unidade": "810 A",
+      "data_venda": "2025-06-30",
+      "de": null,
+      "para": 1
+    },
+    {
+      "id": "ed7cebfb-279a-40d5-9fff-43e574c7e936",
+      "unidade": "810 B",
+      "data_venda": "2025-06-25",
+      "de": null,
+      "para": 1
+    },
+    {
+      "id": "ef1b6708-e632-457a-94d5-3b424ce42d4e",
+      "unidade": "609 A",
+      "data_venda": "2026-02-10",
+      "de": null,
+      "para": 0.5
+    },
+    {
+      "id": "f2b12a53-2ce2-4744-b14b-775207a25301",
+      "unidade": "902 C",
+      "data_venda": "2025-07-27",
+      "de": null,
+      "para": 0.5
+    },
+    {
+      "id": "f3293e5f-23a6-4b72-b39d-38de8d429190",
+      "unidade": "807 A",
+      "data_venda": "2026-02-03",
+      "de": null,
+      "para": 0.5
+    },
+    {
+      "id": "f3b338a7-2ed6-434b-92ba-c8fd254208b3",
+      "unidade": "1606 C",
+      "data_venda": "2026-02-19",
+      "de": null,
+      "para": 0.5
+    },
+    {
+      "id": "f62fedaa-c66a-4abf-b36e-ce12c46334d8",
+      "unidade": "1303 B",
+      "data_venda": "2025-07-21",
+      "de": null,
+      "para": 0.5
+    },
+    {
+      "id": "f79be55a-ed21-49cc-a893-72380178f1c7",
+      "unidade": "1806 D",
+      "data_venda": "2026-01-20",
+      "de": null,
+      "para": 0.5
+    },
+    {
+      "id": "f96d8924-a864-423c-a970-441c2e75c767",
+      "unidade": "1306 D",
+      "data_venda": "2025-06-24",
+      "de": null,
+      "para": 1
+    },
+    {
+      "id": "fa72c841-baca-448f-a92b-05fbe85bcb5d",
+      "unidade": "1202 C",
+      "data_venda": "2025-10-14",
+      "de": null,
+      "para": 0.5
+    },
+    {
+      "id": "fc365e7f-71a1-43cd-8390-240875d6b900",
+      "unidade": "1807 D",
+      "data_venda": "2026-01-20",
+      "de": null,
+      "para": 0.5
+    }
+  ],
+  "humano_pendente": [],
+  "errors": []
+}

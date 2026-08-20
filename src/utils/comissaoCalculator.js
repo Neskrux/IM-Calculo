@@ -149,3 +149,29 @@ export function somarComissao(pagamentos, opts = {}) {
     0,
   )
 }
+
+// ---------------------------------------------------------------------------
+// Taxa da coordenadora por venda (relatório coordenadoras)
+// Prioridade: snapshot da venda (vendas.coordenadora_taxa, migration 040) →
+// taxa negociada vigente (coordenadoras.percentual_padrao, migration 031) → null.
+// O snapshot existe porque a taxa mudou no tempo (cutover 15/07/2025) e a taxa
+// vigente não pode reescrever relatório de mês antigo.
+export const CUTOVER_TAXA_COORDENADORA = '2025-07-15'
+
+export function taxaCoordenadoraDaVenda(venda, coordenadoras = []) {
+  if (!venda?.coordenadora_id) return null
+  const snap = parseFloat(venda.coordenadora_taxa)
+  if (Number.isFinite(snap) && snap > 0) return snap
+  const co = coordenadoras.find(c => String(c.id) === String(venda.coordenadora_id))
+  const vigente = co ? parseFloat(co.percentual_padrao) : NaN
+  return Number.isFinite(vigente) && vigente > 0 ? vigente : null
+}
+
+// Regra do cutover usada pelo backfill do snapshot (scripts/backfill-coordenadora-taxa.mjs):
+// contrato (data_venda) antes de 15/07/2025 → 1,0 · a partir de 15/07/2025 → 0,5.
+// Sem data_venda → null (caso vai pra revisão humana, nunca gravar chute).
+export function taxaCoordenadoraPorCutover(dataVenda) {
+  const d = String(dataVenda || '').slice(0, 10)
+  if (!d) return null
+  return d < CUTOVER_TAXA_COORDENADORA ? 1.0 : 0.5
+}

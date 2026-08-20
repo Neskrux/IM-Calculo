@@ -1,5 +1,8 @@
 import { describe, it, expect } from 'vitest'
-import { somarComissao, isPago, isPendente, calcularComissaoPagamentoCompleto } from './comissaoCalculator'
+import {
+  somarComissao, isPago, isPendente, calcularComissaoPagamentoCompleto,
+  taxaCoordenadoraDaVenda, taxaCoordenadoraPorCutover, CUTOVER_TAXA_COORDENADORA,
+} from './comissaoCalculator'
 
 // Invariante financeiro dos 3 números do corretor (cenário BDD da spec mobile):
 //  - totais vêm de somarComissao sobre pagamentos_prosoluto (nunca snapshot stale)
@@ -56,5 +59,64 @@ describe('somarComissao — invariante dos 3 números', () => {
   it('lista inválida → 0', () => {
     expect(somarComissao(null)).toBe(0)
     expect(somarComissao(undefined)).toBe(0)
+  })
+})
+
+// Taxa da coordenadora por venda (relatório coordenadoras):
+//  Dado uma venda direcionada a uma coordenadora
+//  Quando ela tem taxa snapshotada (vendas.coordenadora_taxa, migration 040)
+//  Então o relatório usa o snapshot — a taxa vigente da coordenadora nunca
+//  reescreve mês antigo (mesma filosofia do fator_comissao_aplicado).
+describe('taxaCoordenadoraDaVenda', () => {
+  const coordenadoras = [
+    { id: 'c1', nome: 'Carol', percentual_padrao: 0.5 },
+    { id: 'c2', nome: 'Jessica', percentual_padrao: 1 },
+  ]
+
+  it('snapshot da venda vence a taxa vigente da coordenadora', () => {
+    const venda = { coordenadora_id: 'c1', coordenadora_taxa: 1 } // contrato pré-cutover
+    expect(taxaCoordenadoraDaVenda(venda, coordenadoras)).toBe(1)
+  })
+
+  it('sem snapshot cai na taxa negociada vigente (percentual_padrao)', () => {
+    expect(taxaCoordenadoraDaVenda({ coordenadora_id: 'c2' }, coordenadoras)).toBe(1)
+    expect(taxaCoordenadoraDaVenda({ coordenadora_id: 'c1' }, coordenadoras)).toBe(0.5)
+  })
+
+  it('venda sem coordenadora → null (relatório usa o percentual do cargo)', () => {
+    expect(taxaCoordenadoraDaVenda({ coordenadora_id: null }, coordenadoras)).toBeNull()
+    expect(taxaCoordenadoraDaVenda(null, coordenadoras)).toBeNull()
+  })
+
+  it('snapshot inválido/zerado não vale — cai no fallback', () => {
+    expect(taxaCoordenadoraDaVenda({ coordenadora_id: 'c1', coordenadora_taxa: 0 }, coordenadoras)).toBe(0.5)
+    expect(taxaCoordenadoraDaVenda({ coordenadora_id: 'c1', coordenadora_taxa: 'x' }, coordenadoras)).toBe(0.5)
+  })
+
+  it('coordenadora desconhecida sem snapshot → null', () => {
+    expect(taxaCoordenadoraDaVenda({ coordenadora_id: 'c9' }, coordenadoras)).toBeNull()
+  })
+})
+
+// Regra do cutover (fonte: repasse-mensal-coordenadora.mjs, aprovada pela gestão):
+//  contrato assinado ANTES de 15/07/2025 → 1,0% · a partir de 15/07/2025 → 0,5%.
+describe('taxaCoordenadoraPorCutover (regra do backfill)', () => {
+  it('cutover é 2025-07-15', () => {
+    expect(CUTOVER_TAXA_COORDENADORA).toBe('2025-07-15')
+  })
+
+  it('contrato antes do cutover → 1,0', () => {
+    expect(taxaCoordenadoraPorCutover('2025-07-14')).toBe(1)
+    expect(taxaCoordenadoraPorCutover('2024-12-01T00:00:00')).toBe(1)
+  })
+
+  it('contrato no dia do cutover ou depois → 0,5', () => {
+    expect(taxaCoordenadoraPorCutover('2025-07-15')).toBe(0.5)
+    expect(taxaCoordenadoraPorCutover('2026-08-01')).toBe(0.5)
+  })
+
+  it('sem data_venda → null (não chutar: vai pra revisão, nunca gravar)', () => {
+    expect(taxaCoordenadoraPorCutover(null)).toBeNull()
+    expect(taxaCoordenadoraPorCutover('')).toBeNull()
   })
 })

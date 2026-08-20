@@ -31,7 +31,7 @@ import '../styles/Dashboard.css'
 import '../styles/EmpreendimentosPage.css'
 import { LayoutGrid, List } from 'lucide-react'
 import { safeGet, safeSet } from '../utils/storage'
-import { calcularFatorComissao, calcularComissaoPagamento, dataEfetiva } from '../utils/comissaoCalculator'
+import { calcularFatorComissao, calcularComissaoPagamento, dataEfetiva, taxaCoordenadoraDaVenda } from '../utils/comissaoCalculator'
 import { parseDataLocal, formatDataBR } from '../utils/datas'
 import { baixarPdfBase64 } from '../utils/pdfBase64'
 import { triggerFullSync, triggerNormalizeOnly, probeSienge, pollRunUntilDone } from '../lib/siengeSyncApi'
@@ -1033,6 +1033,7 @@ const AdminDashboard = () => {
     vendaId: '',
     cargoId: 'Corretor', // Padrão: Corretor
     coordenadoraId: '', // 2º seletor: filtra vendas por coordenadora (cargo Coordenadora)
+    papel: 'corretor', // quando o corretor selecionado TAMBÉM é coordenadora (Caroline/Jessica): 'corretor' = vendas próprias | 'coordenadora' = vendas direcionadas a ela
     status: 'todos',
     dataInicio: '',
     dataFim: '',
@@ -1399,16 +1400,12 @@ const AdminDashboard = () => {
     // Calcular percentual total dos cargos para distribuição
     const percentualTotal = cargosDoTipo.reduce((acc, c) => acc + (parseFloat(c.percentual) || 0), 0)
 
-    // Taxa NEGOCIADA da coordenadora (override do cargo 'Coordenadora'): a venda aponta
-    // uma coordenadora (vendas.coordenadora_id) que pode ter percentual_padrao != 0,5%
-    // (ex.: Jessica=1,0). percentualTotal permanece 7 → fatia = comissao_gerada × (rate/7).
-    // Ver migration 031 + .claude/rules/fator-comissao.md. No-op se sem coordenadora/legado.
-    const taxaCoordenadora = (() => {
-      if (!venda.coordenadora_id) return null
-      const co = coordenadoras.find(c => String(c.id) === String(venda.coordenadora_id))
-      const r = co ? parseFloat(co.percentual_padrao) : NaN
-      return Number.isFinite(r) && r > 0 ? r : null
-    })()
+    // Taxa da coordenadora (override do cargo 'Coordenadora'): snapshot POR VENDA
+    // (vendas.coordenadora_taxa, migration 040 — cutover 15/07/2025: 1,0 antes / 0,5 depois)
+    // com fallback na taxa vigente (coordenadoras.percentual_padrao, migration 031).
+    // percentualTotal permanece 7 → fatia = comissao_gerada × (taxa/7).
+    // Ver .claude/rules/fator-comissao.md. No-op se venda sem coordenadora.
+    const taxaCoordenadora = taxaCoordenadoraDaVenda(venda, coordenadoras)
 
     // Distribuir entre os cargos proporcionalmente
     return cargosDoTipo.map(cargo => {
@@ -5205,8 +5202,18 @@ const AdminDashboard = () => {
       
       // Aplicar filtros
       if (relatorioFiltros.corretorId) {
+        // Papel COORDENADORA (Caroline/Jessica): reporta as vendas DIRECIONADAS a ela
+        // (vendas.coordenadora_id), excluindo as que ela mesma vendeu — coordenadora não
+        // reporta venda própria (migration 031). Papel corretor: comportamento original.
+        const coPapel = relatorioFiltros.papel === 'coordenadora'
+          ? coordenadoras.find(c => String(c.usuario_id) === String(relatorioFiltros.corretorId))
+          : null
         dadosFiltrados = dadosFiltrados.filter(g => {
           const corretorIdVenda = String(g.venda?.corretor?.id || g.venda?.corretor_id || '')
+          if (coPapel) {
+            return String(g.venda?.coordenadora_id || '') === String(coPapel.id) &&
+              corretorIdVenda !== String(relatorioFiltros.corretorId)
+          }
           return corretorIdVenda === String(relatorioFiltros.corretorId)
         })
       }
@@ -9322,10 +9329,12 @@ const AdminDashboard = () => {
                       // Ao mudar corretor, resetar empreendimento e venda
                       // O empreendimento será filtrado automaticamente no dropdown
                       setRelatorioFiltros({
-                        ...relatorioFiltros, 
-                        corretorId: novoCorretorId, 
+                        ...relatorioFiltros,
+                        corretorId: novoCorretorId,
                         empreendimentoId: '', // Reset empreendimento
-                        vendaId: '' // Reset venda
+                        vendaId: '', // Reset venda
+                        papel: 'corretor', // Reset papel (toggle só reaparece se o novo selecionado for coordenadora)
+                        cargoId: relatorioFiltros.papel === 'coordenadora' ? 'Corretor' : relatorioFiltros.cargoId
                       })
                     }}
                   >
@@ -9344,7 +9353,41 @@ const AdminDashboard = () => {
                     </small>
                   )}
                 </div>
-                
+
+                {/* Papel — só quando o corretor selecionado TAMBÉM é coordenadora (Caroline/Jessica).
+                    'Corretora' = vendas que ELA vendeu (fatia do cargo Corretor).
+                    'Coordenadora' = vendas DIRECIONADAS a ela (fatia do cargo Coordenadora, taxa
+                    snapshotada por venda — migration 040). Trocar o papel já ajusta o cargo do relatório. */}
+                {(() => {
+                  const coDoSelecionado = relatorioFiltros.corretorId
+                    ? coordenadoras.find(c => String(c.usuario_id) === String(relatorioFiltros.corretorId))
+                    : null
+                  if (!coDoSelecionado) return null
+                  return (
+                    <div className="filtro-grupo">
+                      <label>Papel</label>
+                      <select
+                        value={relatorioFiltros.papel}
+                        onChange={(e) => {
+                          const papel = e.target.value
+                          setRelatorioFiltros({
+                            ...relatorioFiltros,
+                            papel,
+                            cargoId: papel === 'coordenadora' ? 'Coordenadora' : 'Corretor',
+                            coordenadoraId: '' // o papel já direciona; evita filtro duplicado
+                          })
+                        }}
+                      >
+                        <option value="corretor">Corretora (vendas próprias)</option>
+                        <option value="coordenadora">Coordenadora (vendas direcionadas)</option>
+                      </select>
+                      <small style={{ color: '#64748b', marginTop: '4px', display: 'block' }}>
+                        {formatNome(coDoSelecionado.nome)} atua nos dois papéis
+                      </small>
+                    </div>
+                  )
+                })()}
+
                 <div className="filtro-grupo">
                   <label><Building size={14} /> Empreendimento</label>
                   <select
@@ -9534,6 +9577,7 @@ const AdminDashboard = () => {
                       vendaId: '',
                       cargoId: 'Corretor', // Manter padrão como Corretor
                       coordenadoraId: '',
+                      papel: 'corretor',
                       status: 'todos',
                       dataInicio: '',
                       dataFim: '',
