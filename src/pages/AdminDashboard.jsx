@@ -1577,7 +1577,10 @@ const AdminDashboard = () => {
         pagamentosData,
         boletosData
       ] = await Promise.all([
-        supabase.from('usuarios').select('*').eq('tipo', 'corretor'),
+        // Inclui beneficiários (Nohros/Beton/Ferretti — migration 041): as entidades sempre
+        // moraram nesta lista quando eram tipo=corretor; manter aqui preserva o card e o
+        // botão de acesso (edge admin-corretor-acesso) pra elas.
+        supabase.from('usuarios').select('*').in('tipo', ['corretor', 'beneficiario']),
         supabase.from('vendas').select('*').or('excluido.eq.false,excluido.is.null'),
         supabase.from('empreendimentos').select('*'),
         supabase.from('clientes').select('*').or('ativo.eq.true,ativo.is.null'),

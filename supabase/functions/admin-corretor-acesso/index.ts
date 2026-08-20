@@ -90,7 +90,11 @@ Deno.serve(async (req) => {
     .maybeSingle()
   if (corErr) return json({ error: corErr.message }, 500)
   if (!corretor) return json({ error: "corretor não encontrado" }, 404)
-  if (corretor.tipo !== "corretor") return json({ error: `usuário é do tipo '${corretor.tipo}', não corretor` }, 400)
+  // Beneficiário (Nohros/Beton/Ferretti — migration 041) usa o MESMO fluxo de acesso:
+  // usuarios.id é a identidade e a conta do Auth precisa nascer com esse id igual ao corretor.
+  if (corretor.tipo !== "corretor" && corretor.tipo !== "beneficiario") {
+    return json({ error: `usuário é do tipo '${corretor.tipo}', não corretor/beneficiário` }, 400)
+  }
 
   // Já existe conta de Auth com este id?
   const { data: jaExiste } = await admin.auth.admin.getUserById(corretor_id)
