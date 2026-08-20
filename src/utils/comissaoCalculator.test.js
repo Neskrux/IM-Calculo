@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest'
 import {
   somarComissao, isPago, isPendente, calcularComissaoPagamentoCompleto,
   taxaCoordenadoraDaVenda, taxaCoordenadoraPorCutover, CUTOVER_TAXA_COORDENADORA,
+  fatiaCargoDoPagamento,
 } from './comissaoCalculator'
 
 // Invariante financeiro dos 3 números do corretor (cenário BDD da spec mobile):
@@ -118,5 +119,56 @@ describe('taxaCoordenadoraPorCutover (regra do backfill)', () => {
   it('sem data_venda → null (não chutar: vai pra revisão, nunca gravar)', () => {
     expect(taxaCoordenadoraPorCutover(null)).toBeNull()
     expect(taxaCoordenadoraPorCutover('')).toBeNull()
+  })
+})
+
+// Visão do beneficiário (Nohros e afins): fatia de UM cargo por parcela.
+//  Dado uma parcela com comissão total e o cargo do beneficiário
+//  Então a fatia = comissao_gerada × (pct_cargo / pct_total), pelo TIPO da venda.
+describe('fatiaCargoDoPagamento (visão beneficiário)', () => {
+  const cargos = [
+    { nome_cargo: 'Corretor', tipo_corretor: 'externo', percentual: 4 },
+    { nome_cargo: 'Nohros', tipo_corretor: 'externo', percentual: 0.5 },
+    { nome_cargo: 'Coordenadora', tipo_corretor: 'externo', percentual: 0.5 },
+    { nome_cargo: 'Corretor', tipo_corretor: 'interno', percentual: 2.5 },
+    { nome_cargo: 'Nohros', tipo_corretor: 'interno', percentual: 1.25 },
+  ]
+  const vendaExt = { id: 'v1', tipo_corretor: 'externo' }
+  const vendaInt = { id: 'v2', tipo_corretor: 'interno' }
+
+  it('externo: Nohros = comissao × 0,5/7', () => {
+    const pag = { venda_id: 'v1', status: 'pago', comissao_gerada: 700, valor: 1000, percentual_comissao_total: 7 }
+    expect(fatiaCargoDoPagamento(pag, vendaExt, 'Nohros', cargos)).toBeCloseTo(50, 2)
+  })
+
+  it('interno: Nohros = comissao × 1,25/6,5 (tipo DA VENDA decide a tabela)', () => {
+    const pag = { venda_id: 'v2', status: 'pago', comissao_gerada: 650, valor: 1000, percentual_comissao_total: 6.5 }
+    expect(fatiaCargoDoPagamento(pag, vendaInt, 'Nohros', cargos)).toBeCloseTo(125, 2)
+  })
+
+  it('sem snapshot de pct_total cai na soma dos cargos do tipo', () => {
+    const pag = { venda_id: 'v1', status: 'pago', comissao_gerada: 450 } // externo: 4+0,5+0,5 = 5
+    expect(fatiaCargoDoPagamento(pag, vendaExt, 'Nohros', cargos)).toBeCloseTo(45, 2)
+  })
+
+  it('parcela cancelada → 0 (nunca infla)', () => {
+    const pag = { venda_id: 'v1', status: 'cancelado', comissao_gerada: 700, percentual_comissao_total: 7 }
+    expect(fatiaCargoDoPagamento(pag, vendaExt, 'Nohros', cargos)).toBe(0)
+  })
+
+  it('cargo Coordenadora usa a taxa por venda (snapshot do cutover)', () => {
+    const venda = { id: 'v1', tipo_corretor: 'externo', coordenadora_id: 'c1', coordenadora_taxa: 1 }
+    const pag = { venda_id: 'v1', status: 'pago', comissao_gerada: 700, percentual_comissao_total: 7 }
+    expect(fatiaCargoDoPagamento(pag, venda, 'Coordenadora', cargos, [])).toBeCloseTo(100, 2)
+  })
+
+  it('cargo Coordenadora em venda SEM coordenadora → 0', () => {
+    const pag = { venda_id: 'v1', status: 'pago', comissao_gerada: 700, percentual_comissao_total: 7 }
+    expect(fatiaCargoDoPagamento(pag, vendaExt, 'Coordenadora', cargos, [])).toBe(0)
+  })
+
+  it('cargo inexistente no tipo → 0', () => {
+    const pag = { venda_id: 'v1', status: 'pago', comissao_gerada: 700, percentual_comissao_total: 7 }
+    expect(fatiaCargoDoPagamento(pag, vendaExt, 'Inexistente', cargos)).toBe(0)
   })
 })
