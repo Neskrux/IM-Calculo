@@ -175,3 +175,34 @@ export function taxaCoordenadoraPorCutover(dataVenda) {
   if (!d) return null
   return d < CUTOVER_TAXA_COORDENADORA ? 1.0 : 0.5
 }
+
+// ---------------------------------------------------------------------------
+// Fatia de UM CARGO numa parcela (visão do beneficiário: Nohros, Beton, ...).
+// Regra canônica: comissao_gerada é a comissão TOTAL da parcela; a fatia do cargo é
+// proporcional — comissao_gerada × (pct_cargo / pct_total). Ver fator-comissao.md.
+//  - pct_total: snapshot da parcela (percentual_comissao_total) quando existir;
+//    fallback = soma dos cargos do tipo da venda.
+//  - pct_cargo: cargos_empreendimento filtrado pelo tipo da venda; cargo Coordenadora
+//    usa a taxa por venda (taxaCoordenadoraDaVenda) quando houver.
+// Retorna 0 pra parcela cancelada — cancelada nunca infla total (visualizacao-totais.md).
+export function fatiaCargoDoPagamento(pagamento, venda, nomeCargo, cargosDoEmp = [], coordenadoras = []) {
+  if (!pagamento || isCancelado(pagamento) || !venda || !nomeCargo) return 0
+
+  const tipoVenda = venda.tipo_corretor || 'externo'
+  const cargosDoTipo = cargosDoEmp.filter(c => (c.tipo_corretor || 'externo') === tipoVenda)
+
+  let pctCargo = parseFloat(cargosDoTipo.find(c => c.nome_cargo === nomeCargo)?.percentual) || 0
+  if (nomeCargo === 'Coordenadora') {
+    const taxa = taxaCoordenadoraDaVenda(venda, coordenadoras)
+    if (taxa != null) pctCargo = taxa
+    else if (!venda.coordenadora_id) return 0 // venda sem coordenadora não gera fatia do cargo
+  }
+  if (pctCargo <= 0) return 0
+
+  const pctTotal = parseFloat(pagamento.percentual_comissao_total) ||
+    cargosDoTipo.reduce((acc, c) => acc + (parseFloat(c.percentual) || 0), 0)
+  if (pctTotal <= 0) return 0
+
+  const comissaoTotal = calcularComissaoPagamentoCompleto(pagamento, { vendas: [venda] })
+  return comissaoTotal * (pctCargo / pctTotal)
+}
