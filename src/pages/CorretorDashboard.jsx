@@ -34,6 +34,7 @@ import {
   isPendente,
   isAtivo,
   dataEfetiva,
+  percentualCorretorDaVenda,
 } from '../utils/comissaoCalculator'
 import { parseDataLocal, formatDataBR } from '../utils/datas'
 
@@ -1154,7 +1155,9 @@ const CorretorDashboard = () => {
     if (valorParcela <= 0) return 0
 
     const venda = vendas.find(v => v.id === pagamento.venda_id)
-    const percentualCorretorVenda = parseFloat(venda?.percentual_corretor) || parseFloat(percentualFallback) || 0
+    // Fatia do corretor por VENDA — regra centralizada e testada no calculator
+    // (conta multi-tipo: venda de tipo diferente do cadastro usa a taxa do tipo DA VENDA).
+    const percentualCorretorVenda = percentualCorretorDaVenda(venda, userProfile)
     const valorProSoluto = parseFloat(venda?.valor_pro_soluto) || 0
 
     if (venda && percentualCorretorVenda > 0 && valorProSoluto > 0) {

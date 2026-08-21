@@ -8,7 +8,7 @@
 // canônico com pró-soluto. Ver .claude/rules/comissao-corretor.md + fator-comissao.md.
 import { jsPDF } from 'jspdf'
 import autoTable from 'jspdf-autotable'
-import { calcularFatorComissao, calcularComissaoPagamentoCompleto } from './comissaoCalculator'
+import { calcularFatorComissao, calcularComissaoPagamentoCompleto, percentualCorretorDaVenda } from './comissaoCalculator'
 import { parseDataLocal, formatDataBR } from './datas'
 
 const formatCurrency = (value) => {
@@ -37,7 +37,8 @@ function makeCalcularComissao(vendas, corretorProfile) {
     if (valorParcela <= 0) return 0
 
     const venda = vendas.find(v => v.id === pagamento.venda_id)
-    const percentualCorretorVenda = parseFloat(venda?.percentual_corretor) || parseFloat(percentualFallback) || 0
+    // Conta multi-tipo: regra centralizada e testada no calculator.
+    const percentualCorretorVenda = percentualCorretorDaVenda(venda, corretorProfile)
     const valorProSoluto = parseFloat(venda?.valor_pro_soluto) || 0
 
     if (venda && percentualCorretorVenda > 0 && valorProSoluto > 0) {
