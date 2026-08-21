@@ -91,3 +91,6 @@ Manual - API de Cobranca*.pdf
 # Homologação (clone anonimizado) — credenciais e dumps locais
 .env.homolog
 docs/homolog/*.sql
+
+# Fila operacional de acessos (contém e-mails pessoais — repo público)
+docs/controladoria/PENDENTE-acessos-corretores.md
