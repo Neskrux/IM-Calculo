@@ -94,3 +94,4 @@ docs/homolog/*.sql
 
 # Fila operacional de acessos (contém e-mails pessoais — repo público)
 docs/controladoria/PENDENTE-acessos-corretores.md
+scripts/acessos/01-corrigir-emails.sql
