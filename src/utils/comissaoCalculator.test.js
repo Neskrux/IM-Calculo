@@ -3,6 +3,7 @@ import {
   somarComissao, isPago, isPendente, calcularComissaoPagamentoCompleto,
   taxaCoordenadoraDaVenda, taxaCoordenadoraPorCutover, CUTOVER_TAXA_COORDENADORA,
   fatiaCargoDoPagamento,
+  percentualCorretorDaVenda,
 } from './comissaoCalculator'
 
 // Invariante financeiro dos 3 números do corretor (cenário BDD da spec mobile):
@@ -170,5 +171,40 @@ describe('fatiaCargoDoPagamento (visão beneficiário)', () => {
   it('cargo inexistente no tipo → 0', () => {
     const pag = { venda_id: 'v1', status: 'pago', comissao_gerada: 700, percentual_comissao_total: 7 }
     expect(fatiaCargoDoPagamento(pag, vendaExt, 'Inexistente', cargos)).toBe(0)
+  })
+})
+
+// Conta multi-tipo (caso Matheus Pires — cadastro interno, 32 vendas internas + 13 externas):
+//  Dado um corretor com cadastro de um tipo e venda do OUTRO tipo
+//  Então a fatia usa a taxa padrão do tipo DA VENDA, nunca a do perfil.
+describe('percentualCorretorDaVenda (conta multi-tipo)', () => {
+  const perfilInterno = { tipo_corretor: 'interno', percentual_corretor: null }
+
+  it('venda do MESMO tipo do cadastro → taxa padrão do tipo (caso normal)', () => {
+    expect(percentualCorretorDaVenda({ tipo_corretor: 'interno' }, perfilInterno)).toBe(2.5)
+  })
+
+  it('cadastro interno + venda EXTERNA → 4 (taxa do tipo da venda)', () => {
+    expect(percentualCorretorDaVenda({ tipo_corretor: 'externo' }, perfilInterno)).toBe(4)
+  })
+
+  it('cadastro externo + venda INTERNA → 2,5', () => {
+    expect(percentualCorretorDaVenda({ tipo_corretor: 'interno' }, { tipo_corretor: 'externo' })).toBe(2.5)
+  })
+
+  it('percentual negociado do PERFIL vale só pra venda do mesmo tipo', () => {
+    const perfilNegociado = { tipo_corretor: 'interno', percentual_corretor: 3 }
+    expect(percentualCorretorDaVenda({ tipo_corretor: 'interno' }, perfilNegociado)).toBe(3)
+    // venda externa NÃO herda o 3% negociado do cadastro interno
+    expect(percentualCorretorDaVenda({ tipo_corretor: 'externo' }, perfilNegociado)).toBe(4)
+  })
+
+  it('percentual snapshotado NA VENDA vence tudo', () => {
+    expect(percentualCorretorDaVenda({ tipo_corretor: 'externo', percentual_corretor: 5 }, perfilInterno)).toBe(5)
+  })
+
+  it('venda sem tipo → herda o tipo do perfil; sem nada → externo (4)', () => {
+    expect(percentualCorretorDaVenda({}, perfilInterno)).toBe(2.5)
+    expect(percentualCorretorDaVenda({}, null)).toBe(4)
   })
 })

@@ -21,6 +21,31 @@ export function calcularComissaoPagamento(valorParcela, fatorComissaoAplicado) {
 }
 
 /**
+ * Fatia do CORRETOR por venda (conta multi-tipo — caso Matheus Pires).
+ * Prioridade:
+ *  1. venda.percentual_corretor (quando existir — snapshot por venda);
+ *  2. percentual do PERFIL, mas SO quando a venda e do MESMO tipo do cadastro;
+ *  3. taxa padrao do tipo DA VENDA (interno 2,5 / externo 4).
+ * A regra 3 e o coracao do multi-tipo: cadastro interno com venda externa recebe
+ * pela taxa da VENDA, nunca pela do perfil. Validado em 20/08/2026 contra o snapshot
+ * percentual_comissao_total (2.340 parcelas do Matheus, 100% consistentes).
+ * TODO multi-empreendimento: quando outro empreendimento entrar (percentuais 6,0%),
+ * TAXA_CORRETOR_PADRAO deve ser lida de cargos_empreendimento por empreendimento —
+ * este helper e o UNICO lugar a mudar. Ver stream multi-empreendimento.
+ */
+export const TAXA_CORRETOR_PADRAO = Object.freeze({ interno: 2.5, externo: 4 })
+
+export function percentualCorretorDaVenda(venda, perfil) {
+  const pctVenda = parseFloat(venda?.percentual_corretor)
+  if (Number.isFinite(pctVenda) && pctVenda > 0) return pctVenda
+  const tipoVenda = venda?.tipo_corretor || perfil?.tipo_corretor || 'externo'
+  const mesmoTipo = !venda?.tipo_corretor || venda.tipo_corretor === perfil?.tipo_corretor
+  const pctPerfil = parseFloat(perfil?.percentual_corretor)
+  if (mesmoTipo && Number.isFinite(pctPerfil) && pctPerfil > 0) return pctPerfil
+  return TAXA_CORRETOR_PADRAO[tipoVenda] ?? TAXA_CORRETOR_PADRAO.externo
+}
+
+/**
  * Status canônicos. Use sempre via constante pra evitar typo em string mágica.
  */
 export const STATUS = Object.freeze({
