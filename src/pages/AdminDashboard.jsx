@@ -2743,6 +2743,9 @@ const AdminDashboard = () => {
   }
 
   const handleSaveCorretor = async () => {
+    // Beneficiário (Nohros/Beton/Ferretti — migration 041): sem vínculo de corretor.
+    // Não exige empreendimento/cargo e o update não escreve campos de corretor.
+    const isBeneficiario = selectedItem?.tipo === 'beneficiario'
     if (!corretorForm.nome || !corretorForm.email) {
       setMessage({ type: 'error', text: 'Preencha todos os campos obrigatórios' })
       return
@@ -2754,7 +2757,7 @@ const AdminDashboard = () => {
         setMessage({ type: 'error', text: 'Informe a comissão do corretor autônomo' })
         return
       }
-    } else {
+    } else if (!isBeneficiario) {
       if (!corretorForm.empreendimento_id || !corretorForm.cargo_id) {
         setMessage({ type: 'error', text: 'Selecione o empreendimento e cargo' })
         return
@@ -2833,14 +2836,16 @@ const AdminDashboard = () => {
             .update({
               email: corretorForm.email,
               nome: corretorForm.nome,
-              tipo_corretor: corretorForm.tipo_corretor,
               telefone: corretorForm.telefone || null,
-              percentual_corretor: corretorForm.is_autonomo ? parseFloat(corretorForm.percentual_corretor) : (parseFloat(corretorForm.percentual_corretor) || null),
-              empreendimento_id: corretorForm.is_autonomo ? null : (corretorForm.empreendimento_id || null),
-              cargo_id: corretorForm.is_autonomo ? null : (corretorForm.cargo_id || null),
               cnpj: corretorForm.cnpj || null,
               imobiliaria: corretorForm.imobiliaria || null,
-              creci: corretorForm.creci || null,
+              ...(isBeneficiario ? {} : {
+                tipo_corretor: corretorForm.tipo_corretor,
+                percentual_corretor: corretorForm.is_autonomo ? parseFloat(corretorForm.percentual_corretor) : (parseFloat(corretorForm.percentual_corretor) || null),
+                empreendimento_id: corretorForm.is_autonomo ? null : (corretorForm.empreendimento_id || null),
+                cargo_id: corretorForm.is_autonomo ? null : (corretorForm.cargo_id || null),
+                creci: corretorForm.creci || null,
+              }),
               tem_acesso_sistema: true
             })
             .eq('id', selectedItem.id)
@@ -2857,14 +2862,16 @@ const AdminDashboard = () => {
             .update({
               nome: corretorForm.nome,
               email: corretorForm.email,
-              tipo_corretor: corretorForm.tipo_corretor,
               telefone: corretorForm.telefone || null,
-              percentual_corretor: corretorForm.is_autonomo ? parseFloat(corretorForm.percentual_corretor) : (parseFloat(corretorForm.percentual_corretor) || null),
-              empreendimento_id: corretorForm.is_autonomo ? null : (corretorForm.empreendimento_id || null),
-              cargo_id: corretorForm.is_autonomo ? null : (corretorForm.cargo_id || null),
               cnpj: corretorForm.cnpj || null,
               imobiliaria: corretorForm.imobiliaria || null,
-              creci: corretorForm.creci || null
+              ...(isBeneficiario ? {} : {
+                tipo_corretor: corretorForm.tipo_corretor,
+                percentual_corretor: corretorForm.is_autonomo ? parseFloat(corretorForm.percentual_corretor) : (parseFloat(corretorForm.percentual_corretor) || null),
+                empreendimento_id: corretorForm.is_autonomo ? null : (corretorForm.empreendimento_id || null),
+                cargo_id: corretorForm.is_autonomo ? null : (corretorForm.cargo_id || null),
+                creci: corretorForm.creci || null,
+              })
             })
             .eq('id', selectedItem.id)
 
@@ -10598,7 +10605,9 @@ const AdminDashboard = () => {
                   ? (selectedItem ? 'Editar Venda' : 'Nova Venda')
                   : modalType === 'empreendimento'
                   ? (selectedItem ? 'Editar Empreendimento' : 'Novo Empreendimento')
-                  : (selectedItem ? 'Editar Corretor' : 'Novo Corretor')
+                  : (selectedItem
+                      ? (selectedItem.tipo === 'beneficiario' ? 'Editar Beneficiário' : 'Editar Corretor')
+                      : 'Novo Corretor')
                 }
               </h2>
               <button className="close-btn" onClick={() => setShowModal(false)}>
@@ -11704,13 +11713,16 @@ const AdminDashboard = () => {
                       
                       {corretorForm.tem_acesso_sistema ? (
                         <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.7)', margin: 0 }}>
-                          Este corretor pode fazer login no sistema com o email cadastrado.
+                          {selectedItem?.tipo === 'beneficiario'
+                            ? 'Esta entidade pode fazer login e cai direto no painel do beneficiário.'
+                            : 'Este corretor pode fazer login no sistema com o email cadastrado.'}
                         </p>
                       ) : (
                         <>
                           <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.7)', marginBottom: '12px' }}>
-                            Este corretor foi sincronizado do Sienge e ainda não tem acesso ao sistema. 
-                            Ative o acesso para que ele possa fazer login e visualizar suas comissões.
+                            {selectedItem?.tipo === 'beneficiario'
+                              ? 'Esta entidade ainda não tem acesso. Ative para que ela faça login e veja o painel do próprio cargo (comissões da fatia dela e métricas gerais).'
+                              : 'Este corretor foi sincronizado do Sienge e ainda não tem acesso ao sistema. Ative o acesso para que ele possa fazer login e visualizar suas comissões.'}
                           </p>
                           
                           <div className="form-group" style={{ marginBottom: '12px' }}>
@@ -11776,6 +11788,19 @@ const AdminDashboard = () => {
                     </div>
                   )}
 
+                  {selectedItem?.tipo === 'beneficiario' ? (
+                    <>
+                      <div className="section-divider">
+                        <span>Beneficiário de cargo</span>
+                      </div>
+                      <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.7)' }}>
+                        Esta entidade recebe a fatia do cargo <strong>{selectedItem?.cargo_beneficiario}</strong> em
+                        todas as vendas do empreendimento — não tem vínculo de corretor, tipo nem cargo próprios.
+                        O percentual vem da configuração de cargos do empreendimento.
+                      </p>
+                    </>
+                  ) : (
+                  <>
                   <div className="section-divider">
                     <span>Vínculo com Empreendimento</span>
                   </div>
@@ -11848,6 +11873,8 @@ const AdminDashboard = () => {
                       <span>Comissão do cargo:</span>
                       <strong>{corretorForm.percentual_corretor}%</strong>
                     </div>
+                  )}
+                  </>
                   )}
 
                   <div className="form-group">
