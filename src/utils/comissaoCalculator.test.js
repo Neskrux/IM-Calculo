@@ -5,6 +5,7 @@ import {
   fatiaCargoDoPagamento,
   percentualCorretorDaVenda,
   contarVendas,
+  isVendaAtiva,
   ehBaixaFalsaDeDistrato,
   comissaoHeaderVenda,
 } from './comissaoCalculator'
@@ -312,15 +313,34 @@ describe('comissaoHeaderVenda (header do PDF = mesma régua das linhas — D6)',
   })
 })
 
-describe('régua única — pago real de distratada permanece na soma (D1, trava de regressão)', () => {
-  it('somarComissao NÃO olha status da venda: paga de distratada conta', () => {
-    // a função recebe só pagamentos; a política é: quem filtra por venda está errado.
+describe('somarComissao é agnóstica a status de venda (o recorte é de quem chama)', () => {
+  it('soma o que recebe e ignora canceladas — nunca olha a venda', () => {
     const pagos = [
-      { status: 'pago', comissao_gerada: 100 },   // de venda ativa
-      { status: 'pago', comissao_gerada: 50 },    // de venda distratada (pago real pré-distrato)
+      { status: 'pago', comissao_gerada: 100 },
+      { status: 'pago', comissao_gerada: 50 },
       { status: 'cancelado', comissao_gerada: 77 }, // baixa falsa já curada
     ]
     expect(somarComissao(pagos.filter(isPago))).toBeCloseTo(150, 2)
     expect(somarComissao(pagos)).toBeCloseTo(150, 2)
+  })
+})
+
+describe('isVendaAtiva — o recorte das telas do corretor (decisão 2026-08-28)', () => {
+  it('distratada e excluída ficam FORA; ativa entra', () => {
+    expect(isVendaAtiva({ status: 'pago', excluido: false })).toBe(true)
+    expect(isVendaAtiva({ status: 'pendente', excluido: null })).toBe(true)
+    expect(isVendaAtiva({ status: 'distrato', excluido: false })).toBe(false)
+    expect(isVendaAtiva({ status: 'pago', excluido: true })).toBe(false)
+  })
+  it('o VGV exibido e a comissão exibida usam o MESMO recorte (o teste dos 4%)', () => {
+    // Caso real: VGV com distratos 12.194.701,91 → 4% = 487.788,08, mas a comissão
+    // exibida era 390.240,58 (= 4% de 9.756.014,26, só ativas). Quem conferisse não fechava.
+    const vendas = [
+      { id: 'a', status: 'pago', excluido: false, valor_venda: 9756014.26 },
+      { id: 'b', status: 'distrato', excluido: false, valor_venda: 2438687.65 },
+    ]
+    const vgvExibido = vendas.filter(isVendaAtiva).reduce((s, v) => s + v.valor_venda, 0)
+    expect(vgvExibido).toBeCloseTo(9756014.26, 2)
+    expect(vgvExibido * 0.04).toBeCloseTo(390240.57, 2)
   })
 })
