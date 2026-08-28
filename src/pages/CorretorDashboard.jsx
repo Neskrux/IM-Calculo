@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { createPortal } from 'react-dom'
 import { safeGet, safeSet } from '../utils/storage'
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
@@ -312,7 +312,9 @@ const CorretorDashboard = () => {
 
       // Associar vendas a cada cliente. Comissão SEMPRE via pagamentos (R2).
       const clientesComVendas = (data || []).map(cliente => {
-        const vendasCliente = vendas.filter(v => v.cliente_id === cliente.id)
+        // Só vendas ativas: distratada fora de todas as telas do corretor (ver
+        // idsVendasAtivas). Sem isto o "Volume de Vendas" carregaria VGV de contrato morto.
+        const vendasCliente = vendas.filter(v => v.cliente_id === cliente.id && isVendaAtiva(v))
         const vendaIds = new Set(vendasCliente.map(v => v.id))
         const pagamentosCliente = meusPagamentos.filter(p => vendaIds.has(p.venda_id))
         const totalVendas = vendasCliente.reduce((acc, v) => acc + (parseFloat(v.valor_venda) || 0), 0)
@@ -1061,9 +1063,9 @@ const CorretorDashboard = () => {
   // janeiro com TODAS as parcelas pagas (qualquer mês). Igual ao relatório do admin.
   const getRelatorioVendasBase = () => {
     return vendas.filter((venda) => {
-      // Distratada ENTRA: a comissão já paga dela permanece nos totais (decisão da
-      // gestão 2026-06-01, régua única D1 — ver docs/specs/2026-08-28-spec-regua-unica-telas-distrato.md).
-      // A parcela falsa da baixa-em-massa fica de fora porque a cura a marca 'cancelado'.
+      // Distratada fica FORA (ratifica o PR #54 / 2026-07-03) — mesma régua do PDF e
+      // dos cards. Contrato cancelado não entra no relatório de repasse do corretor.
+      if (!isVendaAtiva(venda)) return false
       if (relatorioFiltros.empreendimento && venda.empreendimento_nome !== relatorioFiltros.empreendimento) {
         return false
       }
@@ -1111,14 +1113,10 @@ const CorretorDashboard = () => {
       .filter(pag => pag.status === 'pendente')
       .reduce((acc, pag) => acc + calcularComissaoPagamento(pag), 0)
 
-    // Régua única D2: o CONTADOR mostra só ativas (distrato rotulado do lado);
-    // as SOMAS acima continuam incluindo o pago real de distratada (D1).
-    const contagem = contarVendas(vendasFiltradas)
     return {
       vendasFiltradas,
       pagamentosFiltrados,
-      totalVendas: contagem.ativas,
-      totalDistratos: contagem.distratos,
+      totalVendas: vendasFiltradas.length,
       valorTotalVendas,
       comissaoTotal,
       comissaoPaga,
@@ -1182,11 +1180,25 @@ const CorretorDashboard = () => {
     return calcularComissaoPagamentoCompleto(pagamento, { vendas, percentualFallback })
   }
 
+  // Venda DISTRATADA fica FORA de todas as telas do corretor (decisão 2026-08-28,
+  // que ratifica o PR #54 de 2026-07-03: "relatório do corretor exclui distratos").
+  // Motivo: o contrato não existe mais, e mostrar a comissão dele sem mostrar o VGV
+  // dele quebra a conferência — quem fizesse 4% do volume exibido não fechava com a
+  // comissão exibida. O histórico continua íntegro no banco e no relatório do ADMIN.
+  // Ver docs/specs/2026-08-28-spec-regua-unica-telas-distrato.md.
+  const idsVendasAtivas = useMemo(
+    () => new Set(vendas.filter(isVendaAtiva).map(v => v.id)),
+    [vendas]
+  )
+  const ehDeVendaAtiva = (pag) => idsVendasAtivas.has(pag?.venda_id)
+
   const somarMinhaComissao = (pagamentos, predicate) => {
     if (!Array.isArray(pagamentos)) return 0
+    // Filtra na ORIGEM: todo card de comissão herda a regra, sem cada um repetir o filtro.
+    const doCorretor = pagamentos.filter(ehDeVendaAtiva)
     const lista = predicate
-      ? pagamentos.filter(predicate)
-      : pagamentos.filter(pag => pag.status !== 'cancelado')
+      ? doCorretor.filter(predicate)
+      : doCorretor.filter(pag => pag.status !== 'cancelado')
     return lista.reduce((acc, pag) => acc + calcularComissaoPagamento(pag), 0)
   }
 
@@ -1282,9 +1294,7 @@ const CorretorDashboard = () => {
       {
         name: 'TOTAL EM VENDAS',
         value: formatTicker(getTotalVendas()),
-        change: vendas.length > 0
-          ? `${getVendasCount()} vendas ativas${vendasContagem.distratos > 0 ? ` · ${vendasContagem.distratos} distrato${vendasContagem.distratos > 1 ? 's' : ''}` : ''}`
-          : '',
+        change: getVendasCount() > 0 ? `${getVendasCount()} vendas` : '',
         type: 'positive'
       },
       {
@@ -1694,12 +1704,7 @@ const CorretorDashboard = () => {
               </svg>
               <div className="donut-center">
                 <span className="donut-total">{getVendasCount()}</span>
-                <span className="donut-label">vendas ativas</span>
-                {vendasContagem.distratos > 0 && (
-                  <span className="donut-label" style={{ color: '#ef4444' }}>
-                    · {vendasContagem.distratos} distrato{vendasContagem.distratos > 1 ? 's' : ''}
-                  </span>
-                )}
+                <span className="donut-label">vendas</span>
           </div>
           </div>
             <div className="chart-legend">
@@ -2914,13 +2919,8 @@ const CorretorDashboard = () => {
                 <h3>Resumo Geral</h3>
                 <div className="resumo-cards">
                   <div className="resumo-card-item">
-                    <span className="resumo-titulo">Total de Vendas (ativas)</span>
+                    <span className="resumo-titulo">Total de Vendas</span>
                     <span className="resumo-numero">{relatorioResumo.totalVendas}</span>
-                    {relatorioResumo.totalDistratos > 0 && (
-                      <span className="resumo-titulo" style={{ color: '#ef4444' }}>
-                        · {relatorioResumo.totalDistratos} distrato{relatorioResumo.totalDistratos > 1 ? 's' : ''} (comissão paga incluída)
-                      </span>
-                    )}
                   </div>
                   <div className="resumo-card-item">
                     <span className="resumo-titulo">Comissão Total</span>
