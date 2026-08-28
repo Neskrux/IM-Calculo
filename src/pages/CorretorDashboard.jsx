@@ -35,6 +35,8 @@ import {
   isAtivo,
   dataEfetiva,
   percentualCorretorDaVenda,
+  contarVendas,
+  isVendaAtiva,
 } from '../utils/comissaoCalculator'
 import { parseDataLocal, formatDataBR } from '../utils/datas'
 
@@ -1059,8 +1061,9 @@ const CorretorDashboard = () => {
   // janeiro com TODAS as parcelas pagas (qualquer mês). Igual ao relatório do admin.
   const getRelatorioVendasBase = () => {
     return vendas.filter((venda) => {
-      // Distrato NÃO entra no relatório do corretor (venda cancelada não conta).
-      if (venda.status === 'distrato') return false
+      // Distratada ENTRA: a comissão já paga dela permanece nos totais (decisão da
+      // gestão 2026-06-01, régua única D1 — ver docs/specs/2026-08-28-spec-regua-unica-telas-distrato.md).
+      // A parcela falsa da baixa-em-massa fica de fora porque a cura a marca 'cancelado'.
       if (relatorioFiltros.empreendimento && venda.empreendimento_nome !== relatorioFiltros.empreendimento) {
         return false
       }
@@ -1139,7 +1142,8 @@ const CorretorDashboard = () => {
   }
 
   const getTotalVendas = () => {
-    return filteredVendas.reduce((acc, v) => acc + (parseFloat(v.valor_venda) || 0), 0)
+    // Régua única D2: valor em carteira = vendas ATIVAS (VGV de contrato morto não é carteira).
+    return filteredVendas.filter(isVendaAtiva).reduce((acc, v) => acc + (parseFloat(v.valor_venda) || 0), 0)
   }
 
   // Visao do corretor: calcula a fatia do cargo Corretor por pagamento,
@@ -1187,10 +1191,10 @@ const CorretorDashboard = () => {
   const getComissaoPendente = () => somarMinhaComissao(meusPagamentos, isPendente)
   const getComissaoPaga = () => somarMinhaComissao(meusPagamentos, isPago)
 
-  // Contagem real de vendas (baseado em vendas únicas, não pagamentos)
-  const getVendasCount = () => {
-    return vendas.length
-  }
+  // Contagem canônica (régua única D2): o número principal é de vendas ATIVAS;
+  // distratos aparecem rotulados do lado, nunca somados em silêncio.
+  const vendasContagem = contarVendas(vendas)
+  const getVendasCount = () => vendasContagem.ativas
 
   const percentualCorretor = percentualFallback
 
@@ -1274,7 +1278,9 @@ const CorretorDashboard = () => {
       {
         name: 'TOTAL EM VENDAS',
         value: formatTicker(getTotalVendas()),
-        change: vendas.length > 0 ? `${getVendasCount()} vendas` : '',
+        change: vendas.length > 0
+          ? `${getVendasCount()} vendas ativas${vendasContagem.distratos > 0 ? ` · ${vendasContagem.distratos} distrato${vendasContagem.distratos > 1 ? 's' : ''}` : ''}`
+          : '',
         type: 'positive'
       },
       {
@@ -1684,7 +1690,12 @@ const CorretorDashboard = () => {
               </svg>
               <div className="donut-center">
                 <span className="donut-total">{getVendasCount()}</span>
-                <span className="donut-label">vendas</span>
+                <span className="donut-label">vendas ativas</span>
+                {vendasContagem.distratos > 0 && (
+                  <span className="donut-label" style={{ color: '#ef4444' }}>
+                    · {vendasContagem.distratos} distrato{vendasContagem.distratos > 1 ? 's' : ''}
+                  </span>
+                )}
           </div>
           </div>
             <div className="chart-legend">
@@ -2508,7 +2519,7 @@ const CorretorDashboard = () => {
                   {/* Resumo de Clientes */}
                   <div className="pagamentos-resumo">
                     <div className="resumo-card">
-                      <span className="resumo-label">Total de Clientes</span>
+                      <span className="resumo-label">Total de Clientes (distintos)</span>
                       <span className="resumo-valor">{filteredMeusClientes.length}</span>
                     </div>
                     <div className="resumo-card">

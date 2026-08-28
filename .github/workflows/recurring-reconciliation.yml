@@ -142,6 +142,20 @@ jobs:
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
 
+      # Etapa 3b — CURA de distrato (escreve). Roda DEPOIS do sync (que traz
+      # situacao=3 + data_distrato) e ANTES do detector de stale. Regra composta
+      # canonica (ehBaixaFalsaDeDistrato): paga com VENCIMENTO apos o distrato E
+      # baixa no dia do distrato ou depois -> cancelado motivo 'distrato'; pagas
+      # reais pre-distrato preservadas. Idempotente (rerun = 0). Decisao D4 da
+      # spec docs/specs/2026-08-28-spec-regua-unica-telas-distrato.md: antes era
+      # script one-shot gated e todo distrato novo re-envenenava as telas ate
+      # alguem rodar na mao (caso 1002 D, 25/08 — R$ 12.868,71 fantasma).
+      - name: Curar baixa-em-massa de distrato
+        run: node scripts/curar-distrato-apply.mjs --apply
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+
       # Etapa 4 — detector de distrato-stale. READ-ONLY, roda DEPOIS do sync (le o estado
       # ja atualizado). Nao escreve no banco e nunca derruba o job: e aviso no log + artifact.
       # Existe porque em julho dois contratos cancelados no Sienge (710 A c63 e 404 A c8)
@@ -165,6 +179,7 @@ jobs:
             docs/aplicacao-data-prevista-*.json
             docs/reconciliacao-geral-*.json
             docs/sincronizacao-vendas-sienge-*.json
+            docs/auditorias/distrato-cron/cura-distrato-*.json
           retention-days: 30
 
       - name: Check Sienge cache contents
@@ -208,6 +223,15 @@ jobs:
             E=$(jq '.counts.errors' "$R"); U=$(jq '.counts.updated' "$R")
             echo "data_prevista: updated=$U errors=$E ($R)"
             [ "$E" -gt 0 ] && fail=1
+          fi
+          # cura de distrato (cron)
+          R=$(ls -t docs/auditorias/distrato-cron/cura-distrato-*-apply.json 2>/dev/null | head -1)
+          if [ -n "$R" ]; then
+            E=$(jq '.counts.errors' "$R"); C=$(jq '.counts.updated_cancelado' "$R")
+            V=$(jq '.verificacao_pos_apply.pagas_pos_distrato_restantes // 0' "$R")
+            echo "cura distrato: canceladas=$C restantes_pos_distrato=$V errors=$E ($R)"
+            [ "$E" -gt 0 ] && fail=1
+            [ "$V" -gt 0 ] && fail=1
           fi
           # reconciliacao geral
           R=$(ls -t docs/reconciliacao-geral-*-aplicado.json 2>/dev/null | head -1)
