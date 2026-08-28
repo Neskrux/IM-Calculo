@@ -1111,10 +1111,14 @@ const CorretorDashboard = () => {
       .filter(pag => pag.status === 'pendente')
       .reduce((acc, pag) => acc + calcularComissaoPagamento(pag), 0)
 
+    // Régua única D2: o CONTADOR mostra só ativas (distrato rotulado do lado);
+    // as SOMAS acima continuam incluindo o pago real de distratada (D1).
+    const contagem = contarVendas(vendasFiltradas)
     return {
       vendasFiltradas,
       pagamentosFiltrados,
-      totalVendas: vendasFiltradas.length,
+      totalVendas: contagem.ativas,
+      totalDistratos: contagem.distratos,
       valorTotalVendas,
       comissaoTotal,
       comissaoPaga,
@@ -2910,8 +2914,13 @@ const CorretorDashboard = () => {
                 <h3>Resumo Geral</h3>
                 <div className="resumo-cards">
                   <div className="resumo-card-item">
-                    <span className="resumo-titulo">Total de Vendas</span>
+                    <span className="resumo-titulo">Total de Vendas (ativas)</span>
                     <span className="resumo-numero">{relatorioResumo.totalVendas}</span>
+                    {relatorioResumo.totalDistratos > 0 && (
+                      <span className="resumo-titulo" style={{ color: '#ef4444' }}>
+                        · {relatorioResumo.totalDistratos} distrato{relatorioResumo.totalDistratos > 1 ? 's' : ''} (comissão paga incluída)
+                      </span>
+                    )}
                   </div>
                   <div className="resumo-card-item">
                     <span className="resumo-titulo">Comissão Total</span>
