@@ -1,4 +1,11 @@
-// Cura de distrato — APPLY (gated, requer OK explícito da gestão).
+// Cura de distrato — APPLY.
+//
+// DESDE 2026-08-28 roda TODO DIA no cron (recurring-reconciliation.yml, depois do
+// sync que traz situacao=3/data_distrato) — decisão D4 da spec
+// docs/specs/2026-08-28-spec-regua-unica-telas-distrato.md. Antes era one-shot
+// gated, e todo distrato novo re-envenenava as telas até alguém rodar na mão
+// (caso 1002 D, 25/08: 45 baixas falsas = R$ 12.868,71 de comissão fantasma que
+// o financeiro da Corazza flagrou nas telas do corretor).
 //
 // Recalcula o plano AO VIVO (mesma lógica do dry-run, nunca confia em JSON velho) e:
 //   1. "Excluir Baixa": status='pendente' + data_pagamento=NULL no MESMO UPDATE (trigger 020)
@@ -17,6 +24,7 @@
 
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs'
 import { createClient } from '@supabase/supabase-js'
+import { ehBaixaFalsaDeDistrato } from '../src/utils/comissaoCalculator.js'
 
 const APPLY = process.argv.includes('--apply')
 const FIGUEIRA = '0d7d01f4-c398-4d9a-a280-13f44c957279'
@@ -48,7 +56,7 @@ for (let i = 0; i < ids.length; i += 50) {
   const chunk = ids.slice(i, i + 50)
   for (let f = 0; ; f += PAGE) {
     const { data } = await supa.from('pagamentos_prosoluto')
-      .select('id, venda_id, numero_parcela, tipo, valor, comissao_gerada, data_pagamento, status')
+      .select('id, venda_id, numero_parcela, tipo, valor, comissao_gerada, data_pagamento, data_prevista, status')
       .in('venda_id', chunk).eq('status', 'pago').order('id').range(f, f + PAGE - 1)
     if (!data?.length) break
     for (const p of data) { if (!pagasPorVenda.has(p.venda_id)) pagasPorVenda.set(p.venda_id, []); pagasPorVenda.get(p.venda_id).push(p) }
@@ -62,8 +70,14 @@ for (const v of vendas) {
   const dd = d10(v.data_distrato)
   if (!dd) continue
   const pagas = pagasPorVenda.get(v.id) || []
-  const pos = pagas.filter((p) => d10(p.data_pagamento) >= dd)
-  const pre = pagas.filter((p) => d10(p.data_pagamento) < dd)
+  // Régua composta canônica (ehBaixaFalsaDeDistrato, testada em
+  // comissaoCalculator.test.js): falsa = VENCIMENTO após o distrato E baixa no dia
+  // do distrato ou depois. Preserva antecipação real (lição 412 B) e recebimento
+  // de parcela madura no próprio dia. A régua antiga (só data_pagamento >= dd)
+  // cancelava recebimento legítimo.
+  const vendaRegua = { status: 'distrato', situacao_contrato: '3', data_distrato: dd }
+  const pos = pagas.filter((p) => ehBaixaFalsaDeDistrato(p, vendaRegua))
+  const pre = pagas.filter((p) => !ehBaixaFalsaDeDistrato(p, vendaRegua))
   plano.push({ venda: v, dd, pos, pre })
 }
 const totCancelar = plano.reduce((s, x) => s + x.pos.length, 0)
@@ -128,14 +142,15 @@ if (!APPLY) {
   for (const x of plano) {
     const { count } = await supa.from('pagamentos_prosoluto')
       .select('id', { count: 'exact', head: true })
-      .eq('venda_id', x.venda.id).eq('status', 'pago').gte('data_pagamento', x.dd)
+      .eq('venda_id', x.venda.id).eq('status', 'pago')
+      .gt('data_prevista', x.dd).gte('data_pagamento', x.dd)
     restantes += count || 0
   }
   out.verificacao_pos_apply = { pagas_pos_distrato_restantes: restantes }
   console.log(`  verificação: pagas pós-distrato restantes = ${restantes} ${restantes === 0 ? '✓' : '❌'}`)
 }
 
-mkdirSync('docs/auditorias/2026-06-10-distrato', { recursive: true })
-const f = `docs/auditorias/2026-06-10-distrato/cura-distrato-${APPLY ? 'apply' : 'dryrun2'}.json`
+mkdirSync('docs/auditorias/distrato-cron', { recursive: true })
+const f = `docs/auditorias/distrato-cron/cura-distrato-${new Date().toISOString().slice(0, 10)}-${APPLY ? 'apply' : 'dryrun'}.json`
 writeFileSync(f, JSON.stringify(out, null, 2))
 console.log(`\nSalvo: ${f}`)

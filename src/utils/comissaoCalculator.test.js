@@ -4,6 +4,9 @@ import {
   taxaCoordenadoraDaVenda, taxaCoordenadoraPorCutover, CUTOVER_TAXA_COORDENADORA,
   fatiaCargoDoPagamento,
   percentualCorretorDaVenda,
+  contarVendas,
+  ehBaixaFalsaDeDistrato,
+  comissaoHeaderVenda,
 } from './comissaoCalculator'
 
 // Invariante financeiro dos 3 números do corretor (cenário BDD da spec mobile):
@@ -206,5 +209,118 @@ describe('percentualCorretorDaVenda (conta multi-tipo)', () => {
   it('venda sem tipo → herda o tipo do perfil; sem nada → externo (4)', () => {
     expect(percentualCorretorDaVenda({}, perfilInterno)).toBe(2.5)
     expect(percentualCorretorDaVenda({}, null)).toBe(4)
+  })
+})
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Régua única das telas do corretor + cura de distrato
+// Spec: docs/specs/2026-08-28-spec-regua-unica-telas-distrato.md
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('contarVendas (régua única de contagem — D2)', () => {
+  const vendas = [
+    { status: 'pago', excluido: false },
+    { status: 'pendente', excluido: null },
+    { status: 'distrato', excluido: false },
+    { status: 'distrato', excluido: false },
+    { status: 'pago', excluido: true },      // soft-deletada: fora de tudo
+  ]
+  it('separa ativas, distratos e total visível', () => {
+    expect(contarVendas(vendas)).toEqual({ ativas: 2, distratos: 2, total: 4 })
+  })
+  it('lista vazia → tudo zero', () => {
+    expect(contarVendas([])).toEqual({ ativas: 0, distratos: 0, total: 0 })
+  })
+  it('venda sem status conta como ativa (não some do painel)', () => {
+    expect(contarVendas([{ excluido: false }]).ativas).toBe(1)
+  })
+})
+
+describe('ehBaixaFalsaDeDistrato (régua física da cura — D4)', () => {
+  const distratada = { status: 'distrato', situacao_contrato: '3', data_distrato: '2026-08-25' }
+  it('paga com VENCIMENTO após o distrato = falsa (caso 1002 D)', () => {
+    expect(ehBaixaFalsaDeDistrato(
+      { status: 'pago', data_prevista: '2027-08-10', data_pagamento: '2026-08-25' }, distratada
+    )).toBe(true)
+  })
+  it('paga com vencimento até a data do distrato = dinheiro real, preserva', () => {
+    expect(ehBaixaFalsaDeDistrato(
+      { status: 'pago', data_prevista: '2026-08-10', data_pagamento: '2026-08-11' }, distratada
+    )).toBe(false)
+  })
+  it('data_pagamento NÃO decide (a baixa em massa reescreve a data das legítimas)', () => {
+    expect(ehBaixaFalsaDeDistrato(
+      { status: 'pago', data_prevista: '2026-07-10', data_pagamento: '2026-08-25' }, distratada
+    )).toBe(false)
+  })
+  it('parcela futura paga ANTES do distrato = antecipação real, preserva (lição 412 B)', () => {
+    expect(ehBaixaFalsaDeDistrato(
+      { status: 'pago', data_prevista: '2027-01-10', data_pagamento: '2026-05-02' }, distratada
+    )).toBe(false)
+  })
+  it('aceita venda com situacao_contrato=3 antes do status=distrato (janela do sync)', () => {
+    expect(ehBaixaFalsaDeDistrato(
+      { status: 'pago', data_prevista: '2027-08-10', data_pagamento: '2026-08-25' },
+      { status: 'pago', situacao_contrato: '3', data_distrato: '2026-08-25' }
+    )).toBe(true)
+  })
+  it('venda ativa nunca tem baixa falsa por esta régua', () => {
+    expect(ehBaixaFalsaDeDistrato(
+      { status: 'pago', data_prevista: '2030-01-10' }, { status: 'pago' }
+    )).toBe(false)
+  })
+  it('distrato sem data_distrato → false (S6 do reconciliador cobre essa janela)', () => {
+    expect(ehBaixaFalsaDeDistrato(
+      { status: 'pago', data_prevista: '2030-01-10' }, { status: 'distrato', data_distrato: null }
+    )).toBe(false)
+  })
+  it('parcela pendente/cancelada não é baixa', () => {
+    expect(ehBaixaFalsaDeDistrato({ status: 'pendente', data_prevista: '2030-01-10' }, distratada)).toBe(false)
+    expect(ehBaixaFalsaDeDistrato({ status: 'cancelado', data_prevista: '2030-01-10' }, distratada)).toBe(false)
+  })
+})
+
+describe('comissaoHeaderVenda (header do PDF = mesma régua das linhas — D6)', () => {
+  // calcPorCargo injetado: devolve a decomposição por cargo de uma parcela
+  const calcPorCargo = (pag) => [
+    { nome_cargo: 'Corretor', valor: (parseFloat(pag.comissao_gerada) || 0) * 4 / 7 },
+    { nome_cargo: 'Ferretti Consultoria', valor: (parseFloat(pag.comissao_gerada) || 0) * 1 / 7 },
+  ]
+  const pags = [
+    { status: 'pago', comissao_gerada: 70 },
+    { status: 'pendente', comissao_gerada: 35 },
+    { status: 'cancelado', comissao_gerada: 999 },  // nunca entra
+  ]
+  it('filtro de cargo → soma a fatia DAQUELE cargo (não o total)', () => {
+    const r = comissaoHeaderVenda(pags, { cargoId: 'Corretor', mostrarTotal: false }, calcPorCargo)
+    expect(r.valor).toBeCloseTo((70 + 35) * 4 / 7, 2)
+    expect(r.rotulo).toBe('Comissão (Corretor)')
+  })
+  it('filtro Total → soma comissao_gerada e ROTULA como total de todos os cargos', () => {
+    const r = comissaoHeaderVenda(pags, { cargoId: '__total__', mostrarTotal: true }, calcPorCargo)
+    expect(r.valor).toBeCloseTo(105, 2)
+    expect(r.rotulo).toBe('Comissão total (todos os cargos)')
+  })
+  it('sem filtro de cargo → total rotulado', () => {
+    const r = comissaoHeaderVenda(pags, { cargoId: '', mostrarTotal: false }, calcPorCargo)
+    expect(r.valor).toBeCloseTo(105, 2)
+    expect(r.rotulo).toBe('Comissão total (todos os cargos)')
+  })
+  it('parcela cancelada nunca infla o header', () => {
+    const r = comissaoHeaderVenda(pags, { cargoId: 'Corretor', mostrarTotal: false }, calcPorCargo)
+    expect(r.valor).toBeLessThan(999 * 4 / 7)
+  })
+})
+
+describe('régua única — pago real de distratada permanece na soma (D1, trava de regressão)', () => {
+  it('somarComissao NÃO olha status da venda: paga de distratada conta', () => {
+    // a função recebe só pagamentos; a política é: quem filtra por venda está errado.
+    const pagos = [
+      { status: 'pago', comissao_gerada: 100 },   // de venda ativa
+      { status: 'pago', comissao_gerada: 50 },    // de venda distratada (pago real pré-distrato)
+      { status: 'cancelado', comissao_gerada: 77 }, // baixa falsa já curada
+    ]
+    expect(somarComissao(pagos.filter(isPago))).toBeCloseTo(150, 2)
+    expect(somarComissao(pagos)).toBeCloseTo(150, 2)
   })
 })

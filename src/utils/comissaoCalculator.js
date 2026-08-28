@@ -231,3 +231,65 @@ export function fatiaCargoDoPagamento(pagamento, venda, nomeCargo, cargosDoEmp =
   const comissaoTotal = calcularComissaoPagamentoCompleto(pagamento, { vendas: [venda] })
   return comissaoTotal * (pctCargo / pctTotal)
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Régua única das telas do corretor + cura de distrato
+// Spec: docs/specs/2026-08-28-spec-regua-unica-telas-distrato.md
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Contagem canônica de vendas pra QUALQUER contador de tela (D2 da spec).
+ * "Vendas" = ativas (isVendaAtiva). Distratos aparecem rotulados do lado, nunca
+ * somados no número principal — foi a mistura silenciosa (donut contava 31,
+ * Relatórios 25) que o financeiro flagrou como inconsistência.
+ */
+export const contarVendas = (vendas = []) => {
+  const visiveis = vendas.filter((v) => v?.excluido !== true)
+  const ativas = visiveis.filter(isVendaAtiva).length
+  const distratos = visiveis.filter((v) => v?.status === 'distrato').length
+  return { ativas, distratos, total: visiveis.length }
+}
+
+/**
+ * Régua FÍSICA da baixa-em-massa de distrato: ao distratar, o Sienge dá baixa em
+ * TODAS as parcelas do contrato na data do distrato — inclusive as que só
+ * venceriam anos depois. Só o VENCIMENTO decide: paga com data_prevista posterior
+ * à data do distrato nunca foi dinheiro. `data_pagamento` NÃO serve de régua
+ * porque a baixa em massa reescreve a data das parcelas legitimamente pagas.
+ * Sem `data_distrato` conhecida → false (a janela é coberta pelo guard S6 do
+ * reconciliador, que parqueia a venda). Usada pela cura (curar-distrato --auto).
+ */
+export const ehBaixaFalsaDeDistrato = (pagamento, venda) => {
+  if (pagamento?.status !== STATUS.PAGO) return false
+  const ehDistratada = venda?.status === 'distrato' || venda?.situacao_contrato === '3'
+  if (!ehDistratada || !venda?.data_distrato) return false
+  const dd = String(venda.data_distrato).slice(0, 10)
+  const venc = String(pagamento?.data_prevista || '').slice(0, 10)
+  if (!venc || venc <= dd) return false
+  // Parcela futura paga ANTES do distrato é antecipação real do cliente (lição
+  // 412 B: régua só por data de pagamento cancelava recebimento legítimo).
+  const pg = String(pagamento?.data_pagamento || '').slice(0, 10)
+  if (pg && pg < dd) return false
+  return true
+}
+
+/**
+ * Header "Valor Comissão" do PDF do Admin decide pela MESMA régua das linhas da
+ * tabela (filtro de cargo), não pelo percentual_corretor do cadastro — que é NULL
+ * pra vários corretores e fazia o header cair no total (7%) enquanto as linhas
+ * mostravam a fatia (4%): o card não fechava consigo mesmo (caso 908 C).
+ * `calcPorCargo` = calcularComissaoPorCargoPagamento (injetado; vive no Admin).
+ */
+export const comissaoHeaderVenda = (pagamentos = [], { cargoId, mostrarTotal } = {}, calcPorCargo) => {
+  const ativos = pagamentos.filter(isAtivo)
+  const porCargo = cargoId && cargoId !== '__total__' && !mostrarTotal
+  if (porCargo && typeof calcPorCargo === 'function') {
+    const valor = ativos.reduce((acc, p) => {
+      const cargo = calcPorCargo(p).find((c) => c.nome_cargo === cargoId)
+      return acc + (cargo?.valor ?? 0)
+    }, 0)
+    return { valor, rotulo: `Comissão (${cargoId})` }
+  }
+  const valor = ativos.reduce((acc, p) => acc + (parseFloat(p.comissao_gerada) || 0), 0)
+  return { valor, rotulo: 'Comissão total (todos os cargos)' }
+}

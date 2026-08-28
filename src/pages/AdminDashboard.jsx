@@ -31,7 +31,7 @@ import '../styles/Dashboard.css'
 import '../styles/EmpreendimentosPage.css'
 import { LayoutGrid, List } from 'lucide-react'
 import { safeGet, safeSet } from '../utils/storage'
-import { calcularFatorComissao, calcularComissaoPagamento, dataEfetiva, taxaCoordenadoraDaVenda } from '../utils/comissaoCalculator'
+import { calcularFatorComissao, calcularComissaoPagamento, dataEfetiva, taxaCoordenadoraDaVenda, comissaoHeaderVenda } from '../utils/comissaoCalculator'
 import { parseDataLocal, formatDataBR } from '../utils/datas'
 import { baixarPdfBase64 } from '../utils/pdfBase64'
 import { triggerFullSync, triggerNormalizeOnly, probeSienge, pollRunUntilDone } from '../lib/siengeSyncApi'
@@ -5486,20 +5486,17 @@ const AdminDashboard = () => {
         const valorProSolutoCalc = grupo.pagamentos.filter(p => p.status !== 'cancelado').reduce((acc, p) => acc + (parseFloat(p.valor) || 0), 0)
         const valorProSoluto = valorProSolutoDb > 0 ? valorProSolutoDb : (valorProSolutoCalc > 0 ? valorProSolutoCalc : valorVenda)
         
-        // Calcular comissão da venda
-        let comissaoVenda = 0
-        if (percentualCorretorTotais !== null) {
-          // Soma viva da comissao do cargo "Corretor" via fator (ver .claude/rules/fator-comissao.md).
-          comissaoVenda = grupo.pagamentos.filter(p => p.status !== 'cancelado').reduce((acc, p) => {
-            const cargos = calcularComissaoPorCargoPagamento(p)
-            const cargoCorretor = cargos.find(c => c.nome_cargo === 'Corretor' || c.nome_cargo?.toLowerCase().includes('corretor'))
-            return acc + (cargoCorretor?.valor ?? 0)
-          }, 0)
-        } else {
-          // soma viva dos pagamentos — nao usar venda.comissao_total (snapshot stale
-          // em 89.7% das vendas, ver .claude/rules/visualizacao-totais.md)
-          comissaoVenda = grupo.totalComissao || grupo.pagamentos.filter(p => p.status !== 'cancelado').reduce((acc, p) => acc + (parseFloat(p.comissao_gerada) || 0), 0)
-        }
+        // Comissão do header decide pela MESMA régua das linhas da tabela (filtro de
+        // cargo) — nunca pelo percentual_corretor do cadastro, que é NULL pra vários
+        // corretores e fazia o header mostrar o total (7%) enquanto as linhas mostravam
+        // a fatia (4%): o card não fechava consigo mesmo (caso 908 C, 2026-08-28).
+        // Soma viva dos pagamentos — nunca venda.comissao_total (snapshot stale,
+        // ver .claude/rules/visualizacao-totais.md).
+        const { valor: comissaoVenda, rotulo: rotuloComissaoVenda } = comissaoHeaderVenda(
+          grupo.pagamentos,
+          { cargoId: relatorioFiltros.cargoId, mostrarTotal: relatorioFiltros.cargoId === '__total__' },
+          calcularComissaoPorCargoPagamento
+        )
         
         // ========================================
         // HEADER DA VENDA - Borda fina preta, cor dourada, valores sem |, Cliente/Corretor dentro
@@ -5523,7 +5520,7 @@ const AdminDashboard = () => {
         doc.setFontSize(8)
         doc.setFont('helvetica', 'normal')
         doc.setTextColor(...cores.cinzaEscuro)
-        const linhaValores = `Valor Venda: ${formatCurrency(valorVenda)}   Valor Pro-Soluto: ${formatCurrency(valorProSoluto)}   Valor Comissão: ${formatCurrency(comissaoVenda)}`
+        const linhaValores = `Valor Venda: ${formatCurrency(valorVenda)}   Valor Pro-Soluto: ${formatCurrency(valorProSoluto)}   ${rotuloComissaoVenda}: ${formatCurrency(comissaoVenda)}`
         doc.text(linhaValores, 18, yPosition + 18)
         
         // Cliente e Corretor abaixo dos valores, dentro do card (sem |)
