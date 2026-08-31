@@ -7,7 +7,7 @@
  *
  * Spec: docs/specs/2026-08-31-spec-nota-fiscal-corretor.md
  */
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Download, FileText, RefreshCw, Send, X } from 'lucide-react'
 import {
   derivarSituacaoCompetencia,
@@ -37,6 +37,14 @@ export default function NotasFiscaisPainel({ adminId, comissaoDoCorretorNaCompet
   const [carregando, setCarregando] = useState(true)
   const [erro, setErro] = useState(null)
   const [enviandoPor, setEnviandoPor] = useState(null)
+  const formRef = useRef(null)
+
+  // O formulario abre NO TOPO do painel e rola ate ele. Antes ele era o ultimo
+  // elemento da pagina: com 72 corretores na tabela, clicar "enviar por ele"
+  // renderizava o form muito abaixo da dobra e parecia que o botao nao fazia nada.
+  useEffect(() => {
+    if (enviandoPor) formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }, [enviandoPor])
 
   const carregar = useCallback(async () => {
     setCarregando(true)
@@ -147,6 +155,32 @@ export default function NotasFiscaisPainel({ adminId, comissaoDoCorretorNaCompet
         </div>
       </div>
 
+      {enviandoPor && (
+        <div className="nf-card nf-card-form" ref={formRef}>
+          <h3>
+            Enviar nota por {enviandoPor.nome}
+            <button
+              type="button"
+              className="nf-link"
+              style={{ float: 'right' }}
+              onClick={() => setEnviandoPor(null)}
+            >
+              <X size={14} /> fechar
+            </button>
+          </h3>
+          <NotaFiscalForm
+            corretor={enviandoPor}
+            criadoPor={adminId}
+            competencia={mes}
+            onCancelar={() => setEnviandoPor(null)}
+            onEnviado={() => {
+              setEnviandoPor(null)
+              carregar()
+            }}
+          />
+        </div>
+      )}
+
       {erro && <p className="nf-falha">{erro}</p>}
 
       <div className="nf-card">
@@ -170,7 +204,7 @@ export default function NotasFiscaisPainel({ adminId, comissaoDoCorretorNaCompet
                 {situacao.naoEnviaram.map(({ corretor }) => {
                   const comissao = comissaoDe(corretor.id)
                   return (
-                    <tr key={corretor.id}>
+                    <tr key={corretor.id} className={enviandoPor?.id === corretor.id ? 'nf-selecionada' : undefined}>
                       <td>
                         {corretor.nome}
                         <span className="nf-pill faltou" style={{ marginLeft: 8 }}>não enviou</span>
@@ -245,31 +279,6 @@ export default function NotasFiscaisPainel({ adminId, comissaoDoCorretorNaCompet
         )}
       </div>
 
-      {enviandoPor && (
-        <div className="nf-card">
-          <h3>
-            Enviar nota por {enviandoPor.nome}
-            <button
-              type="button"
-              className="nf-link"
-              style={{ float: 'right' }}
-              onClick={() => setEnviandoPor(null)}
-            >
-              <X size={14} /> fechar
-            </button>
-          </h3>
-          <NotaFiscalForm
-            corretor={enviandoPor}
-            criadoPor={adminId}
-            competencia={mes}
-            onCancelar={() => setEnviandoPor(null)}
-            onEnviado={() => {
-              setEnviandoPor(null)
-              carregar()
-            }}
-          />
-        </div>
-      )}
     </div>
   )
 }

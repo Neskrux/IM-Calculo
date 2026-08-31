@@ -281,3 +281,37 @@
   .nf-acoes { justify-content: stretch; }
   .nf-acoes .nf-btn { flex: 1; justify-content: center; }
 }
+
+/* Formulário aberto pela controladoria: precisa se anunciar, porque a lista
+   abaixo dele tem 72 linhas e o clique vinha parecendo sem efeito. */
+.nf-card-form {
+  border-color: var(--accent-primary, #c9a962);
+  box-shadow: 0 0 0 1px var(--accent-primary, #c9a962), 0 12px 32px rgba(0, 0, 0, 0.45);
+  scroll-margin-top: 12px;
+}
+
+.nf-tabela tr.nf-selecionada {
+  background: rgba(201, 169, 98, 0.12);
+  box-shadow: inset 3px 0 0 var(--accent-primary, #c9a962);
+}
+
+/* A coluna de ação é a mais importante da linha e era justamente a que ficava
+   cortada quando a tabela rolava na horizontal. Fica colada à direita. */
+.nf-tabela th:last-child,
+.nf-tabela td:last-child {
+  position: sticky;
+  right: 0;
+  background: var(--bg-card, rgba(18, 18, 18, 0.95));
+  box-shadow: -8px 0 12px -8px rgba(0, 0, 0, 0.6);
+}
+
+.nf-tabela tr.nf-selecionada td:last-child {
+  background: #1c1913;
+}
+
+.nf-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+}
