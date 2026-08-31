@@ -25,11 +25,12 @@ import EmpreendimentoGaleria from '../components/EmpreendimentoGaleria'
 import VendaDocumentos from '../components/VendaDocumentos'
 import { gerarBoletoPdfBase64 } from '../utils/ailosBoletoPdf'
 import ProfilePhotoModal from '../components/ProfilePhotoModal'
+import NotasFiscaisPainel from '../components/admin/NotasFiscaisPainel'
 // import CadastrarCorretores from '../components/CadastrarCorretores'
 // import ImportarVendas from '../components/ImportarVendas'
 import '../styles/Dashboard.css'
 import '../styles/EmpreendimentosPage.css'
-import { LayoutGrid, List } from 'lucide-react'
+import { LayoutGrid, List, FileCheck } from 'lucide-react'
 import { safeGet, safeSet } from '../utils/storage'
 import { calcularFatorComissao, calcularComissaoPagamento, dataEfetiva, taxaCoordenadoraDaVenda, comissaoHeaderVenda } from '../utils/comissaoCalculator'
 import { parseDataLocal, formatDataBR } from '../utils/datas'
@@ -742,7 +743,7 @@ const CORRETOR_SEARCH_FIELDS = ['nome', 'email', { key: 'telefone', tipo: 'numer
 const EMP_SEARCH_FIELDS = ['nome', 'descricao']
 
 const AdminDashboard = () => {
-  const { userProfile, signOut, loading: authLoading } = useAuth()
+  const { user, userProfile, signOut, loading: authLoading } = useAuth()
   const { tab } = useParams()
   const navigate = useNavigate()
   const location = useLocation()
@@ -1426,6 +1427,36 @@ const AdminDashboard = () => {
     })
   }
   
+  // FATIA DO CARGO 'Corretor' por corretor e por MES, pra a aba de Notas Fiscais
+  // mostrar "valor declarado x comissao do mes" lado a lado.
+  // Usa a MESMA regua do PDF (filtro de cargo 'Corretor'), nunca comissao_gerada
+  // cru — que e o TOTAL de todos os cargos. Ver .claude/rules/comissao-corretor.md.
+  // So calcula quando a aba esta aberta: varrer ~19k parcelas nao pode pesar nas
+  // outras telas.
+  const comissaoCorretorPorMes = useMemo(() => {
+    const mapa = new Map()
+    if (activeTab !== 'notas-fiscais') return mapa
+    const corretorDaVenda = new Map(vendas.map(v => [v.id, v.corretor_id]))
+    pagamentos.forEach(pag => {
+      if (pag.status !== 'pago') return
+      const corretorId = corretorDaVenda.get(pag.venda_id)
+      if (!corretorId) return
+      const mes = String(pag.data_pagamento || '').slice(0, 7)
+      if (!mes) return
+      const fatia = calcularComissaoPorCargoPagamento(pag).find(c => c.nome_cargo === 'Corretor')
+      if (!fatia) return
+      const chave = `${corretorId}|${mes}`
+      mapa.set(chave, (mapa.get(chave) || 0) + (fatia.valor || 0))
+    })
+    return mapa
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab, vendas, pagamentos, empreendimentos, coordenadoras])
+
+  const comissaoCorretorNaCompetencia = (corretorId, competencia) => {
+    if (!corretorId || !competencia) return null
+    return comissaoCorretorPorMes.get(`${corretorId}|${String(competencia).slice(0, 7)}`) ?? 0
+  }
+
   // Calcular comissão total de um pagamento (soma de todos os cargos)
   const calcularComissaoTotalPagamento = (pagamento) => {
     const comissoesPorCargo = calcularComissaoPorCargoPagamento(pagamento)
@@ -6385,6 +6416,14 @@ const AdminDashboard = () => {
             <Barcode size={20} />
             <span>Boletos</span>
           </button>
+          <button
+            className={`nav-item ${activeTab === 'notas-fiscais' ? 'active' : ''}`}
+            onClick={() => navigate('/admin/notas-fiscais')}
+            title="Notas fiscais dos corretores"
+          >
+            <FileCheck size={20} />
+            <span>Notas Fiscais</span>
+          </button>
           <button 
             className={`nav-item ${activeTab === 'relatorios' ? 'active' : ''}`}
             onClick={() => navigate('/admin/relatorios')}
@@ -6496,6 +6535,7 @@ const AdminDashboard = () => {
             {activeTab === 'auditoria' && 'Central de Auditoria'}
             {activeTab === 'clientes' && 'Cadastro de Clientes'}
             {activeTab === 'boletos' && 'Boletos dos Clientes'}
+            {activeTab === 'notas-fiscais' && 'Notas Fiscais dos Corretores'}
             {activeTab === 'relatorios' && 'Relatórios'}
             {activeTab === 'preview-pdf' && 'Ver PDF'}
             {activeTab === 'solicitacoes' && 'Solicitações'}
@@ -8920,6 +8960,14 @@ const AdminDashboard = () => {
               </div>
             )}
           </div>
+        )}
+
+        {/* Aba Notas Fiscais — quem mandou e quem nao mandou nota no mes */}
+        {activeTab === 'notas-fiscais' && (
+          <NotasFiscaisPainel
+            adminId={user?.id}
+            comissaoDoCorretorNaCompetencia={comissaoCorretorNaCompetencia}
+          />
         )}
 
         {/* Aba Boletos — cobrança dos CLIENTES (mundo separado das comissões) */}

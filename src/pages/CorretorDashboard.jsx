@@ -23,6 +23,7 @@ import { gerarRelatorioCorretorPDF } from '../utils/relatorioCorretorPDF'
 import InputDataBR from "../components/InputDataBR"
 import { casaBusca } from '../utils/searchUtils'
 import ProfilePhotoModal from '../components/ProfilePhotoModal'
+import NotasFiscaisCorretor from '../components/corretor/NotasFiscaisCorretor'
 import '../styles/Dashboard.css'
 import '../styles/CorretorDashboard.css'
 import '../styles/EmpreendimentosPage.css'
@@ -122,6 +123,11 @@ const CorretorDashboard = () => {
   // Sem nada pra criar, a aba "Solicitações" (só histórico) sai da navegação.
   // Volta sozinha se qualquer criação acima for reativada.
   const SOLICITACOES_OCULTA = REGISTRO_VENDA_CONGELADO && REGISTRO_CLIENTE_CONGELADO
+
+  // Rollout em duas etapas (decisao do Jonas, 31/08): primeiro so o Admin, pra a
+  // controladoria testar em producao; depois abre pros 72 corretores. Virar pra
+  // false libera a aba — nao ha nada alem desta linha pra mexer.
+  const NOTA_FISCAL_OCULTA_PARA_CORRETOR = true
   const [showNovoClienteModal, setShowNovoClienteModal] = useState(false)
   const [message, setMessage] = useState({ type: '', text: '' })
   const [todosClientes, setTodosClientes] = useState([])
@@ -1412,6 +1418,7 @@ const CorretorDashboard = () => {
     { path: '/corretor/pagamentos', label: 'Receber', icon: CreditCard },
     { path: '/corretor/clientes', label: 'Clientes', icon: UserPlus },
     { path: '/corretor/relatorios', label: 'Relatorio', icon: FileText },
+    ...(NOTA_FISCAL_OCULTA_PARA_CORRETOR ? [] : [{ path: '/corretor/notas-fiscais', label: 'Nota Fiscal', icon: Upload }]),
   ]
 
   const relatorioResumo = getRelatorioResumo()
@@ -1461,6 +1468,16 @@ const CorretorDashboard = () => {
             <FileText size={20} />
             <span>Relatórios</span>
           </button>
+          {!NOTA_FISCAL_OCULTA_PARA_CORRETOR && (
+            <button
+              className={`nav-item ${activeTab === 'notas-fiscais' ? 'active' : ''}`}
+              onClick={() => goTo('/corretor/notas-fiscais')}
+              title="Nota Fiscal"
+            >
+              <FileText size={20} />
+              <span>Nota Fiscal</span>
+            </button>
+          )}
           <button
             className="nav-item"
             onClick={() => window.open('/cadastro-figueira', '_blank', 'noopener')}
@@ -1560,6 +1577,7 @@ const CorretorDashboard = () => {
             {activeTab === 'clientes' && 'Meus Clientes'}
             {activeTab === 'empreendimentos' && 'Empreendimentos'}
             {activeTab === 'relatorios' && 'Relatórios'}
+            {activeTab === 'notas-fiscais' && !NOTA_FISCAL_OCULTA_PARA_CORRETOR && 'Nota Fiscal'}
             {activeTab === 'solicitacoes' && 'Minhas Solicitações'}
             {activeTab === 'perfil' && 'Meu Perfil'}
           </h1>
@@ -3008,6 +3026,10 @@ const CorretorDashboard = () => {
           )}
 
           {/* Solicitações Tab */}
+          {activeTab === 'notas-fiscais' && !NOTA_FISCAL_OCULTA_PARA_CORRETOR && (
+            <NotasFiscaisCorretor corretor={userProfile} />
+          )}
+
           {activeTab === 'solicitacoes' && (
             <section className="solicitacoes-section">
               {/* Mensagem de feedback */}

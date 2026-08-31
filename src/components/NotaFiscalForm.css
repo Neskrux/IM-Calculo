@@ -1,0 +1,283 @@
+/* Nota fiscal do corretor — formulário e painéis.
+   Usa os tokens de tema já definidos em styles/CorretorDashboard.css (:root). */
+
+.nf-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.nf-competencia {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: var(--bg-elevated, #161616);
+  border: 1px solid var(--border-muted, rgba(201, 169, 98, 0.25));
+  color: var(--text-primary, #f5f5f5);
+  font-size: 0.95rem;
+}
+
+.nf-campo {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  min-width: 0;
+}
+
+.nf-campo > span,
+.nf-campo > legend {
+  font-size: 0.82rem;
+  color: var(--text-secondary, #a0a0a0);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 0;
+}
+
+.nf-campo input[type='text'],
+.nf-campo input[type='tel'],
+.nf-campo input[type='number'],
+.nf-campo input[type='file'],
+.nf-campo textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border-default, rgba(255, 255, 255, 0.08));
+  background: var(--bg-secondary, #111);
+  color: var(--text-primary, #f5f5f5);
+  font-size: 0.95rem;
+  font-family: inherit;
+}
+
+.nf-campo input:focus,
+.nf-campo textarea:focus {
+  outline: none;
+  border-color: var(--accent-primary, #c9a962);
+}
+
+.nf-campo textarea { resize: vertical; }
+
+.nf-linha {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.nf-radios {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.nf-radios label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-primary, #f5f5f5);
+  font-size: 0.95rem;
+  cursor: pointer;
+}
+
+.nf-hint {
+  font-size: 0.78rem;
+  color: var(--text-muted, #666);
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.nf-erro {
+  font-size: 0.82rem;
+  color: var(--accent-red, #ef4444);
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.nf-falha {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: var(--accent-red, #ef4444);
+  font-size: 0.9rem;
+}
+
+.nf-acoes {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.nf-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  border-radius: 8px;
+  border: 1px solid var(--border-default, rgba(255, 255, 255, 0.08));
+  background: transparent;
+  color: var(--text-primary, #f5f5f5);
+  font-size: 0.92rem;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.nf-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.nf-btn-primario {
+  background: var(--accent-primary, #c9a962);
+  border-color: var(--accent-primary, #c9a962);
+  color: #0a0a0a;
+  font-weight: 600;
+}
+
+.nf-girando { animation: nf-spin 1s linear infinite; }
+@keyframes nf-spin { to { transform: rotate(360deg); } }
+
+/* ---------- Painéis (corretor e admin) ---------- */
+
+.nf-painel { display: flex; flex-direction: column; gap: 18px; }
+
+.nf-card {
+  background: var(--bg-card, rgba(18, 18, 18, 0.8));
+  border: 1px solid var(--border-default, rgba(255, 255, 255, 0.08));
+  border-radius: 12px;
+  padding: 18px;
+}
+
+.nf-card h3 {
+  margin: 0 0 12px;
+  font-size: 1rem;
+  color: var(--text-primary, #f5f5f5);
+}
+
+.nf-resumo {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+}
+
+.nf-metrica {
+  background: var(--bg-elevated, #161616);
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.06));
+  border-radius: 10px;
+  padding: 14px;
+}
+
+.nf-metrica span {
+  display: block;
+  font-size: 0.78rem;
+  color: var(--text-secondary, #a0a0a0);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.nf-metrica strong {
+  font-size: 1.5rem;
+  color: var(--text-primary, #f5f5f5);
+}
+
+.nf-metrica.falta strong { color: var(--accent-red, #ef4444); }
+.nf-metrica.ok strong { color: var(--accent-primary, #c9a962); }
+
+.nf-controles {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.nf-controles input[type='month'] {
+  padding: 9px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border-default, rgba(255, 255, 255, 0.08));
+  background: var(--bg-secondary, #111);
+  color: var(--text-primary, #f5f5f5);
+  font-family: inherit;
+}
+
+.nf-tabela-wrap { overflow-x: auto; }
+
+.nf-tabela {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+  min-width: 640px;
+}
+
+.nf-tabela th,
+.nf-tabela td {
+  text-align: left;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.06));
+  color: var(--text-primary, #f5f5f5);
+  white-space: nowrap;
+}
+
+.nf-tabela th {
+  font-size: 0.76rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-secondary, #a0a0a0);
+  font-weight: 600;
+}
+
+.nf-tabela tbody tr:hover { background: rgba(255, 255, 255, 0.02); }
+
+.nf-pill {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 0.76rem;
+  font-weight: 600;
+}
+
+.nf-pill.enviou { background: rgba(201, 169, 98, 0.15); color: var(--accent-primary, #c9a962); }
+.nf-pill.faltou { background: rgba(239, 68, 68, 0.15); color: var(--accent-red, #ef4444); }
+.nf-pill.terceiro { background: rgba(139, 92, 246, 0.15); color: var(--accent-purple, #8b5cf6); }
+
+.nf-obs {
+  display: block;
+  margin-top: 4px;
+  font-size: 0.82rem;
+  color: var(--text-secondary, #a0a0a0);
+  white-space: normal;
+  max-width: 340px;
+}
+
+.nf-vazio {
+  color: var(--text-muted, #666);
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+.nf-link {
+  color: var(--accent-primary, #c9a962);
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.nf-correcao {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  font-size: 0.88rem;
+  color: var(--text-secondary, #a0a0a0);
+}
+
+@media (max-width: 640px) {
+  .nf-linha { grid-template-columns: 1fr; }
+  .nf-acoes { justify-content: stretch; }
+  .nf-acoes .nf-btn { flex: 1; justify-content: center; }
+}
