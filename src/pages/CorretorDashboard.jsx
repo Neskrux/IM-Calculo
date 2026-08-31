@@ -1577,7 +1577,7 @@ const CorretorDashboard = () => {
             {activeTab === 'clientes' && 'Meus Clientes'}
             {activeTab === 'empreendimentos' && 'Empreendimentos'}
             {activeTab === 'relatorios' && 'Relatórios'}
-            {activeTab === 'notas-fiscais' && 'Nota Fiscal'}
+            {activeTab === 'notas-fiscais' && !NOTA_FISCAL_OCULTA_PARA_CORRETOR && 'Nota Fiscal'}
             {activeTab === 'solicitacoes' && 'Minhas Solicitações'}
             {activeTab === 'perfil' && 'Meu Perfil'}
           </h1>
