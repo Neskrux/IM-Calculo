@@ -5,6 +5,13 @@
 # (migrations 017/018), functions, RLS e constraints. Introspeccao por query nao
 # reproduz isso fiel — pg_dump reproduz.
 #
+# ATENCAO — prefira scripts/homolog/wizard-homologacao.sh.
+# Este script chama `npx supabase db dump`, que roda o pg_dump DENTRO de um
+# container Docker. Sem Docker instalado ele falha no primeiro passo. O wizard
+# faz o mesmo clone chamando pg_dump/psql diretos (so precisa do client do
+# Postgres) e ainda cobre o que falta aqui: anonimizar auth/storage, publicar as
+# edge functions no projeto de homologacao e subir o site.
+#
 # Uso:
 #   export PROD_DB_URL='postgresql://postgres.jdkkusrxullttyeakwib:<SENHA>@aws-0-us-east-1.pooler.supabase.com:5432/postgres'
 #   export HOMOLOG_DB_URL='postgresql://postgres.ibscxvkgrdyzlgtgbbuz:<SENHA>@aws-0-us-east-1.pooler.supabase.com:5432/postgres'
