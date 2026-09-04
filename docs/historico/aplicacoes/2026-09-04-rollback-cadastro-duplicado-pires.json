@@ -1,0 +1,42 @@
+{
+  "meta": {
+    "geradoEm": "2026-09-04",
+    "spec_ref": "docs/specs/2026-09-04-tickets-papel-coordenador.md (T8)",
+    "modo": "apply",
+    "motivo": "Cadastro duplicado do Matheus Pires. Zero referencias em qualquer tabela (14 FKs + vendas.corretor_id, que nao tem FK). Alem do ruido na lista, os dois cadastros compartilhavam sienge_broker_id=118, e o sync monta um Map por esse id: com duas linhas, a ultima vence de forma nao-deterministica, entao a atribuicao de venda nova do Pires era moeda ao ar.",
+    "rollback": "INSERT em usuarios com o objeto abaixo."
+  },
+  "linha_removida": {
+    "id": "a80c1aa4-0d13-4ea0-9f90-f86ddcf03602",
+    "email": "MEUCNPJ@ACCOUNTTECH.COM.BR",
+    "nome": "MATHEUS DE S. PIRES NEGOCIOS IMOBILIARIOS",
+    "tipo": "corretor",
+    "tipo_corretor": "externo",
+    "telefone": "1192003475",
+    "celular": "48999940606",
+    "ativo": false,
+    "created_at": "2026-01-15T14:28:58.208+00:00",
+    "updated_at": "2026-07-13T17:33:10.807453+00:00",
+    "cnpj": "60509941000187",
+    "sienge_broker_id": "118",
+    "origem": "sienge",
+    "endereco": "RUA HEITOR LIBERATO, no 1238, Bairro VILA OPERARIA, Itajai - SC, 88303-101",
+    "endereco_completo": "RUA HEITOR LIBERATO, no 1238, Bairro VILA OPERARIA, Itajai - SC, 88303-101",
+    "cidade": "Itajai", "estado": "SC", "cep": "88303101",
+    "sienge_updated_at": "2026-01-16T11:57:44.595+00:00",
+    "tem_acesso_sistema": false
+  },
+  "referencias_conferidas_antes": {
+    "vendas.corretor_id": 0, "vendas.excluido_por": 0, "clientes.corretor_id": 0,
+    "atividades": 0, "leads": 0, "metas": 0, "solicitacoes.corretor_id": 0,
+    "solicitacoes.admin_id": 0, "notificacoes": 0, "usuario_conquistas": 0,
+    "coordenadoras": 0, "boletos.criado_por": 0, "notas_fiscais.corretor_id": 0,
+    "notas_fiscais.criado_por": 0, "empreendimento_fotos": 0,
+    "controle_positivo": "vendas.corretor_id do cadastro VIVO = 46 (a consulta funciona)"
+  },
+  "cadastro_mantido": {
+    "id": "9b1f5c90-defa-4b6c-b011-ffb496a14349",
+    "email": "piresmatheusdesouza@gmail.com",
+    "tipo_corretor": "interno", "ativo": true, "vendas": 46, "tem_login": true
+  }
+}

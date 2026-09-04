@@ -1,7 +1,6 @@
 # Mensagem para a controladoria — acessos e teste da visão de Coordenação
 
-> Enviar **depois** do deploy (a redefinição de senha e o painel de coordenação estão
-> nesta branch, ainda não em produção). Spec: [../specs/2026-09-04-spec-papel-coordenador.md](../specs/2026-09-04-spec-papel-coordenador.md).
+> Já em produção (PR #97 e #99, merge em 04/09/2026). Spec: [../specs/2026-09-04-spec-papel-coordenador.md](../specs/2026-09-04-spec-papel-coordenador.md).
 
 ---
 
@@ -10,24 +9,30 @@ qualquer pessoa receber o acesso.
 
 ## O que mudou
 
-A Carolina, a Jessica e o Matheus Pires são corretores e também coordenam vendas de
-outras pessoas. Até agora o sistema só mostrava para eles as vendas que eles mesmos
-fizeram. Agora, quando eles entram, aparece um botão no topo da tela inicial com duas
-opções:
+A Carolina e a Jessica são corretoras e também coordenam vendas de outras pessoas. Até
+agora o sistema só mostrava para elas as vendas que elas mesmas fizeram. Agora, quando
+elas entram, aparece um botão no topo da tela inicial com duas opções:
 
-- **Corretor** — as vendas deles, exatamente como já era. Nada mudou aqui.
-- **Coordenação** — as vendas que foram direcionadas a eles para coordenar.
+- **Corretor** — as vendas delas, exatamente como já era. Nada mudou aqui.
+- **Coordenação** — as vendas que foram direcionadas a elas para coordenar.
 
-Na opção Coordenação eles veem quanto já receberam e quanto ainda vão receber pela
-coordenação, além do resumo dessas vendas: quantas são, quantas parcelas já foram
-pagas, quanto do pró-soluto já entrou e quantas parcelas estão vencidas em aberto.
+Na opção Coordenação elas veem quanto já receberam e quanto ainda vão receber pela
+coordenação, além do resumo dessas vendas: quantas são, quantas parcelas já foram pagas,
+quanto do pró-soluto já entrou e quantas parcelas estão vencidas em aberto.
 
-Duas coisas importantes: eles **não** veem a comissão de outras pessoas, só a parte
-deles como coordenador. E a venda que a própria pessoa vendeu não aparece na
+Duas coisas importantes: elas **não** veem a comissão de outras pessoas, só a parte
+delas como coordenadora. E a venda que a própria pessoa vendeu não aparece na
 Coordenação, só na aba Corretor, para não contar duas vezes.
 
-Esse botão só aparece para quem coordena. Os outros corretores continuam vendo a tela
-igual à de sempre.
+Esse botão só aparece para quem coordena. **O Matheus Pires é corretor e não tem esse
+botão** — a conta dele é a de sempre. Os outros corretores também continuam vendo a tela
+igual à de antes.
+
+Junto com isso saiu uma correção de cálculo que afeta **duas** pessoas: Matheus Pires e
+Enzo Tormes. Os dois têm cadastro como corretor interno mas fizeram algumas vendas
+externas, e nessas vendas o sistema estava mostrando uma comissão menor do que a devida.
+Agora mostra o valor certo, que é o mesmo que sempre apareceu no relatório do
+administrador. **O valor deles sobe, nenhum valor diminui.**
 
 ## O que eu preciso que você faça
 
@@ -54,9 +59,13 @@ depois manda a senha para cada pessoa.
 
 ### Passo 3 — Matheus Pires
 
-Igual ao Passo 2. Procure por **MATHEUS DE S. PIRES NEGOCIOS IMOBILIARIOS**, use o
-campo **Redefinir senha**, escreva uma senha nova, anote e clique em
-**Redefinir senha**.
+Igual ao Passo 2. Procure por **MATHEUS DE S. PIRES NEGOCIOS IMOBILIARIOS**, use o campo
+**Redefinir senha**, escreva uma senha nova, anote e clique em **Redefinir senha**.
+
+⚠️ Vão aparecer **dois** cadastros com esse mesmo nome na lista. Use o que tem o e-mail
+`piresmatheusdesouza@gmail.com` — é o que tem as vendas dele. O outro está desativado e
+sem venda nenhuma; se você tentar ativar acesso por ele, o sistema recusa, e a recusa
+está certa.
 
 ### Passo 4 — Testar as três
 
@@ -67,23 +76,17 @@ que você anotou.
 - **Jessica** — e-mail `jessica@imincorporadora.com.br`
 - **Matheus Pires** — e-mail `piresmatheusdesouza@gmail.com`
 
-Em cada uma, confira o seguinte:
-
-1. O botão com **Corretor** e **Coordenação** aparece no topo da tela inicial.
-2. Clicando em **Coordenação**, os números carregam.
-3. Clicando de volta em **Corretor**, as vendas da pessoa aparecem como antes.
-
 O que esperar em cada uma:
 
-| Pessoa | O que deve aparecer em Coordenação |
+| Pessoa | O que deve aparecer |
 |---|---|
-| Carolina | 162 vendas direcionadas, com valores |
-| Jessica | 10 vendas direcionadas, com valores |
-| Matheus Pires | Uma mensagem dizendo que ainda não há venda direcionada a ele |
+| Carolina | O botão Corretor / Coordenação. Em Coordenação, 162 vendas direcionadas com valores |
+| Jessica | O botão Corretor / Coordenação. Em Coordenação, 10 vendas direcionadas com valores |
+| Matheus Pires | **Sem** o botão de Coordenação. A tela normal de corretor, com as vendas dele |
 
-**A mensagem do Matheus está certa, não é erro.** Ele está começando como coordenador
-agora e ainda não recebeu nenhuma venda para coordenar. Quando você direcionar a
-primeira venda para ele, os números aparecem sozinhos.
+Em Coordenação, os números precisam **carregar e aparecer**. Se ficar parado em
+"Carregando as vendas direcionadas a você" por mais de um minuto, me avise — isso é
+justamente o que foi corrigido e eu quero saber se ficou algum resto.
 
 ### Passo 5 — Entregar as senhas
 

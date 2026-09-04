@@ -34,6 +34,7 @@ import { LayoutGrid, List, FileCheck } from 'lucide-react'
 import { safeGet, safeSet } from '../utils/storage'
 import { calcularFatorComissao, calcularComissaoPagamento, dataEfetiva, taxaCoordenadoraDaVenda, comissaoHeaderVenda } from '../utils/comissaoCalculator'
 import { podeRedefinirSenha, senhaValida, SENHA_MIN } from '../utils/acessoUsuario'
+import { coordenadoraDoUsuario } from '../utils/comissaoCalculator'
 import { parseDataLocal, formatDataBR } from '../utils/datas'
 import { baixarPdfBase64 } from '../utils/pdfBase64'
 import { triggerFullSync, triggerNormalizeOnly, probeSienge, pollRunUntilDone } from '../lib/siengeSyncApi'
@@ -7177,7 +7178,17 @@ const AdminDashboard = () => {
                                 {corretor.cargo?.nome_cargo && (
                                   <span className="vinculo-item cargo">
                                     {corretor.cargo.nome_cargo}
-                                    {corretor.cargo.percentual && ` (${corretor.cargo.percentual}%)`}
+                                    {/* No cargo Coordenadora vale a taxa NEGOCIADA da pessoa
+                                        (coordenadoras.percentual_padrao — Jessica 1,00%), nao o
+                                        percentual generico do cargo em cargos_empreendimento
+                                        (0,50%). O card mostrava 0,50% pra Jessica, que recebe 1%. */}
+                                    {(() => {
+                                      const co = coordenadoraDoUsuario(corretor, coordenadoras)
+                                      const pct = corretor.cargo.nome_cargo === 'Coordenadora' && co?.percentual_padrao != null
+                                        ? co.percentual_padrao
+                                        : corretor.cargo.percentual
+                                      return pct ? ` (${pct}%)` : ''
+                                    })()}
                                   </span>
                                 )}
                               </div>
