@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { safeGet, safeSet } from '../utils/storage'
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
@@ -42,6 +42,7 @@ import {
   papeisDisponiveis,
   vendasDaCoordenacao,
   resumoCoordenacao,
+  fatiaCorretorDaVenda,
 } from '../utils/comissaoCalculator'
 import PainelCoordenacao from '../components/corretor/PainelCoordenacao'
 import { parseDataLocal, formatDataBR } from '../utils/datas'
@@ -74,7 +75,12 @@ const CorretorDashboard = () => {
   const [cargosEmp, setCargosEmp] = useState([])
   const [vendasCoord, setVendasCoord] = useState([])
   const [pagsCoord, setPagsCoord] = useState([])
-  const [coordCarregado, setCoordCarregado] = useState(false)
+  // Guarda de "ja disparou" fora do estado — de proposito. Estado usado como guarda
+  // ENTRA na lista de dependencias do efeito; ao setar `carregando` o efeito reexecuta,
+  // o React roda a limpeza do anterior, o `vivo` da execucao em voo vira false e o
+  // resultado e descartado: a tela fica em "Carregando..." pra sempre. Ref nao dispara
+  // render nem reexecucao, entao a carga em voo sobrevive.
+  const coordDisparadoRef = useRef(false)
   const [coordCarregando, setCoordCarregando] = useState(false)
   const [coordErro, setCoordErro] = useState(null)
   const [coordMes, setCoordMes] = useState('')
@@ -457,20 +463,16 @@ const CorretorDashboard = () => {
       const vendasValidadas = (data || []).map(venda => {
         const valorVenda = parseFloat(venda.valor_venda) || 0
         const valorProSoluto = parseFloat(venda.valor_pro_soluto) || 0
-        let comissaoCorretor = parseFloat(venda.comissao_corretor) || 0
 
-        // Percentual nominal do cargo Corretor, conforme planilha calculo.xlsx.
-        const tipoCorretorVenda = venda.tipo_corretor || userProfile?.tipo_corretor || 'externo'
-        const percentualCorretor = parseFloat(userProfile?.percentual_corretor) ||
-          (tipoCorretorVenda === 'interno' ? 2.5 : 4)
-
-        // Se comissao_corretor for 0, calcular usando a formula correta.
-        if (!comissaoCorretor || comissaoCorretor === 0) {
-          comissaoCorretor = (valorVenda * percentualCorretor) / 100
-        }
-
-        // Fator da fatia do corretor, nao o fator total da venda.
-        const fatorComissaoCorretor = calcularFatorComissao(valorVenda, valorProSoluto, percentualCorretor)
+        // Fatia do cargo Corretor PARA ESTA VENDA (helper puro e testado).
+        // Antes esta conta era inline e usava o percentual do CADASTRO em toda venda:
+        // como o resultado era colado de volta em `venda.percentual_corretor`, e o
+        // helper multi-tipo trata esse campo como snapshot, a venda EXTERNA de um
+        // cadastro INTERNO passava a pagar 2,5% em vez de 4%. Media do estrago no
+        // Matheus Pires (agosto/2026, pagas): R$ 4.352,55 na tela dele contra
+        // R$ 4.704,87 no Admin, que estava certo.
+        const { percentual: percentualCorretor, comissao: comissaoCorretor, fator: fatorComissaoCorretor } =
+          fatiaCorretorDaVenda(venda, userProfile)
 
         return {
           ...venda,
@@ -1192,7 +1194,8 @@ const CorretorDashboard = () => {
   // vendas direcionadas — as parcelas passam de 1000 linhas, e sem paginação o
   // PostgREST corta em silêncio (leitura-de-listas-e-refetch.md).
   useEffect(() => {
-    if (papel !== 'coordenacao' || !minhaCoordenacao || coordCarregado || coordCarregando) return
+    if (papel !== 'coordenacao' || !minhaCoordenacao || coordDisparadoRef.current) return
+    coordDisparadoRef.current = true
     let vivo = true
     const carregar = async () => {
       setCoordCarregando(true)
@@ -1233,8 +1236,9 @@ const CorretorDashboard = () => {
         setCargosEmp(cargosData || [])
         setVendasCoord(escopo)
         setPagsCoord(pags)
-        setCoordCarregado(true)
       } catch (err) {
+        // Libera pra tentar de novo — senao o ref travaria a tela no erro.
+        coordDisparadoRef.current = false
         if (vivo) setCoordErro(err?.message || String(err))
       } finally {
         if (vivo) setCoordCarregando(false)
@@ -1242,7 +1246,7 @@ const CorretorDashboard = () => {
     }
     carregar()
     return () => { vivo = false }
-  }, [papel, minhaCoordenacao, coordCarregado, coordCarregando])
+  }, [papel, minhaCoordenacao])
 
   // O número do coordenador: nenhuma conta na tela, tudo vem do helper testado.
   const resumoCoord = useMemo(
@@ -2257,7 +2261,7 @@ const CorretorDashboard = () => {
                       <span className="value">{formatCurrency(venda.valor_venda)}</span>
                     </div>
                     <div className="venda-comissao">
-                                <span className="label">Sua Comissão ({percentualCorretor}%)</span>
+                                <span className="label">Sua Comissão ({venda.percentual_corretor ?? percentualCorretor}%)</span>
                       <span className="value highlight">{formatCurrency(comissaoVenda)}</span>
                     </div>
                   </div>
