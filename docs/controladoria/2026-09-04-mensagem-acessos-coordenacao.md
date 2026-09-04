@@ -1,7 +1,6 @@
 # Mensagem para a controladoria — acessos e teste da visão de Coordenação
 
-> Enviar **depois** do deploy (a redefinição de senha e o painel de coordenação estão
-> nesta branch, ainda não em produção). Spec: [../specs/2026-09-04-spec-papel-coordenador.md](../specs/2026-09-04-spec-papel-coordenador.md).
+> Já em produção (PR #97 e #99, merge em 04/09/2026). Spec: [../specs/2026-09-04-spec-papel-coordenador.md](../specs/2026-09-04-spec-papel-coordenador.md).
 
 ---
 
