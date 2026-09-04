@@ -293,3 +293,122 @@ export const comissaoHeaderVenda = (pagamentos = [], { cargoId, mostrarTotal } =
   const valor = ativos.reduce((acc, p) => acc + (parseFloat(p.comissao_gerada) || 0), 0)
   return { valor, rotulo: 'Comissão total (todos os cargos)' }
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Papel COORDENADOR na conta do corretor (Pires, Carolina, Jessica).
+// Spec: docs/specs/2026-09-04-spec-papel-coordenador.md
+//
+// Coordenação NÃO é um tipo de acesso novo nem o `beneficiario` genérico por cargo:
+// `usuarios.tipo` é coluna única (marcar de coordenador apagaria a carteira própria,
+// e duas contas por pessoa é proibido), e o beneficiário escopa por CARGO no
+// empreendimento inteiro — coordenação escopa por PESSOA, via vendas.coordenadora_id.
+// O que se reusa do beneficiário é o motor da conta (fatiaCargoDoPagamento), não o
+// tipo de acesso. O vínculo pessoa→coordenação já existe: coordenadoras.usuario_id
+// (migrations 030/031). Zero migration.
+// ─────────────────────────────────────────────────────────────────────────────
+
+const mesmoId = (a, b) => a != null && b != null && String(a) === String(b)
+
+/**
+ * A linha de `coordenadoras` deste usuário, ou null. Só linha ATIVA vira papel —
+ * coordenadora desativada não deve reabrir a visão de coordenação.
+ */
+export function coordenadoraDoUsuario(userProfile, coordenadoras = []) {
+  if (!userProfile?.id || !Array.isArray(coordenadoras)) return null
+  return coordenadoras.find(c => c?.ativo !== false && mesmoId(c?.usuario_id, userProfile.id)) || null
+}
+
+/**
+ * Papéis do login. 'corretor' é sempre o primeiro (default da tela, zero regressão
+ * pra quem não coordena); 'coordenacao' entra só quando há vínculo ativo.
+ */
+export function papeisDisponiveis(userProfile, coordenadoras = []) {
+  return coordenadoraDoUsuario(userProfile, coordenadoras)
+    ? ['corretor', 'coordenacao']
+    : ['corretor']
+}
+
+/**
+ * Escopo do papel de coordenação: vendas DIRECIONADAS à coordenadora, menos as que
+ * ela mesma vendeu (regra da migration 031 — coordenadora não reporta venda própria;
+ * sem isso a mesma venda contaria nos dois papéis), e sob a régua única das telas do
+ * corretor: distratada e excluída ficam fora (spec 2026-08-28).
+ */
+export function vendasDaCoordenacao(vendas, coordenadora) {
+  if (!Array.isArray(vendas) || !coordenadora?.id) return []
+  return vendas.filter(v =>
+    mesmoId(v?.coordenadora_id, coordenadora.id) &&
+    !mesmoId(v?.corretor_id, coordenadora.usuario_id) &&
+    isVendaAtiva(v),
+  )
+}
+
+/**
+ * Resumo do papel de coordenação: a fatia do cargo Coordenadora + macro NEUTRO
+ * (contagens e valores de PARCELA — nunca a comissão de outro cargo).
+ *
+ * A fatia sai de `fatiaCargoDoPagamento(..., 'Coordenadora', ...)`, que já resolve a
+ * taxa por venda (snapshot `vendas.coordenadora_taxa` > `coordenadoras.percentual_padrao`)
+ * e devolve 0 pra parcela cancelada. Nada aqui recalcula comissão: a taxa decide só a
+ * PROPORÇÃO sobre `comissao_gerada` (visualizacao-totais.md).
+ *
+ * `vazio` é o que a tela usa pro estado "ainda não tem venda direcionada" (caso Pires,
+ * virando coordenador com carteira vazia) — nunca R$ 0,00 mudo.
+ *
+ * @param {object}   p
+ * @param {Array}    p.vendas         - vendas já carregadas (qualquer escopo)
+ * @param {Array}    p.pagamentos     - parcelas já carregadas
+ * @param {object}   p.coordenadora   - linha de `coordenadoras` deste usuário
+ * @param {Array}    p.cargos         - cargos_empreendimento
+ * @param {Array}    p.coordenadoras  - todas as coordenadoras (fallback da taxa vigente)
+ * @param {string}   [p.mes]          - 'YYYY-MM' pra filtrar a fatia; '' = todo o período
+ * @param {string}   [p.hoje]         - 'YYYY-MM-DD' (injetável pra teste determinístico)
+ */
+export function resumoCoordenacao({
+  vendas = [], pagamentos = [], coordenadora, cargos = [], coordenadoras = [],
+  mes = '', hoje = new Date().toISOString().slice(0, 10),
+} = {}) {
+  const escopo = vendasDaCoordenacao(vendas, coordenadora)
+  const vazio = escopo.length === 0
+  const base = {
+    vazio, nVendas: escopo.length,
+    nParcelasPagas: 0, nParcelasPendentes: 0, pctRecebido: 0,
+    nVencidasAbertas: 0, valorVencidoAberto: 0,
+    fatiaPaga: 0, fatiaPendente: 0, serieMensal: [],
+  }
+  if (vazio) return base
+
+  const porId = new Map(escopo.map(v => [String(v.id), v]))
+  const ativos = (Array.isArray(pagamentos) ? pagamentos : [])
+    .filter(p => porId.has(String(p?.venda_id)) && isAtivo(p))
+
+  const fatia = (p) =>
+    fatiaCargoDoPagamento(p, porId.get(String(p.venda_id)), 'Coordenadora', cargos, coordenadoras)
+
+  const pagos = ativos.filter(isPago)
+  const pendentes = ativos.filter(isPendente)
+  const noMes = (p) => !mes || (dataEfetiva(p) || '').slice(0, 7) === mes
+
+  const valorTotal = ativos.reduce((s, p) => s + (parseFloat(p.valor) || 0), 0)
+  const valorPago = pagos.reduce((s, p) => s + (parseFloat(p.valor) || 0), 0)
+  const vencidas = pendentes.filter(p => p.data_prevista && String(p.data_prevista).slice(0, 10) < hoje)
+
+  const porMes = new Map()
+  for (const p of pagos) {
+    const ym = String(p.data_pagamento || '').slice(0, 7)
+    if (!ym) continue
+    porMes.set(ym, (porMes.get(ym) || 0) + fatia(p))
+  }
+
+  return {
+    ...base,
+    nParcelasPagas: pagos.length,
+    nParcelasPendentes: pendentes.length,
+    pctRecebido: valorTotal > 0 ? (valorPago / valorTotal) * 100 : 0,
+    nVencidasAbertas: vencidas.length,
+    valorVencidoAberto: vencidas.reduce((s, p) => s + (parseFloat(p.valor) || 0), 0),
+    fatiaPaga: pagos.filter(noMes).reduce((s, p) => s + fatia(p), 0),
+    fatiaPendente: pendentes.filter(noMes).reduce((s, p) => s + fatia(p), 0),
+    serieMensal: [...porMes.entries()].sort((a, b) => b[0].localeCompare(a[0])).slice(0, 13),
+  }
+}
