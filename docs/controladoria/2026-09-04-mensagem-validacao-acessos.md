@@ -38,7 +38,21 @@ parado em "Carregando as vendas direcionadas a você" por mais de um minuto, me 
 hora. Era exatamente esse o problema que acabou de ser corrigido, e preciso saber se
 sobrou algum resto.
 
-Depois volte em **Corretor** e confirme que aparecem as 4 vendas dela.
+Repare que, em **Coordenação**, as outras telas também mudam junto: Vendas, Pagamentos,
+Clientes e Relatórios passam a falar das vendas que ela coordena, e não das dela. É assim
+que tem que ser. Se alguma dessas telas continuar mostrando só as 4 vendas dela mesma
+enquanto o botão está em Coordenação, me avise.
+
+Depois volte em **Corretor**. Devem aparecer as **4 vendas dela**, e agora com a comissão
+corrigida: as vendas próprias dela passaram a ser calculadas a **4%**, que é a taxa de
+corretor, e não a 0,5%, que era a taxa de coordenação aplicada por engano.
+
+| item | valor esperado |
+|---|---|
+| Comissão recebida (Corretor) | R$ 7.215,43 |
+| Comissão a receber (Corretor) | R$ 48.429,11 |
+
+Se aparecer R$ 901,93 e R$ 6.053,64, é a tela antiga em cache: recarregue com `/?novo`.
 
 ### 2. Jessica — `jessica@imincorporadora.com.br`
 

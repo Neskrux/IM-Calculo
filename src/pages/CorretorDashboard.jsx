@@ -43,6 +43,8 @@ import {
   vendasDaCoordenacao,
   resumoCoordenacao,
   fatiaCorretorDaVenda,
+  fatiaCargoDoPagamento,
+  taxaCoordenadoraDaVenda,
 } from '../utils/comissaoCalculator'
 import PainelCoordenacao from '../components/corretor/PainelCoordenacao'
 import { parseDataLocal, formatDataBR } from '../utils/datas'
@@ -63,7 +65,7 @@ const CorretorDashboard = () => {
     activeTab = 'dashboard'
   }
   
-  const [vendas, setVendas] = useState([])
+  const [vendasProprias, setVendasProprias] = useState([])
   const [loading, setLoading] = useState(true)
 
   // ── Papel COORDENAÇÃO (spec 2026-09-04) ────────────────────────────────────
@@ -96,8 +98,21 @@ const CorretorDashboard = () => {
   
   // Novos estados para as abas adicionais
   const [empreendimentos, setEmpreendimentos] = useState([])
-  const [meusPagamentos, setMeusPagamentos] = useState([])
+  const [pagamentosProprios, setPagamentosProprios] = useState([])
   const [meusClientes, setMeusClientes] = useState([])
+
+  // ── A VISÃO (spec 2026-09-04) ───────────────────────────────────────────────
+  // Trocar de papel troca a BASE de toda a tela, não só um painel: Minhas Vendas,
+  // Meus Pagamentos, Meus Clientes e Relatórios passam a falar das vendas
+  // DIRECIONADAS. Por isso `vendas` e `meusPagamentos` deixam de ser estado e viram
+  // derivados — os ~90 pontos que já liam esses nomes seguem funcionando sem tocar
+  // em nenhum deles. O estado cru fica em `vendasProprias`/`pagamentosProprios`,
+  // que só os fetchers da carteira própria escrevem.
+  // Declarado AQUI, junto dos estados, e não lá embaixo: as listas de dependência
+  // dos efeitos são avaliadas durante o render e cairiam em zona morta.
+  const emCoordenacao = papel === 'coordenacao'
+  const vendas = emCoordenacao ? vendasCoord : vendasProprias
+  const meusPagamentos = emCoordenacao ? pagsCoord : pagamentosProprios
   const [loadingEmpreendimentos, setLoadingEmpreendimentos] = useState(false)
   const [loadingPagamentos, setLoadingPagamentos] = useState(false)
   const [loadingClientes, setLoadingClientes] = useState(false)
@@ -221,10 +236,10 @@ const CorretorDashboard = () => {
 
   // Carregar pagamentos sempre que vendas mudar (para o dashboard)
   useEffect(() => {
-    if (vendas.length > 0 && meusPagamentos.length === 0) {
+    if (vendasProprias.length > 0 && pagamentosProprios.length === 0) {
       fetchMeusPagamentos()
     }
-  }, [vendas])
+  }, [vendasProprias])
 
   useEffect(() => {
     if (userProfile) {
@@ -237,13 +252,15 @@ const CorretorDashboard = () => {
     if ((activeTab === 'empreendimentos' || activeTab === 'solicitacoes') && empreendimentos.length === 0) {
       fetchEmpreendimentos()
     }
-    if (activeTab === 'pagamentos' && meusPagamentos.length === 0 && vendas.length > 0) {
+    if (activeTab === 'pagamentos' && pagamentosProprios.length === 0 && vendasProprias.length > 0) {
       fetchMeusPagamentos()
     }
-    if (activeTab === 'clientes' && meusClientes.length === 0 && vendas.length > 0) {
+    // Clientes seguem a VISÃO: no papel de coordenação são os clientes das vendas
+    // direcionadas. Por isso `vendas` (derivado) e `papel` entram na dependência.
+    if (activeTab === 'clientes' && vendas.length > 0) {
       fetchMeusClientes()
     }
-  }, [activeTab, vendas])
+  }, [activeTab, vendas, vendasProprias, papel])
 
   // Fetch Empreendimentos
   const fetchEmpreendimentos = async () => {
@@ -283,9 +300,9 @@ const CorretorDashboard = () => {
   const fetchMeusPagamentos = async () => {
     setLoadingPagamentos(true)
     try {
-      const vendaIds = vendas.map(v => v.id)
+      const vendaIds = vendasProprias.map(v => v.id)
       if (vendaIds.length === 0) {
-        setMeusPagamentos([])
+        setPagamentosProprios([])
         return
       }
 
@@ -314,7 +331,7 @@ const CorretorDashboard = () => {
         }
       })
 
-      setMeusPagamentos(pagamentosEnriquecidos)
+      setPagamentosProprios(pagamentosEnriquecidos)
     } catch (error) {
       console.error('Erro ao buscar pagamentos:', error)
     } finally {
@@ -431,7 +448,7 @@ const CorretorDashboard = () => {
 
       if (error) {
         console.error('❌ Erro ao buscar vendas:', error)
-        setVendas([])
+        setVendasProprias([])
         return
       }
 
@@ -487,10 +504,10 @@ const CorretorDashboard = () => {
         }
       })
       
-      setVendas(vendasValidadas)
+      setVendasProprias(vendasValidadas)
     } catch (error) {
       console.error('❌ Erro crítico ao buscar vendas:', error)
-      setVendas([])
+      setVendasProprias([])
     } finally {
     setLoading(false)
     }
@@ -1161,6 +1178,11 @@ const CorretorDashboard = () => {
         vendas,
         pagamentos: meusPagamentos,
         filtros: relatorioFiltros,
+        // No papel de coordenação o PDF tem que usar a MESMA régua da tela: a fatia do
+        // cargo Coordenadora. Sem isto ele sairia com a fatia de CORRETOR das vendas de
+        // outras pessoas — número errado e vazamento.
+        calcComissao: emCoordenacao ? calcularComissaoPagamento : null,
+        subtitulo: emCoordenacao ? 'Coordenacao' : '',
       })
     } catch (error) {
       console.error('Erro ao gerar PDF:', error)
@@ -1294,6 +1316,12 @@ const CorretorDashboard = () => {
     if (valorParcela <= 0) return 0
 
     const venda = vendas.find(v => v.id === pagamento.venda_id)
+
+    // No papel de coordenação o que ela recebe é a fatia do cargo COORDENADORA
+    // (taxa por venda: snapshot > negociada), nunca a do cargo Corretor.
+    if (emCoordenacao) {
+      return fatiaCargoDoPagamento(pagamento, venda, 'Coordenadora', cargosEmp, coordenadoras)
+    }
     // Fatia do corretor por VENDA — regra centralizada e testada no calculator
     // (conta multi-tipo: venda de tipo diferente do cadastro usa a taxa do tipo DA VENDA).
     const percentualCorretorVenda = percentualCorretorDaVenda(venda, userProfile)
@@ -1699,9 +1727,9 @@ const CorretorDashboard = () => {
           </button>
           <h1>
             {activeTab === 'dashboard' && getDashboardTitle()}
-            {activeTab === 'vendas' && 'Minhas Vendas'}
-            {activeTab === 'pagamentos' && 'Meus Pagamentos'}
-            {activeTab === 'clientes' && 'Meus Clientes'}
+            {activeTab === 'vendas' && (emCoordenacao ? 'Vendas da Coordenação' : 'Minhas Vendas')}
+            {activeTab === 'pagamentos' && (emCoordenacao ? 'Pagamentos da Coordenação' : 'Meus Pagamentos')}
+            {activeTab === 'clientes' && (emCoordenacao ? 'Clientes da Coordenação' : 'Meus Clientes')}
             {activeTab === 'empreendimentos' && 'Empreendimentos'}
             {activeTab === 'relatorios' && 'Relatórios'}
             {activeTab === 'notas-fiscais' && !NOTA_FISCAL_OCULTA_PARA_CORRETOR && 'Nota Fiscal'}
@@ -2261,7 +2289,11 @@ const CorretorDashboard = () => {
                       <span className="value">{formatCurrency(venda.valor_venda)}</span>
                     </div>
                     <div className="venda-comissao">
-                                <span className="label">Sua Comissão ({venda.percentual_corretor ?? percentualCorretor}%)</span>
+                                <span className="label">
+                        {emCoordenacao
+                          ? `Coordenação (${taxaCoordenadoraDaVenda(venda, coordenadoras) ?? minhaCoordenacao?.percentual_padrao ?? ''}%)`
+                          : `Sua Comissão (${venda.percentual_corretor ?? percentualCorretor}%)`}
+                      </span>
                       <span className="value highlight">{formatCurrency(comissaoVenda)}</span>
                     </div>
                   </div>
