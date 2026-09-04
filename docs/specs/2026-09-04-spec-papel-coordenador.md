@@ -1,10 +1,16 @@
 # Spec: papel Coordenador na conta do corretor (Pires, Carolina, Jessica)
 
-> **Demanda (04/09/2026):** dar acesso a Matheus Pires, Carolina e Jessica. Os três
-> **acumulam papel**: são corretores com carteira própria **e** coordenadores de vendas
-> direcionadas. A visão de coordenação é o **macro dessas vendas** + a fatia do cargo
-> Coordenadora. Pires está virando coordenador **agora** e hoje tem carteira de
-> coordenação **vazia** — a tela precisa dizer isso, não quebrar.
+> **Demanda (04/09/2026):** dar acesso a Matheus Pires, Carolina e Jessica.
+>
+> ⚠️ **Correção no mesmo dia:** o enunciado dizia que o Pires estava virando coordenador.
+> **Ele não é** — é corretor, e só. Quem acumula os dois papéis é **Carolina e Jessica**:
+> corretoras com carteira própria e coordenadoras de vendas direcionadas. A visão de
+> coordenação é o **macro dessas vendas** + a fatia do cargo Coordenadora. A linha que
+> chegou a ser criada para o Pires foi revertida (ver T7 dos tickets).
+>
+> O cenário de **carteira de coordenação vazia** continua valendo como comportamento
+> exigido: uma coordenadora nova entra sem venda direcionada, e a tela precisa dizer
+> isso em vez de mostrar R$ 0,00 mudo.
 
 ## 0. Estado verificado em produção (04/09/2026, read-only)
 
@@ -145,8 +151,9 @@ helper devolveu. Nada de conta dentro de JSX.
    **reusando o id existente** (o botão 🔑 do Admin passa o email real; a edge recusaria o
    placeholder `@sync.local`). A outra Caroline do banco (`CAROLINE CRISTINA PERES SUDRE`)
    não tem relação com a coordenação.
-3. **Pires — 0,50%, o mesmo da Carol.** `coordenadoras.percentual_padrao = 0.50`
-   (a Jessica é a exceção negociada, 1,00%).
+3. ~~**Pires — 0,50%, o mesmo da Carol.**~~ **Revertido no mesmo dia: o Pires não é
+   coordenador** (correção do Jonas). A coordenação fica com Carolina (0,50%) e Jessica
+   (1,00%, exceção negociada). Ver T7 dos tickets.
 4. **Cadastro duplicado do Pires** (`a80c1aa4`, inativo, 0 vendas): fica como está. É
    inerte — nenhuma venda aponta pra ele.
 
@@ -170,7 +177,10 @@ helper devolveu. Nada de conta dentro de JSX.
   sem PII do cliente além do que o corretor já vê.
 - **PDF de coordenação**: o `relatorioBeneficiarioPDF` já emite fatia por cargo. Fica pra
   uma segunda passada, depois que a tela estiver no ar.
-- **Rótulo "Sua Comissão (X%)"** do CorretorDashboard usa o percentual do cadastro
-  (2,5% pro Pires) mesmo em venda externa. Só o rótulo — o dinheiro já sai certo por
-  `percentualCorretorDaVenda`. Bug pré-existente, anotado, não corrigido aqui.
+- ~~Rótulo "Sua Comissão (X%)" ... só o rótulo.~~ **Estava errado — era o dinheiro.**
+  O enriquecimento colava o percentual do cadastro em cada venda, e como
+  `percentualCorretorDaVenda` trata `venda.percentual_corretor` como snapshot, a regra
+  multi-tipo era anulada: venda externa de cadastro interno pagava 2,5%. Medido no Pires
+  (agosto/2026, pagas): R$ 4.352,55 na tela dele contra R$ 4.704,87 no Admin, que estava
+  certo. **Corrigido** pelo helper `fatiaCorretorDaVenda`.
 - Escrever `coordenadora_taxa` na criação da venda (ticket T6) — depende da decisão 3.
