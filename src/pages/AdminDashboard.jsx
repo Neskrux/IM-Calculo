@@ -33,6 +33,7 @@ import '../styles/EmpreendimentosPage.css'
 import { LayoutGrid, List, FileCheck } from 'lucide-react'
 import { safeGet, safeSet } from '../utils/storage'
 import { calcularFatorComissao, calcularComissaoPagamento, dataEfetiva, taxaCoordenadoraDaVenda, comissaoHeaderVenda } from '../utils/comissaoCalculator'
+import { podeRedefinirSenha, senhaValida, SENHA_MIN } from '../utils/acessoUsuario'
 import { parseDataLocal, formatDataBR } from '../utils/datas'
 import { baixarPdfBase64 } from '../utils/pdfBase64'
 import { triggerFullSync, triggerNormalizeOnly, probeSienge, pollRunUntilDone } from '../lib/siengeSyncApi'
@@ -1043,6 +1044,11 @@ const AdminDashboard = () => {
   })
   const [buscaCorretorRelatorio, setBuscaCorretorRelatorio] = useState('')
   const [coordenadoras, setCoordenadoras] = useState([])
+  // Redefinicao de senha de corretor/beneficiario que JA tem login (spec 2026-09-04).
+  // Ate aqui a tela so oferecia CRIAR acesso: quem ja tinha conta ficava sem caminho
+  // pra trocar a senha, embora a edge `admin-corretor-acesso` sempre tenha suportado.
+  const [novaSenhaCorretor, setNovaSenhaCorretor] = useState('')
+  const [redefinindoSenha, setRedefinindoSenha] = useState(false)
   const [gerandoPdf, setGerandoPdf] = useState(false)
   const [pdfPreviewUrl, setPdfPreviewUrl] = useState(null) // Preview PDF (aba temporária para ajuste visual)
 
@@ -3949,6 +3955,35 @@ const AdminDashboard = () => {
     }
     if (data?.error) throw new Error(data.error)
     return data
+  }
+
+  // Redefine a senha de um corretor/beneficiario que ja tem login. A edge valida de
+  // novo no servidor (admin + tipo + conta existente); os guardas daqui sao so pra
+  // tela nao oferecer botao que vai falhar. Ver src/utils/acessoUsuario.js.
+  const redefinirSenhaCorretor = async () => {
+    if (!podeRedefinirSenha(selectedItem)) {
+      setMessage({ type: 'error', text: 'Este cadastro ainda nao tem login — use "Ativar acesso ao sistema".' })
+      return
+    }
+    if (!senhaValida(novaSenhaCorretor)) {
+      setMessage({ type: 'error', text: `A senha deve ter no minimo ${SENHA_MIN} caracteres` })
+      return
+    }
+    setRedefinindoSenha(true)
+    setMessage({ type: '', text: '' })
+    try {
+      await chamarAdminCorretorAcesso({
+        acao: 'trocar_senha',
+        corretor_id: selectedItem.id,
+        senha: novaSenhaCorretor,
+      })
+      setNovaSenhaCorretor('')
+      setMessage({ type: 'success', text: `Senha de ${selectedItem.nome} redefinida. Entregue a nova senha e peca a troca no primeiro acesso.` })
+    } catch (err) {
+      setMessage({ type: 'error', text: `Nao foi possivel redefinir a senha: ${err.message}` })
+    } finally {
+      setRedefinindoSenha(false)
+    }
   }
 
   const chamarAdminClienteAcesso = async (body) => {
@@ -11757,11 +11792,41 @@ const AdminDashboard = () => {
                       </div>
                       
                       {corretorForm.tem_acesso_sistema ? (
-                        <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.7)', margin: 0 }}>
-                          {selectedItem?.tipo === 'beneficiario'
-                            ? 'Esta entidade pode fazer login e cai direto no painel do beneficiário.'
-                            : 'Este corretor pode fazer login no sistema com o email cadastrado.'}
-                        </p>
+                        <>
+                          <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.7)', marginBottom: '12px' }}>
+                            {selectedItem?.tipo === 'beneficiario'
+                              ? 'Esta entidade pode fazer login e cai direto no painel do beneficiário.'
+                              : 'Este corretor pode fazer login no sistema com o email cadastrado.'}
+                          </p>
+                          {/* Redefinir senha de quem JÁ tem login (spec 2026-09-04). A tela só
+                              oferecia criar acesso; quem já tinha conta e esqueceu a senha
+                              ficava sem caminho. A edge sempre suportou 'trocar_senha'. */}
+                          <div className="form-group" style={{ marginBottom: 0 }}>
+                            <label>Redefinir senha (mínimo {SENHA_MIN} caracteres)</label>
+                            <div className="input-with-icon">
+                              <Lock size={18} />
+                              <input
+                                type="password"
+                                placeholder="Deixe em branco para não alterar"
+                                value={novaSenhaCorretor}
+                                onChange={(e) => setNovaSenhaCorretor(e.target.value)}
+                              />
+                            </div>
+                            <button
+                              type="button"
+                              className="btn-secondary"
+                              style={{ marginTop: '10px' }}
+                              onClick={redefinirSenhaCorretor}
+                              disabled={redefinindoSenha || !senhaValida(novaSenhaCorretor)}
+                            >
+                              {redefinindoSenha ? 'Redefinindo...' : 'Redefinir senha'}
+                            </button>
+                            <small style={{ display: 'block', marginTop: '8px', fontSize: '11px', color: 'rgba(255,255,255,0.5)' }}>
+                              A senha atual é substituída na hora. Entregue a nova senha à pessoa e
+                              peça que ela troque no primeiro acesso, em Meu Perfil.
+                            </small>
+                          </div>
+                        </>
                       ) : (
                         <>
                           <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.7)', marginBottom: '12px' }}>
