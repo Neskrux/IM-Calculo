@@ -8,6 +8,10 @@ import {
   isVendaAtiva,
   ehBaixaFalsaDeDistrato,
   comissaoHeaderVenda,
+  coordenadoraDoUsuario,
+  papeisDisponiveis,
+  vendasDaCoordenacao,
+  resumoCoordenacao,
 } from './comissaoCalculator'
 
 // Invariante financeiro dos 3 números do corretor (cenário BDD da spec mobile):
@@ -342,5 +346,235 @@ describe('isVendaAtiva — o recorte das telas do corretor (decisão 2026-08-28)
     const vgvExibido = vendas.filter(isVendaAtiva).reduce((s, v) => s + v.valor_venda, 0)
     expect(vgvExibido).toBeCloseTo(9756014.26, 2)
     expect(vgvExibido * 0.04).toBeCloseTo(390240.57, 2)
+  })
+})
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Papel COORDENADOR na conta do corretor (Pires, Carolina, Jessica).
+// Spec: docs/specs/2026-09-04-spec-papel-coordenador.md
+//
+// Os três acumulam papel: corretor (carteira própria) + coordenador (vendas
+// direcionadas via vendas.coordenadora_id). UM login por pessoa; o papel troca na
+// tela. O vínculo pessoa→coordenação é coordenadoras.usuario_id (migration 030/031).
+// ─────────────────────────────────────────────────────────────────────────────
+
+const CAROL = {
+  id: 'co-carol', nome: 'Carol', ativo: true,
+  usuario_id: 'u-carolina', percentual_padrao: 0.5,
+}
+const JESSICA = {
+  id: 'co-jessica', nome: 'Jessica', ativo: true,
+  usuario_id: 'u-jessica', percentual_padrao: 1.0,
+}
+const PIRES_COORD = {
+  id: 'co-pires', nome: 'Pires', ativo: true,
+  usuario_id: 'u-pires', percentual_padrao: 0.5,
+}
+const COORDS = [CAROL, JESSICA, PIRES_COORD]
+
+// Cargo Coordenadora só existe pra venda EXTERNA (verificado em produção: 0,5%,
+// num único empreendimento). Venda interna não tem coordenadora.
+const CARGOS_EXT = [
+  { nome_cargo: 'Corretor', tipo_corretor: 'externo', percentual: 4 },
+  { nome_cargo: 'Coordenadora', tipo_corretor: 'externo', percentual: 0.5 },
+  { nome_cargo: 'Nohros', tipo_corretor: 'externo', percentual: 0.5 },
+]
+
+describe('coordenadoraDoUsuario (o vínculo que liga a pessoa ao papel)', () => {
+  it('usuário com linha ativa devolve a linha', () => {
+    expect(coordenadoraDoUsuario({ id: 'u-carolina' }, COORDS)).toBe(CAROL)
+  })
+
+  it('corretor sem linha em coordenadoras devolve null', () => {
+    expect(coordenadoraDoUsuario({ id: 'u-qualquer' }, COORDS)).toBeNull()
+  })
+
+  it('linha INATIVA não vira papel', () => {
+    const inativa = [{ ...CAROL, ativo: false }]
+    expect(coordenadoraDoUsuario({ id: 'u-carolina' }, inativa)).toBeNull()
+  })
+
+  it('compara id como string dos dois lados (id do banco vs id do perfil)', () => {
+    expect(coordenadoraDoUsuario({ id: 7 }, [{ ...CAROL, usuario_id: '7' }])).toBeTruthy()
+  })
+
+  it('perfil nulo ou lista vazia devolve null, sem lançar', () => {
+    expect(coordenadoraDoUsuario(null, COORDS)).toBeNull()
+    expect(coordenadoraDoUsuario({ id: 'u-carolina' }, [])).toBeNull()
+    expect(coordenadoraDoUsuario({ id: 'u-carolina' }, undefined)).toBeNull()
+  })
+})
+
+describe('papeisDisponiveis (um login, dois papéis)', () => {
+  it('corretor comum tem só o papel corretor', () => {
+    expect(papeisDisponiveis({ id: 'u-qualquer' }, COORDS)).toEqual(['corretor'])
+  })
+
+  it('quem coordena acumula os dois — corretor sempre primeiro (default)', () => {
+    expect(papeisDisponiveis({ id: 'u-jessica' }, COORDS)).toEqual(['corretor', 'coordenacao'])
+  })
+
+  it('Pires sem linha ainda: só corretor (papel não se inventa)', () => {
+    expect(papeisDisponiveis({ id: 'u-pires' }, [CAROL, JESSICA])).toEqual(['corretor'])
+  })
+})
+
+describe('vendasDaCoordenacao (escopo do papel de coordenação)', () => {
+  const vendas = [
+    { id: 'v1', corretor_id: 'u-outro', coordenadora_id: 'co-carol', status: 'pago', excluido: false },
+    { id: 'v2', corretor_id: 'u-outro2', coordenadora_id: 'co-carol', status: 'pendente', excluido: false },
+    // venda que a PRÓPRIA Carol vendeu: não entra no papel de coordenação
+    { id: 'v3', corretor_id: 'u-carolina', coordenadora_id: 'co-carol', status: 'pago', excluido: false },
+    { id: 'v4', corretor_id: 'u-outro', coordenadora_id: 'co-carol', status: 'distrato', excluido: false },
+    { id: 'v5', corretor_id: 'u-outro', coordenadora_id: 'co-carol', status: 'pago', excluido: true },
+    { id: 'v6', corretor_id: 'u-outro', coordenadora_id: 'co-jessica', status: 'pago', excluido: false },
+  ]
+
+  it('traz só as direcionadas a ela', () => {
+    expect(vendasDaCoordenacao(vendas, CAROL).map(v => v.id)).toEqual(['v1', 'v2'])
+  })
+
+  it('exclui a venda que ela mesma vendeu (regra da migration 031)', () => {
+    expect(vendasDaCoordenacao(vendas, CAROL).some(v => v.id === 'v3')).toBe(false)
+  })
+
+  it('exclui distratada e excluída — mesma régua única das telas do corretor', () => {
+    const ids = vendasDaCoordenacao(vendas, CAROL).map(v => v.id)
+    expect(ids).not.toContain('v4')
+    expect(ids).not.toContain('v5')
+  })
+
+  it('não vaza a coordenação de outra pessoa', () => {
+    expect(vendasDaCoordenacao(vendas, JESSICA).map(v => v.id)).toEqual(['v6'])
+  })
+
+  it('sem coordenadora ou sem vendas devolve lista vazia', () => {
+    expect(vendasDaCoordenacao(vendas, null)).toEqual([])
+    expect(vendasDaCoordenacao(null, CAROL)).toEqual([])
+  })
+})
+
+describe('resumoCoordenacao (o número do coordenador + macro neutro)', () => {
+  const vDirecionada = {
+    id: 'v1', corretor_id: 'u-outro', coordenadora_id: 'co-carol',
+    tipo_corretor: 'externo', status: 'pago', excluido: false, coordenadora_taxa: 0.5,
+  }
+  const parcela = (over = {}) => ({
+    venda_id: 'v1', status: 'pago', valor: 1000,
+    comissao_gerada: 700, percentual_comissao_total: 7,
+    data_prevista: '2026-05-20', data_pagamento: '2026-05-20', ...over,
+  })
+  const base = { coordenadora: CAROL, cargos: CARGOS_EXT, coordenadoras: COORDS }
+
+  it('fatia paga = comissao_gerada × taxa/percentual_total (0,5/7 de 700 = 50)', () => {
+    const r = resumoCoordenacao({ ...base, vendas: [vDirecionada], pagamentos: [parcela()] })
+    expect(r.fatiaPaga).toBeCloseTo(50, 2)
+    expect(r.fatiaPendente).toBeCloseTo(0, 2)
+  })
+
+  it('snapshot da venda vence a taxa vigente (contrato pré-cutover a 1,0%)', () => {
+    const preCutover = { ...vDirecionada, coordenadora_taxa: 1 }
+    const r = resumoCoordenacao({ ...base, vendas: [preCutover], pagamentos: [parcela()] })
+    // 700 × 1/7 = 100 (não 50, que seria a taxa vigente da Carol)
+    expect(r.fatiaPaga).toBeCloseTo(100, 2)
+  })
+
+  it('sem snapshot cai na taxa vigente da coordenadora (Jessica = 1,0%)', () => {
+    const semSnap = { ...vDirecionada, coordenadora_id: 'co-jessica', coordenadora_taxa: null }
+    const r = resumoCoordenacao({
+      ...base, coordenadora: JESSICA, vendas: [semSnap], pagamentos: [parcela()],
+    })
+    expect(r.fatiaPaga).toBeCloseTo(100, 2)
+  })
+
+  it('parcela cancelada NUNCA infla nenhum número', () => {
+    const r = resumoCoordenacao({
+      ...base, vendas: [vDirecionada],
+      pagamentos: [parcela(), parcela({ status: 'cancelado', comissao_gerada: 7000 })],
+    })
+    expect(r.fatiaPaga).toBeCloseTo(50, 2)
+    expect(r.nParcelasPagas).toBe(1)
+  })
+
+  it('pagamento de venda fora do escopo é ignorado', () => {
+    const r = resumoCoordenacao({
+      ...base, vendas: [vDirecionada],
+      pagamentos: [parcela(), parcela({ venda_id: 'v-outra', comissao_gerada: 7000 })],
+    })
+    expect(r.fatiaPaga).toBeCloseTo(50, 2)
+  })
+
+  it('pendente entra na fatia a receber, nunca na recebida', () => {
+    const r = resumoCoordenacao({
+      ...base, vendas: [vDirecionada],
+      pagamentos: [parcela({ status: 'pendente', data_pagamento: null })],
+    })
+    expect(r.fatiaPaga).toBeCloseTo(0, 2)
+    expect(r.fatiaPendente).toBeCloseTo(50, 2)
+  })
+
+  it('CARTEIRA VAZIA (caso Pires): vazio=true, zeros, e não lança', () => {
+    const r = resumoCoordenacao({ ...base, coordenadora: PIRES_COORD, vendas: [], pagamentos: [] })
+    expect(r.vazio).toBe(true)
+    expect(r.nVendas).toBe(0)
+    expect(r.fatiaPaga).toBe(0)
+    expect(r.fatiaPendente).toBe(0)
+    expect(r.pctRecebido).toBe(0)
+    expect(r.serieMensal).toEqual([])
+  })
+
+  it('com venda no escopo, vazio=false', () => {
+    const r = resumoCoordenacao({ ...base, vendas: [vDirecionada], pagamentos: [parcela()] })
+    expect(r.vazio).toBe(false)
+    expect(r.nVendas).toBe(1)
+  })
+
+  it('macro neutro usa valor de PARCELA, nunca comissão de outro cargo', () => {
+    const r = resumoCoordenacao({
+      ...base, vendas: [vDirecionada],
+      pagamentos: [
+        parcela(),
+        parcela({ status: 'pendente', valor: 3000, data_pagamento: null, data_prevista: '2099-01-20' }),
+      ],
+    })
+    expect(r.nParcelasPagas).toBe(1)
+    expect(r.nParcelasPendentes).toBe(1)
+    expect(r.pctRecebido).toBeCloseTo(25, 2) // 1000 pago de 4000 previstos
+  })
+
+  it('vencida em aberto = pendente com data_prevista no passado', () => {
+    const r = resumoCoordenacao({
+      ...base, vendas: [vDirecionada], hoje: '2026-06-01',
+      pagamentos: [
+        parcela({ status: 'pendente', data_pagamento: null, data_prevista: '2026-05-20', valor: 1000 }),
+        parcela({ status: 'pendente', data_pagamento: null, data_prevista: '2099-01-20', valor: 1000 }),
+      ],
+    })
+    expect(r.nVencidasAbertas).toBe(1)
+    expect(r.valorVencidoAberto).toBeCloseTo(1000, 2)
+  })
+
+  it('filtro por mês usa a data efetiva do pagamento', () => {
+    const pags = [parcela({ data_pagamento: '2026-05-20' }), parcela({ data_pagamento: '2026-06-20' })]
+    const r = resumoCoordenacao({ ...base, vendas: [vDirecionada], pagamentos: pags, mes: '2026-05' })
+    expect(r.fatiaPaga).toBeCloseTo(50, 2)
+  })
+
+  it('série mensal agrega a fatia paga por mês, mais recente primeiro', () => {
+    const pags = [
+      parcela({ data_pagamento: '2026-05-20' }),
+      parcela({ data_pagamento: '2026-06-20' }),
+      parcela({ data_pagamento: '2026-06-25' }),
+    ]
+    const r = resumoCoordenacao({ ...base, vendas: [vDirecionada], pagamentos: pags })
+    expect(r.serieMensal[0][0]).toBe('2026-06')
+    expect(r.serieMensal[0][1]).toBeCloseTo(100, 2)
+    expect(r.serieMensal[1][0]).toBe('2026-05')
+  })
+
+  it('sem coordenadora devolve resumo vazio em vez de lançar', () => {
+    const r = resumoCoordenacao({ ...base, coordenadora: null, vendas: [vDirecionada], pagamentos: [parcela()] })
+    expect(r.vazio).toBe(true)
+    expect(r.fatiaPaga).toBe(0)
   })
 })

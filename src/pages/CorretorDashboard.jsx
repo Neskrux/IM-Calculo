@@ -38,7 +38,12 @@ import {
   percentualCorretorDaVenda,
   contarVendas,
   isVendaAtiva,
+  coordenadoraDoUsuario,
+  papeisDisponiveis,
+  vendasDaCoordenacao,
+  resumoCoordenacao,
 } from '../utils/comissaoCalculator'
+import PainelCoordenacao from '../components/corretor/PainelCoordenacao'
 import { parseDataLocal, formatDataBR } from '../utils/datas'
 
 const CorretorDashboard = () => {
@@ -59,6 +64,20 @@ const CorretorDashboard = () => {
   
   const [vendas, setVendas] = useState([])
   const [loading, setLoading] = useState(true)
+
+  // ── Papel COORDENAÇÃO (spec 2026-09-04) ────────────────────────────────────
+  // Um login por pessoa: quem tem linha ativa em `coordenadoras` acumula o papel e
+  // troca na tela. `tipo` continua 'corretor' — marcar de outro tipo apagaria a
+  // carteira própria, e duas contas por pessoa quebra o vínculo com as vendas.
+  const [papel, setPapel] = useState('corretor')
+  const [coordenadoras, setCoordenadoras] = useState([])
+  const [cargosEmp, setCargosEmp] = useState([])
+  const [vendasCoord, setVendasCoord] = useState([])
+  const [pagsCoord, setPagsCoord] = useState([])
+  const [coordCarregado, setCoordCarregado] = useState(false)
+  const [coordCarregando, setCoordCarregando] = useState(false)
+  const [coordErro, setCoordErro] = useState(null)
+  const [coordMes, setCoordMes] = useState('')
   const [periodo, setPeriodo] = useState('todos')
   const [menuOpen, setMenuOpen] = useState(false)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
@@ -1149,6 +1168,110 @@ const CorretorDashboard = () => {
     }
   }
 
+  // ── Papel COORDENAÇÃO: vínculo, carga e resumo ────────────────────────────
+  // Spec: docs/specs/2026-09-04-spec-papel-coordenador.md
+  const minhaCoordenacao = useMemo(
+    () => coordenadoraDoUsuario(userProfile, coordenadoras),
+    [userProfile, coordenadoras]
+  )
+  const papeis = useMemo(
+    () => papeisDisponiveis(userProfile, coordenadoras),
+    [userProfile, coordenadoras]
+  )
+
+  // A tabela de coordenadoras é pequena (domínio) — leitura direta, sem paginar.
+  useEffect(() => {
+    if (!user) return
+    let vivo = true
+    supabase.from('coordenadoras').select('*').eq('ativo', true)
+      .then(({ data }) => { if (vivo) setCoordenadoras(data || []) })
+    return () => { vivo = false }
+  }, [user])
+
+  // Carga sob demanda: só quando o papel de coordenação é aberto. A Carol tem 172
+  // vendas direcionadas — as parcelas passam de 1000 linhas, e sem paginação o
+  // PostgREST corta em silêncio (leitura-de-listas-e-refetch.md).
+  useEffect(() => {
+    if (papel !== 'coordenacao' || !minhaCoordenacao || coordCarregado || coordCarregando) return
+    let vivo = true
+    const carregar = async () => {
+      setCoordCarregando(true)
+      setCoordErro(null)
+      try {
+        const { data: cargosData, error: eCargos } = await supabase
+          .from('cargos_empreendimento')
+          .select('empreendimento_id, nome_cargo, tipo_corretor, percentual')
+        if (eCargos) throw eCargos
+
+        const vendasData = await fetchAllPaginated((from, to) =>
+          supabase.from('vendas')
+            .select('id, unidade, corretor_id, empreendimento_id, tipo_corretor, coordenadora_id, coordenadora_taxa, valor_venda, valor_pro_soluto, fator_comissao, status, situacao_contrato, data_distrato, excluido')
+            .eq('coordenadora_id', minhaCoordenacao.id)
+            .order('id', { ascending: true })
+            .range(from, to)
+        )
+        // Escopo canônico (exclui venda própria, distrato e excluída) vem do helper.
+        const escopo = vendasDaCoordenacao(vendasData, minhaCoordenacao)
+
+        const pags = []
+        const LOTE = 100 // .in() com lista gigante estoura a URL — fatiar por lote
+        for (let i = 0; i < escopo.length; i += LOTE) {
+          const ids = escopo.slice(i, i + LOTE).map(v => v.id)
+          const parte = await fetchAllPaginated((from, to) =>
+            supabase.from('pagamentos_prosoluto')
+              .select('id, venda_id, tipo, numero_parcela, valor, status, data_prevista, data_pagamento, comissao_gerada, percentual_comissao_total, fator_comissao_aplicado')
+              .in('venda_id', ids)
+              .order('data_prevista', { ascending: true })
+              .order('id', { ascending: true })
+              .range(from, to),
+            { concurrency: 4 }
+          )
+          pags.push(...parte)
+        }
+
+        if (!vivo) return
+        setCargosEmp(cargosData || [])
+        setVendasCoord(escopo)
+        setPagsCoord(pags)
+        setCoordCarregado(true)
+      } catch (err) {
+        if (vivo) setCoordErro(err?.message || String(err))
+      } finally {
+        if (vivo) setCoordCarregando(false)
+      }
+    }
+    carregar()
+    return () => { vivo = false }
+  }, [papel, minhaCoordenacao, coordCarregado, coordCarregando])
+
+  // O número do coordenador: nenhuma conta na tela, tudo vem do helper testado.
+  const resumoCoord = useMemo(
+    () => resumoCoordenacao({
+      vendas: vendasCoord,
+      pagamentos: pagsCoord,
+      coordenadora: minhaCoordenacao,
+      cargos: cargosEmp,
+      coordenadoras,
+      mes: coordMes,
+    }),
+    [vendasCoord, pagsCoord, minhaCoordenacao, cargosEmp, coordenadoras, coordMes]
+  )
+
+  const seletorPapel = papeis.length > 1 ? (
+    <div className="coord-papel-switch" role="group" aria-label="Papel">
+      {papeis.map((p) => (
+        <button
+          key={p}
+          type="button"
+          className={papel === p ? 'active' : ''}
+          onClick={() => setPapel(p)}
+        >
+          {p === 'corretor' ? 'Corretor' : 'Coordenação'}
+        </button>
+      ))}
+    </div>
+  ) : null
+
   const getTotalVendas = () => {
     // Régua única D2: valor em carteira = vendas ATIVAS (VGV de contrato morto não é carteira).
     return filteredVendas.filter(isVendaAtiva).reduce((acc, v) => acc + (parseFloat(v.valor_venda) || 0), 0)
@@ -1588,6 +1711,20 @@ const CorretorDashboard = () => {
           {/* Dashboard Tab */}
           {activeTab === 'dashboard' && (
             <>
+      {/* Seletor de papel — só aparece pra quem acumula corretor + coordenação
+          (spec 2026-09-04). Default sempre 'corretor': zero regressão pros demais. */}
+      {seletorPapel}
+      {papel === 'coordenacao' ? (
+        <PainelCoordenacao
+          resumo={resumoCoord}
+          carregando={coordCarregando}
+          erro={coordErro}
+          mes={coordMes}
+          setMes={setCoordMes}
+          nomeCoordenacao={minhaCoordenacao?.nome}
+        />
+      ) : (
+      <>
       {/* Welcome Section */}
       <section className="welcome-section">
         <div className="welcome-content">
@@ -1850,6 +1987,8 @@ const CorretorDashboard = () => {
         </div>
       </section>
 
+      </>
+      )}
             </>
           )}
 
