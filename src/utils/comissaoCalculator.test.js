@@ -12,6 +12,7 @@ import {
   papeisDisponiveis,
   vendasDaCoordenacao,
   resumoCoordenacao,
+  fatiaCorretorDaVenda,
 } from './comissaoCalculator'
 
 // Invariante financeiro dos 3 números do corretor (cenário BDD da spec mobile):
@@ -576,5 +577,66 @@ describe('resumoCoordenacao (o número do coordenador + macro neutro)', () => {
     const r = resumoCoordenacao({ ...base, coordenadora: null, vendas: [vDirecionada], pagamentos: [parcela()] })
     expect(r.vazio).toBe(true)
     expect(r.fatiaPaga).toBe(0)
+  })
+})
+
+// ─────────────────────────────────────────────────────────────────────────────
+// fatiaCorretorDaVenda — o enriquecimento da venda na tela do corretor.
+//
+// Bug real encontrado em 04/09/2026 com o Matheus Pires (cadastro INTERNO, 2,5%,
+// com 13 vendas EXTERNAS). O CorretorDashboard colava em cada venda um
+// `percentual_corretor` vindo do CADASTRO. Como `percentualCorretorDaVenda` trata
+// `venda.percentual_corretor` como snapshot e ele vence tudo, a venda externa
+// passava a pagar 2,5% em vez de 4% — e o proprio helper multi-tipo ficava cego,
+// porque recebia de volta o valor que a tela tinha inventado.
+//
+// Medido em producao (agosto/2026, parcelas pagas, cargo Corretor):
+//   relatorio do proprio corretor  R$ 4.352,55  (2,5% em tudo)
+//   relatorio do Admin             R$ 4.704,87  (taxa do tipo da venda)  <- correto
+// Nao era distrato: em agosto a fatia vinda de distratada e R$ 0,00.
+//
+// `vendas.percentual_corretor` NAO EXISTE no banco — o campo so nasce nesse
+// enriquecimento. Por isso o helper aqui parte da venda crua.
+// ─────────────────────────────────────────────────────────────────────────────
+describe('fatiaCorretorDaVenda (enriquecimento da venda na tela do corretor)', () => {
+  const pires = { tipo_corretor: 'interno', percentual_corretor: 2.5 }
+
+  it('venda EXTERNA de cadastro interno usa 4% — o bug do Pires', () => {
+    const venda = { tipo_corretor: 'externo', valor_venda: 400000, valor_pro_soluto: 80000 }
+    expect(fatiaCorretorDaVenda(venda, pires).percentual).toBe(4)
+  })
+
+  it('venda INTERNA do mesmo cadastro segue 2,5%', () => {
+    const venda = { tipo_corretor: 'interno', valor_venda: 400000, valor_pro_soluto: 80000 }
+    expect(fatiaCorretorDaVenda(venda, pires).percentual).toBe(2.5)
+  })
+
+  it('o resultado NAO pode se auto-envenenar: reenriquecer nao muda o percentual', () => {
+    const venda = { tipo_corretor: 'externo', valor_venda: 400000, valor_pro_soluto: 80000 }
+    const uma = fatiaCorretorDaVenda(venda, pires)
+    const duas = fatiaCorretorDaVenda({ ...venda, ...uma, percentual_corretor: uma.percentual }, pires)
+    expect(duas.percentual).toBe(4)
+  })
+
+  it('fator sai pela formula canonica com o percentual da VENDA', () => {
+    const venda = { tipo_corretor: 'externo', valor_venda: 400000, valor_pro_soluto: 80000 }
+    // (400000 x 4%) / 80000 = 0,2
+    expect(fatiaCorretorDaVenda(venda, pires).fator).toBeCloseTo(0.2, 6)
+  })
+
+  it('comissao existente na venda e preservada; so calcula quando falta', () => {
+    const comSnapshot = { tipo_corretor: 'externo', valor_venda: 400000, valor_pro_soluto: 80000, comissao_corretor: 12345 }
+    expect(fatiaCorretorDaVenda(comSnapshot, pires).comissao).toBe(12345)
+    const sem = { tipo_corretor: 'externo', valor_venda: 400000, valor_pro_soluto: 80000, comissao_corretor: 0 }
+    expect(fatiaCorretorDaVenda(sem, pires).comissao).toBeCloseTo(16000, 2) // 4% de 400k
+  })
+
+  it('pro-soluto zero nao quebra: fator 0, sem divisao por zero', () => {
+    const venda = { tipo_corretor: 'externo', valor_venda: 400000, valor_pro_soluto: 0 }
+    expect(fatiaCorretorDaVenda(venda, pires).fator).toBe(0)
+  })
+
+  it('venda sem tipo herda o do perfil', () => {
+    expect(fatiaCorretorDaVenda({ valor_venda: 1, valor_pro_soluto: 1 }, pires).percentual).toBe(2.5)
   })
 })

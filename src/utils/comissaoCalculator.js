@@ -412,3 +412,37 @@ export function resumoCoordenacao({
     serieMensal: [...porMes.entries()].sort((a, b) => b[0].localeCompare(a[0])).slice(0, 13),
   }
 }
+
+/**
+ * Enriquecimento da venda na tela do corretor: percentual, fator e comissão do
+ * cargo Corretor PARA AQUELA VENDA.
+ *
+ * Existe porque o CorretorDashboard fazia essa conta inline e colava em cada venda um
+ * `percentual_corretor` tirado do CADASTRO. Como `percentualCorretorDaVenda` trata
+ * `venda.percentual_corretor` como snapshot (e snapshot vence tudo), o objeto enriquecido
+ * voltava pro helper e anulava a regra multi-tipo: venda EXTERNA de cadastro INTERNO
+ * passava a pagar 2,5% em vez de 4%.
+ *
+ * Caso Matheus Pires (agosto/2026, parcelas pagas, cargo Corretor), medido em produção:
+ *   relatório do próprio corretor  R$ 4.352,55  (2,5% em tudo)   ← errado
+ *   relatório do Admin             R$ 4.704,87  (taxa do tipo)   ← certo
+ * A diferença de R$ 352,32 não tinha nada a ver com distrato: naquele mês a fatia vinda
+ * de venda distratada é R$ 0,00.
+ *
+ * ⚠️ `vendas.percentual_corretor` NÃO EXISTE no banco — o campo nasce só neste
+ * enriquecimento. Passe sempre a venda como veio do banco.
+ */
+export function fatiaCorretorDaVenda(venda, perfil) {
+  const valorVenda = parseFloat(venda?.valor_venda) || 0
+  const valorProSoluto = parseFloat(venda?.valor_pro_soluto) || 0
+  const percentual = percentualCorretorDaVenda(venda, perfil)
+
+  const comissaoSnapshot = parseFloat(venda?.comissao_corretor) || 0
+  const comissao = comissaoSnapshot > 0 ? comissaoSnapshot : (valorVenda * percentual) / 100
+
+  return {
+    percentual,
+    comissao,
+    fator: calcularFatorComissao(valorVenda, valorProSoluto, percentual),
+  }
+}
