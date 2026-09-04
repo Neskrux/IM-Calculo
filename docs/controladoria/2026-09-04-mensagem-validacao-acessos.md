@@ -71,7 +71,7 @@ valores acima já consideram isso. Se aparecer algo em torno da metade disso, me
 seria sinal de que a taxa dela não está sendo aplicada.
 
 Em **Corretor**, a carteira própria dela está praticamente vazia: a única venda no nome
-dela foi distratada, então é normal não aparecer venda ativa.
+dela foi distratada, então é normal não aparecer venda ativa. Isso não é erro.
 
 ### 3. Matheus Pires — `piresmatheusdesouza@gmail.com`
 
