@@ -136,18 +136,31 @@ helper devolveu. Nada de conta dentro de JSX.
 - Régua única das telas do corretor: `isVendaAtiva` (spec 2026-08-28).
 - `usuarios.id` é a identidade; login só pela edge, nunca pelo painel do Supabase.
 
-## 6. Decisões que precisam do Jonas (bloqueiam produção, não o código)
+## 6. Decisões tomadas (Jonas, 04/09/2026)
 
-1. **Email da Jessica**: o cadastro é `jessica@imincorporadora.com.br` e ela **já tem
-   login**. O card diz `jessicacararo@`. Manter o atual ou trocar?
-2. **Email da Carolina**: cadastro tem placeholder de sync. Criar o acesso com
-   `carolina@imincorporadora.com.br` reusando o id `4c04b405…3c0c` — confirmar que a
-   Carolina do card é a "Carolina de Oliveira dos Santos Rita" (existe outra Caroline no
-   banco, `CAROLINE CRISTINA PERES SUDRE`, que **não** é a coordenadora).
-3. **Taxa do Pires como coordenador** (`coordenadoras.percentual_padrao`): 0,50% como a
-   Carol, 1,00% como a Jessica, ou outra? Sem isso a linha dele não é criada.
-4. **Cadastro duplicado do Pires** (`a80c1aa4`, inativo, 0 vendas): deixar como está ou
-   limpar? Não bloqueia — só é ruído.
+1. **Jessica — mantém `jessica@imincorporadora.com.br`.** Ela já tem login nesse email;
+   nada a fazer. `jessicacararo@` não entra.
+2. **Carolina — é a "Carolina de Oliveira dos Santos Rita"** (id `4c04b405…3c0c`), e o
+   email interno dela é `carolina@imincorporadora.com.br`. O acesso nasce com esse email,
+   **reusando o id existente** (o botão 🔑 do Admin passa o email real; a edge recusaria o
+   placeholder `@sync.local`). A outra Caroline do banco (`CAROLINE CRISTINA PERES SUDRE`)
+   não tem relação com a coordenação.
+3. **Pires — 0,50%, o mesmo da Carol.** `coordenadoras.percentual_padrao = 0.50`
+   (a Jessica é a exceção negociada, 1,00%).
+4. **Cadastro duplicado do Pires** (`a80c1aa4`, inativo, 0 vendas): fica como está. É
+   inerte — nenhuma venda aponta pra ele.
+
+### O que essas decisões implicam
+
+- A taxa da coordenação do Pires só vira número quando houver venda direcionada. Como
+  toda venda direcionada nova nasce **sem** `coordenadora_taxa` (nada escreve o snapshot
+  na criação), a fatia dele cai no fallback da taxa vigente — que agora é 0,50%, o valor
+  certo. O ticket T6 deixa de ser urgente, mas segue valendo: snapshot é mais seguro que
+  fallback quando a taxa mudar de novo.
+- O cargo Coordenadora só existe pra `tipo_corretor='externo'` (migration 030). O Pires é
+  **interno como corretor**, o que não o impede de coordenar — mas venda **interna**
+  direcionada a ele não teria cargo Coordenadora na tabela de cargos. Vale conferir com a
+  controladoria que as vendas destinadas a ele serão externas.
 
 ## 7. Fora de escopo (registrado)
 

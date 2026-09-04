@@ -1,7 +1,7 @@
 # Tickets — papel Coordenador na conta do corretor
 
 Spec: [2026-09-04-spec-papel-coordenador.md](2026-09-04-spec-papel-coordenador.md).
-Ordem de execução: T1 → T2 → T3 → T4. T5/T6/T7 são gated pelo Jonas.
+Ordem de execução: T1 → T2 → T3 → T4 (feitos). T5/T7 esperam só o OK de execução em produção — as decisões já vieram (04/09). T6 segue aberto.
 
 ---
 
@@ -90,34 +90,41 @@ números do helper.
 
 ---
 
-## T5 — Acessos das três pessoas (PRODUÇÃO — gated)
+## T5 — Acesso da Carolina (PRODUÇÃO — só falta o OK de execução)
 
-Não executar sem OK explícito do Jonas. Depende das decisões 1 e 2 da spec.
+Decisões 1–3 já respondidas. Nada mais bloqueia; falta o "pode aplicar".
 
-- **Pires** (`9b1f5c90…4349`): já tem login. Nada a criar.
-- **Jessica** (`e94de4d7…ab7e`): já tem login em `jessica@`. Se o Jonas quiser
-  `jessicacararo@`, é troca de email do cadastro + do Auth, **mantendo o mesmo id**.
-- **Carolina** (`4c04b405…3c0c`): criar acesso pelo botão 🔑 do Admin passando
-  `carolina@imincorporadora.com.br` — a edge recusa o placeholder `@sync.local`, então o
-  email real é obrigatório no payload. **Nunca criar pelo painel do Supabase** (gera id
-  novo e desliga as 4 vendas dela).
+- **Pires** (`9b1f5c90…4349`): já tem login. Nada a fazer.
+- **Jessica** (`e94de4d7…ab7e`): já tem login em `jessica@`. Mantido. Nada a fazer.
+- **Carolina** (`4c04b405…3c0c`): criar acesso pelo botão 🔑 do Admin, informando
+  `carolina@imincorporadora.com.br`. A edge grava o email no cadastro e cria a conta do
+  Auth **com o mesmo id**. **Quem digita a senha é o Jonas, no próprio painel** — senha
+  não passa por aqui. **Nunca criar pelo painel do Supabase**: geraria id novo e
+  desligaria as 4 vendas dela.
 
-Verificação: rodar `scripts/_validar-acesso-usuario.mjs` com as credenciais de cada uma e
-conferir que o perfil casa e a carteira aparece.
-
----
-
-## T6 — `coordenadora_taxa` na criação da venda (gated pela decisão 3)
-
-Hoje nada escreve o snapshot na criação — venda direcionada nova nasce NULL e cai no
-fallback da taxa vigente. Ao salvar venda com `coordenadora_id` no Admin, gravar
-`coordenadora_taxa`. Qual valor (cutover × `percentual_padrao` da coordenadora) depende da
-decisão 3 da spec. Não implementar antes da resposta.
+Verificação depois: `scripts/_validar-acesso-usuario.mjs` com as credenciais dela —
+confere que o perfil casa pelo id e que a carteira aparece.
 
 ---
 
-## T7 — Linha do Pires em `coordenadoras` (PRODUÇÃO — gated pela decisão 3)
+## T6 — `coordenadora_taxa` na criação da venda
 
-`INSERT` com `nome`, `usuario_id = 9b1f5c90…4349`, `percentual_padrao` a definir,
-`ativo = true`. Enquanto não existir, o Pires não vê o seletor — e é o comportamento
-correto (cenário 1), não um bug.
+Hoje só o backfill escreve o snapshot; venda direcionada nova nasce NULL e cai no
+fallback da taxa vigente da coordenadora. Com a decisão 3 o fallback dá o valor certo pro
+Pires (0,50%), então isto deixou de ser urgente — mas snapshot > fallback quando a taxa
+mudar de novo. Ao salvar venda com `coordenadora_id` no Admin, gravar
+`coordenadora_taxa` com a taxa vigente da coordenadora daquela venda.
+
+---
+
+## T7 — Linha do Pires em `coordenadoras` (PRODUÇÃO — só falta o OK de execução)
+
+```sql
+INSERT INTO coordenadoras (nome, usuario_id, percentual_padrao, ativo)
+VALUES ('Matheus Pires', '9b1f5c90-defa-4b6c-b011-ffb496a14349', 0.50, true);
+```
+
+Nome livre no índice único de ativas (só existem "Carol" e "Jessica"). Enquanto a linha
+não existir, o Pires não vê o seletor — comportamento correto (cenário 1), não bug.
+Depois de inserida, ele vê o painel no estado vazio (cenário 4) até o Admin direcionar a
+primeira venda.
