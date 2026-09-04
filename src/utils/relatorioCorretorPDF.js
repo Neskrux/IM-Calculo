@@ -99,9 +99,14 @@ const rotuloParcela = (p) => {
  * @param {array}  p.vendas           todas as vendas do corretor
  * @param {array}  p.pagamentos       todas as parcelas das vendas do corretor
  * @param {object} p.filtros          { empreendimento, status, dataInicio, dataFim }
+ * @param {function} [p.calcComissao]  regra de comissao por parcela. Sem ela, usa a fatia
+ *   do cargo CORRETOR (comportamento historico). O papel de coordenacao injeta a fatia do
+ *   cargo COORDENADORA — sem isso o PDF da coordenacao sairia com a fatia de corretor das
+ *   vendas de OUTRAS pessoas, que e numero errado e vazamento. Ver spec 2026-09-04.
+ * @param {string} [p.subtitulo]       linha abaixo do nome (ex.: "Coordenacao").
  */
-export function gerarRelatorioCorretorPDF({ corretorProfile, vendas = [], pagamentos = [], filtros = {} }) {
-  const calcularComissao = makeCalcularComissao(vendas, corretorProfile)
+export function gerarRelatorioCorretorPDF({ corretorProfile, vendas = [], pagamentos = [], filtros = {}, calcComissao = null, subtitulo = '' }) {
+  const calcularComissao = calcComissao || makeCalcularComissao(vendas, corretorProfile)
   const { vendasFiltradas, pagamentosFiltrados } = getRelatorioDados({ vendas, pagamentos, filtros })
 
   const totalVendas = vendasFiltradas.length
@@ -124,7 +129,10 @@ export function gerarRelatorioCorretorPDF({ corretorProfile, vendas = [], pagame
   doc.setTextColor(...cores.dourado); doc.setFontSize(20); doc.setFont('helvetica', 'bold')
   doc.text('RELATORIO DE COMISSOES', 105, 18, { align: 'center' })
   doc.setTextColor(...cores.branco); doc.setFontSize(12); doc.setFont('helvetica', 'normal')
-  doc.text(capitalizeName(corretorProfile?.nome || 'Corretor'), 105, 28, { align: 'center' })
+  doc.text(
+    capitalizeName(corretorProfile?.nome || 'Corretor') + (subtitulo ? ` — ${subtitulo}` : ''),
+    105, 28, { align: 'center' },
+  )
 
   doc.setTextColor(...cores.dourado); doc.setFontSize(10)
   doc.text(`Gerado em: ${new Date().toLocaleDateString('pt-BR')} as ${new Date().toLocaleTimeString('pt-BR')}`, 105, 45, { align: 'center' })

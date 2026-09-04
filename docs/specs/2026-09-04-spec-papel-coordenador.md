@@ -75,6 +75,19 @@ CorretorDashboard — mesma mecânica do toggle que o `AdminDashboard` já usa n
 | **Corretor** (default) | `corretor_id = eu` (comportamento atual, zero regressão) | fatia do cargo Corretor |
 | **Coordenação** | `coordenadora_id = minha` **menos** as que eu vendi | fatia do cargo **Coordenadora** + macro neutro |
 
+**Trocar de papel troca a BASE DA TELA INTEIRA** (decisão do Jonas, 04/09, depois de ver a
+primeira versão): não é só um painel no Dashboard. Minhas Vendas, Meus Pagamentos, Meus
+Clientes e Relatórios passam a falar das vendas **direcionadas**, e o PDF sai com a fatia
+do cargo Coordenadora. *"Se não, não faz sentido"* — uma coordenadora precisa da visão
+geral do que coordena, não só das quatro vendas que ela mesma fez.
+
+Implementação: `vendas` e `meusPagamentos` deixaram de ser estado e viraram **derivados**
+do papel. Os ~90 pontos de leitura que já usavam esses nomes continuam funcionando sem
+alteração; o estado cru mora em `vendasProprias`/`pagamentosProprios`, que só os fetchers
+da carteira própria escrevem. O PDF do corretor ganhou o parâmetro `calcComissao` — sem
+ele, o relatório da coordenação sairia com a fatia de **corretor** das vendas de outras
+pessoas, o que é número errado **e** vazamento.
+
 Excluir a venda própria do papel de coordenação é regra de negócio já vigente
 (migration 031 e spec das coordenadoras): coordenadora não reporta venda que ela mesma
 vendeu. Sem isso a Jessica contaria a mesma venda nos dois papéis.
