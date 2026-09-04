@@ -117,14 +117,26 @@ mudar de novo. Ao salvar venda com `coordenadora_id` no Admin, gravar
 
 ---
 
-## T7 — Linha do Pires em `coordenadoras` (PRODUÇÃO — só falta o OK de execução)
+## T7 — Linha do Pires em `coordenadoras` — ✅ APLICADO (produção, OK do Jonas, 04/09/2026)
 
 ```sql
 INSERT INTO coordenadoras (nome, usuario_id, percentual_padrao, ativo)
 VALUES ('Matheus Pires', '9b1f5c90-defa-4b6c-b011-ffb496a14349', 0.50, true);
 ```
 
-Nome livre no índice único de ativas (só existem "Carol" e "Jessica"). Enquanto a linha
-não existir, o Pires não vê o seletor — comportamento correto (cenário 1), não bug.
-Depois de inserida, ele vê o painel no estado vazio (cenário 4) até o Admin direcionar a
+Aplicado com guarda `WHERE NOT EXISTS` (idempotente — rerun inseriu 0). Linha
+`9169320a…44fa`, "Matheus Pires", 0,50%, ativa.
+
+Verificado pelos helpers do app contra produção
+([scripts/verificar-papel-coordenacao.mjs](../../scripts/verificar-papel-coordenacao.mjs)):
+
+| pessoa | papéis | taxa | escopo | recebida | a receber |
+|---|---|---:|---:|---:|---:|
+| Matheus Pires | corretor + coordenacao | 0,50% | 0 vendas (`vazio=true`) | R$ 0,00 | R$ 0,00 |
+| Carolina | corretor + coordenacao | 0,50% | 162 vendas / 9.737 parcelas | R$ 100.637,76 | R$ 398.140,52 |
+| Jessica | corretor + coordenacao | 1,00% | 10 vendas / 602 parcelas | R$ 7.206,70 | R$ 24.460,98 |
+| controle negativo (corretor comum) | corretor | — | — | — | — |
+
+Carol e Jessica **inalteradas** (mesmos centavos de antes do insert) — o T7 não teve
+efeito colateral. O Pires cai no estado vazio (cenário 4) até o Admin direcionar a
 primeira venda.
