@@ -1041,7 +1041,11 @@ const AdminDashboard = () => {
     dataInicio: '',
     dataFim: '',
     empreendimentoId: '', // filtro por empreendimento
-    empreendimentoDetalhe: '' // para o card de detalhes por empreendimento
+    empreendimentoDetalhe: '', // para o card de detalhes por empreendimento
+    // Venda DISTRATADA fica FORA do relatório por padrão (mesma régua do PDF do
+    // corretor desde o PR #54 e das telas do corretor desde o #92). A controladoria
+    // liga quando quiser auditar — e aí cada card sai marcado DISTRATO em vermelho.
+    incluirDistratos: false
   })
   const [buscaCorretorRelatorio, setBuscaCorretorRelatorio] = useState('')
   const [coordenadoras, setCoordenadoras] = useState([])
@@ -5319,6 +5323,13 @@ const AdminDashboard = () => {
         dadosFiltrados = dadosFiltrados.filter(g => g.venda_id === relatorioFiltros.vendaId)
       }
       
+      // Distratada fora por padrão. Contrato cancelado não entra no relatório de repasse —
+      // o que a cliente pagou ANTES do distrato já foi repassado nos meses em que entrou.
+      // Com "Incluir", entra e o card sai marcado DISTRATO em vermelho (auditoria).
+      if (!relatorioFiltros.incluirDistratos) {
+        dadosFiltrados = dadosFiltrados.filter(g => g.venda?.status !== 'distrato')
+      }
+
       if (relatorioFiltros.status !== 'todos') {
         if (listaVendasComPagamentos.length > 0) {
           dadosFiltrados = dadosFiltrados.map(g => ({
@@ -5362,6 +5373,7 @@ const AdminDashboard = () => {
       if (corretorSelecionado) filtrosTexto.push(`Corretor: ${corretorSelecionado.nome}`)
       if (empreendimentoSelecionado) filtrosTexto.push(`Empreend.: ${empreendimentoSelecionado.nome}`)
       if (relatorioFiltros.status !== 'todos') filtrosTexto.push(`Status: ${relatorioFiltros.status === 'pago' ? 'Pago' : 'Pendente'}`)
+      filtrosTexto.push(relatorioFiltros.incluirDistratos ? 'Distratados: INCLUIDOS (marcados)' : 'Distratados: excluidos')
       if (relatorioFiltros.cargoId === '__total__') filtrosTexto.push('Cargo: Total')
       else if (relatorioFiltros.cargoId === '') filtrosTexto.push('Cargo: Todos os cargos')
       else if (relatorioFiltros.cargoId) filtrosTexto.push(`Cargo: ${relatorioFiltros.cargoId}`)
@@ -5582,6 +5594,14 @@ const AdminDashboard = () => {
         doc.setFont('helvetica', 'bold')
         const tituloEmp = unidade !== '-' ? `${empreendimento.toUpperCase()} - Un. ${unidade}` : empreendimento.toUpperCase()
         doc.text(tituloEmp, 18, yPosition + 8)
+        if (venda?.status === 'distrato') {
+          // Marca inequívoca: sem isto a controladoria não distingue "pago real de contrato
+          // cancelado" de "baixa falsa de distrato" e acha que o bug antigo voltou.
+          const distratoEm = venda?.data_distrato ? ` em ${formatDataBR(venda.data_distrato)}` : ''
+          doc.setTextColor(192, 0, 0)
+          doc.text(`  DISTRATO${distratoEm}`, 18 + doc.getTextWidth(tituloEmp), yPosition + 8)
+          doc.setTextColor(...cores.cinzaEscuro)
+        }
         
         // Valores: Valor Venda   Valor Pro-Soluto   Valor Comissão (sem |)
         doc.setFontSize(8)
@@ -5879,6 +5899,7 @@ const AdminDashboard = () => {
       if (corretorSelecionado) {
         nomeArquivo = `comissoes_${corretorSelecionado.nome.replace(/\s+/g, '_').toLowerCase()}`
       }
+      if (relatorioFiltros.incluirDistratos) nomeArquivo += '_com-distratos'
       if (relatorioFiltros.status !== 'todos') {
         nomeArquivo += `_${relatorioFiltros.status}`
       }
@@ -9562,6 +9583,17 @@ const AdminDashboard = () => {
                     <option value="pago">Pagos</option>
                   </select>
                 </div>
+
+                <div className="filtro-grupo">
+                  <label>Distratados</label>
+                  <select
+                    value={relatorioFiltros.incluirDistratos ? 'incluir' : 'excluir'}
+                    onChange={(e) => setRelatorioFiltros({...relatorioFiltros, incluirDistratos: e.target.value === 'incluir'})}
+                  >
+                    <option value="excluir">Excluir (padrão)</option>
+                    <option value="incluir">Incluir, marcados</option>
+                  </select>
+                </div>
                 
                 {/* Só mostra o filtro de cargo se um empreendimento estiver selecionado */}
                 {relatorioFiltros.empreendimentoId && (
@@ -9630,6 +9662,8 @@ const AdminDashboard = () => {
                         // Filtrar por corretor se selecionado
                         const corretorId = venda?.corretor_id || venda?.corretor?.id
                         if (relatorioFiltros.corretorId && corretorId !== relatorioFiltros.corretorId) return false
+                        // Distratada só entra se a controladoria pedir (mesma régua do PDF)
+                        if (!relatorioFiltros.incluirDistratos && venda?.status === 'distrato') return false
                         // Filtrar por empreendimento se selecionado
                         const empId = venda?.empreendimento_id || venda?.empreendimento?.id
                         if (relatorioFiltros.empreendimentoId && empId !== relatorioFiltros.empreendimentoId) return false
@@ -9682,7 +9716,8 @@ const AdminDashboard = () => {
                       status: 'todos',
                       dataInicio: '',
                       dataFim: '',
-                      empreendimentoId: ''
+                      empreendimentoId: '',
+                      incluirDistratos: false
                     })
                     setBuscaCorretorRelatorio('')
                   }}
@@ -9798,8 +9833,9 @@ const AdminDashboard = () => {
                     const empSelecionado = empreendimentos.find(e => e.id === empId)
                     
                     // Filtrar vendas do empreendimento
-                    const vendasEmp = listaVendasComPagamentos.filter(g => 
-                      g.venda?.empreendimento_id === empId
+                    const vendasEmp = listaVendasComPagamentos.filter(g =>
+                      g.venda?.empreendimento_id === empId &&
+                      (relatorioFiltros.incluirDistratos || g.venda?.status !== 'distrato')
                     )
                     
                     // Calcular totais
