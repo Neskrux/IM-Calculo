@@ -8,7 +8,7 @@
 // canônico com pró-soluto. Ver .claude/rules/comissao-corretor.md + fator-comissao.md.
 import { jsPDF } from 'jspdf'
 import autoTable from 'jspdf-autotable'
-import { calcularFatorComissao, calcularComissaoPagamentoCompleto } from './comissaoCalculator'
+import { calcularFatorComissao, calcularComissaoPagamentoCompleto, percentualCorretorDaVenda } from './comissaoCalculator'
 import { parseDataLocal, formatDataBR } from './datas'
 
 const formatCurrency = (value) => {
@@ -37,7 +37,8 @@ function makeCalcularComissao(vendas, corretorProfile) {
     if (valorParcela <= 0) return 0
 
     const venda = vendas.find(v => v.id === pagamento.venda_id)
-    const percentualCorretorVenda = parseFloat(venda?.percentual_corretor) || parseFloat(percentualFallback) || 0
+    // Conta multi-tipo: regra centralizada e testada no calculator.
+    const percentualCorretorVenda = percentualCorretorDaVenda(venda, corretorProfile)
     const valorProSoluto = parseFloat(venda?.valor_pro_soluto) || 0
 
     if (venda && percentualCorretorVenda > 0 && valorProSoluto > 0) {
@@ -98,9 +99,14 @@ const rotuloParcela = (p) => {
  * @param {array}  p.vendas           todas as vendas do corretor
  * @param {array}  p.pagamentos       todas as parcelas das vendas do corretor
  * @param {object} p.filtros          { empreendimento, status, dataInicio, dataFim }
+ * @param {function} [p.calcComissao]  regra de comissao por parcela. Sem ela, usa a fatia
+ *   do cargo CORRETOR (comportamento historico). O papel de coordenacao injeta a fatia do
+ *   cargo COORDENADORA — sem isso o PDF da coordenacao sairia com a fatia de corretor das
+ *   vendas de OUTRAS pessoas, que e numero errado e vazamento. Ver spec 2026-09-04.
+ * @param {string} [p.subtitulo]       linha abaixo do nome (ex.: "Coordenacao").
  */
-export function gerarRelatorioCorretorPDF({ corretorProfile, vendas = [], pagamentos = [], filtros = {} }) {
-  const calcularComissao = makeCalcularComissao(vendas, corretorProfile)
+export function gerarRelatorioCorretorPDF({ corretorProfile, vendas = [], pagamentos = [], filtros = {}, calcComissao = null, subtitulo = '' }) {
+  const calcularComissao = calcComissao || makeCalcularComissao(vendas, corretorProfile)
   const { vendasFiltradas, pagamentosFiltrados } = getRelatorioDados({ vendas, pagamentos, filtros })
 
   const totalVendas = vendasFiltradas.length
@@ -123,7 +129,10 @@ export function gerarRelatorioCorretorPDF({ corretorProfile, vendas = [], pagame
   doc.setTextColor(...cores.dourado); doc.setFontSize(20); doc.setFont('helvetica', 'bold')
   doc.text('RELATORIO DE COMISSOES', 105, 18, { align: 'center' })
   doc.setTextColor(...cores.branco); doc.setFontSize(12); doc.setFont('helvetica', 'normal')
-  doc.text(capitalizeName(corretorProfile?.nome || 'Corretor'), 105, 28, { align: 'center' })
+  doc.text(
+    capitalizeName(corretorProfile?.nome || 'Corretor') + (subtitulo ? ` — ${subtitulo}` : ''),
+    105, 28, { align: 'center' },
+  )
 
   doc.setTextColor(...cores.dourado); doc.setFontSize(10)
   doc.text(`Gerado em: ${new Date().toLocaleDateString('pt-BR')} as ${new Date().toLocaleTimeString('pt-BR')}`, 105, 45, { align: 'center' })

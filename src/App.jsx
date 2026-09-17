@@ -10,6 +10,7 @@ import CorretorDashboard from './pages/CorretorDashboard'
 import ClienteDashboard from './pages/ClienteDashboard'
 import HomeDashboard from './pages/HomeDashboard'
 import CadastroFigueira from './pages/CadastroFigueira'
+import BeneficiarioDashboard from './pages/BeneficiarioDashboard'
 import './App.css'
 
 // Componente de Loading com botão de sair
@@ -188,6 +189,8 @@ const ProtectedRoute = ({ children, requiredRole }) => {
       return <Navigate to="/corretor" replace />
     } else if (userProfile?.tipo === 'cliente') {
       return <Navigate to="/cliente" replace />
+    } else if (userProfile?.tipo === 'beneficiario') {
+      return <Navigate to="/beneficiario" replace />
     }
   }
 
@@ -214,6 +217,8 @@ const PublicRoute = ({ children }) => {
       return <Navigate to="/corretor" replace />
     } else if (userProfile.tipo === 'cliente') {
       return <Navigate to="/cliente" replace />
+    } else if (userProfile.tipo === 'beneficiario') {
+      return <Navigate to="/beneficiario" replace />
     }
   }
 
@@ -317,6 +322,8 @@ const DashboardRedirect = () => {
         navigate('/corretor', { replace: true })
       } else if (userProfile.tipo === 'cliente') {
         navigate('/cliente', { replace: true })
+      } else if (userProfile.tipo === 'beneficiario') {
+        navigate('/beneficiario', { replace: true })
       }
     }
   }, [userProfile, navigate])
@@ -408,6 +415,14 @@ function AppRoutes() {
             <ClienteDashboard />
           </ProtectedRoute>
         } 
+      />
+      <Route
+        path="/beneficiario"
+        element={
+          <ProtectedRoute requiredRole="beneficiario">
+            <BeneficiarioDashboard />
+          </ProtectedRoute>
+        }
       />
       <Route 
         path="/dashboard" 

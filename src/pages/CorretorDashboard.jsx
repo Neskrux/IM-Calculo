@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { safeGet, safeSet } from '../utils/storage'
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
@@ -23,6 +23,7 @@ import { gerarRelatorioCorretorPDF } from '../utils/relatorioCorretorPDF'
 import InputDataBR from "../components/InputDataBR"
 import { casaBusca } from '../utils/searchUtils'
 import ProfilePhotoModal from '../components/ProfilePhotoModal'
+import NotasFiscaisCorretor from '../components/corretor/NotasFiscaisCorretor'
 import '../styles/Dashboard.css'
 import '../styles/CorretorDashboard.css'
 import '../styles/EmpreendimentosPage.css'
@@ -34,7 +35,18 @@ import {
   isPendente,
   isAtivo,
   dataEfetiva,
+  percentualCorretorDaVenda,
+  contarVendas,
+  isVendaAtiva,
+  coordenadoraDoUsuario,
+  papeisDisponiveis,
+  vendasDaCoordenacao,
+  resumoCoordenacao,
+  fatiaCorretorDaVenda,
+  fatiaCargoDoPagamento,
+  taxaCoordenadoraDaVenda,
 } from '../utils/comissaoCalculator'
+import PainelCoordenacao from '../components/corretor/PainelCoordenacao'
 import { parseDataLocal, formatDataBR } from '../utils/datas'
 
 const CorretorDashboard = () => {
@@ -53,8 +65,27 @@ const CorretorDashboard = () => {
     activeTab = 'dashboard'
   }
   
-  const [vendas, setVendas] = useState([])
+  const [vendasProprias, setVendasProprias] = useState([])
   const [loading, setLoading] = useState(true)
+
+  // ── Papel COORDENAÇÃO (spec 2026-09-04) ────────────────────────────────────
+  // Um login por pessoa: quem tem linha ativa em `coordenadoras` acumula o papel e
+  // troca na tela. `tipo` continua 'corretor' — marcar de outro tipo apagaria a
+  // carteira própria, e duas contas por pessoa quebra o vínculo com as vendas.
+  const [papel, setPapel] = useState('corretor')
+  const [coordenadoras, setCoordenadoras] = useState([])
+  const [cargosEmp, setCargosEmp] = useState([])
+  const [vendasCoord, setVendasCoord] = useState([])
+  const [pagsCoord, setPagsCoord] = useState([])
+  // Guarda de "ja disparou" fora do estado — de proposito. Estado usado como guarda
+  // ENTRA na lista de dependencias do efeito; ao setar `carregando` o efeito reexecuta,
+  // o React roda a limpeza do anterior, o `vivo` da execucao em voo vira false e o
+  // resultado e descartado: a tela fica em "Carregando..." pra sempre. Ref nao dispara
+  // render nem reexecucao, entao a carga em voo sobrevive.
+  const coordDisparadoRef = useRef(false)
+  const [coordCarregando, setCoordCarregando] = useState(false)
+  const [coordErro, setCoordErro] = useState(null)
+  const [coordMes, setCoordMes] = useState('')
   const [periodo, setPeriodo] = useState('todos')
   const [menuOpen, setMenuOpen] = useState(false)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
@@ -67,8 +98,21 @@ const CorretorDashboard = () => {
   
   // Novos estados para as abas adicionais
   const [empreendimentos, setEmpreendimentos] = useState([])
-  const [meusPagamentos, setMeusPagamentos] = useState([])
+  const [pagamentosProprios, setPagamentosProprios] = useState([])
   const [meusClientes, setMeusClientes] = useState([])
+
+  // ── A VISÃO (spec 2026-09-04) ───────────────────────────────────────────────
+  // Trocar de papel troca a BASE de toda a tela, não só um painel: Minhas Vendas,
+  // Meus Pagamentos, Meus Clientes e Relatórios passam a falar das vendas
+  // DIRECIONADAS. Por isso `vendas` e `meusPagamentos` deixam de ser estado e viram
+  // derivados — os ~90 pontos que já liam esses nomes seguem funcionando sem tocar
+  // em nenhum deles. O estado cru fica em `vendasProprias`/`pagamentosProprios`,
+  // que só os fetchers da carteira própria escrevem.
+  // Declarado AQUI, junto dos estados, e não lá embaixo: as listas de dependência
+  // dos efeitos são avaliadas durante o render e cairiam em zona morta.
+  const emCoordenacao = papel === 'coordenacao'
+  const vendas = emCoordenacao ? vendasCoord : vendasProprias
+  const meusPagamentos = emCoordenacao ? pagsCoord : pagamentosProprios
   const [loadingEmpreendimentos, setLoadingEmpreendimentos] = useState(false)
   const [loadingPagamentos, setLoadingPagamentos] = useState(false)
   const [loadingClientes, setLoadingClientes] = useState(false)
@@ -119,6 +163,11 @@ const CorretorDashboard = () => {
   // Sem nada pra criar, a aba "Solicitações" (só histórico) sai da navegação.
   // Volta sozinha se qualquer criação acima for reativada.
   const SOLICITACOES_OCULTA = REGISTRO_VENDA_CONGELADO && REGISTRO_CLIENTE_CONGELADO
+
+  // Rollout em duas etapas (decisao do Jonas, 31/08): primeiro so o Admin, pra a
+  // controladoria testar em producao; depois abre pros 72 corretores. Virar pra
+  // false libera a aba — nao ha nada alem desta linha pra mexer.
+  const NOTA_FISCAL_OCULTA_PARA_CORRETOR = true
   const [showNovoClienteModal, setShowNovoClienteModal] = useState(false)
   const [message, setMessage] = useState({ type: '', text: '' })
   const [todosClientes, setTodosClientes] = useState([])
@@ -187,10 +236,10 @@ const CorretorDashboard = () => {
 
   // Carregar pagamentos sempre que vendas mudar (para o dashboard)
   useEffect(() => {
-    if (vendas.length > 0 && meusPagamentos.length === 0) {
+    if (vendasProprias.length > 0 && pagamentosProprios.length === 0) {
       fetchMeusPagamentos()
     }
-  }, [vendas])
+  }, [vendasProprias])
 
   useEffect(() => {
     if (userProfile) {
@@ -203,13 +252,15 @@ const CorretorDashboard = () => {
     if ((activeTab === 'empreendimentos' || activeTab === 'solicitacoes') && empreendimentos.length === 0) {
       fetchEmpreendimentos()
     }
-    if (activeTab === 'pagamentos' && meusPagamentos.length === 0 && vendas.length > 0) {
+    if (activeTab === 'pagamentos' && pagamentosProprios.length === 0 && vendasProprias.length > 0) {
       fetchMeusPagamentos()
     }
-    if (activeTab === 'clientes' && meusClientes.length === 0 && vendas.length > 0) {
+    // Clientes seguem a VISÃO: no papel de coordenação são os clientes das vendas
+    // direcionadas. Por isso `vendas` (derivado) e `papel` entram na dependência.
+    if (activeTab === 'clientes' && vendas.length > 0) {
       fetchMeusClientes()
     }
-  }, [activeTab, vendas])
+  }, [activeTab, vendas, vendasProprias, papel])
 
   // Fetch Empreendimentos
   const fetchEmpreendimentos = async () => {
@@ -249,9 +300,9 @@ const CorretorDashboard = () => {
   const fetchMeusPagamentos = async () => {
     setLoadingPagamentos(true)
     try {
-      const vendaIds = vendas.map(v => v.id)
+      const vendaIds = vendasProprias.map(v => v.id)
       if (vendaIds.length === 0) {
-        setMeusPagamentos([])
+        setPagamentosProprios([])
         return
       }
 
@@ -280,7 +331,7 @@ const CorretorDashboard = () => {
         }
       })
 
-      setMeusPagamentos(pagamentosEnriquecidos)
+      setPagamentosProprios(pagamentosEnriquecidos)
     } catch (error) {
       console.error('Erro ao buscar pagamentos:', error)
     } finally {
@@ -309,7 +360,9 @@ const CorretorDashboard = () => {
 
       // Associar vendas a cada cliente. Comissão SEMPRE via pagamentos (R2).
       const clientesComVendas = (data || []).map(cliente => {
-        const vendasCliente = vendas.filter(v => v.cliente_id === cliente.id)
+        // Só vendas ativas: distratada fora de todas as telas do corretor (ver
+        // idsVendasAtivas). Sem isto o "Volume de Vendas" carregaria VGV de contrato morto.
+        const vendasCliente = vendas.filter(v => v.cliente_id === cliente.id && isVendaAtiva(v))
         const vendaIds = new Set(vendasCliente.map(v => v.id))
         const pagamentosCliente = meusPagamentos.filter(p => vendaIds.has(p.venda_id))
         const totalVendas = vendasCliente.reduce((acc, v) => acc + (parseFloat(v.valor_venda) || 0), 0)
@@ -395,7 +448,7 @@ const CorretorDashboard = () => {
 
       if (error) {
         console.error('❌ Erro ao buscar vendas:', error)
-        setVendas([])
+        setVendasProprias([])
         return
       }
 
@@ -427,20 +480,16 @@ const CorretorDashboard = () => {
       const vendasValidadas = (data || []).map(venda => {
         const valorVenda = parseFloat(venda.valor_venda) || 0
         const valorProSoluto = parseFloat(venda.valor_pro_soluto) || 0
-        let comissaoCorretor = parseFloat(venda.comissao_corretor) || 0
 
-        // Percentual nominal do cargo Corretor, conforme planilha calculo.xlsx.
-        const tipoCorretorVenda = venda.tipo_corretor || userProfile?.tipo_corretor || 'externo'
-        const percentualCorretor = parseFloat(userProfile?.percentual_corretor) ||
-          (tipoCorretorVenda === 'interno' ? 2.5 : 4)
-
-        // Se comissao_corretor for 0, calcular usando a formula correta.
-        if (!comissaoCorretor || comissaoCorretor === 0) {
-          comissaoCorretor = (valorVenda * percentualCorretor) / 100
-        }
-
-        // Fator da fatia do corretor, nao o fator total da venda.
-        const fatorComissaoCorretor = calcularFatorComissao(valorVenda, valorProSoluto, percentualCorretor)
+        // Fatia do cargo Corretor PARA ESTA VENDA (helper puro e testado).
+        // Antes esta conta era inline e usava o percentual do CADASTRO em toda venda:
+        // como o resultado era colado de volta em `venda.percentual_corretor`, e o
+        // helper multi-tipo trata esse campo como snapshot, a venda EXTERNA de um
+        // cadastro INTERNO passava a pagar 2,5% em vez de 4%. Media do estrago no
+        // Matheus Pires (agosto/2026, pagas): R$ 4.352,55 na tela dele contra
+        // R$ 4.704,87 no Admin, que estava certo.
+        const { percentual: percentualCorretor, comissao: comissaoCorretor, fator: fatorComissaoCorretor } =
+          fatiaCorretorDaVenda(venda, userProfile)
 
         return {
           ...venda,
@@ -455,10 +504,10 @@ const CorretorDashboard = () => {
         }
       })
       
-      setVendas(vendasValidadas)
+      setVendasProprias(vendasValidadas)
     } catch (error) {
       console.error('❌ Erro crítico ao buscar vendas:', error)
-      setVendas([])
+      setVendasProprias([])
     } finally {
     setLoading(false)
     }
@@ -1058,8 +1107,9 @@ const CorretorDashboard = () => {
   // janeiro com TODAS as parcelas pagas (qualquer mês). Igual ao relatório do admin.
   const getRelatorioVendasBase = () => {
     return vendas.filter((venda) => {
-      // Distrato NÃO entra no relatório do corretor (venda cancelada não conta).
-      if (venda.status === 'distrato') return false
+      // Distratada fica FORA (ratifica o PR #54 / 2026-07-03) — mesma régua do PDF e
+      // dos cards. Contrato cancelado não entra no relatório de repasse do corretor.
+      if (!isVendaAtiva(venda)) return false
       if (relatorioFiltros.empreendimento && venda.empreendimento_nome !== relatorioFiltros.empreendimento) {
         return false
       }
@@ -1128,6 +1178,11 @@ const CorretorDashboard = () => {
         vendas,
         pagamentos: meusPagamentos,
         filtros: relatorioFiltros,
+        // No papel de coordenação o PDF tem que usar a MESMA régua da tela: a fatia do
+        // cargo Coordenadora. Sem isto ele sairia com a fatia de CORRETOR das vendas de
+        // outras pessoas — número errado e vazamento.
+        calcComissao: emCoordenacao ? calcularComissaoPagamento : null,
+        subtitulo: emCoordenacao ? 'Coordenacao' : '',
       })
     } catch (error) {
       console.error('Erro ao gerar PDF:', error)
@@ -1137,8 +1192,115 @@ const CorretorDashboard = () => {
     }
   }
 
+  // ── Papel COORDENAÇÃO: vínculo, carga e resumo ────────────────────────────
+  // Spec: docs/specs/2026-09-04-spec-papel-coordenador.md
+  const minhaCoordenacao = useMemo(
+    () => coordenadoraDoUsuario(userProfile, coordenadoras),
+    [userProfile, coordenadoras]
+  )
+  const papeis = useMemo(
+    () => papeisDisponiveis(userProfile, coordenadoras),
+    [userProfile, coordenadoras]
+  )
+
+  // A tabela de coordenadoras é pequena (domínio) — leitura direta, sem paginar.
+  useEffect(() => {
+    if (!user) return
+    let vivo = true
+    supabase.from('coordenadoras').select('*').eq('ativo', true)
+      .then(({ data }) => { if (vivo) setCoordenadoras(data || []) })
+    return () => { vivo = false }
+  }, [user])
+
+  // Carga sob demanda: só quando o papel de coordenação é aberto. A Carol tem 172
+  // vendas direcionadas — as parcelas passam de 1000 linhas, e sem paginação o
+  // PostgREST corta em silêncio (leitura-de-listas-e-refetch.md).
+  useEffect(() => {
+    if (papel !== 'coordenacao' || !minhaCoordenacao || coordDisparadoRef.current) return
+    coordDisparadoRef.current = true
+    let vivo = true
+    const carregar = async () => {
+      setCoordCarregando(true)
+      setCoordErro(null)
+      try {
+        const { data: cargosData, error: eCargos } = await supabase
+          .from('cargos_empreendimento')
+          .select('empreendimento_id, nome_cargo, tipo_corretor, percentual')
+        if (eCargos) throw eCargos
+
+        const vendasData = await fetchAllPaginated((from, to) =>
+          supabase.from('vendas')
+            .select('id, unidade, corretor_id, empreendimento_id, tipo_corretor, coordenadora_id, coordenadora_taxa, valor_venda, valor_pro_soluto, fator_comissao, status, situacao_contrato, data_distrato, excluido')
+            .eq('coordenadora_id', minhaCoordenacao.id)
+            .order('id', { ascending: true })
+            .range(from, to)
+        )
+        // Escopo canônico (exclui venda própria, distrato e excluída) vem do helper.
+        const escopo = vendasDaCoordenacao(vendasData, minhaCoordenacao)
+
+        const pags = []
+        const LOTE = 100 // .in() com lista gigante estoura a URL — fatiar por lote
+        for (let i = 0; i < escopo.length; i += LOTE) {
+          const ids = escopo.slice(i, i + LOTE).map(v => v.id)
+          const parte = await fetchAllPaginated((from, to) =>
+            supabase.from('pagamentos_prosoluto')
+              .select('id, venda_id, tipo, numero_parcela, valor, status, data_prevista, data_pagamento, comissao_gerada, percentual_comissao_total, fator_comissao_aplicado')
+              .in('venda_id', ids)
+              .order('data_prevista', { ascending: true })
+              .order('id', { ascending: true })
+              .range(from, to),
+            { concurrency: 4 }
+          )
+          pags.push(...parte)
+        }
+
+        if (!vivo) return
+        setCargosEmp(cargosData || [])
+        setVendasCoord(escopo)
+        setPagsCoord(pags)
+      } catch (err) {
+        // Libera pra tentar de novo — senao o ref travaria a tela no erro.
+        coordDisparadoRef.current = false
+        if (vivo) setCoordErro(err?.message || String(err))
+      } finally {
+        if (vivo) setCoordCarregando(false)
+      }
+    }
+    carregar()
+    return () => { vivo = false }
+  }, [papel, minhaCoordenacao])
+
+  // O número do coordenador: nenhuma conta na tela, tudo vem do helper testado.
+  const resumoCoord = useMemo(
+    () => resumoCoordenacao({
+      vendas: vendasCoord,
+      pagamentos: pagsCoord,
+      coordenadora: minhaCoordenacao,
+      cargos: cargosEmp,
+      coordenadoras,
+      mes: coordMes,
+    }),
+    [vendasCoord, pagsCoord, minhaCoordenacao, cargosEmp, coordenadoras, coordMes]
+  )
+
+  const seletorPapel = papeis.length > 1 ? (
+    <div className="coord-papel-switch" role="group" aria-label="Papel">
+      {papeis.map((p) => (
+        <button
+          key={p}
+          type="button"
+          className={papel === p ? 'active' : ''}
+          onClick={() => setPapel(p)}
+        >
+          {p === 'corretor' ? 'Corretor' : 'Coordenação'}
+        </button>
+      ))}
+    </div>
+  ) : null
+
   const getTotalVendas = () => {
-    return filteredVendas.reduce((acc, v) => acc + (parseFloat(v.valor_venda) || 0), 0)
+    // Régua única D2: valor em carteira = vendas ATIVAS (VGV de contrato morto não é carteira).
+    return filteredVendas.filter(isVendaAtiva).reduce((acc, v) => acc + (parseFloat(v.valor_venda) || 0), 0)
   }
 
   // Visao do corretor: calcula a fatia do cargo Corretor por pagamento,
@@ -1154,7 +1316,15 @@ const CorretorDashboard = () => {
     if (valorParcela <= 0) return 0
 
     const venda = vendas.find(v => v.id === pagamento.venda_id)
-    const percentualCorretorVenda = parseFloat(venda?.percentual_corretor) || parseFloat(percentualFallback) || 0
+
+    // No papel de coordenação o que ela recebe é a fatia do cargo COORDENADORA
+    // (taxa por venda: snapshot > negociada), nunca a do cargo Corretor.
+    if (emCoordenacao) {
+      return fatiaCargoDoPagamento(pagamento, venda, 'Coordenadora', cargosEmp, coordenadoras)
+    }
+    // Fatia do corretor por VENDA — regra centralizada e testada no calculator
+    // (conta multi-tipo: venda de tipo diferente do cadastro usa a taxa do tipo DA VENDA).
+    const percentualCorretorVenda = percentualCorretorDaVenda(venda, userProfile)
     const valorProSoluto = parseFloat(venda?.valor_pro_soluto) || 0
 
     if (venda && percentualCorretorVenda > 0 && valorProSoluto > 0) {
@@ -1171,11 +1341,25 @@ const CorretorDashboard = () => {
     return calcularComissaoPagamentoCompleto(pagamento, { vendas, percentualFallback })
   }
 
+  // Venda DISTRATADA fica FORA de todas as telas do corretor (decisão 2026-08-28,
+  // que ratifica o PR #54 de 2026-07-03: "relatório do corretor exclui distratos").
+  // Motivo: o contrato não existe mais, e mostrar a comissão dele sem mostrar o VGV
+  // dele quebra a conferência — quem fizesse 4% do volume exibido não fechava com a
+  // comissão exibida. O histórico continua íntegro no banco e no relatório do ADMIN.
+  // Ver docs/specs/2026-08-28-spec-regua-unica-telas-distrato.md.
+  const idsVendasAtivas = useMemo(
+    () => new Set(vendas.filter(isVendaAtiva).map(v => v.id)),
+    [vendas]
+  )
+  const ehDeVendaAtiva = (pag) => idsVendasAtivas.has(pag?.venda_id)
+
   const somarMinhaComissao = (pagamentos, predicate) => {
     if (!Array.isArray(pagamentos)) return 0
+    // Filtra na ORIGEM: todo card de comissão herda a regra, sem cada um repetir o filtro.
+    const doCorretor = pagamentos.filter(ehDeVendaAtiva)
     const lista = predicate
-      ? pagamentos.filter(predicate)
-      : pagamentos.filter(pag => pag.status !== 'cancelado')
+      ? doCorretor.filter(predicate)
+      : doCorretor.filter(pag => pag.status !== 'cancelado')
     return lista.reduce((acc, pag) => acc + calcularComissaoPagamento(pag), 0)
   }
 
@@ -1184,10 +1368,10 @@ const CorretorDashboard = () => {
   const getComissaoPendente = () => somarMinhaComissao(meusPagamentos, isPendente)
   const getComissaoPaga = () => somarMinhaComissao(meusPagamentos, isPago)
 
-  // Contagem real de vendas (baseado em vendas únicas, não pagamentos)
-  const getVendasCount = () => {
-    return vendas.length
-  }
+  // Contagem canônica (régua única D2): o número principal é de vendas ATIVAS;
+  // distratos aparecem rotulados do lado, nunca somados em silêncio.
+  const vendasContagem = contarVendas(vendas)
+  const getVendasCount = () => vendasContagem.ativas
 
   const percentualCorretor = percentualFallback
 
@@ -1271,7 +1455,7 @@ const CorretorDashboard = () => {
       {
         name: 'TOTAL EM VENDAS',
         value: formatTicker(getTotalVendas()),
-        change: vendas.length > 0 ? `${getVendasCount()} vendas` : '',
+        change: getVendasCount() > 0 ? `${getVendasCount()} vendas` : '',
         type: 'positive'
       },
       {
@@ -1389,6 +1573,7 @@ const CorretorDashboard = () => {
     { path: '/corretor/pagamentos', label: 'Receber', icon: CreditCard },
     { path: '/corretor/clientes', label: 'Clientes', icon: UserPlus },
     { path: '/corretor/relatorios', label: 'Relatorio', icon: FileText },
+    ...(NOTA_FISCAL_OCULTA_PARA_CORRETOR ? [] : [{ path: '/corretor/notas-fiscais', label: 'Nota Fiscal', icon: Upload }]),
   ]
 
   const relatorioResumo = getRelatorioResumo()
@@ -1438,6 +1623,16 @@ const CorretorDashboard = () => {
             <FileText size={20} />
             <span>Relatórios</span>
           </button>
+          {!NOTA_FISCAL_OCULTA_PARA_CORRETOR && (
+            <button
+              className={`nav-item ${activeTab === 'notas-fiscais' ? 'active' : ''}`}
+              onClick={() => goTo('/corretor/notas-fiscais')}
+              title="Nota Fiscal"
+            >
+              <FileText size={20} />
+              <span>Nota Fiscal</span>
+            </button>
+          )}
           <button
             className="nav-item"
             onClick={() => window.open('/cadastro-figueira', '_blank', 'noopener')}
@@ -1532,11 +1727,12 @@ const CorretorDashboard = () => {
           </button>
           <h1>
             {activeTab === 'dashboard' && getDashboardTitle()}
-            {activeTab === 'vendas' && 'Minhas Vendas'}
-            {activeTab === 'pagamentos' && 'Meus Pagamentos'}
-            {activeTab === 'clientes' && 'Meus Clientes'}
+            {activeTab === 'vendas' && (emCoordenacao ? 'Vendas da Coordenação' : 'Minhas Vendas')}
+            {activeTab === 'pagamentos' && (emCoordenacao ? 'Pagamentos da Coordenação' : 'Meus Pagamentos')}
+            {activeTab === 'clientes' && (emCoordenacao ? 'Clientes da Coordenação' : 'Meus Clientes')}
             {activeTab === 'empreendimentos' && 'Empreendimentos'}
             {activeTab === 'relatorios' && 'Relatórios'}
+            {activeTab === 'notas-fiscais' && !NOTA_FISCAL_OCULTA_PARA_CORRETOR && 'Nota Fiscal'}
             {activeTab === 'solicitacoes' && 'Minhas Solicitações'}
             {activeTab === 'perfil' && 'Meu Perfil'}
           </h1>
@@ -1547,6 +1743,20 @@ const CorretorDashboard = () => {
           {/* Dashboard Tab */}
           {activeTab === 'dashboard' && (
             <>
+      {/* Seletor de papel — só aparece pra quem acumula corretor + coordenação
+          (spec 2026-09-04). Default sempre 'corretor': zero regressão pros demais. */}
+      {seletorPapel}
+      {papel === 'coordenacao' ? (
+        <PainelCoordenacao
+          resumo={resumoCoord}
+          carregando={coordCarregando}
+          erro={coordErro}
+          mes={coordMes}
+          setMes={setCoordMes}
+          nomeCoordenacao={minhaCoordenacao?.nome}
+        />
+      ) : (
+      <>
       {/* Welcome Section */}
       <section className="welcome-section">
         <div className="welcome-content">
@@ -1809,6 +2019,8 @@ const CorretorDashboard = () => {
         </div>
       </section>
 
+      </>
+      )}
             </>
           )}
 
@@ -2077,7 +2289,11 @@ const CorretorDashboard = () => {
                       <span className="value">{formatCurrency(venda.valor_venda)}</span>
                     </div>
                     <div className="venda-comissao">
-                                <span className="label">Sua Comissão ({percentualCorretor}%)</span>
+                                <span className="label">
+                        {emCoordenacao
+                          ? `Coordenação (${taxaCoordenadoraDaVenda(venda, coordenadoras) ?? minhaCoordenacao?.percentual_padrao ?? ''}%)`
+                          : `Sua Comissão (${venda.percentual_corretor ?? percentualCorretor}%)`}
+                      </span>
                       <span className="value highlight">{formatCurrency(comissaoVenda)}</span>
                     </div>
                   </div>
@@ -2505,7 +2721,7 @@ const CorretorDashboard = () => {
                   {/* Resumo de Clientes */}
                   <div className="pagamentos-resumo">
                     <div className="resumo-card">
-                      <span className="resumo-label">Total de Clientes</span>
+                      <span className="resumo-label">Total de Clientes (distintos)</span>
                       <span className="resumo-valor">{filteredMeusClientes.length}</span>
                     </div>
                     <div className="resumo-card">
@@ -2985,6 +3201,10 @@ const CorretorDashboard = () => {
           )}
 
           {/* Solicitações Tab */}
+          {activeTab === 'notas-fiscais' && !NOTA_FISCAL_OCULTA_PARA_CORRETOR && (
+            <NotasFiscaisCorretor corretor={userProfile} />
+          )}
+
           {activeTab === 'solicitacoes' && (
             <section className="solicitacoes-section">
               {/* Mensagem de feedback */}

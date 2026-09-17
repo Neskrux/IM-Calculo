@@ -88,6 +88,14 @@ API de Cobran*a.zip
 Implementacao de aplicativos*.pdf
 Manual - API de Cobranca*.pdf
 
+# Homologação (clone anonimizado) — credenciais e dumps locais
+.env.homolog
+docs/homolog/*.sql
+
+# Fila operacional de acessos (contém e-mails pessoais — repo público)
+docs/controladoria/PENDENTE-acessos-corretores.md
+scripts/acessos/01-corrigir-emails.sql
+
 # Artefatos operacionais dos lotes Sicoob (refs de clientes)
 scripts/boletos/lote-dryrun-*.json
 scripts/boletos/lote-resultado-*.json

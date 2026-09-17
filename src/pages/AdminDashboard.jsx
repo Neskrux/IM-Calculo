@@ -25,13 +25,16 @@ import EmpreendimentoGaleria from '../components/EmpreendimentoGaleria'
 import VendaDocumentos from '../components/VendaDocumentos'
 import { gerarBoletoPdfBase64 } from '../utils/ailosBoletoPdf'
 import ProfilePhotoModal from '../components/ProfilePhotoModal'
+import NotasFiscaisPainel from '../components/admin/NotasFiscaisPainel'
 // import CadastrarCorretores from '../components/CadastrarCorretores'
 // import ImportarVendas from '../components/ImportarVendas'
 import '../styles/Dashboard.css'
 import '../styles/EmpreendimentosPage.css'
-import { LayoutGrid, List } from 'lucide-react'
+import { LayoutGrid, List, FileCheck } from 'lucide-react'
 import { safeGet, safeSet } from '../utils/storage'
-import { calcularFatorComissao, calcularComissaoPagamento, dataEfetiva } from '../utils/comissaoCalculator'
+import { calcularFatorComissao, calcularComissaoPagamento, dataEfetiva, taxaCoordenadoraDaVenda, comissaoHeaderVenda } from '../utils/comissaoCalculator'
+import { podeRedefinirSenha, senhaValida, SENHA_MIN } from '../utils/acessoUsuario'
+import { coordenadoraDoUsuario } from '../utils/comissaoCalculator'
 import { parseDataLocal, formatDataBR } from '../utils/datas'
 import { baixarPdfBase64 } from '../utils/pdfBase64'
 import { triggerFullSync, triggerNormalizeOnly, probeSienge, pollRunUntilDone } from '../lib/siengeSyncApi'
@@ -742,7 +745,7 @@ const CORRETOR_SEARCH_FIELDS = ['nome', 'email', { key: 'telefone', tipo: 'numer
 const EMP_SEARCH_FIELDS = ['nome', 'descricao']
 
 const AdminDashboard = () => {
-  const { userProfile, signOut, loading: authLoading } = useAuth()
+  const { user, userProfile, signOut, loading: authLoading } = useAuth()
   const { tab } = useParams()
   const navigate = useNavigate()
   const location = useLocation()
@@ -1033,14 +1036,24 @@ const AdminDashboard = () => {
     vendaId: '',
     cargoId: 'Corretor', // Padrão: Corretor
     coordenadoraId: '', // 2º seletor: filtra vendas por coordenadora (cargo Coordenadora)
+    papel: 'corretor', // quando o corretor selecionado TAMBÉM é coordenadora (Caroline/Jessica): 'corretor' = vendas próprias | 'coordenadora' = vendas direcionadas a ela
     status: 'todos',
     dataInicio: '',
     dataFim: '',
     empreendimentoId: '', // filtro por empreendimento
-    empreendimentoDetalhe: '' // para o card de detalhes por empreendimento
+    empreendimentoDetalhe: '', // para o card de detalhes por empreendimento
+    // Venda DISTRATADA fica FORA do relatório por padrão (mesma régua do PDF do
+    // corretor desde o PR #54 e das telas do corretor desde o #92). A controladoria
+    // liga quando quiser auditar — e aí cada card sai marcado DISTRATO em vermelho.
+    incluirDistratos: false
   })
   const [buscaCorretorRelatorio, setBuscaCorretorRelatorio] = useState('')
   const [coordenadoras, setCoordenadoras] = useState([])
+  // Redefinicao de senha de corretor/beneficiario que JA tem login (spec 2026-09-04).
+  // Ate aqui a tela so oferecia CRIAR acesso: quem ja tinha conta ficava sem caminho
+  // pra trocar a senha, embora a edge `admin-corretor-acesso` sempre tenha suportado.
+  const [novaSenhaCorretor, setNovaSenhaCorretor] = useState('')
+  const [redefinindoSenha, setRedefinindoSenha] = useState(false)
   const [gerandoPdf, setGerandoPdf] = useState(false)
   const [pdfPreviewUrl, setPdfPreviewUrl] = useState(null) // Preview PDF (aba temporária para ajuste visual)
 
@@ -1400,16 +1413,12 @@ const AdminDashboard = () => {
     // Calcular percentual total dos cargos para distribuição
     const percentualTotal = cargosDoTipo.reduce((acc, c) => acc + (parseFloat(c.percentual) || 0), 0)
 
-    // Taxa NEGOCIADA da coordenadora (override do cargo 'Coordenadora'): a venda aponta
-    // uma coordenadora (vendas.coordenadora_id) que pode ter percentual_padrao != 0,5%
-    // (ex.: Jessica=1,0). percentualTotal permanece 7 → fatia = comissao_gerada × (rate/7).
-    // Ver migration 031 + .claude/rules/fator-comissao.md. No-op se sem coordenadora/legado.
-    const taxaCoordenadora = (() => {
-      if (!venda.coordenadora_id) return null
-      const co = coordenadoras.find(c => String(c.id) === String(venda.coordenadora_id))
-      const r = co ? parseFloat(co.percentual_padrao) : NaN
-      return Number.isFinite(r) && r > 0 ? r : null
-    })()
+    // Taxa da coordenadora (override do cargo 'Coordenadora'): snapshot POR VENDA
+    // (vendas.coordenadora_taxa, migration 040 — cutover 15/07/2025: 1,0 antes / 0,5 depois)
+    // com fallback na taxa vigente (coordenadoras.percentual_padrao, migration 031).
+    // percentualTotal permanece 7 → fatia = comissao_gerada × (taxa/7).
+    // Ver .claude/rules/fator-comissao.md. No-op se venda sem coordenadora.
+    const taxaCoordenadora = taxaCoordenadoraDaVenda(venda, coordenadoras)
 
     // Distribuir entre os cargos proporcionalmente
     return cargosDoTipo.map(cargo => {
@@ -1430,6 +1439,36 @@ const AdminDashboard = () => {
     })
   }
   
+  // FATIA DO CARGO 'Corretor' por corretor e por MES, pra a aba de Notas Fiscais
+  // mostrar "valor declarado x comissao do mes" lado a lado.
+  // Usa a MESMA regua do PDF (filtro de cargo 'Corretor'), nunca comissao_gerada
+  // cru — que e o TOTAL de todos os cargos. Ver .claude/rules/comissao-corretor.md.
+  // So calcula quando a aba esta aberta: varrer ~19k parcelas nao pode pesar nas
+  // outras telas.
+  const comissaoCorretorPorMes = useMemo(() => {
+    const mapa = new Map()
+    if (activeTab !== 'notas-fiscais') return mapa
+    const corretorDaVenda = new Map(vendas.map(v => [v.id, v.corretor_id]))
+    pagamentos.forEach(pag => {
+      if (pag.status !== 'pago') return
+      const corretorId = corretorDaVenda.get(pag.venda_id)
+      if (!corretorId) return
+      const mes = String(pag.data_pagamento || '').slice(0, 7)
+      if (!mes) return
+      const fatia = calcularComissaoPorCargoPagamento(pag).find(c => c.nome_cargo === 'Corretor')
+      if (!fatia) return
+      const chave = `${corretorId}|${mes}`
+      mapa.set(chave, (mapa.get(chave) || 0) + (fatia.valor || 0))
+    })
+    return mapa
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab, vendas, pagamentos, empreendimentos, coordenadoras])
+
+  const comissaoCorretorNaCompetencia = (corretorId, competencia) => {
+    if (!corretorId || !competencia) return null
+    return comissaoCorretorPorMes.get(`${corretorId}|${String(competencia).slice(0, 7)}`) ?? 0
+  }
+
   // Calcular comissão total de um pagamento (soma de todos os cargos)
   const calcularComissaoTotalPagamento = (pagamento) => {
     const comissoesPorCargo = calcularComissaoPorCargoPagamento(pagamento)
@@ -1581,7 +1620,10 @@ const AdminDashboard = () => {
         pagamentosData,
         boletosData
       ] = await Promise.all([
-        supabase.from('usuarios').select('*').eq('tipo', 'corretor'),
+        // Inclui beneficiários (Nohros/Beton/Ferretti — migration 041): as entidades sempre
+        // moraram nesta lista quando eram tipo=corretor; manter aqui preserva o card e o
+        // botão de acesso (edge admin-corretor-acesso) pra elas.
+        supabase.from('usuarios').select('*').in('tipo', ['corretor', 'beneficiario']),
         supabase.from('vendas').select('*').or('excluido.eq.false,excluido.is.null'),
         supabase.from('empreendimentos').select('*'),
         supabase.from('clientes').select('*').or('ativo.eq.true,ativo.is.null'),
@@ -2744,6 +2786,9 @@ const AdminDashboard = () => {
   }
 
   const handleSaveCorretor = async () => {
+    // Beneficiário (Nohros/Beton/Ferretti — migration 041): sem vínculo de corretor.
+    // Não exige empreendimento/cargo e o update não escreve campos de corretor.
+    const isBeneficiario = selectedItem?.tipo === 'beneficiario'
     if (!corretorForm.nome || !corretorForm.email) {
       setMessage({ type: 'error', text: 'Preencha todos os campos obrigatórios' })
       return
@@ -2755,7 +2800,7 @@ const AdminDashboard = () => {
         setMessage({ type: 'error', text: 'Informe a comissão do corretor autônomo' })
         return
       }
-    } else {
+    } else if (!isBeneficiario) {
       if (!corretorForm.empreendimento_id || !corretorForm.cargo_id) {
         setMessage({ type: 'error', text: 'Selecione o empreendimento e cargo' })
         return
@@ -2834,14 +2879,16 @@ const AdminDashboard = () => {
             .update({
               email: corretorForm.email,
               nome: corretorForm.nome,
-              tipo_corretor: corretorForm.tipo_corretor,
               telefone: corretorForm.telefone || null,
-              percentual_corretor: corretorForm.is_autonomo ? parseFloat(corretorForm.percentual_corretor) : (parseFloat(corretorForm.percentual_corretor) || null),
-              empreendimento_id: corretorForm.is_autonomo ? null : (corretorForm.empreendimento_id || null),
-              cargo_id: corretorForm.is_autonomo ? null : (corretorForm.cargo_id || null),
               cnpj: corretorForm.cnpj || null,
               imobiliaria: corretorForm.imobiliaria || null,
-              creci: corretorForm.creci || null,
+              ...(isBeneficiario ? {} : {
+                tipo_corretor: corretorForm.tipo_corretor,
+                percentual_corretor: corretorForm.is_autonomo ? parseFloat(corretorForm.percentual_corretor) : (parseFloat(corretorForm.percentual_corretor) || null),
+                empreendimento_id: corretorForm.is_autonomo ? null : (corretorForm.empreendimento_id || null),
+                cargo_id: corretorForm.is_autonomo ? null : (corretorForm.cargo_id || null),
+                creci: corretorForm.creci || null,
+              }),
               tem_acesso_sistema: true
             })
             .eq('id', selectedItem.id)
@@ -2858,14 +2905,16 @@ const AdminDashboard = () => {
             .update({
               nome: corretorForm.nome,
               email: corretorForm.email,
-              tipo_corretor: corretorForm.tipo_corretor,
               telefone: corretorForm.telefone || null,
-              percentual_corretor: corretorForm.is_autonomo ? parseFloat(corretorForm.percentual_corretor) : (parseFloat(corretorForm.percentual_corretor) || null),
-              empreendimento_id: corretorForm.is_autonomo ? null : (corretorForm.empreendimento_id || null),
-              cargo_id: corretorForm.is_autonomo ? null : (corretorForm.cargo_id || null),
               cnpj: corretorForm.cnpj || null,
               imobiliaria: corretorForm.imobiliaria || null,
-              creci: corretorForm.creci || null
+              ...(isBeneficiario ? {} : {
+                tipo_corretor: corretorForm.tipo_corretor,
+                percentual_corretor: corretorForm.is_autonomo ? parseFloat(corretorForm.percentual_corretor) : (parseFloat(corretorForm.percentual_corretor) || null),
+                empreendimento_id: corretorForm.is_autonomo ? null : (corretorForm.empreendimento_id || null),
+                cargo_id: corretorForm.is_autonomo ? null : (corretorForm.cargo_id || null),
+                creci: corretorForm.creci || null,
+              })
             })
             .eq('id', selectedItem.id)
 
@@ -3912,6 +3961,35 @@ const AdminDashboard = () => {
     }
     if (data?.error) throw new Error(data.error)
     return data
+  }
+
+  // Redefine a senha de um corretor/beneficiario que ja tem login. A edge valida de
+  // novo no servidor (admin + tipo + conta existente); os guardas daqui sao so pra
+  // tela nao oferecer botao que vai falhar. Ver src/utils/acessoUsuario.js.
+  const redefinirSenhaCorretor = async () => {
+    if (!podeRedefinirSenha(selectedItem)) {
+      setMessage({ type: 'error', text: 'Este cadastro ainda nao tem login — use "Ativar acesso ao sistema".' })
+      return
+    }
+    if (!senhaValida(novaSenhaCorretor)) {
+      setMessage({ type: 'error', text: `A senha deve ter no minimo ${SENHA_MIN} caracteres` })
+      return
+    }
+    setRedefinindoSenha(true)
+    setMessage({ type: '', text: '' })
+    try {
+      await chamarAdminCorretorAcesso({
+        acao: 'trocar_senha',
+        corretor_id: selectedItem.id,
+        senha: novaSenhaCorretor,
+      })
+      setNovaSenhaCorretor('')
+      setMessage({ type: 'success', text: `Senha de ${selectedItem.nome} redefinida. Entregue a nova senha e peca a troca no primeiro acesso.` })
+    } catch (err) {
+      setMessage({ type: 'error', text: `Nao foi possivel redefinir a senha: ${err.message}` })
+    } finally {
+      setRedefinindoSenha(false)
+    }
   }
 
   const chamarAdminClienteAcesso = async (body) => {
@@ -5237,8 +5315,18 @@ const AdminDashboard = () => {
       
       // Aplicar filtros
       if (relatorioFiltros.corretorId) {
+        // Papel COORDENADORA (Caroline/Jessica): reporta as vendas DIRECIONADAS a ela
+        // (vendas.coordenadora_id), excluindo as que ela mesma vendeu — coordenadora não
+        // reporta venda própria (migration 031). Papel corretor: comportamento original.
+        const coPapel = relatorioFiltros.papel === 'coordenadora'
+          ? coordenadoras.find(c => String(c.usuario_id) === String(relatorioFiltros.corretorId))
+          : null
         dadosFiltrados = dadosFiltrados.filter(g => {
           const corretorIdVenda = String(g.venda?.corretor?.id || g.venda?.corretor_id || '')
+          if (coPapel) {
+            return String(g.venda?.coordenadora_id || '') === String(coPapel.id) &&
+              corretorIdVenda !== String(relatorioFiltros.corretorId)
+          }
           return corretorIdVenda === String(relatorioFiltros.corretorId)
         })
       }
@@ -5267,6 +5355,13 @@ const AdminDashboard = () => {
         dadosFiltrados = dadosFiltrados.filter(g => g.venda_id === relatorioFiltros.vendaId)
       }
       
+      // Distratada fora por padrão. Contrato cancelado não entra no relatório de repasse —
+      // o que a cliente pagou ANTES do distrato já foi repassado nos meses em que entrou.
+      // Com "Incluir", entra e o card sai marcado DISTRATO em vermelho (auditoria).
+      if (!relatorioFiltros.incluirDistratos) {
+        dadosFiltrados = dadosFiltrados.filter(g => g.venda?.status !== 'distrato')
+      }
+
       if (relatorioFiltros.status !== 'todos') {
         if (listaVendasComPagamentos.length > 0) {
           dadosFiltrados = dadosFiltrados.map(g => ({
@@ -5310,6 +5405,7 @@ const AdminDashboard = () => {
       if (corretorSelecionado) filtrosTexto.push(`Corretor: ${corretorSelecionado.nome}`)
       if (empreendimentoSelecionado) filtrosTexto.push(`Empreend.: ${empreendimentoSelecionado.nome}`)
       if (relatorioFiltros.status !== 'todos') filtrosTexto.push(`Status: ${relatorioFiltros.status === 'pago' ? 'Pago' : 'Pendente'}`)
+      filtrosTexto.push(relatorioFiltros.incluirDistratos ? 'Distratados: INCLUIDOS (marcados)' : 'Distratados: excluidos')
       if (relatorioFiltros.cargoId === '__total__') filtrosTexto.push('Cargo: Total')
       else if (relatorioFiltros.cargoId === '') filtrosTexto.push('Cargo: Todos os cargos')
       else if (relatorioFiltros.cargoId) filtrosTexto.push(`Cargo: ${relatorioFiltros.cargoId}`)
@@ -5501,20 +5597,17 @@ const AdminDashboard = () => {
         const valorProSolutoCalc = grupo.pagamentos.filter(p => p.status !== 'cancelado').reduce((acc, p) => acc + (parseFloat(p.valor) || 0), 0)
         const valorProSoluto = valorProSolutoDb > 0 ? valorProSolutoDb : (valorProSolutoCalc > 0 ? valorProSolutoCalc : valorVenda)
         
-        // Calcular comissão da venda
-        let comissaoVenda = 0
-        if (percentualCorretorTotais !== null) {
-          // Soma viva da comissao do cargo "Corretor" via fator (ver .claude/rules/fator-comissao.md).
-          comissaoVenda = grupo.pagamentos.filter(p => p.status !== 'cancelado').reduce((acc, p) => {
-            const cargos = calcularComissaoPorCargoPagamento(p)
-            const cargoCorretor = cargos.find(c => c.nome_cargo === 'Corretor' || c.nome_cargo?.toLowerCase().includes('corretor'))
-            return acc + (cargoCorretor?.valor ?? 0)
-          }, 0)
-        } else {
-          // soma viva dos pagamentos — nao usar venda.comissao_total (snapshot stale
-          // em 89.7% das vendas, ver .claude/rules/visualizacao-totais.md)
-          comissaoVenda = grupo.totalComissao || grupo.pagamentos.filter(p => p.status !== 'cancelado').reduce((acc, p) => acc + (parseFloat(p.comissao_gerada) || 0), 0)
-        }
+        // Comissão do header decide pela MESMA régua das linhas da tabela (filtro de
+        // cargo) — nunca pelo percentual_corretor do cadastro, que é NULL pra vários
+        // corretores e fazia o header mostrar o total (7%) enquanto as linhas mostravam
+        // a fatia (4%): o card não fechava consigo mesmo (caso 908 C, 2026-08-28).
+        // Soma viva dos pagamentos — nunca venda.comissao_total (snapshot stale,
+        // ver .claude/rules/visualizacao-totais.md).
+        const { valor: comissaoVenda, rotulo: rotuloComissaoVenda } = comissaoHeaderVenda(
+          grupo.pagamentos,
+          { cargoId: relatorioFiltros.cargoId, mostrarTotal: relatorioFiltros.cargoId === '__total__' },
+          calcularComissaoPorCargoPagamento
+        )
         
         // ========================================
         // HEADER DA VENDA - Borda fina preta, cor dourada, valores sem |, Cliente/Corretor dentro
@@ -5533,12 +5626,20 @@ const AdminDashboard = () => {
         doc.setFont('helvetica', 'bold')
         const tituloEmp = unidade !== '-' ? `${empreendimento.toUpperCase()} - Un. ${unidade}` : empreendimento.toUpperCase()
         doc.text(tituloEmp, 18, yPosition + 8)
+        if (venda?.status === 'distrato') {
+          // Marca inequívoca: sem isto a controladoria não distingue "pago real de contrato
+          // cancelado" de "baixa falsa de distrato" e acha que o bug antigo voltou.
+          const distratoEm = venda?.data_distrato ? ` em ${formatDataBR(venda.data_distrato)}` : ''
+          doc.setTextColor(192, 0, 0)
+          doc.text(`  DISTRATO${distratoEm}`, 18 + doc.getTextWidth(tituloEmp), yPosition + 8)
+          doc.setTextColor(...cores.cinzaEscuro)
+        }
         
         // Valores: Valor Venda   Valor Pro-Soluto   Valor Comissão (sem |)
         doc.setFontSize(8)
         doc.setFont('helvetica', 'normal')
         doc.setTextColor(...cores.cinzaEscuro)
-        const linhaValores = `Valor Venda: ${formatCurrency(valorVenda)}   Valor Pro-Soluto: ${formatCurrency(valorProSoluto)}   Valor Comissão: ${formatCurrency(comissaoVenda)}`
+        const linhaValores = `Valor Venda: ${formatCurrency(valorVenda)}   Valor Pro-Soluto: ${formatCurrency(valorProSoluto)}   ${rotuloComissaoVenda}: ${formatCurrency(comissaoVenda)}`
         doc.text(linhaValores, 18, yPosition + 18)
         
         // Cliente e Corretor abaixo dos valores, dentro do card (sem |)
@@ -5830,6 +5931,7 @@ const AdminDashboard = () => {
       if (corretorSelecionado) {
         nomeArquivo = `comissoes_${corretorSelecionado.nome.replace(/\s+/g, '_').toLowerCase()}`
       }
+      if (relatorioFiltros.incluirDistratos) nomeArquivo += '_com-distratos'
       if (relatorioFiltros.status !== 'todos') {
         nomeArquivo += `_${relatorioFiltros.status}`
       }
@@ -6403,6 +6505,14 @@ const AdminDashboard = () => {
             <Barcode size={20} />
             <span>Boletos</span>
           </button>
+          <button
+            className={`nav-item ${activeTab === 'notas-fiscais' ? 'active' : ''}`}
+            onClick={() => navigate('/admin/notas-fiscais')}
+            title="Notas fiscais dos corretores"
+          >
+            <FileCheck size={20} />
+            <span>Notas Fiscais</span>
+          </button>
           <button 
             className={`nav-item ${activeTab === 'relatorios' ? 'active' : ''}`}
             onClick={() => navigate('/admin/relatorios')}
@@ -6514,6 +6624,7 @@ const AdminDashboard = () => {
             {activeTab === 'auditoria' && 'Central de Auditoria'}
             {activeTab === 'clientes' && 'Cadastro de Clientes'}
             {activeTab === 'boletos' && 'Boletos dos Clientes'}
+            {activeTab === 'notas-fiscais' && 'Notas Fiscais dos Corretores'}
             {activeTab === 'relatorios' && 'Relatórios'}
             {activeTab === 'preview-pdf' && 'Ver PDF'}
             {activeTab === 'solicitacoes' && 'Solicitações'}
@@ -7120,7 +7231,17 @@ const AdminDashboard = () => {
                                 {corretor.cargo?.nome_cargo && (
                                   <span className="vinculo-item cargo">
                                     {corretor.cargo.nome_cargo}
-                                    {corretor.cargo.percentual && ` (${corretor.cargo.percentual}%)`}
+                                    {/* No cargo Coordenadora vale a taxa NEGOCIADA da pessoa
+                                        (coordenadoras.percentual_padrao — Jessica 1,00%), nao o
+                                        percentual generico do cargo em cargos_empreendimento
+                                        (0,50%). O card mostrava 0,50% pra Jessica, que recebe 1%. */}
+                                    {(() => {
+                                      const co = coordenadoraDoUsuario(corretor, coordenadoras)
+                                      const pct = corretor.cargo.nome_cargo === 'Coordenadora' && co?.percentual_padrao != null
+                                        ? co.percentual_padrao
+                                        : corretor.cargo.percentual
+                                      return pct ? ` (${pct}%)` : ''
+                                    })()}
                                   </span>
                                 )}
                               </div>
@@ -8940,6 +9061,14 @@ const AdminDashboard = () => {
           </div>
         )}
 
+        {/* Aba Notas Fiscais — quem mandou e quem nao mandou nota no mes */}
+        {activeTab === 'notas-fiscais' && (
+          <NotasFiscaisPainel
+            adminId={user?.id}
+            comissaoDoCorretorNaCompetencia={comissaoCorretorNaCompetencia}
+          />
+        )}
+
         {/* Aba Boletos — cobrança dos CLIENTES (mundo separado das comissões) */}
         {activeTab === 'boletos' && (() => {
           const hoje = new Date().toISOString().slice(0, 10)
@@ -9371,10 +9500,12 @@ const AdminDashboard = () => {
                       // Ao mudar corretor, resetar empreendimento e venda
                       // O empreendimento será filtrado automaticamente no dropdown
                       setRelatorioFiltros({
-                        ...relatorioFiltros, 
-                        corretorId: novoCorretorId, 
+                        ...relatorioFiltros,
+                        corretorId: novoCorretorId,
                         empreendimentoId: '', // Reset empreendimento
-                        vendaId: '' // Reset venda
+                        vendaId: '', // Reset venda
+                        papel: 'corretor', // Reset papel (toggle só reaparece se o novo selecionado for coordenadora)
+                        cargoId: relatorioFiltros.papel === 'coordenadora' ? 'Corretor' : relatorioFiltros.cargoId
                       })
                     }}
                   >
@@ -9393,7 +9524,41 @@ const AdminDashboard = () => {
                     </small>
                   )}
                 </div>
-                
+
+                {/* Papel — só quando o corretor selecionado TAMBÉM é coordenadora (Caroline/Jessica).
+                    'Corretora' = vendas que ELA vendeu (fatia do cargo Corretor).
+                    'Coordenadora' = vendas DIRECIONADAS a ela (fatia do cargo Coordenadora, taxa
+                    snapshotada por venda — migration 040). Trocar o papel já ajusta o cargo do relatório. */}
+                {(() => {
+                  const coDoSelecionado = relatorioFiltros.corretorId
+                    ? coordenadoras.find(c => String(c.usuario_id) === String(relatorioFiltros.corretorId))
+                    : null
+                  if (!coDoSelecionado) return null
+                  return (
+                    <div className="filtro-grupo">
+                      <label>Papel</label>
+                      <select
+                        value={relatorioFiltros.papel}
+                        onChange={(e) => {
+                          const papel = e.target.value
+                          setRelatorioFiltros({
+                            ...relatorioFiltros,
+                            papel,
+                            cargoId: papel === 'coordenadora' ? 'Coordenadora' : 'Corretor',
+                            coordenadoraId: '' // o papel já direciona; evita filtro duplicado
+                          })
+                        }}
+                      >
+                        <option value="corretor">Corretora (vendas próprias)</option>
+                        <option value="coordenadora">Coordenadora (vendas direcionadas)</option>
+                      </select>
+                      <small style={{ color: '#64748b', marginTop: '4px', display: 'block' }}>
+                        {formatNome(coDoSelecionado.nome)} atua nos dois papéis
+                      </small>
+                    </div>
+                  )
+                })()}
+
                 <div className="filtro-grupo">
                   <label><Building size={14} /> Empreendimento</label>
                   <select
@@ -9467,6 +9632,17 @@ const AdminDashboard = () => {
                     <option value="pago">Pagos</option>
                   </select>
                 </div>
+
+                <div className="filtro-grupo">
+                  <label>Distratados</label>
+                  <select
+                    value={relatorioFiltros.incluirDistratos ? 'incluir' : 'excluir'}
+                    onChange={(e) => setRelatorioFiltros({...relatorioFiltros, incluirDistratos: e.target.value === 'incluir'})}
+                  >
+                    <option value="excluir">Excluir (padrão)</option>
+                    <option value="incluir">Incluir, marcados</option>
+                  </select>
+                </div>
                 
                 {/* Só mostra o filtro de cargo se um empreendimento estiver selecionado */}
                 {relatorioFiltros.empreendimentoId && (
@@ -9535,6 +9711,8 @@ const AdminDashboard = () => {
                         // Filtrar por corretor se selecionado
                         const corretorId = venda?.corretor_id || venda?.corretor?.id
                         if (relatorioFiltros.corretorId && corretorId !== relatorioFiltros.corretorId) return false
+                        // Distratada só entra se a controladoria pedir (mesma régua do PDF)
+                        if (!relatorioFiltros.incluirDistratos && venda?.status === 'distrato') return false
                         // Filtrar por empreendimento se selecionado
                         const empId = venda?.empreendimento_id || venda?.empreendimento?.id
                         if (relatorioFiltros.empreendimentoId && empId !== relatorioFiltros.empreendimentoId) return false
@@ -9583,10 +9761,12 @@ const AdminDashboard = () => {
                       vendaId: '',
                       cargoId: 'Corretor', // Manter padrão como Corretor
                       coordenadoraId: '',
+                      papel: 'corretor',
                       status: 'todos',
                       dataInicio: '',
                       dataFim: '',
-                      empreendimentoId: ''
+                      empreendimentoId: '',
+                      incluirDistratos: false
                     })
                     setBuscaCorretorRelatorio('')
                   }}
@@ -9702,8 +9882,9 @@ const AdminDashboard = () => {
                     const empSelecionado = empreendimentos.find(e => e.id === empId)
                     
                     // Filtrar vendas do empreendimento
-                    const vendasEmp = listaVendasComPagamentos.filter(g => 
-                      g.venda?.empreendimento_id === empId
+                    const vendasEmp = listaVendasComPagamentos.filter(g =>
+                      g.venda?.empreendimento_id === empId &&
+                      (relatorioFiltros.incluirDistratos || g.venda?.status !== 'distrato')
                     )
                     
                     // Calcular totais
@@ -10600,7 +10781,9 @@ const AdminDashboard = () => {
                   ? (selectedItem ? 'Editar Venda' : 'Nova Venda')
                   : modalType === 'empreendimento'
                   ? (selectedItem ? 'Editar Empreendimento' : 'Novo Empreendimento')
-                  : (selectedItem ? 'Editar Corretor' : 'Novo Corretor')
+                  : (selectedItem
+                      ? (selectedItem.tipo === 'beneficiario' ? 'Editar Beneficiário' : 'Editar Corretor')
+                      : 'Novo Corretor')
                 }
               </h2>
               <button className="close-btn" onClick={() => setShowModal(false)}>
@@ -11705,14 +11888,47 @@ const AdminDashboard = () => {
                       </div>
                       
                       {corretorForm.tem_acesso_sistema ? (
-                        <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.7)', margin: 0 }}>
-                          Este corretor pode fazer login no sistema com o email cadastrado.
-                        </p>
+                        <>
+                          <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.7)', marginBottom: '12px' }}>
+                            {selectedItem?.tipo === 'beneficiario'
+                              ? 'Esta entidade pode fazer login e cai direto no painel do beneficiário.'
+                              : 'Este corretor pode fazer login no sistema com o email cadastrado.'}
+                          </p>
+                          {/* Redefinir senha de quem JÁ tem login (spec 2026-09-04). A tela só
+                              oferecia criar acesso; quem já tinha conta e esqueceu a senha
+                              ficava sem caminho. A edge sempre suportou 'trocar_senha'. */}
+                          <div className="form-group" style={{ marginBottom: 0 }}>
+                            <label>Redefinir senha (mínimo {SENHA_MIN} caracteres)</label>
+                            <div className="input-with-icon">
+                              <Lock size={18} />
+                              <input
+                                type="password"
+                                placeholder="Deixe em branco para não alterar"
+                                value={novaSenhaCorretor}
+                                onChange={(e) => setNovaSenhaCorretor(e.target.value)}
+                              />
+                            </div>
+                            <button
+                              type="button"
+                              className="btn-secondary"
+                              style={{ marginTop: '10px' }}
+                              onClick={redefinirSenhaCorretor}
+                              disabled={redefinindoSenha || !senhaValida(novaSenhaCorretor)}
+                            >
+                              {redefinindoSenha ? 'Redefinindo...' : 'Redefinir senha'}
+                            </button>
+                            <small style={{ display: 'block', marginTop: '8px', fontSize: '11px', color: 'rgba(255,255,255,0.5)' }}>
+                              A senha atual é substituída na hora. Entregue a nova senha à pessoa e
+                              peça que ela troque no primeiro acesso, em Meu Perfil.
+                            </small>
+                          </div>
+                        </>
                       ) : (
                         <>
                           <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.7)', marginBottom: '12px' }}>
-                            Este corretor foi sincronizado do Sienge e ainda não tem acesso ao sistema. 
-                            Ative o acesso para que ele possa fazer login e visualizar suas comissões.
+                            {selectedItem?.tipo === 'beneficiario'
+                              ? 'Esta entidade ainda não tem acesso. Ative para que ela faça login e veja o painel do próprio cargo (comissões da fatia dela e métricas gerais).'
+                              : 'Este corretor foi sincronizado do Sienge e ainda não tem acesso ao sistema. Ative o acesso para que ele possa fazer login e visualizar suas comissões.'}
                           </p>
                           
                           <div className="form-group" style={{ marginBottom: '12px' }}>
@@ -11778,6 +11994,19 @@ const AdminDashboard = () => {
                     </div>
                   )}
 
+                  {selectedItem?.tipo === 'beneficiario' ? (
+                    <>
+                      <div className="section-divider">
+                        <span>Beneficiário de cargo</span>
+                      </div>
+                      <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.7)' }}>
+                        Esta entidade recebe a fatia do cargo <strong>{selectedItem?.cargo_beneficiario}</strong> em
+                        todas as vendas do empreendimento — não tem vínculo de corretor, tipo nem cargo próprios.
+                        O percentual vem da configuração de cargos do empreendimento.
+                      </p>
+                    </>
+                  ) : (
+                  <>
                   <div className="section-divider">
                     <span>Vínculo com Empreendimento</span>
                   </div>
@@ -11850,6 +12079,8 @@ const AdminDashboard = () => {
                       <span>Comissão do cargo:</span>
                       <strong>{corretorForm.percentual_corretor}%</strong>
                     </div>
+                  )}
+                  </>
                   )}
 
                   <div className="form-group">

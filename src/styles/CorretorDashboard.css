@@ -6993,3 +6993,130 @@ button.perfil-avatar-clickable:focus-visible .perfil-avatar-overlay {
     padding-right: 8px;
   }
 }
+
+/* ── Papel COORDENAÇÃO (spec docs/specs/2026-09-04-spec-papel-coordenador.md) ──
+   Vars --broker-* são escopadas em .corretor-shell (ver .claude/rules/ui-mobile-ios.md);
+   este bloco vive dentro do shell, então herda o tema sem truque. */
+.coord-papel-switch {
+  display: flex;
+  gap: 8px;
+  margin: 0 0 18px;
+  flex-wrap: wrap;
+}
+
+.coord-papel-switch button {
+  padding: 8px 18px;
+  border-radius: 999px;
+  border: 1px solid var(--broker-border, #e2e8f0);
+  background: var(--broker-surface, #fff);
+  color: var(--broker-text, #0f172a);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.coord-papel-switch button.active {
+  background: var(--broker-gold, #c9a962);
+  border-color: var(--broker-gold, #c9a962);
+  color: #12100b;
+}
+
+.coord-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.coord-filtros {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.coord-filtros select {
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--broker-border, #e2e8f0);
+  background: var(--broker-surface, #fff);
+  color: var(--broker-text, #0f172a);
+}
+
+.coord-cards {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.coord-card {
+  flex: 1 1 190px;
+  min-width: 180px;
+  padding: 18px 20px;
+  border-radius: 12px;
+  border: 1px solid var(--broker-border, #e2e8f0);
+  background: var(--broker-surface, #fff);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.coord-card strong {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--broker-text, #0f172a);
+}
+
+.coord-card-paga { border-left: 4px solid #16a34a; }
+.coord-card-paga strong { color: #16a34a; }
+.coord-card-pendente { border-left: 4px solid #f59e0b; }
+.coord-card-pendente strong { color: #b45309; }
+
+.coord-label {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  opacity: 0.7;
+}
+
+.coord-serie {
+  padding: 18px 20px;
+  border-radius: 12px;
+  border: 1px solid var(--broker-border, #e2e8f0);
+  background: var(--broker-surface, #fff);
+  overflow-x: auto;
+}
+
+.coord-serie table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+  font-size: 14px;
+}
+
+.coord-serie td {
+  padding: 8px 4px;
+  border-top: 1px solid var(--broker-border, #f1f5f9);
+}
+
+.coord-serie-valor {
+  text-align: right;
+  font-weight: 600;
+}
+
+.coord-vazio {
+  padding: 28px 24px;
+  border-radius: 12px;
+  border: 1px dashed var(--broker-border, #e2e8f0);
+  background: var(--broker-surface, #fff);
+}
+
+.coord-vazio h2 {
+  margin: 0 0 10px;
+  font-size: 18px;
+}
+
+.coord-vazio p { margin: 0 0 8px; line-height: 1.5; }
+.coord-nota { font-size: 13px; opacity: 0.75; }
+.coord-msg { padding: 20px 0; }
+.coord-msg-erro { color: #b91c1c; }
