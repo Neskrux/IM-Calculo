@@ -1253,6 +1253,7 @@ const AdminDashboard = () => {
   const [emitindoLote, setEmitindoLote] = useState(false)
   const [progressoEmissao, setProgressoEmissao] = useState(null) // {feitos, total}
   const [resultadoEmissao, setResultadoEmissao] = useState(null)
+  const [sincronizandoBanco, setSincronizandoBanco] = useState(false)
   const [emitindoBoletoId, setEmitindoBoletoId] = useState(null)
   const [buscaBoleto, setBuscaBoleto] = useState('')
   const [clienteBoletoExpandido, setClienteBoletoExpandido] = useState(null)
@@ -4204,6 +4205,37 @@ const AdminDashboard = () => {
     a.download = `lote-conferido-${r.banco}-${new Date().toISOString().slice(0, 10)}.json`
     a.click()
     URL.revokeObjectURL(a.href)
+  }
+
+  // Espelha no sistema as baixas/pagamentos feitos DIRETO no portal do Ailos.
+  // Sem webhook liberado pela Ailos, a conciliação é por consulta à API.
+  // Só atualiza a tabela boletos — NUNCA toca pagamentos_prosoluto.
+  const sincronizarBancoAilos = async () => {
+    setSincronizandoBanco(true)
+    try {
+      const { data: sess } = await supabase.auth.getSession()
+      const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ailos-boletos/sincronizar`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${sess?.session?.access_token}`, apikey: import.meta.env.VITE_SUPABASE_ANON_KEY },
+        body: JSON.stringify({}),
+      })
+      const data = await resp.json().catch(() => ({}))
+      if (!resp.ok || data.error) throw new Error(data.error || `HTTP ${resp.status}`)
+      if (data.alterados?.length > 0) {
+        setBoletosAdmin(prev => prev.map(b => {
+          const alt = data.alterados.find(a => a.id === b.id)
+          return alt ? { ...b, status: alt.status, ...(alt.data_pagamento ? { data_pagamento: alt.data_pagamento } : {}) } : b
+        }))
+      }
+      setMessage({
+        type: 'success',
+        text: `Banco Ailos conferido (${data.conferidos} boletos): ${data.baixados} baixados no portal · ${data.pagos} pagos · ${data.semMudanca} sem mudança${data.restantes > 0 ? ` — clique de novo pra conferir os ${data.restantes} restantes` : ''}`,
+      })
+    } catch (e) {
+      setMessage({ type: 'error', text: 'Sincronizar com o banco: ' + e.message })
+    } finally {
+      setSincronizandoBanco(false)
+    }
   }
 
   // Boleto vivo da parcela (cancelado/baixado/erro liberam re-emissão)
@@ -9048,6 +9080,12 @@ const AdminDashboard = () => {
                           <ul>{importResultado.fora[k].slice(0, 15).map((r, i) => <li key={i}>{r}</li>)}
                             {importResultado.fora[k].length > 15 && <li>… +{importResultado.fora[k].length - 15}</li>}
                           </ul>
+                          {k === 'ja_tem_boleto' && (
+                            <p className="import-dica">
+                              Esses boletos foram baixados direto no portal do banco? Feche esta janela, clique em
+                              {' '}<strong>Sincronizar com o banco</strong> (no topo da aba) e importe de novo — o sistema confere e libera.
+                            </p>
+                          )}
                         </div>
                       ))}
                       {resultadoEmissao ? (
@@ -9113,6 +9151,17 @@ const AdminDashboard = () => {
                   </div>
                 </div>
               )}
+
+              {/* Sincronizar com o banco — espelha o que foi feito direto no portal Ailos */}
+              <div className="boletos-sync-row">
+                <button className="btn-modelo btn-sincronizar" onClick={sincronizarBancoAilos} disabled={sincronizandoBanco}>
+                  <RefreshCw size={15} className={sincronizandoBanco ? 'loading-mini-spin' : ''} />
+                  {sincronizandoBanco ? 'Conferindo os boletos no banco…' : 'Sincronizar com o banco (Ailos)'}
+                </button>
+                <span className="boletos-sync-hint">
+                  Baixaram ou pagaram boletos direto no portal do Ailos? Clique aqui e o sistema se atualiza sozinho.
+                </span>
+              </div>
 
               {/* Resumo */}
               <div className="boletos-resumo-grid">

@@ -87,3 +87,7 @@ API-Cobranca-Ailos-extracted/
 API de Cobran*a.zip
 Implementacao de aplicativos*.pdf
 Manual - API de Cobranca*.pdf
+
+# Artefatos operacionais dos lotes Sicoob (refs de clientes)
+scripts/boletos/lote-dryrun-*.json
+scripts/boletos/lote-resultado-*.json

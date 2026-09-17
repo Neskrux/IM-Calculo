@@ -37,9 +37,17 @@ const dataISO = (s) => {
 async function fetchAll(tabela, select) {
   const all = []
   for (let page = 0; ; page++) {
-    const { data, error } = await supabase.from(tabela).select(select)
-      .order('id', { ascending: true }).range(page * 1000, page * 1000 + 999)
-    if (error) throw new Error(`${tabela}: ${error.message}`)
+    // rede local oscila em pulls longos — 3 tentativas com backoff por página
+    let data = null, lastErr = null
+    for (let t = 0; t < 3; t++) {
+      try {
+        const r = await supabase.from(tabela).select(select)
+          .order('id', { ascending: true }).range(page * 1000, page * 1000 + 999)
+        if (r.error) throw new Error(r.error.message)
+        data = r.data; lastErr = null; break
+      } catch (e) { lastErr = e; await dormir(1500 * (t + 1)) }
+    }
+    if (lastErr) throw new Error(`${tabela}: ${lastErr.message ?? lastErr}`)
     all.push(...(data ?? []))
     if (!data || data.length < 1000) break
   }

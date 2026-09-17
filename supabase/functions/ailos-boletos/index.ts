@@ -9,6 +9,10 @@
 //                        layout homologado) e enviado via /armazenar-pdf — CPU da edge não aguenta
 //                        jsPDF em lote. Idempotente por parcela.
 //   POST /armazenar-pdf — ADMIN (JWT) grava PDF (base64) no Storage 'boletos' + pdf_path.
+//   POST /sincronizar  — ADMIN (JWT) espelha o estado real do banco: consulta cada boleto
+//                        Ailos vivo na API e marca baixado/pago conforme o banco confirmar
+//                        (conciliação por consulta — a Ailos ainda não liberou webhooks).
+//                        Só mexe na tabela boletos, NUNCA em pagamentos_prosoluto.
 //
 // Segredos: AILOS_CONSUMER_KEY / AILOS_CONSUMER_SECRET (env ou Vault via RPC ailos_segredo).
 // Estado de tokens em ailos_tokens (migration 038). Ver scripts/boletos/README.md.
@@ -250,6 +254,38 @@ Deno.serve(async (req: Request) => {
     if (upErr) return json({ error: "upload: " + upErr.message }, 500);
     await supa.from("boletos").update({ pdf_path: `${boletoId}.pdf` }).eq("id", boletoId);
     return json({ ok: true });
+  }
+  if (rota === "sincronizar") {
+    const adminId = await autenticarAdmin(req);
+    if (!adminId) return json({ error: "apenas administradores" }, 401);
+    const { data: bols } = await supa.from("boletos")
+      .select("id, seu_numero, valor")
+      .eq("banco", "ailos").eq("ambiente", AMBIENTE)
+      .not("status", "in", "(cancelado,baixado,erro,pago)")
+      .order("created_at").limit(150);
+    let baixados = 0, pagos = 0, semMudanca = 0, errosN = 0;
+    // deno-lint-ignore no-explicit-any
+    const alterados: any[] = [];
+    for (const b of bols ?? []) {
+      const r = await ailosApi("GET", `/ailos/cobranca/api/v2/boletos/consultar/boleto/convenios/${CONVENIO}/${b.seu_numero}`);
+      // deno-lint-ignore no-explicit-any
+      let bb: any = null; try { bb = JSON.parse(r.body).boleto; } catch { /* não-JSON */ }
+      if (!bb) { errosN++; continue; }
+      const sit = bb.indicadorSituacaoBoleto;
+      const dataPg = String(bb.pagamento?.dataPagamento ?? "").slice(0, 10);
+      const dataBx = String(bb.pagamento?.dataBaixadoBoleto ?? "").slice(0, 10);
+      if (sit === 5 && dataPg && dataPg !== "0001-01-01") {
+        const { error } = await supa.from("boletos").update({ status: "pago", data_pagamento: dataPg, valor_pago: b.valor }).eq("id", b.id);
+        if (error) errosN++; else { pagos++; alterados.push({ id: b.id, status: "pago", data_pagamento: dataPg }); }
+      } else if (sit === 3 && dataBx && dataBx !== "0001-01-01") {
+        const { error } = await supa.from("boletos").update({ status: "baixado", motivo_cancelamento: `Baixado no portal Ailos em ${fmtData(dataBx)} (sincronização com o banco)` }).eq("id", b.id);
+        if (error) errosN++; else { baixados++; alterados.push({ id: b.id, status: "baixado" }); }
+      } else semMudanca++;
+    }
+    const { count } = await supa.from("boletos").select("id", { count: "exact", head: true })
+      .eq("banco", "ailos").eq("ambiente", AMBIENTE).not("status", "in", "(cancelado,baixado,erro,pago)");
+    console.log(JSON.stringify({ sincronizar: { admin: adminId, conferidos: (bols ?? []).length, baixados, pagos, semMudanca, erros: errosN } }));
+    return json({ ok: true, conferidos: (bols ?? []).length, baixados, pagos, semMudanca, erros: errosN, alterados, restantes: Math.max(0, (count ?? 0) - semMudanca - errosN) });
   }
   if (rota === "emitir-lote") {
     try { return await emitirLote(req, body); }
