@@ -57,3 +57,50 @@
   empreendimento, sem PII de cliente).
 - Criação do login da Nohros: via botão 🔑 do Admin (edge `admin-corretor-acesso`),
   nunca senha em texto plano por fora.
+
+---
+
+## v2 — mesmo formato da Coordenação (2026-09-25)
+
+> Pedido do Jonas: *"a visão dos beneficiários está ruim; deve ser parecida com a da
+> coordenadora"*. A v1 era uma página branca solta (título e valores da série mensal
+> quase invisíveis sobre o tema escuro global), sem navegação e sem como ver quais
+> vendas e parcelas formam o número.
+
+**O que muda:** a tela passa a usar a moldura do papel Coordenação (barra lateral, faixa
+de números, título por aba, menu no celular) com 4 abas:
+
+| aba | conteúdo |
+|---|---|
+| Dashboard | o **mesmo** painel da Coordenação (`PainelCoordenacao`, só com rótulos do cargo) + filtro de empreendimento quando há mais de um |
+| Vendas | um card por venda: unidade, empreendimento, interna/externa, situação (% recebido), pró-soluto, fatia do cargo com a taxa (`Nohros (1,25%)`); filtros de busca, situação, tipo e empreendimento; "Ver parcelas" abre a venda em Pagamentos |
+| Pagamentos | parcelas agrupadas por venda (tabela inline, sem modal — `ui-mobile-ios.md`); filtros de status, tipo de parcela, empreendimento e datas; resumo a receber / recebida / total |
+| Relatórios | filtros (empreendimento, status, mês ou intervalo de datas) + "O que vai no relatório" (o mesmo recorte do PDF) + PDF no padrão IM (cabeçalho preto/dourado, resumo, detalhamento por parcela com a taxa do cargo, rodapé paginado) |
+
+**Quem vê o quê (inalterado — só ficou explícito):**
+
+| aparece | nunca aparece |
+|---|---|
+| fatia do próprio cargo (paga / a receber / por venda / por parcela) | fatia de outro cargo, comissão total (`comissao_gerada`) |
+| valores, datas e status de PARCELA; % recebido | nome de cliente, corretor, valor de venda (VGV) |
+| unidade, empreendimento, venda interna/externa, taxa do cargo | aba Clientes, Empreendimentos, Perfil, Nota fiscal |
+
+Escopo de vendas inalterado: ativas dos empreendimentos onde o cargo existe; distrato,
+excluída e "limbo" (situação 3 / data de distrato gravada) fora — agora em
+`vendasDoBeneficiario`.
+
+**Cenário 5 — o % do cargo é o do empreendimento DA VENDA.** A v1 pegava a primeira
+linha de `cargos_empreendimento` com aquele nome e tipo, de qualquer empreendimento.
+Hoje não muda número nenhum (só a Figueira tem venda), mas erraria no dia em que outro
+empreendimento tiver o mesmo cargo com % diferente. Corrigido em `pctCargoDaVenda` /
+`fatiaCargoDoPagamento` (teste em `visaoBeneficiario.test.js`).
+
+**Peças novas (puras, testadas em `src/utils/visaoBeneficiario.test.js`):**
+`pctCargoDaVenda`, `resumoFatiaCargo` (núcleo do painel — `resumoCoordenacao` passou a
+delegar a ele, testes da coordenação intactos), `vendasDoBeneficiario`,
+`resumoPorVendaDoCargo`, `recorteRelatorioCargo` (o MESMO recorte na aba Pagamentos, no
+resumo de Relatórios e no PDF — tela e PDF não divergem).
+
+**Decisões que ficaram para o Jonas:**
+1. O PDF sai por padrão com **parcelas pagas** (como a v1); dá pra trocar para Todos/Pendentes.
+2. Valor de venda (VGV) **não** aparece — seguiu a lista de macro neutro da decisão de 20/08.

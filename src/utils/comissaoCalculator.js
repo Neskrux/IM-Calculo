@@ -201,6 +201,28 @@ export function taxaCoordenadoraPorCutover(dataVenda) {
   return d < CUTOVER_TAXA_COORDENADORA ? 1.0 : 0.5
 }
 
+// Linhas de cargos_empreendimento que valem pra ESTA venda: o tipo da venda decide a
+// tabela (interno/externo) e, quando as linhas trazem empreendimento_id, só as do
+// empreendimento da venda contam — o % de um empreendimento nunca vaza pra outro.
+function cargosDaVenda(venda, cargos = []) {
+  const tipoVenda = venda?.tipo_corretor || 'externo'
+  const empId = venda?.empreendimento_id
+  return (Array.isArray(cargos) ? cargos : []).filter(c =>
+    (c.tipo_corretor || 'externo') === tipoVenda &&
+    (empId == null || c.empreendimento_id == null || String(c.empreendimento_id) === String(empId)))
+}
+
+// % do cargo NAQUELA venda (rótulo "Nohros (1,25%)" e base da fatia).
+// Coordenadora usa a taxa por venda (snapshot > negociada); sem coordenadora na venda → 0.
+export function pctCargoDaVenda(venda, nomeCargo, cargos = [], coordenadoras = []) {
+  if (!venda || !nomeCargo) return 0
+  const pctTabela = parseFloat(cargosDaVenda(venda, cargos).find(c => c.nome_cargo === nomeCargo)?.percentual) || 0
+  if (nomeCargo !== 'Coordenadora') return pctTabela
+  const taxa = taxaCoordenadoraDaVenda(venda, coordenadoras)
+  if (taxa != null) return taxa
+  return venda.coordenadora_id ? pctTabela : 0
+}
+
 // ---------------------------------------------------------------------------
 // Fatia de UM CARGO numa parcela (visão do beneficiário: Nohros, Beton, ...).
 // Regra canônica: comissao_gerada é a comissão TOTAL da parcela; a fatia do cargo é
@@ -213,19 +235,11 @@ export function taxaCoordenadoraPorCutover(dataVenda) {
 export function fatiaCargoDoPagamento(pagamento, venda, nomeCargo, cargosDoEmp = [], coordenadoras = []) {
   if (!pagamento || isCancelado(pagamento) || !venda || !nomeCargo) return 0
 
-  const tipoVenda = venda.tipo_corretor || 'externo'
-  const cargosDoTipo = cargosDoEmp.filter(c => (c.tipo_corretor || 'externo') === tipoVenda)
-
-  let pctCargo = parseFloat(cargosDoTipo.find(c => c.nome_cargo === nomeCargo)?.percentual) || 0
-  if (nomeCargo === 'Coordenadora') {
-    const taxa = taxaCoordenadoraDaVenda(venda, coordenadoras)
-    if (taxa != null) pctCargo = taxa
-    else if (!venda.coordenadora_id) return 0 // venda sem coordenadora não gera fatia do cargo
-  }
+  const pctCargo = pctCargoDaVenda(venda, nomeCargo, cargosDoEmp, coordenadoras)
   if (pctCargo <= 0) return 0
 
   const pctTotal = parseFloat(pagamento.percentual_comissao_total) ||
-    cargosDoTipo.reduce((acc, c) => acc + (parseFloat(c.percentual) || 0), 0)
+    cargosDaVenda(venda, cargosDoEmp).reduce((acc, c) => acc + (parseFloat(c.percentual) || 0), 0)
   if (pctTotal <= 0) return 0
 
   const comissaoTotal = calcularComissaoPagamentoCompleto(pagamento, { vendas: [venda] })
@@ -364,11 +378,20 @@ export function vendasDaCoordenacao(vendas, coordenadora) {
  * @param {string}   [p.mes]          - 'YYYY-MM' pra filtrar a fatia; '' = todo o período
  * @param {string}   [p.hoje]         - 'YYYY-MM-DD' (injetável pra teste determinístico)
  */
-export function resumoCoordenacao({
-  vendas = [], pagamentos = [], coordenadora, cargos = [], coordenadoras = [],
+export function resumoCoordenacao({ vendas = [], coordenadora, ...resto } = {}) {
+  return resumoFatiaCargo({ ...resto, vendas: vendasDaCoordenacao(vendas, coordenadora), cargo: 'Coordenadora' })
+}
+
+/**
+ * Núcleo do painel de UM cargo (Coordenação e Beneficiário usam o mesmo): fatia do
+ * cargo recebida / a receber + macro neutro (valores de PARCELA). Nunca devolve a
+ * comissão total nem a fatia de outro cargo. `vendas` já chega no escopo de quem chama.
+ */
+export function resumoFatiaCargo({
+  vendas = [], pagamentos = [], cargo, cargos = [], coordenadoras = [],
   mes = '', hoje = new Date().toISOString().slice(0, 10),
 } = {}) {
-  const escopo = vendasDaCoordenacao(vendas, coordenadora)
+  const escopo = Array.isArray(vendas) ? vendas : []
   const vazio = escopo.length === 0
   const base = {
     vazio, nVendas: escopo.length,
@@ -383,7 +406,7 @@ export function resumoCoordenacao({
     .filter(p => porId.has(String(p?.venda_id)) && isAtivo(p))
 
   const fatia = (p) =>
-    fatiaCargoDoPagamento(p, porId.get(String(p.venda_id)), 'Coordenadora', cargos, coordenadoras)
+    fatiaCargoDoPagamento(p, porId.get(String(p.venda_id)), cargo, cargos, coordenadoras)
 
   const pagos = ativos.filter(isPago)
   const pendentes = ativos.filter(isPendente)
@@ -411,6 +434,102 @@ export function resumoCoordenacao({
     fatiaPendente: pendentes.filter(noMes).reduce((s, p) => s + fatia(p), 0),
     serieMensal: [...porMes.entries()].sort((a, b) => b[0].localeCompare(a[0])).slice(0, 13),
   }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Visão do BENEFICIÁRIO v2 (mesmo formato da Coordenação)
+// Spec: docs/specs/2026-08-20-spec-visao-beneficiario.md (§ v2)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Escopo do beneficiário: só venda ATIVA. Tira distrato, excluída e o "limbo"
+ * (situacao_contrato '3' ou data_distrato já gravada, mas status ainda não virou).
+ */
+export const vendasDoBeneficiario = (vendas = []) =>
+  (Array.isArray(vendas) ? vendas : []).filter(v =>
+    isVendaAtiva(v) && String(v?.situacao_contrato ?? '') !== '3' && !v?.data_distrato)
+
+const porUnidade = (a, b) =>
+  String(a?.unidade || '').localeCompare(String(b?.unidade || ''), 'pt-BR', { numeric: true })
+
+/**
+ * Uma linha por venda (aba Vendas e cabeçalho da aba Pagamentos): fatia do cargo
+ * paga / a receber, soma das parcelas e % recebido. Venda sem parcela aparece zerada.
+ * Nunca devolve comissão total nem fatia de outro cargo.
+ */
+export function resumoPorVendaDoCargo({ vendas = [], pagamentos = [], cargo, cargos = [], coordenadoras = [] } = {}) {
+  const pagsPorVenda = new Map()
+  for (const p of Array.isArray(pagamentos) ? pagamentos : []) {
+    if (!isAtivo(p)) continue
+    const k = String(p.venda_id)
+    if (!pagsPorVenda.has(k)) pagsPorVenda.set(k, [])
+    pagsPorVenda.get(k).push(p)
+  }
+  return (Array.isArray(vendas) ? vendas : []).map((venda) => {
+    const pags = pagsPorVenda.get(String(venda.id)) || []
+    let valorParcelas = 0, valorRecebido = 0, fatiaPaga = 0, fatiaPendente = 0, nPagas = 0
+    for (const p of pags) {
+      const valor = parseFloat(p.valor) || 0
+      const fatia = fatiaCargoDoPagamento(p, venda, cargo, cargos, coordenadoras)
+      valorParcelas += valor
+      if (isPago(p)) { valorRecebido += valor; fatiaPaga += fatia; nPagas++ }
+      else if (isPendente(p)) fatiaPendente += fatia
+    }
+    return {
+      venda,
+      pctCargo: pctCargoDaVenda(venda, cargo, cargos, coordenadoras),
+      nParcelas: pags.length, nPagas, valorParcelas, valorRecebido,
+      pctRecebido: valorParcelas > 0 ? (valorRecebido / valorParcelas) * 100 : 0,
+      fatiaTotal: fatiaPaga + fatiaPendente, fatiaPaga, fatiaPendente,
+    }
+  }).sort((a, b) => porUnidade(a.venda, b.venda))
+}
+
+/**
+ * O recorte de parcelas que a aba Pagamentos, o resumo de Relatórios e o PDF usam —
+ * o MESMO, pra tela e PDF nunca divergirem. Período pela data efetiva (paga → data do
+ * pagamento; pendente → vencimento). Cancelada e parcela sem fatia do cargo não entram.
+ *
+ * @param {object} p.filtros { empreendimentoId, status: 'todos'|'pago'|'pendente',
+ *   tipoParcela: 'todos'|tipo, dataInicio: 'YYYY-MM-DD', dataFim: 'YYYY-MM-DD' }
+ */
+export function recorteRelatorioCargo({
+  vendas = [], pagamentos = [], cargo, cargos = [], coordenadoras = [], filtros = {},
+} = {}) {
+  const { empreendimentoId = '', status = 'todos', tipoParcela = 'todos', dataInicio = '', dataFim = '' } = filtros || {}
+  const vendaPorId = new Map((Array.isArray(vendas) ? vendas : [])
+    .filter(v => !empreendimentoId || String(v.empreendimento_id) === String(empreendimentoId))
+    .map(v => [String(v.id), v]))
+
+  const linhas = []
+  for (const p of Array.isArray(pagamentos) ? pagamentos : []) {
+    const venda = vendaPorId.get(String(p?.venda_id))
+    if (!venda || !isAtivo(p)) continue
+    if (status !== 'todos' && p.status !== status) continue
+    if (tipoParcela !== 'todos' && p.tipo !== tipoParcela) continue
+    const ref = String(dataEfetiva(p) || '').slice(0, 10)
+    if (dataInicio && (!ref || ref < dataInicio)) continue
+    if (dataFim && (!ref || ref > dataFim)) continue
+    const fatia = fatiaCargoDoPagamento(p, venda, cargo, cargos, coordenadoras)
+    if (fatia <= 0) continue
+    linhas.push({ pagamento: p, venda, fatia })
+  }
+  linhas.sort((a, b) =>
+    String(dataEfetiva(a.pagamento) || '').localeCompare(String(dataEfetiva(b.pagamento) || '')) ||
+    porUnidade(a.venda, b.venda) ||
+    String(a.pagamento.id).localeCompare(String(b.pagamento.id)))
+
+  const totais = { nParcelas: linhas.length, nVendas: 0, valorParcelas: 0, fatiaTotal: 0, fatiaPaga: 0, fatiaPendente: 0 }
+  const vendasNoRecorte = new Set()
+  for (const { pagamento, venda, fatia } of linhas) {
+    vendasNoRecorte.add(String(venda.id))
+    totais.valorParcelas += parseFloat(pagamento.valor) || 0
+    totais.fatiaTotal += fatia
+    if (isPago(pagamento)) totais.fatiaPaga += fatia
+    else totais.fatiaPendente += fatia
+  }
+  totais.nVendas = vendasNoRecorte.size
+  return { linhas, totais }
 }
 
 /**
