@@ -45,6 +45,11 @@ const ultimoDia = (ym) => {
   const [a, m] = ym.split('-').map(Number)
   return new Date(Date.UTC(a, m, 0)).toISOString().slice(0, 10)
 }
+// Mês corrente no relógio LOCAL (BRT): toISOString() é UTC e viraria o mês 3h antes.
+const mesAtualLocal = () => {
+  const d = new Date()
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+}
 const tipoVendaLabel = (v) => (v?.tipo_corretor === 'interno' ? 'Venda interna' : 'Venda externa')
 
 const ABAS = [
@@ -154,7 +159,7 @@ const BeneficiarioDashboard = () => {
     [vendas, pagamentos, cargo, cargos, coordenadoras]
   )
   const recebidoNoMes = useMemo(
-    () => resumoFatiaCargo({ vendas, pagamentos, cargo, cargos, coordenadoras, mes: new Date().toISOString().slice(0, 7) }).fatiaPaga,
+    () => resumoFatiaCargo({ vendas, pagamentos, cargo, cargos, coordenadoras, mes: mesAtualLocal() }).fatiaPaga,
     [vendas, pagamentos, cargo, cargos, coordenadoras]
   )
   const resumoPainel = useMemo(
@@ -295,7 +300,7 @@ const BeneficiarioDashboard = () => {
         {multiEmp && (
           <div className="coord-filtros bnf-filtro-emp">
             <label htmlFor="bnf-emp-painel">Empreendimento</label>
-            {selectEmpreendimento(empPainel, setEmpPainel, 'bnf-emp-painel', '')}
+            {selectEmpreendimento(empPainel, (v) => { setEmpPainel(v); setMesPainel('') }, 'bnf-emp-painel', '')}
           </div>
         )}
         <PainelCoordenacao

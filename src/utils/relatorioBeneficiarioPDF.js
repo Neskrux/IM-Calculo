@@ -103,6 +103,7 @@ export function gerarRelatorioBeneficiarioPDF({
       p.status === 'pago' ? 'Pago' : 'Pendente',
     ]),
     foot: [['', '', '', '', '', 'Total', fmt(totais.fatiaTotal), '']],
+    showFoot: 'lastPage', // total GERAL: só no fim — em toda página parecia subtotal
     headStyles: { fillColor: cores.dourado, textColor: cores.preto, fontStyle: 'bold', fontSize: 8 },
     bodyStyles: { textColor: cores.preto, fontSize: 8 },
     footStyles: { fillColor: cores.preto, textColor: cores.dourado, fontStyle: 'bold', fontSize: 8 },
