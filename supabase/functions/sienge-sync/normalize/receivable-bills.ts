@@ -1,6 +1,7 @@
 import { publicClient, upsertRaw } from "../raw/writer.ts"
 import { siengeGet } from "../transport/client.ts"
 import { log } from "../lib/log.ts"
+import { classificarBaixa } from "../lib/baixa-caixa.ts"
 
 /**
  * Entity receivable-bills (via bulk-data /income)
@@ -40,7 +41,7 @@ interface IncomePayload {
   paidAmount?: number | string
   paidValue?: number | string
   paymentTerm?: { id?: string | number; description?: string | null }
-  receipts?: Array<{ paymentDate?: string; netAmount?: number; grossAmount?: number }>
+  receipts?: Array<{ paymentDate?: string; netAmount?: number; grossAmount?: number; operationTypeName?: string }>
 }
 
 interface BulkResponse {
@@ -94,10 +95,13 @@ function isValidIsoDate(s: unknown): s is string {
   return !isNaN(d.getTime())
 }
 
+// Data do pagamento = recibo em DINHEIRO mais antigo. So chamar quando classificarBaixa(inc).pago.
+// Reparcelamento (aditivo) e Distrato nao sao dinheiro — ver lib/baixa-caixa.ts e
+// .claude/rules/sincronizacao-sienge.md ("Tipo da baixa").
 function firstPaymentDate(inc: IncomePayload): string | null {
-  if (inc.paymentDate && isValidIsoDate(inc.paymentDate)) return inc.paymentDate.slice(0, 10)
-  if (Array.isArray(inc.receipts) && inc.receipts.length > 0) {
-    const dates = inc.receipts
+  const { recibosCaixa } = classificarBaixa(inc)
+  if (recibosCaixa.length > 0) {
+    const dates = recibosCaixa
       .map((r) => r.paymentDate)
       .filter((d): d is string => !!d && isValidIsoDate(d))
       .sort()
@@ -258,7 +262,7 @@ export async function normalizeReceivableBills(
   let apiCalls = 0
   let offset = 0
   let totalRowsSeen = 0
-  let matched = 0, noMatch = 0, noBillMatch = 0, noPaymentDate = 0, ignoredPaymentTerm = 0
+  let matched = 0, noMatch = 0, noBillMatch = 0, noPaymentDate = 0, ignoredPaymentTerm = 0, baixaNaoCaixa = 0
   let updated = 0, drift = 0, invalidDate = 0, errUpdate = 0
   let budgetExhausted = false
 
@@ -299,6 +303,17 @@ export async function normalizeReceivableBills(
       if (!billId) { noBillMatch++; continue }
       const vendaId = vendaByBill.get(billId)
       if (!vendaId) { noBillMatch++; continue }
+      // Tipo da baixa: so recibo em dinheiro marca pago. Baixa de Reparcelamento (aditivo) ou
+      // Distrato e contabil — marcar pago ai gerou comissao falsa (501 A, 2026-08-20).
+      const baixa = classificarBaixa(inc)
+      if (!baixa.pago) {
+        if (baixa.motivo === "sem_baixa") noPaymentDate++
+        else {
+          baixaNaoCaixa++
+          log("info", "rb_baixa_nao_caixa", { billId, installmentId: installmentIdOf(inc), motivo: baixa.motivo, tipos: baixa.tiposNaoCaixa })
+        }
+        continue
+      }
       const pd = firstPaymentDate(inc)
       if (!pd) { noPaymentDate++; continue }
 
@@ -355,7 +370,7 @@ export async function normalizeReceivableBills(
     extra: {
       companyId: COMPANY_ID, startDate, endDate,
       apiCalls, apiBudget, budgetExhausted,
-      totalRowsSeen, matched, noMatch, noBillMatch, noPaymentDate,
+      totalRowsSeen, matched, noMatch, noBillMatch, noPaymentDate, baixaNaoCaixa,
       ignoredPaymentTerm, drift, invalidDate,
     },
   }

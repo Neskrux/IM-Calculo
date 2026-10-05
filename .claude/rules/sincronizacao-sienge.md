@@ -52,9 +52,40 @@ Os dois endpoints complementam: `income` fecha o lado cliente→IM (status das p
 
 ```
 data_prevista  date null,          -- do Sienge: installment.dueDate
-data_pagamento date null,          -- do Sienge: installment.paymentDate (ou receipts[0].paymentDate)
-status         text default 'pendente'  -- 'pago' SSE Sienge confirmou baixa; senão 'pendente'
+data_pagamento date null,          -- do Sienge: data do recibo em DINHEIRO (ver "Tipo da baixa")
+status         text default 'pendente'  -- 'pago' SSE Sienge tem baixa em DINHEIRO; senão 'pendente'
 ```
+
+### Tipo da baixa — só dinheiro conta como pago (2026-10-05)
+
+Cada recibo do income traz `receipts[].operationTypeName`. **Baixa não é sinônimo de pagamento.**
+
+| `operationTypeName` | É dinheiro? | O que é |
+|---|---|---|
+| `Recebimento` | ✅ | cliente pagou |
+| `Adiantamento` | ✅ | pagamento antecipado |
+| `Por Bens` | ✅ | dação (bem em pagamento) |
+| `Reparcelamento` | ❌ | **aditivo**: a dívida rolou pra grade nova (ver F4 / `renegociacoes`) |
+| `Distrato` | ❌ | liquidação contábil do contrato cancelado |
+| qualquer outro | ❌ | na dúvida **não** marca pago |
+
+**Regra:** `pago` ⇔ ao menos um recibo em dinheiro com valor > 0 **e nenhum** recibo não-dinheiro.
+Parcial em dinheiro + Reparcelamento **não** é pago inteiro. `data_pagamento` = data de recibo em dinheiro.
+
+Implementação única, com gêmeo testado: [scripts/_baixa-caixa.mjs](../../scripts/_baixa-caixa.mjs) (reconciliador) e
+[supabase/functions/sienge-sync/lib/baixa-caixa.ts](../../supabase/functions/sienge-sync/lib/baixa-caixa.ts) (edge `receivable-bills`).
+**Todo escritor de `status='pago'` passa por ela.** Teste: `tests/baixa-caixa.test.js`.
+
+**Por quê:** em 2026-08-20 a 501 A fez aditivo (4 parcelas vencidas → 25 novas). O Sienge baixou as 4 como
+`Reparcelamento`; o sync (`receivable-bills`) marcou pago por "ter data" → **R$ 1.425,52 de comissão falsa**, e o
+aditivo nunca apareceu na tela. Medido em 2026-10-05: 194 baixas `Reparcelamento` e 3.170 `Distrato` no income, contra
+3.209 `Recebimento`. Antes disso a defesa era só heurística (data do distrato, S6 ≥ 8 baixas no mesmo dia) — o aditivo da
+501 A derrubou só 4 e passou.
+
+**Alertas do reconciliador (não escrevem nada):** `aditivo_nao_materializado[]` (baixa de Reparcelamento fora de
+`renegociacoes` → rodar o F4) e `pago_sem_caixa[]` (banco `pago`, Sienge sem baixa em dinheiro → rodada-b; pode ser
+tratativa manual da controladoria, ver [edge-cases-externos.md](edge-cases-externos.md)). Pago já gravado **nunca** é
+revertido automaticamente — a cura é humana.
 
 **Invariantes:**
 1. `status='pago'` → `data_pagamento IS NOT NULL` (sempre). Nunca marcar pago sem data.

@@ -28,6 +28,11 @@
 //   S5. > 3 parcelas ativas no banco sem match no Sienge
 //   S6. N baixas no MESMO dia sem distrato conhecido (baixa-em-massa nao sincronizada)
 //
+// TIPO DA BAIXA (ver .claude/rules/sincronizacao-sienge.md, "Tipo da baixa"): Sienge pago = recibo em
+// DINHEIRO (Recebimento/Adiantamento/Por Bens) e nenhum Reparcelamento/Distrato — scripts/_baixa-caixa.mjs.
+// Alertas (nao escrevem nada): aditivo_nao_materializado[] (baixa de Reparcelamento fora de
+// `renegociacoes` -> rodar o F4) e pago_sem_caixa[] (banco pago, Sienge sem baixa em dinheiro).
+//
 // Trigger 017: cancelado->pago/pendente e pendente->pago permitidos. NUNCA
 // DELETE nem reverte pago. Comissao das criadas: formula canonica.
 //
@@ -36,6 +41,7 @@
 import { readFileSync, writeFileSync, existsSync } from 'node:fs'
 import { createClient } from '@supabase/supabase-js'
 import { siengeGet, extractRows } from './_sienge-http.mjs'
+import { classificarBaixa } from './_baixa-caixa.mjs'
 
 const DRY = !process.argv.includes('--apply')
 console.log(`Modo: ${DRY ? 'dry-run' : 'apply'}\n`)
@@ -169,6 +175,7 @@ for (const i of income) {
 const resultado = {
   meta: { geradoEm: new Date().toISOString(), modo: DRY ? 'dry-run' : 'apply', total_vendas: vendas.length },
   processadas: [], revisao_humana: [], revisao_data: [], drift: [], fora_de_escopo: [],
+  aditivo_nao_materializado: [], pago_sem_caixa: [],
   totais: { popular: 0, marcar_pago: 0, reativar: 0, criar: 0, sem_match_banco: 0, corrigir_data: 0 },
 }
 
@@ -180,6 +187,18 @@ for (const v of vendas) {
   // aditivo-aware (2b): remove os installments renegociados do universo da venda
   const renegSet = renegPorVenda.get(v.id)
   if (renegSet?.size) inc = inc.filter((i) => !renegSet.has(String(i.installmentId)))
+
+  // ALERTA — aditivo no Sienge que ainda nao virou `renegociacoes`. Fica ANTES dos guards: a grade
+  // nova do aditivo infla a soma e o S2 parqueia a venda, escondendo o motivo real. Nao escreve nada;
+  // a cura e o F4 (scripts/f4-materializar-aditivos.mjs). Caso real: 501 A, aditivo de 2026-08-20.
+  const reparcelados = inc.filter((i) => classificarBaixa(i).tiposNaoCaixa.includes('Reparcelamento'))
+  if (reparcelados.length) {
+    const recibo = (i) => (i.receipts || []).find((x) => x.operationTypeName === 'Reparcelamento')
+    resultado.aditivo_nao_materializado.push({ venda_id: v.id, unidade: v.unidade, contrato: v.sienge_contract_id, bill,
+      installments: reparcelados.map((i) => String(i.installmentId)),
+      datas: [...new Set(reparcelados.map((i) => d10(recibo(i)?.paymentDate)))],
+      acao: 'rodar F4 (materializar aditivo) — baixa de Reparcelamento nao e pagamento' })
+  }
 
   // S1
   if (inc.length === 0) {
@@ -218,7 +237,7 @@ for (const v of vendas) {
   // pareamento é indiferente — só muda qual installmentId cada linha carrega, e a ordenação por
   // installmentId abaixo torna isso determinístico (mesmo resultado em toda execução).
   // Medido 2026-08-13: 1003 C, 810 C, 1606 A e 1302 A têm 1 chave duplicada cada, ambas em ABERTO.
-  const pagoSienge = (i) => !!(i.paymentDate || i.receipts?.[0]?.paymentDate)
+  const pagoSienge = (i) => classificarBaixa(i).pago
   const dupInseguras = [...siengePorChave.values()].filter(
     (a) => a.length > 1 && new Set(a.map(pagoSienge)).size > 1)
   if (dupInseguras.length) {
@@ -287,10 +306,15 @@ for (const v of vendas) {
   for (const i of inc) {
     const valor = Number(i.originalAmount || 0)
     const due = i.dueDate
-    const pd = i.paymentDate || i.receipts?.[0]?.paymentDate || null
-    const recebido = (i.receipts || []).reduce((s, x) => s + Number(x.netAmount || 0), 0)
-    const ehBaixaDistrato = dataDistrato && pd && String(pd).slice(0, 10) >= dataDistrato
-    const siengePago = !!pd && recebido > 0 && !ehBaixaDistrato
+    // Tipo da baixa: so recibo em DINHEIRO conta (ver _baixa-caixa.mjs). A data continua sendo a do
+    // primeiro recibo do array, agora so entre os de dinheiro (mesma regua de antes p/ drift de data).
+    const baixa = classificarBaixa(i)
+    const pd = baixa.recibosCaixa[0]?.paymentDate || null
+    // ehBaixaDistrato fica como segunda trava (distrato com recibo tipado errado / dado antigo).
+    // A primeira e o tipo: recibo 'Distrato' ja nao e dinheiro. Tambem bloqueia reativar a cancelada.
+    const pdQualquer = pd || (i.receipts || [])[0]?.paymentDate || null
+    const ehBaixaDistrato = dataDistrato && pdQualquer && String(pdQualquer).slice(0, 10) >= dataDistrato
+    const siengePago = baixa.pago && !!pd && !ehBaixaDistrato
     const instId = String(i.installmentId ?? i.installmentNumber ?? '')
     const k = chave(i._tipoInterno, valor, due)
     const porInstallmentId = instId
@@ -304,6 +328,13 @@ for (const v of vendas) {
 
     if (ativa) {
       usados.add(ativa.id)
+      // ALERTA — banco pago, Sienge sem baixa em dinheiro (Reparcelamento/Distrato/sem baixa).
+      // So loga: nunca reverte pago (spec). A cura e humana (rodada-b) ou F4/curar-distrato.
+      // ⚠️ Pode ser tratativa manual da controladoria (edge-cases-externos.md, caso c134) — revisar.
+      if (ativa.status === 'pago' && !siengePago) {
+        resultado.pago_sem_caixa.push({ venda_id: v.id, unidade: v.unidade, contrato: v.sienge_contract_id, id: ativa.id, instId,
+          data_pagamento: d10(ativa.data_pagamento), sienge: baixa.motivo, tipos: baixa.tiposNaoCaixa })
+      }
       if (siengePago && ativa.status === 'pendente') acoes.marcar_pago.push({ id: ativa.id, data_pagamento: pd, instId })
       else if (String(ativa.sienge_installment_id || '') !== instId) acoes.popular.push({ id: ativa.id, instId })
 
@@ -382,6 +413,8 @@ console.log(`  criar parcela faltante:        ${resultado.totais.criar}`)
 console.log(`  corrigir data (drift Sienge):  ${resultado.totais.corrigir_data}  (prevista: ${resultado.drift.filter(d=>d.campo==='data_prevista').length}, pagamento: ${resultado.drift.filter(d=>d.campo==='data_pagamento').length})`)
 console.log(`  drift de data >30d (rodada-b, NAO auto): ${resultado.revisao_data.length}  (prevista: ${resultado.revisao_data.filter(d=>d.campo==='data_prevista').length}, pagamento: ${resultado.revisao_data.filter(d=>d.campo==='data_pagamento').length})`)
 console.log(`  ativas no banco sem match (so loga): ${resultado.totais.sem_match_banco}`)
+console.log(`  ⚠️ aditivo nao materializado (rodar F4): ${resultado.aditivo_nao_materializado.length}${resultado.aditivo_nao_materializado.length ? '  -> ' + resultado.aditivo_nao_materializado.map((a) => `${a.unidade} (${a.datas.join(',')})`).join(' | ') : ''}`)
+console.log(`  ⚠️ pago no banco sem baixa em dinheiro no Sienge (so loga): ${resultado.pago_sem_caixa.length}`)
 const comMudanca = resultado.processadas.filter((p) => p.acoes.marcar_pago.length || p.acoes.reativar.length || p.acoes.criar.length)
 console.log(`  vendas com correcao real (marcar/reativar/criar): ${comMudanca.length}`)
 console.log(`\n  motivos de revisao humana:`)
