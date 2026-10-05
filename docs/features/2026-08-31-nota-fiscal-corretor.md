@@ -34,7 +34,7 @@ Inspeção do formulário publicado em 2026-08-31 (leitura do DOM; **nada foi su
 | 5 | Telefone | tel | Sim | |
 | 6 | E-mail | email | Sim | |
 | 7 | Informe o valor da NF | number | Sim | |
-| 8 | Pix para o pagamento | text | Sim | "deverá bater com CPF ou CNPJ cadastrado" |
+| 8 | Pix para o pagamento | text | Sim | "deverá bater com CPF ou CNPJ cadastrado" — **premissa FALSA, ver §4 D15** |
 | 9 | Endereço | text x5 | Sim | rua, complemento, cidade, estado, CEP |
 | 10 | Anexe aqui o contrato da venda | file | Sim | |
 | 11 | Anexe aqui a nota fiscal | file | Sim | |
@@ -88,6 +88,7 @@ no primeiro envio.
 | **D11** | **O admin envia nota por qualquer corretor.** É assim que a controladoria testa, e é útil depois: ela já tem acesso a tudo. |
 | **D12** | **Sem fluxo de aprovação no v1.** Estado único: recebida. Não há tempo de testar aprovação neste mês. |
 | **D13** | **Daqui para frente.** Começa na competência de agosto/2026. Sem backfill do vão de 2025. |
+| **D15** | **A chave PIX NÃO precisa bater com o documento de quem emite.** Correção da controladoria em 31/08: é comum emitir a nota pelo CNPJ da imobiliária e receber no CNPJ próprio. O texto de ajuda do JotForm afirmava o contrário e estava errado. Nunca houve validação disso no código — era só texto enganoso, agora corrigido. |
 | **D14** | **Bucket privado.** Ver [ADR 0002](../adr/0002-bucket-privado-para-notas-fiscais.md) — o caminho rápido e o seguro são o mesmo caminho. |
 
 ---
@@ -103,7 +104,7 @@ no primeiro envio.
 | Telefone | **Fica**, pré-preenchido (53/72 já temos). |
 | E-mail | **Sai** — vem da sessão. |
 | Valor da NF | **Fica.** Declarado; exibido ao lado da comissão do mês, sem bloquear. |
-| PIX | **Fica.** Ninguém tem no cadastro hoje; o primeiro envio popula. |
+| PIX | **Fica.** Ninguém tem no cadastro hoje; o primeiro envio popula. Não se exige que case com o emissor (D15). |
 | Endereço | **Removido** (D9). |
 | Contrato da venda | **Removido** — o sistema já tem os contratos. |
 | **Competência** | **Novo e obrigatório.** É a invariante (D4, D5). |
