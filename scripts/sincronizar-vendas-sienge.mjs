@@ -123,7 +123,11 @@ for (const entity of ['sales-contracts', 'receivable-bills']) {
     }
     // Guarda contra loop infinito se a edge parar de avancar o offset.
     if (paginas >= 50) report.errors.push({ entity, msg: 'paginacao abortada em 50 paginas — offset nao avancou?' })
-    if (ex && !ex.hasMore) console.log(`  normalize cobriu os ${ex.total} registros`)
+    // Só loga a cobertura quando o normalize devolve `total` — receivable-bills não
+    // reporta esse bloco (não pagina), e sem a guarda o log saía "cobriu os undefined".
+    if (ex && !ex.hasMore && Number.isFinite(Number(ex.total))) {
+      console.log(`  normalize cobriu os ${ex.total} registros`)
+    }
   } catch (e) {
     console.error(`  ERRO: ${String(e).slice(0, 300)}`)
     report.errors.push({ entity, msg: String(e).slice(0, 300) })
