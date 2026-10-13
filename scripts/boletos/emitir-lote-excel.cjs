@@ -79,7 +79,7 @@ async function main() {
   )
 
   const lote = []
-  const fora = { divergente: [], sem_match: [], ja_tem_boleto: [], venc_passado: [] }
+  const fora = { divergente: [], sem_match: [], ja_tem_boleto: [], venc_passado: [], sem_endereco: [] }
   for (const l of planCob) {
     const cpfD = digitos(l['CPF/CNPJ do Cliente *'])
     const cli = cliPorCpf.get(cpfD)
@@ -112,13 +112,16 @@ async function main() {
     if (boletoVivo.has(String(exata.id))) { fora.ja_tem_boleto.push(ref); continue }
     if (exata.data_prevista <= HOJE) { fora.venc_passado.push(`${ref} (venc ${exata.data_prevista})`); continue }
 
+    // mesma regra da conferência da tela: sem rua (planilha OU cadastro) não emite
+    const cliPlanE = planCliPorCpf.get(cpfD)
+    if (!String(cliPlanE?.['Endereço (Rua e Número) *'] ?? cli.endereco ?? '').trim()) { fora.sem_endereco.push(`${ref} — ${cli.nome_completo}`); continue }
     const venda = vendasCli.find(v => String(v.id) === String(exata.venda_id))
     lote.push({ ref, planilha: l, cliPlan: planCliPorCpf.get(cpfD), cli, venda, parcela: exata })
   }
 
   const somaLote = lote.reduce((a, x) => a + Number(x.parcela.valor), 0)
   console.log(`\nLOTE: ${lote.length} boletos | R$ ${somaLote.toFixed(2)}`)
-  console.log(`FORA: ${fora.divergente.length} divergentes | ${fora.sem_match.length} sem match | ${fora.ja_tem_boleto.length} já tinham boleto | ${fora.venc_passado.length} vencimento passado`)
+  console.log(`FORA: ${fora.divergente.length} divergentes | ${fora.sem_match.length} sem match | ${fora.ja_tem_boleto.length} já tinham boleto | ${fora.venc_passado.length} vencimento passado | ${fora.sem_endereco.length} sem endereço`)
 
   const relatorioPath = path.join(__dirname, `lote-${APPLY ? 'resultado' : 'dryrun'}-${HOJE}.json`)
   if (!APPLY) {
