@@ -1,0 +1,20 @@
+/* Visão do BENEFICIÁRIO v2 — reusa a moldura e as classes do CorretorDashboard.css
+   (mesmo formato da Coordenação). Aqui só o que a tela do beneficiário tem a mais. */
+
+/* Filtro de empreendimento acima do painel: mesmo formato do "Período" do painel. */
+.beneficiario-shell .bnf-filtro-emp {
+  margin-bottom: 12px;
+}
+
+/* Parcelas abertas dentro do card da venda (aba Pagamentos): tabela inline, sem modal —
+   evita o bug de position:fixed dentro do scroller no iOS (ui-mobile-ios.md). */
+.beneficiario-shell .bnf-parcelas {
+  margin: 0;
+  padding: 4px 16px 16px;
+  overflow-x: auto;
+  overscroll-behavior: contain;
+}
+
+.beneficiario-shell .bnf-parcelas .data-table {
+  min-width: 560px;
+}

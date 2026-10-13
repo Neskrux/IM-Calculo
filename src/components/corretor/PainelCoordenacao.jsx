@@ -12,16 +12,37 @@ const mesLabel = (ym) => {
   return MESES[Number(m) - 1] ? `${MESES[Number(m) - 1]}/${a}` : ym
 }
 
-const PainelCoordenacao = ({ resumo, carregando, erro, mes, setMes, nomeCoordenacao }) => {
+// Textos do painel. A visão do BENEFICIÁRIO reusa este mesmo painel (spec
+// 2026-08-20, § v2) trocando só os rótulos — assim as duas telas nunca divergem.
+const ROTULOS_COORDENACAO = {
+  carregando: 'Carregando as vendas direcionadas a você…',
+  erro: 'Não foi possível carregar a coordenação',
+  comissao: 'Comissão de coordenação',
+  vendas: 'Vendas direcionadas',
+  semPagas: 'Nenhuma parcela paga nas vendas direcionadas ainda.',
+  vazio: null, // null = estado vazio próprio da coordenação (abaixo)
+}
+
+const PainelCoordenacao = ({ resumo, carregando, erro, mes, setMes, nomeCoordenacao, rotulos }) => {
+  const r = { ...ROTULOS_COORDENACAO, ...rotulos }
   if (carregando) {
-    return <section className="coord-panel"><p className="coord-msg">Carregando as vendas direcionadas a você…</p></section>
+    return <section className="coord-panel"><p className="coord-msg">{r.carregando}</p></section>
   }
 
   if (erro) {
     return (
       <section className="coord-panel">
-        <p className="coord-msg coord-msg-erro">Não foi possível carregar a coordenação: {erro}</p>
+        <p className="coord-msg coord-msg-erro">{r.erro}: {erro}</p>
         <button type="button" onClick={() => window.location.reload()}>Tentar de novo</button>
+      </section>
+    )
+  }
+
+  if (resumo?.vazio && r.vazio) {
+    return (
+      <section className="coord-panel coord-vazio">
+        <h2>{r.vazio.titulo}</h2>
+        <p>{r.vazio.texto}</p>
       </section>
     )
   }
@@ -59,11 +80,11 @@ const PainelCoordenacao = ({ resumo, carregando, erro, mes, setMes, nomeCoordena
       {/* A fatia do cargo Coordenadora — o número desta pessoa */}
       <div className="coord-cards">
         <div className="coord-card coord-card-paga">
-          <span className="coord-label">Comissão de coordenação recebida{mes ? ` (${mesLabel(mes)})` : ''}</span>
+          <span className="coord-label">{r.comissao} recebida{mes ? ` (${mesLabel(mes)})` : ''}</span>
           <strong>{formatCurrency(resumo.fatiaPaga)}</strong>
         </div>
         <div className="coord-card coord-card-pendente">
-          <span className="coord-label">Comissão de coordenação a receber{mes ? ` (${mesLabel(mes)})` : ''}</span>
+          <span className="coord-label">{r.comissao} a receber{mes ? ` (${mesLabel(mes)})` : ''}</span>
           <strong>{formatCurrency(resumo.fatiaPendente)}</strong>
         </div>
       </div>
@@ -71,7 +92,7 @@ const PainelCoordenacao = ({ resumo, carregando, erro, mes, setMes, nomeCoordena
       {/* Macro neutro — valores de PARCELA, nunca a fatia de outro cargo */}
       <div className="coord-cards">
         <div className="coord-card">
-          <span className="coord-label">Vendas direcionadas</span>
+          <span className="coord-label">{r.vendas}</span>
           <strong>{resumo.nVendas}</strong>
         </div>
         <div className="coord-card">
@@ -90,7 +111,7 @@ const PainelCoordenacao = ({ resumo, carregando, erro, mes, setMes, nomeCoordena
       </div>
 
       <div className="coord-serie">
-        <span className="coord-label">Comissão de coordenação por mês (pagas)</span>
+        <span className="coord-label">{r.comissao} por mês (pagas)</span>
         <table>
           <tbody>
             {resumo.serieMensal.map(([ym, valor]) => (
@@ -100,7 +121,7 @@ const PainelCoordenacao = ({ resumo, carregando, erro, mes, setMes, nomeCoordena
               </tr>
             ))}
             {!resumo.serieMensal.length && (
-              <tr><td colSpan={2}>Nenhuma parcela paga nas vendas direcionadas ainda.</td></tr>
+              <tr><td colSpan={2}>{r.semPagas}</td></tr>
             )}
           </tbody>
         </table>
