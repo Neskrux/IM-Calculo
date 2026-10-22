@@ -42,6 +42,7 @@ import { readFileSync, writeFileSync, existsSync } from 'node:fs'
 import { createClient } from '@supabase/supabase-js'
 import { siengeGet, extractRows } from './_sienge-http.mjs'
 import { classificarBaixa } from './_baixa-caixa.mjs'
+import { podeReativarCancelada } from './_reativar-cancelada.mjs'
 
 const DRY = !process.argv.includes('--apply')
 console.log(`Modo: ${DRY ? 'dry-run' : 'apply'}\n`)
@@ -365,9 +366,11 @@ for (const v of vendas) {
       usados.add(cancelada.id)
       // NÃO reativa: (a) baixa de liquidação de distrato; (b) parcela cancelada DE PROPÓSITO
       // (motivo_cancelamento_parcela setado: duplicata/cronograma_refeito/aditivo_renegociado/...).
-      // Só reativa cancelamento sem motivo (cancelado por engano que o Sienge mostra ativo).
-      if (!ehBaixaDistrato && !cancelada.motivo_cancelamento_parcela) {
-        acoes.reativar.push({ id: cancelada.id, novo_status: siengePago ? 'pago' : 'pendente', data_pagamento: siengePago ? pd : null, instId })
+      // Reativa cancelamento sem motivo (engano) e o de 'distrato' quando o Sienge DESFEZ o distrato
+      // (caso 1408 C) — regra em _reativar-cancelada.mjs. O motivo é limpo junto.
+      if (podeReativarCancelada(cancelada, v, i, ehBaixaDistrato)) {
+        acoes.reativar.push({ id: cancelada.id, novo_status: siengePago ? 'pago' : 'pendente', data_pagamento: siengePago ? pd : null, instId,
+          motivo_anterior: cancelada.motivo_cancelamento_parcela || null })
       }
     } else {
       maxNum++
@@ -444,6 +447,7 @@ for (const venda of resultado.processadas) {
   for (const a of venda.acoes.reativar) {
     const patch = { status: a.novo_status, sienge_installment_id: a.instId, sienge_bill_id: venda.bill, updated_at: new Date().toISOString() }
     if (a.data_pagamento) patch.data_pagamento = a.data_pagamento
+    if (a.motivo_anterior) patch.motivo_cancelamento_parcela = null
     const res = await fetchRetry(`${URL}/rest/v1/pagamentos_prosoluto?id=eq.${a.id}&status=eq.cancelado`, { method: 'PATCH', headers: H, body: JSON.stringify(patch) })
     if (res.ok) okReat++; else { err++; errosDetalhe.push({ acao: 'reativar', id: a.id, status: res.status }) }
   }
