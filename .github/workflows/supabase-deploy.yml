@@ -47,13 +47,13 @@ jobs:
       # Verificado 2026-08-13: /api/rota-inexistente -> 404, /api/cadastro-negociacao/upload
       # (GET) -> 405, /cadastro-colaborador -> 200.
       - name: Configurar RH_BASE_URL (endereco do SistemadeRH)
-        run: supabase secrets set RH_BASE_URL=https://solumn.com.br --project-ref $SUPABASE_PROJECT_REF
+        run: supabase secrets set RH_BASE_URL=https://solumn.com.br --project-ref $SUPABASE_PROJECT_REF --yes
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
 
       - name: Deploy sienge-sync
-        run: supabase functions deploy sienge-sync --project-ref $SUPABASE_PROJECT_REF
+        run: supabase functions deploy sienge-sync --project-ref $SUPABASE_PROJECT_REF --yes
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
@@ -62,7 +62,7 @@ jobs:
       # browser nao leva Authorization; a autenticacao (JWT + tipo='admin') e feita
       # dentro da propria funcao. Mesmo desenho de admin-cliente-acesso.
       - name: Deploy admin-corretor-acesso
-        run: supabase functions deploy admin-corretor-acesso --project-ref $SUPABASE_PROJECT_REF --no-verify-jwt
+        run: supabase functions deploy admin-corretor-acesso --project-ref $SUPABASE_PROJECT_REF --yes --no-verify-jwt
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
