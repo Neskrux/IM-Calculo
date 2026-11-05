@@ -89,7 +89,8 @@ async function emitir(adminId: string, body: any): Promise<Response> {
   if (vivo?.length) return json({ ok: false, ref, motivo: `já tem boleto ${vivo[0].banco} vivo (não duplica)` });
   const { data: c } = await supa.from("clientes").select("id, nome_completo, cpf, cnpj, endereco, cidade, estado, cep").eq("id", v.cliente_id).maybeSingle();
   if (!c) return json({ ok: false, ref, motivo: "venda sem cliente" });
-  const doc = dig(c.cpf) || dig(c.cnpj);
+  // cadastro vindo do contrato Sienge pode estar sem CPF: usa o da planilha (conferida na tela)
+  const doc = dig(c.cpf) || dig(c.cnpj) || dig(body.doc);
   if (!doc) return json({ ok: false, ref, motivo: `${c.nome_completo} sem CPF/CNPJ no cadastro` });
   const rua = String(pl.endereco ?? c.endereco ?? "").trim();
   const cidade = String(pl.cidade ?? c.cidade ?? "").trim();

@@ -18,6 +18,7 @@ const path = require('path')
 const fs = require('fs')
 const { CONFIG, supabase, digitos, dormir, obterToken, sicoobApi } = require('./sicoob.cjs')
 const XLSX = require(path.join(__dirname, '..', '..', 'node_modules', 'xlsx'))
+const { resolverTitular } = require('./_titular.cjs')
 
 const args = process.argv.slice(2).filter(a => a !== '--apply')
 const APPLY = process.argv.includes('--apply')
@@ -82,15 +83,15 @@ async function main() {
   const fora = { divergente: [], sem_match: [], ja_tem_boleto: [], venc_passado: [], sem_endereco: [] }
   for (const l of planCob) {
     const cpfD = digitos(l['CPF/CNPJ do Cliente *'])
-    const cli = cliPorCpf.get(cpfD)
     const ref = `${l['Contrato/Unidade'] ?? '?'} parc ${l['Nº da Parcela'] ?? '?'}`
+    // CPF primeiro; se o cadastro achado não tem venda ativa na unidade, tenta o titular
+    // sem CPF com o mesmo nome (cliente que veio do contrato do Sienge) — ver _titular.cjs
+    const { cli, vendasCli } = resolverTitular({
+      cpfD, unidadePlanilha: l['Contrato/Unidade'],
+      nomePlanilha: planCliPorCpf.get(cpfD)?.['Nome Completo *'],
+      cliPorCpf, dbClientes, dbVendas,
+    })
     if (!cli) { fora.sem_match.push(ref + ' (cliente)'); continue }
-
-    const mUni = String(l['Contrato/Unidade'] ?? '').match(/(\d+)\s*([A-Za-z]?)\s*$/)
-    const uni = mUni?.[1]
-    const vendasCli = dbVendas.filter(v =>
-      String(v.cliente_id) === String(cli.id) && v.excluido !== true && v.status !== 'distrato' &&
-      (!uni || String(v.unidade ?? '').replace(/\D/g, '') === uni))
     const nparc = Number(l['Nº da Parcela'])
     const ehBalao = /bal[aã]o/i.test(String(l['Descrição *'] ?? ''))
     const valorPlan = Number(l['Valor (R$) *'])
@@ -103,6 +104,18 @@ async function main() {
       (!nparc || Number(p.numero_parcela) === nparc) &&
       Math.abs(Number(p.valor) - valorPlan) < 0.01 &&
       p.data_prevista === vencPlan)
+      // A planilha do financeiro usa a numeração do Sienge ("18/58", por série);
+      // o banco numera global (entrada+PM+balões). Se o nº não casar, valor+vencimento
+      // EXATOS com UMA única parcela pendente do cliente é a chave confiável
+      // (ver .claude/rules/numeracao-parcelas-sienge.md). Ambíguo → fica fora.
+      ?? (() => {
+        const cands = dbPags.filter(p =>
+          vendasCli.some(v => String(v.id) === String(p.venda_id)) &&
+          p.status === 'pendente' &&
+          Math.abs(Number(p.valor) - valorPlan) < 0.01 &&
+          p.data_prevista === vencPlan)
+        return cands.length === 1 ? cands[0] : undefined
+      })()
 
     if (!exata) {
       const quase = dbPags.some(p => vendasCli.some(v => String(v.id) === String(p.venda_id)) && Number(p.numero_parcela) === nparc)

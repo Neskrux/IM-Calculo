@@ -24,6 +24,7 @@ import { Sparkles } from 'lucide-react'
 import EmpreendimentoGaleria from '../components/EmpreendimentoGaleria'
 import VendaDocumentos from '../components/VendaDocumentos'
 import { gerarBoletoPdfBase64 } from '../utils/ailosBoletoPdf'
+import { resolverTitular } from '../utils/titularPlanilha'
 import ProfilePhotoModal from '../components/ProfilePhotoModal'
 import NotasFiscaisPainel from '../components/admin/NotasFiscaisPainel'
 // import CadastrarCorretores from '../components/CadastrarCorretores'
@@ -4128,13 +4129,15 @@ const AdminDashboard = () => {
       const lote = []
       const fora = { divergente: [], sem_match: [], ja_tem_boleto: [], venc_passado: [], sem_endereco: [] }
       for (const l of linhas) {
-        const cli = cliPorCpf.get(dig(l['CPF/CNPJ do Cliente *']))
+        const cpfLinha = dig(l['CPF/CNPJ do Cliente *'])
         const ref = `${l['Contrato/Unidade'] ?? '?'} parc ${l['Nº da Parcela'] ?? '?'} (${l['CPF/CNPJ do Cliente *'] ?? 'sem CPF'})`
+        const { cli, vendasCli } = resolverTitular({
+          cpfD: cpfLinha, unidadePlanilha: l['Contrato/Unidade'],
+          nomePlanilha: planCliPorCpf.get(cpfLinha)?.['Nome Completo *'],
+          cliPorCpf, clientes, vendas,
+        })
         if (!cli) { fora.sem_match.push(ref + ' — esse CPF não existe no cadastro de clientes. Cadastre o cliente (ou corrija o CPF na planilha) e importe de novo.'); continue }
         const uni = String(l['Contrato/Unidade'] ?? '').match(/(\d+)\s*[A-Za-z]?\s*$/)?.[1]
-        const vendasCli = vendas.filter(v =>
-          String(v.cliente_id) === String(cli.id) && v.excluido !== true && v.status !== 'distrato' &&
-          (!uni || String(v.unidade ?? '').replace(/\D/g, '') === uni))
         const nparc = Number(l['Nº da Parcela'])
         const ehBalao = /bal[aã]o/i.test(String(l['Descrição *'] ?? ''))
         const valorPlan = Number(l['Valor (R$) *'])
@@ -4146,6 +4149,17 @@ const AdminDashboard = () => {
           (!nparc || Number(p.numero_parcela) === nparc) &&
           Math.abs(Number(p.valor) - valorPlan) < 0.01 &&
           p.data_prevista === vencPlan)
+          // A planilha usa a numeração do Sienge ("18/58", por série); o sistema numera
+          // global. Valor+vencimento EXATOS com UMA única parcela pendente do cliente é a
+          // chave confiável — mesma regra dos robôs. Ambíguo → fica fora e é explicado.
+          ?? (() => {
+            const cands = pagamentos.filter(p =>
+              vendasCli.some(v => String(v.id) === String(p.venda_id)) &&
+              p.status === 'pendente' &&
+              Math.abs(Number(p.valor) - valorPlan) < 0.01 &&
+              p.data_prevista === vencPlan)
+            return cands.length === 1 ? cands[0] : undefined
+          })()
         if (!exata) {
           // explica O QUE difere: acha a parcela candidata e compara com a planilha
           const cand = pagamentos.filter(p => vendasCli.some(v => String(v.id) === String(p.venda_id)) && Number(p.numero_parcela) === nparc)
@@ -4180,7 +4194,8 @@ const AdminDashboard = () => {
         if (!cliPlan?.['Endereço (Rua e Número) *'] && !cli.endereco) {
           fora.sem_endereco.push(`${ref} — ${cli.nome_completo}`); continue
         }
-        lote.push({ ref, cliente: cli.nome_completo, valor: Number(exata.valor), vencimento: exata.data_prevista, pagamento_id: exata.id })
+        // doc: CPF da planilha — o servidor usa quando o cadastro do titular está sem CPF
+        lote.push({ ref, cliente: cli.nome_completo, valor: Number(exata.valor), vencimento: exata.data_prevista, pagamento_id: exata.id, doc: cpfLinha })
       }
       // pagadores da planilha de Clientes (endereço completo) — enviados na emissão
       const pagadores = {}
@@ -4231,7 +4246,7 @@ const AdminDashboard = () => {
         setProgressoEmissao({ feitos: i, total: r.lote.length, atual: item.ref })
         let parte
         try {
-          parte = await chamar('emitir-lote', { pagamento_ids: [item.pagamento_id], pagadores: r.pagadores || {} })
+          parte = await chamar('emitir-lote', { pagamento_ids: [item.pagamento_id], pagadores: r.pagadores || {}, docs: item.doc ? { [item.pagamento_id]: item.doc } : {} })
         } catch (e) {
           data.erros.push({ ref: item.ref, motivo: `falha de comunicação: ${e.message}. Clique em Emitir de novo — o que já saiu não duplica.` })
           continue
@@ -4291,7 +4306,7 @@ const AdminDashboard = () => {
         const cpf = dig(item.ref.match(/\(([^)]*)\)/)?.[1])
         let j
         try {
-          const resp = await fetch(url, { method: 'POST', headers: hdr, body: JSON.stringify({ pagamento_id: item.pagamento_id, pagador: (r.pagadores || {})[cpf] || {} }) })
+          const resp = await fetch(url, { method: 'POST', headers: hdr, body: JSON.stringify({ pagamento_id: item.pagamento_id, doc: item.doc || cpf, pagador: (r.pagadores || {})[item.doc || cpf] || {} }) })
           j = await resp.json().catch(() => ({}))
           if (!resp.ok || j.error) {
             // erro de configuração (ex.: certificado) vale pro lote inteiro — para e explica

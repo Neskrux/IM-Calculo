@@ -120,6 +120,7 @@ async function emitirLote(req: Request, body: any): Promise<Response> {
   if (ids.length === 0 || ids.length > 300) return json({ error: "informe de 1 a 300 pagamento_ids" }, 400);
   // deno-lint-ignore no-explicit-any
   const pagadores: Record<string, any> = body.pagadores ?? {}; // {cpfDigitos: {nome, endereco, bairro, cidade, uf, cep}} da planilha de Clientes
+  const docsPlanilha: Record<string, string> = body.docs ?? {}; // {pagamento_id: cpf da planilha}
   const hoje = new Date().toISOString().slice(0, 10);
 
   const { data: pags } = await supa.from("pagamentos_prosoluto")
@@ -153,7 +154,8 @@ async function emitirLote(req: Request, body: any): Promise<Response> {
     if (!v || v.excluido || v.status === "distrato") { erros.push({ id, ref, motivo: "venda inativa/distratada" }); continue; }
     const c = cliMap.get(String(v.cliente_id));
     if (!c) { erros.push({ id, ref, motivo: "venda sem cliente" }); continue; }
-    const doc = dig(c.cpf) || dig(c.cnpj);
+    // cadastro vindo do contrato Sienge pode estar sem CPF: usa o da planilha (conferida na tela)
+    const doc = dig(c.cpf) || dig(c.cnpj) || dig(docsPlanilha[id]);
     if (!doc) { erros.push({ id, ref, motivo: `${c.nome_completo} sem CPF/CNPJ no cadastro` }); continue; }
     const pl = pagadores[doc] ?? {};
     const end = {
