@@ -8,6 +8,9 @@ import Autocomplete from '../components/Autocomplete'
 import InputDataBR from "../components/InputDataBR"
 import { casaBusca } from '../utils/searchUtils'
 import { gerarRelatorioCorretorPDF } from '../utils/relatorioCorretorPDF'
+import { registrarEmissao } from '../utils/registroRelatorioApi'
+import { filtrosVisiveis, FILTROS_RELATORIO_INICIAIS } from '../utils/registroRelatorio'
+import RelatoriosEmitidos from '../components/admin/RelatoriosEmitidos'
 import { jsPDF } from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import { 
@@ -1049,6 +1052,9 @@ const AdminDashboard = () => {
     incluirDistratos: false
   })
   const [buscaCorretorRelatorio, setBuscaCorretorRelatorio] = useState('')
+  // Relatórios emitidos (migration 043): bump pra lista recarregar após cada emissão
+  const [relatoriosVersao, setRelatoriosVersao] = useState(0)
+  const carregarRelatoriosEmitidos = () => setRelatoriosVersao(v => v + 1)
   const [coordenadoras, setCoordenadoras] = useState([])
   // Redefinicao de senha de corretor/beneficiario que JA tem login (spec 2026-09-04).
   // Ate aqui a tela so oferecia CRIAR acesso: quem ja tinha conta ficava sem caminho
@@ -5235,6 +5241,12 @@ const AdminDashboard = () => {
     const vendaIds = new Set(vendasCorretor.map(v => v.id))
     const pagamentosCorretor = pagamentos.filter(p => vendaIds.has(p.venda_id))
 
+    const filtrosPdfCorretor = {
+      empreendimento: '',
+      status: relatorioFiltros.status,
+      dataInicio: relatorioFiltros.dataInicio,
+      dataFim: relatorioFiltros.dataFim,
+    }
     gerarRelatorioCorretorPDF({
       corretorProfile: {
         nome: corretor.nome,
@@ -5243,13 +5255,17 @@ const AdminDashboard = () => {
       },
       vendas: vendasCorretor,
       pagamentos: pagamentosCorretor,
-      filtros: {
-        empreendimento: '',
-        status: relatorioFiltros.status,
-        dataInicio: relatorioFiltros.dataInicio,
-        dataFim: relatorioFiltros.dataFim,
-      },
+      filtros: filtrosPdfCorretor,
+      // Registro de emissão (migration 043): sem registro, o PDF não é baixado.
+      registrar: ({ blob, totais, parcelas }) => registrarEmissao({
+        blob, totais, parcelas,
+        origem: 'admin_ver_pdf_corretor',
+        corretorId: corretor.id,
+        filtros: { ...filtrosPdfCorretor, corretorId: corretor.id },
+      }),
     })
+      .then(() => carregarRelatoriosEmitidos())
+      .catch(err => setMessage({ type: 'error', text: err?.message || 'Erro ao gerar o PDF do corretor.' }))
   }
 
   const gerarRelatorioPDF = async (options = {}) => {
@@ -5344,7 +5360,18 @@ const AdminDashboard = () => {
       doc.setFontSize(8)
       doc.setTextColor(...cores.textoMedio)
       doc.text(`${new Date().toLocaleDateString('pt-BR')} | ${new Date().toLocaleTimeString('pt-BR')}`, pageWidth - 14, 15, { align: 'right' })
-      
+
+      // Filtros impressos: o PDF diz sozinho como foi tirado (spec 2026-11-09)
+      {
+        const fv = filtrosVisiveis(relatorioFiltros, { corretores, empreendimentos })
+        doc.setFontSize(7)
+        doc.setTextColor(...cores.douradoEscuro)
+        doc.text(
+          `Filtros: Cargo ${fv.cargo} | Empreendimento ${fv.empreendimento} | Status ${fv.status} | Periodo ${fv.periodo} | Distratos ${fv.distratos}`,
+          14, 56, { maxWidth: pageWidth - 28 },
+        )
+      }
+
       let yPosition = 60
       
       // Determinar fonte de dados
@@ -5503,6 +5530,9 @@ const AdminDashboard = () => {
       
       let totalComissao = 0
       let totalPago = 0
+      // Registro de emissão (043): exatamente as parcelas e comissões que entram nos totais impressos
+      const parcelasRegistro = []
+      const registrarParcela = (pag, comissao) => parcelasRegistro.push({ id: pag.id, venda_id: pag.venda_id, valor: pag.valor, comissao, status: pag.status })
       
       const isTotalCargo = relatorioFiltros.cargoId === '__total__'
       const isTodosCargos = relatorioFiltros.cargoId === ''
@@ -5514,6 +5544,7 @@ const AdminDashboard = () => {
             const cargoEncontrado = comissoesCargo.find(c => c.nome_cargo === relatorioFiltros.cargoId)
             if (cargoEncontrado) {
               totalComissao += cargoEncontrado.valor
+              registrarParcela(pag, cargoEncontrado.valor)
               if (pag.status === 'pago') totalPago += cargoEncontrado.valor
             }
           })
@@ -5524,6 +5555,7 @@ const AdminDashboard = () => {
             if (pag.status === 'cancelado') return
             const comissao = parseFloat(pag.comissao_gerada) || 0
             totalComissao += comissao
+            registrarParcela(pag, comissao)
             if (pag.status === 'pago') totalPago += comissao
           })
         })
@@ -5539,6 +5571,7 @@ const AdminDashboard = () => {
             const cargoCorretor = cargos.find(c => c.nome_cargo === 'Corretor' || c.nome_cargo?.toLowerCase().includes('corretor'))
             const comissao = cargoCorretor?.valor ?? 0
             totalComissao += comissao
+            registrarParcela(pag, comissao)
             if (pag.status === 'pago') totalPago += comissao
           })
         })
@@ -5548,6 +5581,7 @@ const AdminDashboard = () => {
             if (pag.status === 'cancelado') return
             const comissao = parseFloat(pag.comissao_gerada) || 0
             totalComissao += comissao
+            registrarParcela(pag, comissao)
             if (pag.status === 'pago') totalPago += comissao
           })
         })
@@ -6004,9 +6038,19 @@ const AdminDashboard = () => {
         nomeArquivo += `_${relatorioFiltros.status}`
       }
       nomeArquivo += `_${new Date().toISOString().split('T')[0]}.pdf`
+      // Registro de emissão (migration 043) ANTES do download: relatório sem prova não sai.
+      await registrarEmissao({
+        blob: doc.output('blob'),
+        origem: 'admin',
+        corretorId: relatorioFiltros.corretorId || null,
+        filtros: relatorioFiltros,
+        totais: { total: totalComissao, pago: totalPago, pendente: totalPendente },
+        parcelas: parcelasRegistro,
+      })
       doc.save(nomeArquivo)
-      
-      setMessage({ type: 'success', text: 'Relatório gerado com sucesso!' })
+      carregarRelatoriosEmitidos()
+
+      setMessage({ type: 'success', text: 'Relatório gerado e registrado!' })
     } catch (error) {
       console.error('Erro ao gerar PDF:', error)
       setMessage({ type: 'error', text: 'Erro ao gerar relatório: ' + error.message })
@@ -9810,32 +9854,35 @@ const AdminDashboard = () => {
                 </div>
               </div>
               
-              {/* Botão Limpar Filtros */}
-              {(relatorioFiltros.corretorId || relatorioFiltros.empreendimentoId || relatorioFiltros.vendaId || relatorioFiltros.status !== 'todos' || relatorioFiltros.cargoId !== 'Corretor' || relatorioFiltros.coordenadoraId || relatorioFiltros.dataInicio || relatorioFiltros.dataFim || buscaCorretorRelatorio) && (
-                <button
-                  className="btn-clear-filters"
-                  onClick={() => {
-                    setRelatorioFiltros({
-                      tipo: 'pagamentos',
-                      corretorId: '',
-                      vendaId: '',
-                      cargoId: 'Corretor', // Manter padrão como Corretor
-                      coordenadoraId: '',
-                      papel: 'corretor',
-                      status: 'todos',
-                      dataInicio: '',
-                      dataFim: '',
-                      empreendimentoId: '',
-                      incluirDistratos: false
-                    })
-                    setBuscaCorretorRelatorio('')
-                  }}
-                  style={{ marginBottom: '16px' }}
-                >
-                  <X size={16} />
-                  Limpar Filtros
-                </button>
-              )}
+              {/* Filtros à vista ANTES de gerar (spec 2026-11-09): cargo e empreendimento em destaque.
+                  Causa provável dos relatórios "iguais" com valores diferentes: cargo Total × Corretor. */}
+              {(() => {
+                const fv = filtrosVisiveis(relatorioFiltros, { corretores, empreendimentos })
+                const alterado = fv.alterado || !!buscaCorretorRelatorio
+                return (
+                  <div className="relatorio-filtros-visiveis" data-testid="relatorio-filtros-visiveis">
+                    <div className="rfv-destaques">
+                      <div className="rfv-item"><span className="rfv-label">Cargo</span><strong className="rfv-valor">{fv.cargo}</strong></div>
+                      <div className="rfv-item"><span className="rfv-label">Empreendimento</span><strong className="rfv-valor">{fv.empreendimento}</strong></div>
+                    </div>
+                    <div className="rfv-secundarios">
+                      Corretor: {fv.corretor} · Status: {fv.status} · Período: {fv.periodo} · Distratos: {fv.distratos}
+                    </div>
+                    <button
+                      type="button"
+                      className="btn-clear-filters"
+                      disabled={!alterado}
+                      onClick={() => {
+                        setRelatorioFiltros({ ...FILTROS_RELATORIO_INICIAIS })
+                        setBuscaCorretorRelatorio('')
+                      }}
+                    >
+                      <X size={16} />
+                      Limpar filtros
+                    </button>
+                  </div>
+                )
+              })()}
               
               <button 
                 className="btn-gerar-pdf"
@@ -9866,7 +9913,14 @@ const AdminDashboard = () => {
                 Ver PDF do corretor
               </button>
             </div>
-            
+
+            {/* Relatórios emitidos (migration 043) — prova do que foi emitido */}
+            <RelatoriosEmitidos
+              corretores={corretores}
+              empreendimentos={empreendimentos}
+              versao={relatoriosVersao}
+            />
+
             {/* Resumo Rápido */}
             <div className="relatorio-resumo">
               <h3>Resumo Geral</h3>

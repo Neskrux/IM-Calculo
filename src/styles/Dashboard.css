@@ -9225,3 +9225,22 @@ textarea:focus {
   .boletos-sync-row { flex-direction: column; align-items: stretch; }
   .boletos-sync-row .btn-modelo { justify-content: center; }
 }
+
+/* Relatórios — filtros à vista + relatórios emitidos (spec 2026-11-09) */
+.relatorio-filtros-visiveis { border: 1px solid var(--accent-primary, #c9a962); border-radius: 10px; padding: 12px 14px; margin-bottom: 16px; display: flex; flex-direction: column; gap: 8px; }
+.relatorio-filtros-visiveis .rfv-destaques { display: flex; flex-wrap: wrap; gap: 24px; }
+.relatorio-filtros-visiveis .rfv-item { display: flex; flex-direction: column; }
+.relatorio-filtros-visiveis .rfv-label { font-size: 11px; text-transform: uppercase; opacity: .7; }
+.relatorio-filtros-visiveis .rfv-valor { font-size: 18px; color: var(--accent-primary, #c9a962); }
+.relatorio-filtros-visiveis .rfv-secundarios { font-size: 13px; opacity: .85; }
+.relatorio-filtros-visiveis .btn-clear-filters { align-self: flex-start; margin: 0; }
+.relatorio-filtros-visiveis .btn-clear-filters:disabled { opacity: .4; cursor: default; }
+.relatorios-emitidos { margin-top: 24px; }
+.relatorios-emitidos .re-topo { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 8px; }
+.relatorios-emitidos .re-scroll { overflow-x: auto; }
+.relatorios-emitidos .re-tabela { width: 100%; border-collapse: collapse; font-size: 13px; }
+.relatorios-emitidos .re-tabela th, .relatorios-emitidos .re-tabela td { padding: 6px 8px; border-bottom: 1px solid rgba(255,255,255,.08); text-align: left; white-space: nowrap; }
+.relatorios-emitidos .re-acoes { display: flex; gap: 6px; }
+.relatorios-emitidos .re-detalhe > td { background: rgba(201,169,98,.06); }
+.relatorios-emitidos .re-muted { font-size: 12px; opacity: .7; padding: 6px 0; }
+.relatorios-emitidos .re-erro { color: #ef4444; font-size: 13px; padding: 6px 0; }
