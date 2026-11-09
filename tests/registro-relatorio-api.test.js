@@ -12,7 +12,8 @@ vi.mock('../src/lib/supabase', () => ({
 const { registrarEmissao } = await import('../src/utils/registroRelatorioApi')
 const { gerarRelatorioCorretorPDF } = await import('../src/utils/relatorioCorretorPDF')
 
-const blob = new Blob(['%PDF-teste'], { type: 'application/pdf' })
+// blob com arrayBuffer do proprio Node (o Blob do jsdom vem de outro realm e o webcrypto do Node 20 recusa)
+const blob = { type: 'application/pdf', arrayBuffer: async () => new TextEncoder().encode('%PDF-teste').buffer }
 const args = { blob, origem: 'corretor', corretorId: 'c1', filtros: {}, totais: { total: 1, pago: 1, pendente: 0 }, parcelas: [{ id: 'p1', valor: 10, comissao: 1, status: 'pago' }] }
 
 describe('registrarEmissao', () => {

@@ -6,7 +6,7 @@ async function sha256Hex(blob) {
   const buf = typeof blob.arrayBuffer === 'function'
     ? await blob.arrayBuffer()
     : await new Promise((ok, falha) => { const r = new FileReader(); r.onload = () => ok(r.result); r.onerror = falha; r.readAsArrayBuffer(blob) })
-  const hash = await crypto.subtle.digest('SHA-256', buf)
+  const hash = await crypto.subtle.digest('SHA-256', new Uint8Array(buf)) // cópia: ArrayBuffer de outro realm (jsdom) é recusado no Node
   return [...new Uint8Array(hash)].map(b => b.toString(16).padStart(2, '0')).join('')
 }
 
