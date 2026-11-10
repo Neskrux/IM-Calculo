@@ -24,7 +24,7 @@ import { Sparkles } from 'lucide-react'
 import EmpreendimentoGaleria from '../components/EmpreendimentoGaleria'
 import VendaDocumentos from '../components/VendaDocumentos'
 import { gerarBoletoPdfBase64 } from '../utils/ailosBoletoPdf'
-import { resolverTitular } from '../utils/titularPlanilha'
+import { resolverTitular, dataPlanilhaISO } from '../utils/titularPlanilha'
 import ProfilePhotoModal from '../components/ProfilePhotoModal'
 import NotasFiscaisPainel from '../components/admin/NotasFiscaisPainel'
 // import CadastrarCorretores from '../components/CadastrarCorretores'
@@ -4113,11 +4113,7 @@ const AdminDashboard = () => {
       const linhasCli = abaCli ? XLSX.utils.sheet_to_json(abaCli, { defval: null }) : []
 
       const dig = (s) => String(s ?? '').replace(/\D/g, '')
-      const dataISO = (s) => {
-        if (s instanceof Date) return s.toISOString().slice(0, 10)
-        const m = String(s ?? '').match(/(\d{2})\/(\d{2})\/(\d{4})/)
-        return m ? `${m[3]}-${m[2]}-${m[1]}` : null
-      }
+      const dataISO = dataPlanilhaISO // texto dd/mm/aaaa, Date ou número de série do Excel
       const hoje = new Date().toISOString().slice(0, 10)
       const cliPorCpf = new Map()
       clientes.forEach(c => { const d = dig(c.cpf) || dig(c.cnpj); if (d) cliPorCpf.set(d, c) })
@@ -4168,7 +4164,7 @@ const AdminDashboard = () => {
           if (pago) {
             fora.divergente.push(`${ref} — parcela JÁ PAGA em ${formatDataBR(pago.data_pagamento)}. Não cobrar de novo — atualize a planilha.`)
           } else if (pend) {
-            fora.divergente.push(`${ref} — planilha: R$ ${valorPlan?.toFixed(2)} venc ${l['Data de Vencimento *']} · sistema: R$ ${Number(pend.valor).toFixed(2)} venc ${formatDataBR(pend.data_prevista)}. Confira qual está certo antes de emitir.`)
+            fora.divergente.push(`${ref} — planilha: R$ ${valorPlan?.toFixed(2)} venc ${dataISO(l['Data de Vencimento *']) ? formatDataBR(dataISO(l['Data de Vencimento *'])) : l['Data de Vencimento *']} · sistema: R$ ${Number(pend.valor).toFixed(2)} venc ${formatDataBR(pend.data_prevista)}. Confira qual está certo antes de emitir.`)
           } else if (vendasCli.length === 0) {
             // cliente existe mas não é o titular da venda — mostra quem é
             const vUni = uni ? vendas.find(v => v.excluido !== true && v.status !== 'distrato' && String(v.unidade ?? '').replace(/\D/g, '') === uni) : null

@@ -68,3 +68,24 @@ for (const [nome, fn, chaveLista] of [['tela', resolverTitular, 'clientes'], ['r
     })
   })
 }
+
+describe('dataPlanilhaISO (tela e robô)', async () => {
+  const { dataPlanilhaISO } = await import('../src/utils/titularPlanilha')
+  const { dataPlanilhaISO: robo } = require('../scripts/boletos/_titular.cjs')
+  for (const [nome, fn] of [['tela', dataPlanilhaISO], ['robô', robo]]) {
+    it(`${nome}: número de série do Excel (1105 B parc 18 = 46346) vira 20/11/2026`, () => {
+      expect(fn(46346)).toBe('2026-11-20')
+      expect(fn('46346')).toBe('2026-11-20')
+    })
+    it(`${nome}: texto dd/mm/aaaa, ISO e Date continuam funcionando`, () => {
+      expect(fn('20/12/2026')).toBe('2026-12-20')
+      expect(fn('2027-01-20')).toBe('2027-01-20')
+      expect(fn(new Date(Date.UTC(2027, 1, 20)))).toBe('2027-02-20')
+    })
+    it(`${nome}: lixo não vira data`, () => {
+      expect(fn(1166.66)).toBe(null)
+      expect(fn('')).toBe(null)
+      expect(fn(null)).toBe(null)
+    })
+  }
+})

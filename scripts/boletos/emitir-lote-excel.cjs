@@ -18,7 +18,7 @@ const path = require('path')
 const fs = require('fs')
 const { CONFIG, supabase, digitos, dormir, obterToken, sicoobApi } = require('./sicoob.cjs')
 const XLSX = require(path.join(__dirname, '..', '..', 'node_modules', 'xlsx'))
-const { resolverTitular } = require('./_titular.cjs')
+const { resolverTitular, dataPlanilhaISO } = require('./_titular.cjs')
 
 const args = process.argv.slice(2).filter(a => a !== '--apply')
 const APPLY = process.argv.includes('--apply')
@@ -30,10 +30,7 @@ if (!ARQ_CLIENTES || !ARQ_COBRANCAS) {
 }
 const HOJE = new Date().toISOString().slice(0, 10)
 
-const dataISO = (s) => {
-  const m = String(s ?? '').match(/(\d{2})\/(\d{2})\/(\d{4})/)
-  return m ? `${m[3]}-${m[2]}-${m[1]}` : null
-}
+const dataISO = dataPlanilhaISO // aceita texto dd/mm/aaaa E número de série do Excel
 
 async function fetchAll(tabela, select) {
   const all = []

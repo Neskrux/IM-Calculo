@@ -18,7 +18,7 @@ const fs = require('fs')
 const { CONFIG, supabase, SUPABASE_URL, ailosApi, dormir } = require('./ailos.cjs')
 const { gerarBoletoPdf } = require('./ailos-boleto-pdf.cjs')
 const XLSX = require(path.join(__dirname, '..', '..', 'node_modules', 'xlsx'))
-const { resolverTitular } = require('./_titular.cjs')
+const { resolverTitular, dataPlanilhaISO } = require('./_titular.cjs')
 
 const WORKER_SECRET_FILE = process.env.BOLETOS_WORKER_SECRET_FILE || 'C:/Users/HP/Downloads/boletos_worker_secret.txt'
 const digitos = (s) => String(s ?? '').replace(/\D/g, '')
@@ -34,7 +34,7 @@ if (APPLY && CONFIG.AMBIENTE !== 'producao') {
   console.error('--apply exige AILOS_ENV=producao'); process.exit(1)
 }
 const HOJE = new Date().toISOString().slice(0, 10)
-const dataISO = (s) => { const m = String(s ?? '').match(/(\d{2})\/(\d{2})\/(\d{4})/); return m ? `${m[3]}-${m[2]}-${m[1]}` : null }
+const dataISO = dataPlanilhaISO // aceita texto dd/mm/aaaa E número de série do Excel
 
 async function fetchAll(tabela, select) {
   const all = []

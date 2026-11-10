@@ -18,6 +18,23 @@ export const normNome = (s) => String(s ?? '').normalize('NFD').replace(/[̀-ͯ]
 const normUni = (s) => String(s ?? '').toUpperCase().replace(/^FIGUEIRA\s*/, '').replace(/\s+/g, '')
 const ativa = (v) => v.excluido !== true && v.status !== 'distrato'
 
+// Data da planilha → 'AAAA-MM-DD'. Aceita "20/11/2026", "2026-11-20", Date e o NÚMERO de
+// série do Excel (46346 = 20/11/2026): data digitada numa célula formatada como data é
+// gravada como número, não texto (1105 B parc 18, nov/2026, barrada como "divergente").
+export const dataPlanilhaISO = (s) => {
+  if (s instanceof Date) return isNaN(s) ? null : s.toISOString().slice(0, 10)
+  const txt = String(s ?? '').trim()
+  if (typeof s === 'number' || /^\d{5}(\.\d+)?$/.test(txt)) {
+    const n = Math.floor(Number(s))
+    if (n < 20000 || n > 80000) return null // fora de 1954..2119: não é data
+    return new Date(Date.UTC(1899, 11, 30) + n * 86400000).toISOString().slice(0, 10)
+  }
+  const br = txt.match(/(\d{2})\/(\d{2})\/(\d{4})/)
+  if (br) return `${br[3]}-${br[2]}-${br[1]}`
+  const iso = txt.match(/^(\d{4})-(\d{2})-(\d{2})/)
+  return iso ? `${iso[1]}-${iso[2]}-${iso[3]}` : null
+}
+
 /** @returns {{ cli: object|null, vendasCli: object[], viaNome: boolean }} */
 export function resolverTitular({ cpfD, unidadePlanilha, nomePlanilha, cliPorCpf, clientes, vendas }) {
   const mUni = String(unidadePlanilha ?? '').match(/(\d+)\s*([A-Za-z]?)\s*$/)

@@ -45,4 +45,20 @@ function resolverTitular({ cpfD, unidadePlanilha, nomePlanilha, cliPorCpf, dbCli
   return { cli: porId.get(String(cands[0].cliente_id)), vendasCli: cands, viaNome: true }
 }
 
-module.exports = { resolverTitular, normNome }
+// Data da planilha → 'AAAA-MM-DD'. Gêmeo de dataPlanilhaISO em src/utils/titularPlanilha.js.
+// Aceita "20/11/2026", "2026-11-20", Date e o NÚMERO de série do Excel (46346 = 20/11/2026).
+const dataPlanilhaISO = (s) => {
+  if (s instanceof Date) return isNaN(s) ? null : s.toISOString().slice(0, 10)
+  const txt = String(s ?? '').trim()
+  if (typeof s === 'number' || /^\d{5}(\.\d+)?$/.test(txt)) {
+    const n = Math.floor(Number(s))
+    if (n < 20000 || n > 80000) return null
+    return new Date(Date.UTC(1899, 11, 30) + n * 86400000).toISOString().slice(0, 10)
+  }
+  const br = txt.match(/(\d{2})\/(\d{2})\/(\d{4})/)
+  if (br) return `${br[3]}-${br[2]}-${br[1]}`
+  const iso = txt.match(/^(\d{4})-(\d{2})-(\d{2})/)
+  return iso ? `${iso[1]}-${iso[2]}-${iso[3]}` : null
+}
+
+module.exports = { resolverTitular, normNome, dataPlanilhaISO }
