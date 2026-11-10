@@ -251,3 +251,10 @@ Regras de negócio críticas que **SEMPRE** devem ser respeitadas ao alterar có
 - **Causa 2 (7 linhas) — cadastro duplicado:** cliente que entra pelo contrato do Sienge chega **sem CPF**; quando há um cadastro antigo COM CPF ligado a venda excluída, a busca por CPF cai nele → "sem venda ativa" (1506 D ×2, 1502 D, 901 D, 1507 D, 906 A, 510 C). Novo `resolverTitular` ([src/utils/titularPlanilha.js](src/utils/titularPlanilha.js) + gêmeo [scripts/boletos/_titular.cjs](scripts/boletos/_titular.cjs), 12 testes): cai pro titular **sem CPF de mesmo nome na mesma unidade/torre**; homônimo com outro CPF ou ambíguo → não resolve. Edges `ailos-boletos` (v12) e `sicoob-lote` (v3) aceitam o CPF da planilha quando o cadastro está vazio.
 - **Causa sistêmica aberta:** clientes novos do Sienge nunca recebem CPF (a entidade customers não é puxada para eles). Preencher o CPF dos 6 cadastros do sync foi barrado (escrita em produção — precisa OK).
 - **CI das edges consertado:** a CLI Supabase nova recusava `[inbucket]` (→ `[local_smtp]`) e exige `--yes` fora de terminal; deploy automático tinha quebrado em 05/11, verde de novo.
+
+### Sessão 2026-11-10 — lote Sicoob: vencimento como número do Excel
+
+- **Emitido pelo robô: 43 boletos Sicoob / R$ 78.950,71, 43 PDFs oficiais, 0 erros, 0 duplicidade, 0 titular errado** (planilhas `scripts/boletos/{clientes,cobrancas}-sicoob-preenchid*.xlsx`).
+- **Bug:** 1105 B parc 18 veio com o vencimento como **número de série do Excel** (46346 = 20/11/2026), não texto. O leitor só entendia `dd/mm/aaaa` → "divergente" falso. Novo `dataPlanilhaISO` (tela + robôs, gêmeos em `titularPlanilha.js`/`_titular.cjs`, 6 testes) aceita texto, ISO, Date e número de série.
+- **A tela não chegou a chamar o servidor** (zero requisições a `sicoob-lote` nos logs do dia) — o lote foi baixado como JSON. Não reproduzido; se repetir, pedir print do modal. Conferir se `SICOOB_CERT_PEM`/`SICOOB_KEY_PEM` já foram colados nos secrets da edge.
+- **Ficaram de fora (correto):** 1507 D parc 11 e 1508 B parc 13 têm boleto **Ailos vivo** (venc 20/01/2027). Se já foram baixados no portal Ailos → "Sincronizar com o banco" e reimportar.
