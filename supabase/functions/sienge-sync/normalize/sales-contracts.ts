@@ -1,5 +1,6 @@
 import { publicClient } from "../raw/writer.ts"
 import { log } from "../lib/log.ts"
+import { planejarMergePagamentos, type PagamentoExistente } from "../lib/merge-pagamentos.ts"
 
 /* ------------------------------------------------------------------
  * Tipos do payload Sienge (sales-contracts)
@@ -249,36 +250,16 @@ function montarPagamentos(vendaId: string, p: PaymentData, valorVenda: number, p
  * Merge de pagamentos respeitando linhas pagas (migration 017)
  *
  * Chave de match: (venda_id, tipo, numero_parcela)
- * - pago  → NÃO altera valor/tipo/data_pagamento/comissao_gerada
- * - pendente existente -> update valor/snapshots/comissao_gerada; preserva data_prevista existente
- * - novo → insert
+ * - pago, cancelado ou ancorado (sienge_installment_id) → o sync NÃO escreve
+ * - pendente não ancorado → update valor/snapshots/comissao_gerada; preserva data_prevista
+ * - chave repetida no desejado → venda sem escrita (log pagamentos_merge_skip_chave_repetida)
  * ---------------------------------------------------------------- */
-
-interface PagamentoExistente {
-  id: string
-  tipo: string
-  numero_parcela: number | null
-  status: string | null
-  valor: number | null
-  data_prevista: string | null
-  comissao_gerada: number | null
-  fator_comissao_aplicado: number | null
-  percentual_comissao_total: number | null
-}
-
-function moneyChanged(a: unknown, b: unknown): boolean {
-  return Math.abs((Number(a) || 0) - (Number(b) || 0)) > 0.005
-}
-
-function numberChanged(a: unknown, b: unknown): boolean {
-  return Math.abs((Number(a) || 0) - (Number(b) || 0)) > 0.000001
-}
 
 async function mergePagamentos(vendaId: string, desejados: PagamentoRow[]): Promise<{ ins: number; upd: number; skip: number }> {
   const supa = publicClient()
   const { data: existentes, error } = await supa
     .from("pagamentos_prosoluto")
-    .select("id, tipo, numero_parcela, status, valor, data_prevista, comissao_gerada, fator_comissao_aplicado, percentual_comissao_total")
+    .select("id, tipo, numero_parcela, status, valor, data_prevista, comissao_gerada, fator_comissao_aplicado, percentual_comissao_total, sienge_installment_id")
     .eq("venda_id", vendaId)
   if (error) throw new Error(`pagamentos.select: ${error.message}`)
 
@@ -293,53 +274,18 @@ async function mergePagamentos(vendaId: string, desejados: PagamentoRow[]): Prom
     return { ins: 0, upd: 0, skip: existentes?.length ?? 0 }
   }
 
-  const key = (tipo: string, np: number | null) => `${tipo}|${np ?? "null"}`
-  const mapEx = new Map<string, PagamentoExistente>()
-  for (const r of existentes ?? []) mapEx.set(key(r.tipo, r.numero_parcela), r as PagamentoExistente)
+  // Plano puro (lib/merge-pagamentos.ts): nao escreve em cancelada, ancorada ou paga; nao escreve
+  // nada se a chave (tipo, numero_parcela) vier repetida. Spec: docs/specs/2026-11-10-spec-sync-merge-pagamentos.md
+  const plano = planejarMergePagamentos(desejados, (existentes ?? []) as PagamentoExistente[])
+  if (plano.motivoSkip === "chave_repetida") {
+    log("warn", "pagamentos_merge_skip_chave_repetida", { vendaId, desejados: desejados.length })
+  }
 
   const now = new Date().toISOString()
-  const toInsert: Record<string, unknown>[] = []
-  const updatesPendente: Array<{ id: string; body: Record<string, unknown> }> = []
-  let ins = 0, upd = 0, skip = 0
-
-  for (const d of desejados) {
-    const k = key(d.tipo, d.numero_parcela)
-    const ex = mapEx.get(k)
-    if (!ex) {
-      toInsert.push({ ...d, status: "pendente", created_at: now, updated_at: now })
-    } else if (ex.status === "pago") {
-      // PARCELA PAGA: o sync NÃO escreve nada aqui — nem o dinheiro, nem o snapshot.
-      //
-      // Até 2026-08-07 este ramo reescrevia `fator_comissao_aplicado` e
-      // `percentual_comissao_total`, com o raciocínio "a 017 protege o dinheiro e a 018
-      // libera o snapshot, então é seguro". É o contrário: o snapshot é a EXPLICAÇÃO do
-      // dinheiro. Atualizar um sem o outro quebra a identidade
-      // `comissao_gerada = valor × fator_comissao_aplicado` de forma IRREVERSÍVEL — depois
-      // a 017 impede consertar pelo lado do `comissao_gerada`.
-      //
-      // Dano medido: 169 parcelas pagas em 21 vendas com identidade quebrada, 168 delas num
-      // único minuto (2026-08-05 15:45 UTC), quando a paginação do normalize (#66) fez este
-      // ramo alcançar a frota inteira pela primeira vez. Antes só os 40 contratos de menor
-      // sienge_id passavam por aqui — o defeito existia e era invisível.
-      //
-      // Regra de Ouro (.claude/rules/fator-comissao.md): "NUNCA recalcule comissões de
-      // vendas antigas ao alterar percentuais. Use sempre o fator_comissao_aplicado salvo."
-      // Snapshot histórico é imutável JUNTO com o dinheiro que ele explica.
-      //
-      // Se algum dia for preciso corrigir snapshot de linha paga, o caminho é script
-      // auditado com métrica e rollback (molde do B1 de 2026-06-03), nunca o sync silencioso.
-      skip++
-    } else {
-      const body: Record<string, unknown> = {}
-      if (moneyChanged(ex.valor, d.valor)) body.valor = d.valor
-      if (!ex.data_prevista && d.data_prevista) body.data_prevista = d.data_prevista
-      if (moneyChanged(ex.comissao_gerada, d.comissao_gerada)) body.comissao_gerada = d.comissao_gerada
-      if (numberChanged(ex.fator_comissao_aplicado, d.fator_comissao_aplicado)) body.fator_comissao_aplicado = d.fator_comissao_aplicado
-      if (numberChanged(ex.percentual_comissao_total, d.percentual_comissao_total)) body.percentual_comissao_total = d.percentual_comissao_total
-      if (Object.keys(body).length > 0) updatesPendente.push({ id: ex.id, body: { ...body, updated_at: now } })
-      else skip++
-    }
-  }
+  const toInsert = plano.inserts.map((d) => ({ ...d, status: "pendente", created_at: now, updated_at: now }))
+  const updatesPendente = plano.updates.map((u) => ({ id: u.id, body: { ...u.body, updated_at: now } }))
+  let ins = 0, upd = 0
+  const skip = plano.skip
 
   if (toInsert.length > 0) {
     const { error: e } = await supa.from("pagamentos_prosoluto").insert(toInsert)
@@ -359,7 +305,7 @@ async function mergePagamentos(vendaId: string, desejados: PagamentoRow[]): Prom
 
   // NÃO existe caminho de UPDATE em parcela `pago` neste normalize — por desenho.
   // O bloco que existia aqui foi removido junto com o ramo que o alimentava (ver o
-  // comentário em `ex.status === "pago"` acima). Reintroduzir um UPDATE em linha paga
+  // regra "pago" em lib/merge-pagamentos.ts; 2026-08-07: reescrever snapshot de paga quebrou 169 identidades). Reintroduzir um UPDATE em linha paga
   // sem script auditado quebra o snapshot histórico de novo.
 
   return { ins, upd, skip }

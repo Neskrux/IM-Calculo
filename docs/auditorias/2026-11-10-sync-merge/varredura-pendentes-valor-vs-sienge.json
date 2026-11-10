@@ -1,0 +1,85 @@
+{
+ "meta": {
+  "geradoEm": "2026-11-10T13:21:43.383Z",
+  "fonte_sienge": "income cron 2026-11-09 06:59Z",
+  "pendentes_ancoradas": 11076,
+  "sem_cache": 0
+ },
+ "divergentes": [
+  {
+   "id": "0bb0def8-81f1-416b-ac96-347215742736",
+   "unidade": "803 D",
+   "excluido": false,
+   "bill": 178,
+   "inst": "17",
+   "termo": "PM",
+   "venc": "2027-01-10",
+   "im_valor": 1500,
+   "sienge_valor": 2650,
+   "im_comissao": 285.69,
+   "fator": 0.190461,
+   "comissao_pelo_sienge": 504.72,
+   "updated_at": "2026-11-10T07:38:08.662047+00:00"
+  },
+  {
+   "id": "33e92c17-0970-4d4f-ab48-0f3abefea75f",
+   "unidade": "1805 A",
+   "excluido": false,
+   "bill": 293,
+   "inst": "6",
+   "termo": "B1",
+   "venc": "2026-03-20",
+   "im_valor": 3780,
+   "sienge_valor": 1260,
+   "im_comissao": 1301.74,
+   "fator": 0.344375,
+   "comissao_pelo_sienge": 433.91,
+   "updated_at": "2026-11-10T07:37:57.667367+00:00"
+  },
+  {
+   "id": "b393beed-bffb-43e4-a3ed-eddae9434a3a",
+   "unidade": "803 D",
+   "excluido": false,
+   "bill": 178,
+   "inst": "15",
+   "termo": "PM",
+   "venc": "2026-11-10",
+   "im_valor": 1500,
+   "sienge_valor": 2650,
+   "im_comissao": 285.69,
+   "fator": 0.190461,
+   "comissao_pelo_sienge": 504.72,
+   "updated_at": "2026-11-10T07:38:08.655985+00:00"
+  },
+  {
+   "id": "d3e0b115-82ec-45ce-8611-282f9d9a063d",
+   "unidade": "803 D",
+   "excluido": false,
+   "bill": 178,
+   "inst": "20",
+   "termo": "PM",
+   "venc": "2027-04-10",
+   "im_valor": 1500,
+   "sienge_valor": 2650,
+   "im_comissao": 285.69,
+   "fator": 0.190461,
+   "comissao_pelo_sienge": 504.72,
+   "updated_at": "2026-08-05T15:45:17.045461+00:00"
+  },
+  {
+   "id": "f09503ea-2e76-4cf2-ab8a-5461b520975b",
+   "unidade": "1004 D",
+   "excluido": false,
+   "bill": 268,
+   "inst": "22",
+   "termo": "PM",
+   "venc": "2027-04-20",
+   "im_valor": 1000,
+   "sienge_valor": 1766.35,
+   "im_comissao": 314.47,
+   "fator": 0.314472,
+   "comissao_pelo_sienge": 555.47,
+   "updated_at": "2026-11-10T07:38:10.597912+00:00"
+  }
+ ]
+}
