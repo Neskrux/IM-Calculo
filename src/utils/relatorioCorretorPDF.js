@@ -104,8 +104,10 @@ const rotuloParcela = (p) => {
  *   cargo COORDENADORA — sem isso o PDF da coordenacao sairia com a fatia de corretor das
  *   vendas de OUTRAS pessoas, que e numero errado e vazamento. Ver spec 2026-09-04.
  * @param {string} [p.subtitulo]       linha abaixo do nome (ex.: "Coordenacao").
+ * @param {function} [p.registrar]   async ({blob, totais, parcelas}) => void. Registro de emissao
+ *   (migration 043). Se lancar erro, o PDF NAO e baixado — relatorio sem prova nao sai.
  */
-export function gerarRelatorioCorretorPDF({ corretorProfile, vendas = [], pagamentos = [], filtros = {}, calcComissao = null, subtitulo = '' }) {
+export async function gerarRelatorioCorretorPDF({ corretorProfile, vendas = [], pagamentos = [], filtros = {}, calcComissao = null, subtitulo = '', registrar = null }) {
   const calcularComissao = calcComissao || makeCalcularComissao(vendas, corretorProfile)
   const { vendasFiltradas, pagamentosFiltrados } = getRelatorioDados({ vendas, pagamentos, filtros })
 
@@ -221,5 +223,12 @@ export function gerarRelatorioCorretorPDF({ corretorProfile, vendas = [], pagame
   }
 
   const nomeArquivo = `Relatorio_${corretorProfile?.nome?.replace(/\s+/g, '_') || 'Corretor'}_${new Date().toISOString().split('T')[0]}.pdf`
+  if (registrar) {
+    await registrar({
+      blob: doc.output('blob'),
+      totais: { total: comissaoTotal, pago: comissaoPaga, pendente: comissaoPendente },
+      parcelas: pagamentosFiltrados.map(p => ({ id: p.id, venda_id: p.venda_id, valor: p.valor, comissao: calcularComissao(p), status: p.status })),
+    })
+  }
   doc.save(nomeArquivo)
 }

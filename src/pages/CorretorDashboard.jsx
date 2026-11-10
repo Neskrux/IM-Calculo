@@ -20,6 +20,7 @@ import Ticker from '../components/Ticker'
 import Autocomplete from '../components/Autocomplete'
 import ParcelaCard from '../components/corretor/ParcelaCard'
 import { gerarRelatorioCorretorPDF } from '../utils/relatorioCorretorPDF'
+import { registrarEmissao } from '../utils/registroRelatorioApi'
 import InputDataBR from "../components/InputDataBR"
 import { casaBusca } from '../utils/searchUtils'
 import ProfilePhotoModal from '../components/ProfilePhotoModal'
@@ -1173,8 +1174,15 @@ const CorretorDashboard = () => {
   const gerarMeuRelatorioPDF = async () => {
     setGerandoPdf(true)
     try {
-      gerarRelatorioCorretorPDF({
+      await gerarRelatorioCorretorPDF({
         corretorProfile: userProfile,
+        // Registro de emissão (migration 043): sem registro, o PDF não é baixado.
+        registrar: ({ blob, totais, parcelas }) => registrarEmissao({
+          blob, totais, parcelas,
+          origem: 'corretor',
+          corretorId: userProfile?.id,
+          filtros: { ...relatorioFiltros, papel: emCoordenacao ? 'coordenacao' : 'corretor' },
+        }),
         vendas,
         pagamentos: meusPagamentos,
         filtros: relatorioFiltros,
@@ -1186,7 +1194,7 @@ const CorretorDashboard = () => {
       })
     } catch (error) {
       console.error('Erro ao gerar PDF:', error)
-      alert('Erro ao gerar relatorio. Tente novamente.')
+      alert(`Erro ao gerar relatorio: ${error?.message || 'tente novamente.'}`)
     } finally {
       setGerandoPdf(false)
     }
