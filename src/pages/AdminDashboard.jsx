@@ -5797,25 +5797,29 @@ const AdminDashboard = () => {
             const cargos = calcularComissaoPorCargoPagamento(pag)
             const tipoFormatado = formatTipo(pag)
             const dataStr = formatDataBR(pag.data_prevista)
+            const pagoEmStr = pag.data_pagamento ? formatDataBR(pag.data_pagamento) : '-'
             const valorStr = formatCurrency(pag.valor)
             const statusStr = pag.status === 'pago' ? 'PAGO' : pag.status === 'cancelado' ? 'CANCELADO' : 'PENDENTE'
             cargos.forEach(c => {
               const pct = valorParcela > 0 ? ((c.valor / valorParcela) * 100).toFixed(2) : '0,00'
-              parcelas.push([tipoFormatado, dataStr, valorStr, statusStr, c.nome_cargo, `${pct.replace('.', ',')}%`, formatCurrency(c.valor)])
+              parcelas.push([tipoFormatado, dataStr, pagoEmStr, valorStr, statusStr, c.nome_cargo, `${pct.replace('.', ',')}%`, formatCurrency(c.valor)])
             })
           })
-          head = [['Tipo', 'Data', 'Valor', 'Status', 'Cargo', '%', 'Comissao']]
-          statusColIdx = 3
-          pctColIdx = 5
-          comissaoColIdx = 6
+          // Vencimento E data em que o cliente pagou (pedido do operador, 2026-11-12) — mesma
+          // dupla de colunas do PDF do corretor (relatorioCorretorPDF).
+          head = [['Tipo', 'Vencimento', 'Pago em', 'Valor', 'Status', 'Cargo', '%', 'Comissao']]
+          statusColIdx = 4
+          pctColIdx = 6
+          comissaoColIdx = 7
           columnStyles = {
             0: { cellWidth: tabelaW * 0.11, halign: 'left' },
-            1: { cellWidth: tabelaW * 0.12, halign: 'left' },
-            2: { cellWidth: tabelaW * 0.14, halign: 'right' },
-            3: { cellWidth: tabelaW * 0.12, halign: 'center' },
-            4: { cellWidth: tabelaW * 0.14, halign: 'left' },
-            5: { cellWidth: tabelaW * 0.10, halign: 'center' },
-            6: { cellWidth: tabelaW * 0.17, halign: 'right', fontStyle: 'bold' }
+            1: { cellWidth: tabelaW * 0.11, halign: 'left' },
+            2: { cellWidth: tabelaW * 0.11, halign: 'left' },
+            3: { cellWidth: tabelaW * 0.13, halign: 'right' },
+            4: { cellWidth: tabelaW * 0.11, halign: 'center' },
+            5: { cellWidth: tabelaW * 0.13, halign: 'left' },
+            6: { cellWidth: tabelaW * 0.09, halign: 'center' },
+            7: { cellWidth: tabelaW * 0.15, halign: 'right', fontStyle: 'bold' }
           }
         } else {
           parcelas = pagamentosOrdenados.map(pag => {
@@ -5835,23 +5839,25 @@ const AdminDashboard = () => {
             return [
               tipoFormatado,
               formatDataBR(pag.data_prevista),
+              pag.data_pagamento ? formatDataBR(pag.data_pagamento) : '-',
               formatCurrency(pag.valor),
               pag.status === 'pago' ? 'PAGO' : pag.status === 'cancelado' ? 'CANCELADO' : 'PENDENTE',
               `${percentualUsado.toFixed(2).replace('.', ',')}%`,
               formatCurrency(comissaoExibir)
             ]
           })
-          head = [['Tipo', 'Data', 'Valor', 'Status', '%', 'Comissao']]
-          statusColIdx = 3
-          pctColIdx = 4
-          comissaoColIdx = 5
+          head = [['Tipo', 'Vencimento', 'Pago em', 'Valor', 'Status', '%', 'Comissao']]
+          statusColIdx = 4
+          pctColIdx = 5
+          comissaoColIdx = 6
           columnStyles = {
-            0: { cellWidth: tabelaW * 0.14, halign: 'left' },
-            1: { cellWidth: tabelaW * 0.15, halign: 'left' },
-            2: { cellWidth: tabelaW * 0.18, halign: 'right' },
-            3: { cellWidth: tabelaW * 0.18, halign: 'center' },
-            4: { cellWidth: tabelaW * 0.12, halign: 'center' },
-            5: { cellWidth: tabelaW * 0.23, halign: 'right', fontStyle: 'bold' }
+            0: { cellWidth: tabelaW * 0.13, halign: 'left' },
+            1: { cellWidth: tabelaW * 0.13, halign: 'left' },
+            2: { cellWidth: tabelaW * 0.13, halign: 'left' },
+            3: { cellWidth: tabelaW * 0.16, halign: 'right' },
+            4: { cellWidth: tabelaW * 0.13, halign: 'center' },
+            5: { cellWidth: tabelaW * 0.10, halign: 'center' },
+            6: { cellWidth: tabelaW * 0.22, halign: 'right', fontStyle: 'bold' }
           }
         }
         
