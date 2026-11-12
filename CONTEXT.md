@@ -52,6 +52,11 @@ competência**; nenhuma nota cobre dois meses. É a invariante central do envio 
 ou a imobiliária dele como pessoa jurídica (identificada por CNPJ, com o nome da imobiliária
 declarado no envio). O emissor pode mudar de um mês para outro; a nota registra qual foi.
 
+**Recebedor** — quem recebe o dinheiro do repasse, identificado pela chave PIX. **Não é
+necessariamente o emissor.** É comum o corretor emitir a nota pelo CNPJ da imobiliária e receber na
+chave do CNPJ próprio. Cobrar que a chave PIX case com o documento do emissor é regra falsa: foi
+herdada do texto de ajuda do formulário antigo e corrigida pela controladoria em 31/08/2026.
+
 **Obrigado** — quem deve uma nota numa competência. Todo corretor ativo, em todo mês.
 
 **Enviou / Não enviou** — a nota da competência existe, ou não existe. É a régua do acompanhamento.

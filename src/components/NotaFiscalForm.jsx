@@ -165,7 +165,9 @@ export default function NotaFiscalForm({ corretor, criadoPor, competencia, onEnv
       <label className="nf-campo">
         <span>Chave PIX para o pagamento</span>
         <input type="text" value={form.chave_pix} onChange={set('chave_pix')} />
-        <span className="nf-hint">Deve bater com o {rotuloDoc} de quem emite.</span>
+        <span className="nf-hint">
+          Pode ser diferente do documento de quem emite — é a chave que recebe o repasse.
+        </span>
         {erroDe('chave_pix') && <span className="nf-erro">{erroDe('chave_pix')}</span>}
       </label>
 
