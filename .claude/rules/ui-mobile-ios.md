@@ -71,3 +71,17 @@ Se o bundle servido tem o código → **é cache do aparelho**, não deploy. Com
 2. `overscroll-behavior: contain` + `dvh` na lista rolável? — regra 3
 3. Fecha no X **e** no overlay (`onClick` no overlay, `stopPropagation` no content)?
 4. Testou no device com **cache furado** (`?novo` ou force-quit), não só pull-to-refresh? — regra 4
+
+---
+
+## 5. Antes de liberar tela: o fluxo do operador num iPhone de verdade (2026-11-16)
+
+Teste unitário e build verde **não** provam que a tela funciona no celular. Em 09/11 o registro de
+relatórios emitidos entrou com testes verdes e o PDF do corretor parou de baixar em todo iPhone: o
+download vinha depois de um `await` de rede e o iOS só deixa baixar dentro do toque do usuário. Um
+corretor descobriu na hora de pegar o relatório, com 16 tentativas registradas e nenhum PDF.
+
+Regra: tela ou ação nova que o corretor, cliente ou operador usa **só é liberada** depois de alguém
+executar o fluxo real, do toque ao resultado (abrir, gerar, baixar, enviar), num **iPhone** com o
+cache furado (regra 4). Ação que precisa de gesto do usuário (download, `window.open`, copiar)
+**não pode vir depois de `await`**: ou acontece antes da rede, ou vira um segundo toque.

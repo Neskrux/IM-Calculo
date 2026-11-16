@@ -168,12 +168,30 @@ jobs:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
 
+      # Etapa 5 — conferencia parcela a parcela IM x Sienge. READ-ONLY, roda por ultimo
+      # (le o estado depois de reconciliador, sync e cura). Usa o income ja baixado no run
+      # (cache 1h) — zero cota. Nunca derruba o job: resumo no painel do run + artifact.
+      # Existe porque em nov/2026 o operador achou sozinho erros que nenhuma conferencia
+      # via (803 D com valor de outra serie desde 05/08). Spec:
+      # docs/specs/2026-11-16-spec-conferencia-diaria-parcelas.md
+      - name: Conferir parcela a parcela (aviso)
+        continue-on-error: true
+        run: node scripts/conferir-parcelas-vs-sienge.mjs
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          SIENGE_USERNAME: ${{ secrets.SIENGE_USERNAME }}
+          SIENGE_PASSWORD: ${{ secrets.SIENGE_PASSWORD }}
+          SIENGE_SUBDOMAIN: ${{ secrets.SIENGE_SUBDOMAIN }}
+          SIENGE_CACHE_TTL_MS: '3600000'
+
       - name: Upload report
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: reconciliation-report-${{ github.run_id }}
           path: |
+            docs/auditorias/conferencia-parcelas-*.json
             docs/auditorias/distrato-stale-*.json
             docs/plano-correcao-data-prevista-*.json
             docs/aplicacao-data-prevista-*.json
