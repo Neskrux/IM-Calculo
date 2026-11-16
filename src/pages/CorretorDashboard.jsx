@@ -13,7 +13,7 @@ import {
   Building, MapPin, CreditCard, Users, FileText, Eye, Phone, Mail,
   Home, CalendarDays, BanknoteIcon, TrendingDown, ArrowUpRight,
   Plus, UserPlus, Send, ClipboardList, CheckCircle2, XCircle, AlertCircle,
-  Camera, Search, Upload
+  Camera, Search, Upload, Download
 } from 'lucide-react'
 import logo from '../imgs/logo.png'
 import Ticker from '../components/Ticker'
@@ -151,7 +151,11 @@ const CorretorDashboard = () => {
     dataFim: ''
   })
   const [gerandoPdf, setGerandoPdf] = useState(false)
-  
+  // PDF já gerado e registrado, esperando o toque de download ({ blob, nomeArquivo, salvar }).
+  const [pdfPronto, setPdfPronto] = useState(null)
+  // Mudou filtro ou papel => o PDF pronto não corresponde mais à tela; volta pro "Gerar".
+  useEffect(() => { setPdfPronto(null) }, [relatorioFiltros, emCoordenacao])
+
   // Estados para solicitações
   const [minhasSolicitacoes, setMinhasSolicitacoes] = useState([])
   const [loadingSolicitacoes, setLoadingSolicitacoes] = useState(false)
@@ -1171,10 +1175,17 @@ const CorretorDashboard = () => {
 
   // FONTE ÚNICA: o corretor gera o MESMO PDF que o admin vê em "Ver PDF do corretor"
   // (util relatorioCorretorPDF). Antes era uma cópia inline que divergia — agora não há drift.
+  //
+  // Download em DOIS toques: o 1º gera e registra (sobe o PDF — leva rede); o 2º baixa.
+  // No iOS o navegador só deixa baixar dentro do toque do usuário, e o toque "expira"
+  // durante o upload do registro — o PDF sumia em silêncio (caso real de um corretor,
+  // 2026-11-12: 16 emissões registradas, nenhum PDF baixado). O 2º toque é gesto novo.
   const gerarMeuRelatorioPDF = async () => {
     setGerandoPdf(true)
+    setPdfPronto(null)
     try {
-      await gerarRelatorioCorretorPDF({
+      const pronto = await gerarRelatorioCorretorPDF({
+        baixarAgora: false,
         corretorProfile: userProfile,
         // Registro de emissão (migration 043): sem registro, o PDF não é baixado.
         registrar: ({ blob, totais, parcelas }) => registrarEmissao({
@@ -1192,6 +1203,7 @@ const CorretorDashboard = () => {
         calcComissao: emCoordenacao ? calcularComissaoPagamento : null,
         subtitulo: emCoordenacao ? 'Coordenacao' : '',
       })
+      setPdfPronto(pronto)
     } catch (error) {
       console.error('Erro ao gerar PDF:', error)
       alert(`Erro ao gerar relatorio: ${error?.message || 'tente novamente.'}`)
@@ -3096,7 +3108,22 @@ const CorretorDashboard = () => {
                   </button>
                 )}
                 
-                <button 
+                {pdfPronto ? (
+                  <>
+                    {/* 2º toque: download síncrono dentro do gesto (exigência do iOS). */}
+                    <button
+                      className="btn-gerar-pdf"
+                      onClick={() => pdfPronto.salvar()}
+                    >
+                      <Download size={20} />
+                      Baixar PDF
+                    </button>
+                    <p style={{ fontSize: '12px', opacity: 0.75, marginTop: '8px', textAlign: 'center' }}>
+                      Relatório gerado e registrado. Toque em “Baixar PDF” para salvar o arquivo.
+                    </p>
+                  </>
+                ) : (
+                <button
                   className="btn-gerar-pdf"
                   onClick={gerarMeuRelatorioPDF}
                   disabled={gerandoPdf}
@@ -3113,6 +3140,7 @@ const CorretorDashboard = () => {
                     </>
                   )}
                 </button>
+                )}
               </div>
               
               {/* Resumo Rápido */}
