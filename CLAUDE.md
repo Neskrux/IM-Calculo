@@ -258,3 +258,10 @@ Regras de negócio críticas que **SEMPRE** devem ser respeitadas ao alterar có
 - **Bug:** 1105 B parc 18 veio com o vencimento como **número de série do Excel** (46346 = 20/11/2026), não texto. O leitor só entendia `dd/mm/aaaa` → "divergente" falso. Novo `dataPlanilhaISO` (tela + robôs, gêmeos em `titularPlanilha.js`/`_titular.cjs`, 6 testes) aceita texto, ISO, Date e número de série.
 - **A tela não chegou a chamar o servidor** (zero requisições a `sicoob-lote` nos logs do dia) — o lote foi baixado como JSON. Não reproduzido; se repetir, pedir print do modal. Conferir se `SICOOB_CERT_PEM`/`SICOOB_KEY_PEM` já foram colados nos secrets da edge.
 - **Ficaram de fora (correto):** 1507 D parc 11 e 1508 B parc 13 têm boleto **Ailos vivo** (venc 20/01/2027). Se já foram baixados no portal Ailos → "Sincronizar com o banco" e reimportar.
+
+### Sessão 2026-11-17 — o botão "Emitir" não fazia nada (window.confirm bloqueado)
+
+- **Emitido pelo robô: 107 boletos Sicoob / R$ 134.462,93, 107 PDFs, 0 erros, 0 duplicidade, 0 titular/status errado** (planilhas `scripts/boletos/as2.xlsx` cobranças + `as3.xlsx` clientes).
+- **Causa-raiz dos 3 lotes "que não subiram" (05/11, 10/11, 17/11):** zero requisições às edges nos logs — o clique em Emitir parava no `window.confirm`. Navegador com "impedir caixas de diálogo" marcado devolve `false` calado → botão mudo, sobrava só o download do JSON. **Fix:** confirmação em 2 cliques dentro do modal ("Sim, emitir N boletos" / "Voltar"); download renomeado "Baixar conferência (não emite)".
+- **30 fora por boleto Ailos vivo:** consultados na API Ailos — 29 **em aberto** (correto não duplicar; pra trocar de banco, baixar na Ailos antes) + 704 D p18 **pago na Ailos em 22/10** → `boletos.status='pago'` (só a tabela boletos).
+- ⚠️ Build local falha com `html-proxy ... index=0.css` quando o cwd é `c:\` minúsculo (bug do Vite no Windows) — rodar de `C:\Users\...`. Não é erro de código.
