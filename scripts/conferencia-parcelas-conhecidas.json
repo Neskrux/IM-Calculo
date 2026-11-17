@@ -1,0 +1,9 @@
+{
+  "_sobre": "Divergencias IM x Sienge ja decididas. Aparecem na conferencia diaria como 'conhecidas', nao como alarme (regra edge-cases-externos.md: confirmar no maximo uma vez). Toda entrada precisa de motivo e de onde a decisao esta registrada.",
+  "conhecidas": [
+    { "sienge_bill_id": 410, "sienge_installment_id": "60", "tipo": "status_pago_sem_dinheiro", "motivo": "905 B - cessao (cessao.md): pagamentos podem estar no titulo do cessionario" },
+    { "sienge_bill_id": 410, "sienge_installment_id": "62", "tipo": "status_pago_sem_dinheiro", "motivo": "905 B - cessao (cessao.md): pagamentos podem estar no titulo do cessionario" },
+    { "sienge_bill_id": 410, "sienge_installment_id": "64", "tipo": "status_pago_sem_dinheiro", "motivo": "905 B - cessao (cessao.md): pagamentos podem estar no titulo do cessionario" },
+    { "sienge_bill_id": 483, "sienge_installment_id": "5", "tipo": "status_pago_sem_dinheiro", "motivo": "603 B - fronteira da cura de distrato de julho com a Controladoria (cura-apply.json, fronteiras_a_confirmar)" }
+  ]
+}

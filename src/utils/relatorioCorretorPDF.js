@@ -106,8 +106,12 @@ const rotuloParcela = (p) => {
  * @param {string} [p.subtitulo]       linha abaixo do nome (ex.: "Coordenacao").
  * @param {function} [p.registrar]   async ({blob, totais, parcelas}) => void. Registro de emissao
  *   (migration 043). Se lancar erro, o PDF NAO e baixado — relatorio sem prova nao sai.
+ * @param {boolean} [p.baixarAgora=true] false = NAO baixa; devolve { blob, nomeArquivo, salvar }
+ *   pra tela baixar num toque NOVO do usuario. Obrigatorio no celular quando ha `registrar`:
+ *   o iOS so deixa baixar arquivo dentro do toque, e o toque "expira" enquanto o registro
+ *   sobe o PDF. Caso real 2026-11-12 (corretor no iPhone): 16 emissoes registradas, 0 PDFs.
  */
-export async function gerarRelatorioCorretorPDF({ corretorProfile, vendas = [], pagamentos = [], filtros = {}, calcComissao = null, subtitulo = '', registrar = null }) {
+export async function gerarRelatorioCorretorPDF({ corretorProfile, vendas = [], pagamentos = [], filtros = {}, calcComissao = null, subtitulo = '', registrar = null, baixarAgora = true }) {
   const calcularComissao = calcComissao || makeCalcularComissao(vendas, corretorProfile)
   const { vendasFiltradas, pagamentosFiltrados } = getRelatorioDados({ vendas, pagamentos, filtros })
 
@@ -223,12 +227,26 @@ export async function gerarRelatorioCorretorPDF({ corretorProfile, vendas = [], 
   }
 
   const nomeArquivo = `Relatorio_${corretorProfile?.nome?.replace(/\s+/g, '_') || 'Corretor'}_${new Date().toISOString().split('T')[0]}.pdf`
+  // UM blob so: o que fica registrado e o mesmo que o corretor baixa.
+  const blob = doc.output('blob')
   if (registrar) {
     await registrar({
-      blob: doc.output('blob'),
+      blob,
       totais: { total: comissaoTotal, pago: comissaoPaga, pendente: comissaoPendente },
       parcelas: pagamentosFiltrados.map(p => ({ id: p.id, venda_id: p.venda_id, valor: p.valor, comissao: calcularComissao(p), status: p.status })),
     })
   }
+  if (!baixarAgora) {
+    return { blob, nomeArquivo, salvar: () => baixarBlobNoToque(blob, nomeArquivo) }
+  }
   doc.save(nomeArquivo)
+}
+
+// Clique SINCRONO no <a download> — chamar direto do onClick, sem await antes.
+function baixarBlobNoToque(blob, nomeArquivo) {
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url; a.download = nomeArquivo; a.rel = 'noopener'
+  document.body.appendChild(a); a.click(); a.remove()
+  setTimeout(() => URL.revokeObjectURL(url), 60000)
 }
