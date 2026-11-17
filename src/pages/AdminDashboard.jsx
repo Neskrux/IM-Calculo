@@ -1271,6 +1271,7 @@ const AdminDashboard = () => {
   const [importResultado, setImportResultado] = useState(null)
   const [importandoPlanilha, setImportandoPlanilha] = useState(false)
   const [emitindoLote, setEmitindoLote] = useState(false)
+  const [confirmandoEmissao, setConfirmandoEmissao] = useState(false)
   const [progressoEmissao, setProgressoEmissao] = useState(null) // {feitos, total}
   const [resultadoEmissao, setResultadoEmissao] = useState(null)
   const [sincronizandoBanco, setSincronizandoBanco] = useState(false)
@@ -4210,6 +4211,7 @@ const AdminDashboard = () => {
         }
       })
       setResultadoEmissao(null)
+      setConfirmandoEmissao(false)
       setImportResultado({
         banco, arquivo: nomes.join(' + '), totalPlanilha: linhas.length,
         clientesPlanilha: linhasCli.length, lote, fora, pagadores,
@@ -4227,8 +4229,11 @@ const AdminDashboard = () => {
   const emitirLoteConferido = async () => {
     const r = importResultado
     if (!r || r.lote.length === 0) return
-    const nomeBanco = BANCOS_EMISSAO[r.banco].label
-    if (!confirm(`Emitir ${r.lote.length} boletos ${nomeBanco} (${formatCurrency(r.lote.reduce((a, x) => a + x.valor, 0))})?\n\nOs boletos são registrados no banco na hora. Confirma?`)) return
+    // Confirmação DENTRO da tela (2 cliques), não window.confirm: se alguém marcou "impedir
+    // esta página de abrir caixas de diálogo", o confirm() devolve false calado e o botão
+    // Emitir "não faz nada" — foi o que travou os lotes de 05/11, 10/11 e 17/11.
+    if (!confirmandoEmissao) { setConfirmandoEmissao(true); return }
+    setConfirmandoEmissao(false)
     if (r.banco === 'sicoob') return emitirLoteSicoob(r)
     setEmitindoLote(true)
     const data = { ok: true, emitidos: [], erros: [], semPdf: [] }
@@ -9290,11 +9295,11 @@ const AdminDashboard = () => {
 
               {/* Modal de conferência da planilha importada */}
               {importResultado && (
-                <div className="modal-overlay" onClick={() => { if (!emitindoLote) setImportResultado(null) }}>
+                <div className="modal-overlay" onClick={() => { if (!emitindoLote) { setImportResultado(null); setConfirmandoEmissao(false) } }}>
                   <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '640px' }}>
                     <div className="modal-header">
                       <h2><Upload size={18} style={{ marginRight: 8 }} /> Conferência do lote — {BANCOS_EMISSAO[importResultado.banco].label}</h2>
-                      <button className="close-btn" onClick={() => setImportResultado(null)} disabled={emitindoLote} title={emitindoLote ? 'Aguarde a emissão terminar' : ''}><X size={22} /></button>
+                      <button className="close-btn" onClick={() => { setImportResultado(null); setConfirmandoEmissao(false) }} disabled={emitindoLote} title={emitindoLote ? 'Aguarde a emissão terminar' : ''}><X size={22} /></button>
                     </div>
                     <div className="modal-body" style={{ padding: '20px 24px', maxHeight: '65vh', overflowY: 'auto' }}>
                       <p style={{ marginTop: 0, fontSize: 13, color: 'var(--text-secondary)' }}>
@@ -9367,13 +9372,26 @@ const AdminDashboard = () => {
                         </div>
                       </div>
                     )}
-                    <div className="modal-footer" style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', padding: '14px 24px' }}>
-                      <button className="btn-modelo" onClick={baixarLoteConferido} disabled={emitindoLote}>
-                        <FileDown size={15} /> Baixar lote conferido
-                      </button>
+                    <div className="modal-footer" style={{ display: 'flex', flexWrap: 'wrap', gap: 10, justifyContent: 'flex-end', padding: '14px 24px' }}>
+                      {confirmandoEmissao && !emitindoLote && (
+                        <div style={{ flexBasis: '100%', fontSize: 14, padding: '10px 12px', borderRadius: 8, background: 'rgba(212,175,55,0.12)', border: '1px solid rgba(212,175,55,0.45)' }}>
+                          ⚠️ Os boletos são registrados no banco na hora. Confirma a emissão de{' '}
+                          <strong>{importResultado.lote.length} boletos {BANCOS_EMISSAO[importResultado.banco]?.label}</strong>{' '}
+                          ({formatCurrency(importResultado.lote.reduce((a, x) => a + x.valor, 0))})?
+                        </div>
+                      )}
+                      {confirmandoEmissao && !emitindoLote ? (
+                        <button className="btn-modelo" onClick={() => setConfirmandoEmissao(false)}>Voltar</button>
+                      ) : (
+                        <button className="btn-modelo" onClick={baixarLoteConferido} disabled={emitindoLote} title="Só baixa um arquivo com a conferência — NÃO emite boletos">
+                          <FileDown size={15} /> Baixar conferência (não emite)
+                        </button>
+                      )}
                       {!resultadoEmissao && importResultado.lote.length > 0 && (
                         <button className="btn-modelo btn-emitir-lote" onClick={emitirLoteConferido} disabled={emitindoLote}>
-                          <Barcode size={15} /> {emitindoLote ? `Emitindo ${progressoEmissao ? `${progressoEmissao.feitos}/${progressoEmissao.total}` : '...'}` : `Emitir ${importResultado.lote.length} boletos`}
+                          <Barcode size={15} /> {emitindoLote
+                            ? `Emitindo ${progressoEmissao ? `${progressoEmissao.feitos}/${progressoEmissao.total}` : '...'}`
+                            : confirmandoEmissao ? `Sim, emitir ${importResultado.lote.length} boletos` : `Emitir ${importResultado.lote.length} boletos`}
                         </button>
                       )}
                     </div>
